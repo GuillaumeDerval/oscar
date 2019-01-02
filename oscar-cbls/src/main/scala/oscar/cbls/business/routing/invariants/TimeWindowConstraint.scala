@@ -26,25 +26,25 @@ object TimeWindowConstraint {
     * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
-    * @param earlylines An array representing the earliest leave time at a node (or vehicle's depot)
-    * @param deadlines An array representing the latest arrival time at a node (or vehicle's depot)
+    * @param earliestArrivalTime An array representing the earliest arrival time at a node (or vehicle's depot)
+    * @param latestLeavingTime An array representing the latest leave time at a node (or vehicle's depot)
     * @param travelTimeMatrix A matrix representing the different travel time between the nodes
-    * @param violations An array representing the eventual violation of the vehicle
+    * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earlylines: Array[Int],
-            deadlines: Array[Int],
+            earliestArrivalTime: Array[Int],
+            latestLeavingTime: Array[Int],
             travelTimeMatrix: Array[Array[Int]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
-      earlylines,
-      deadlines,
-      earlylines,
-      deadlines,
+      earliestArrivalTime,
+      latestLeavingTime,
+      earliestArrivalTime,
+      latestLeavingTime,
       travelTimeMatrix, violations)
   }
 
@@ -53,38 +53,51 @@ object TimeWindowConstraint {
     * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
     * @param n The number of nodes of the problem (including vehicle)
     * @param v The number of vehicles of the problem
-    * @param earlylines An array (size n) representing the earliest leave time at a node (or vehicle's depot)
-    * @param deadlines An array (size n) representing the latest arrival time at a node (or vehicle's depot)
+    * @param earliestArrivalTime An array (size n) representing the earliest arrival time at a node (or vehicle's depot)
+    * @param latestLeavingTime An array (size n) representing the latest leaving time at a node (or vehicle's depot)
     * @param taskDurations An array (size n) representing the task duration at a node (or vehicle's depot)
     * @param travelTimeMatrix A matrix representing the different travel time between the nodes
-    * @param violations An array representing the eventual violation of the vehicle
+    * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earlylines: Array[Int],
-            deadlines: Array[Int],
+            earliestArrivalTime: Array[Int],
+            latestLeavingTime: Array[Int],
             taskDurations: Array[Int],
             travelTimeMatrix: Array[Array[Int]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
-      earlylines,
-      deadlines,
-      (earlylines, taskDurations).zipped.map(_ + _),
-      (deadlines, taskDurations).zipped.map(_ + _),
+      earliestArrivalTime,
+      (latestLeavingTime, taskDurations).zipped.map(_ - _),
+      (earliestArrivalTime, taskDurations).zipped.map(_ + _),
+      latestLeavingTime,
       travelTimeMatrix, violations)
   }
 }
 
+/**
+  * This class represent a time window constraint.
+  * Given parameters, it maintains the violation value of each vehicle (in violations var)
+  * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
+  * @param n The number of nodes of the problem (including vehicle)
+  * @param v The number of vehicles of the problem
+  * @param earliestArrivalTime An array (size n) representing the earliest arrival time at a node (or vehicle's depot)
+  * @param latestArrivalTime An array (size n) representing the latest arrival time at a node (or vehicle's depot)
+  * @param earliestLeavingTime An array (size n) representing the earliest leaving time at a node (or vehicle's depot)
+  * @param latestLeavingTime An array (size n) representing the latest leaving time at a node (or vehicle's depot)
+  * @param travelTimeMatrix A matrix representing the different travel time between the nodes
+  * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
+  */
 class TimeWindowConstraint (routes: ChangingSeqValue,
                             n: Int,
                             v: Int,
-                            earlylines: Array[Int],
-                            deadlines: Array[Int],
-                            earliestLeaveTime: Array[Int],
-                            latestLeaveTime: Array[Int],
+                            earliestArrivalTime: Array[Int],
+                            latestArrivalTime: Array[Int],
+                            earliestLeavingTime: Array[Int],
+                            latestLeavingTime: Array[Int],
                             travelTimeMatrix: Array[Array[Int]],
                             violations: Array[CBLSIntVar]
                            ) extends GlobalConstraintDefinition[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
@@ -92,41 +105,48 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
       DefinedTransferFunction(
-        earlylines(node),
-        deadlines(node),
-        earliestLeaveTime(node)))
+        earliestArrivalTime(node),
+        latestArrivalTime(node),
+        earliestLeavingTime(node)))
 
+  /**
+    * This method makes the composition of two TransferFunction
+    * @param f1 The first TransferFunction
+    * @param f2 The second TransferFunction
+    * @param m The distance between the two TransferFunction
+    * @return The composed TransferFunction or an EmptyTransferFunction
+    */
   private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
     if(f1.isEmpty)
       return f1
     else if(f2.isEmpty)
       return f2
 
-    val earliestArrivalTimeAt2 = f1.l + m
-    val latestArrivalTimeAt2 = f1.d + f1.l - f1.e + m
+    val earliestArrivalTimeAt2 = f1.el + m
+    val latestArrivalTimeAt2 = f1.la + f1.el - f1.ea + m
 
-    val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.e
-    val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.d
-    val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.e
-    val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.d
+    val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
+    val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.la
+    val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.ea
+    val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.la
 
-    val (e3, d3, l3) =
+    val (ea3, ll3, el3) =
       (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
-          (f1.d, f1.d, f2.l)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
+          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
         // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
         // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
-          (f2.e - f1.l - m + f1.e, f1.d, f2.l)
-        case (false,true,false,true) =>
-          (f1.e, f1.d,f1.l + f2.l - f2.e + m)
+          (f2.ea - f1.el - m + f1.ea, f1.la, f2.el)
         case (true,true,false,false) =>
-          (f2.e - f1.l - m + f1.e, f2.d - f1.l - m + f1.e, f2.l)
+          (f2.ea - f1.el - m + f1.ea, f2.la - f1.el - m + f1.ea, f2.el)
+        case (false,true,false,true) =>
+          (f1.ea, f1.la,f1.el + f2.el - f2.ea + m)
         case (false,true,false,false) =>
-          (f1.e, f2.d - f1.l - m + f1.e, f1.l + f2.l - f2.e + m)
+          (f1.ea, f2.la - f1.el - m + f1.ea, f1.el + f2.el - f2.ea + m)
         case (false,false,false,false) =>
           (1, -1, -1)
         case _ =>
@@ -136,28 +156,10 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
             latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2))
       }
 
-    if(e3 > d3)
+    if(ea3 > ll3)
       EmptyTransferFunction
     else
-      DefinedTransferFunction(e3, d3, l3)
-    /*if(!earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) EmptyTransferFunction
-   else{
-     val e3 =
-       if(latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f1.d
-       else if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f2.e - f1.l - m + f1.e
-       else f1.e
-     val d3 =
-       if(latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) f1.d
-       else f2.d - f1.l - m + f1.e
-     if(e3 > d3)
-       EmptyTransferFunction
-     else {
-       val l3 =
-         if (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2) f2.l
-         else f1.l + f2.l - f2.e + m
-       DefinedTransferFunction(e3, d3, l3)
-     }
-   }*/
+      DefinedTransferFunction(ea3, ll3, el3)
   }
 
   private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Int, Int, TransferFunction) ={
@@ -179,7 +181,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     */
   override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
-    def performPreComputeOnNode(route: List[Int]): Unit ={
+    def performPreComputeOnRoute(route: List[Int]): Unit ={
       val node = route.head
       if(preComputedVals(node) == null)preComputedVals(node) = Array.fill(n)(EmptyTransferFunction)
       preComputedVals(node)(node) = transferFunctionOfNode(node)
@@ -192,7 +194,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         lastTF = newTF
       }
       if(route.size > 1)
-        performPreComputeOnNode(route.tail)
+        performPreComputeOnRoute(route.tail)
     }
 
     var continue = true
@@ -211,8 +213,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       }
     }
 
-    performPreComputeOnNode(route)
-    performPreComputeOnNode(route.reverse)
+    performPreComputeOnRoute(route)
+    performPreComputeOnRoute(route.reverse)
   }
 
   /**
@@ -226,7 +228,6 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @return the value associated with the vehicle
     */
   override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
-
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0 if first one)
@@ -247,7 +248,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
 
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
-    arrivalTimeAtDepot.isEmpty || arrivalTimeAtDepot.get > deadlines(vehicle)
+    arrivalTimeAtDepot.isEmpty || arrivalTimeAtDepot.get > latestLeavingTime(vehicle)
   }
 
   /**
@@ -263,15 +264,16 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   }
 
   /**
-    * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
+    * This method is defined for verification purpose.
+    * It computes the value of the vehicle from scratch.
     *
     * @param vehicle the vehicle on which the value is computed
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
   override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
-    var arrivalTimeAtFromNode = earlylines(vehicle)
-    var leaveTimeAtFromNode = earliestLeaveTime(vehicle)
+    var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
+    var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
     val explorerAtVehicleStart = routes.explorerAtAnyOccurrence(vehicle).head
     var explorerAtCurrentNode = explorerAtVehicleStart.next
@@ -281,14 +283,11 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       val toNode = explorerAtCurrentNode.get.value
       val travelDuration = travelTimeMatrix(fromNode)(toNode)
       val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDuration
-      val leaveTimeAtToNode = Math.max(earlylines(toNode), arrivalTimeAtToNode) + earliestLeaveTime(toNode) - earlylines(toNode)
+      val leaveTimeAtToNode = Math.max(earliestArrivalTime(toNode), arrivalTimeAtToNode) + earliestLeavingTime(toNode) - earliestArrivalTime(toNode)
 
       // Check violation
-      if(leaveTimeAtToNode > latestLeaveTime(toNode))
+      if(leaveTimeAtToNode > latestLeavingTime(toNode))
         violationFound = true
-
-      //        encounteredNodes = encounteredNodes :+ toNode
-      //        travelPerformed = travelPerformed :+ travelDuration
 
       // Update values
       fromNode = toNode
@@ -300,7 +299,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    violationFound || arrivalTimeAtDepot >= latestLeaveTime(vehicle)
+    violationFound || arrivalTimeAtDepot >= latestLeavingTime(vehicle)
   }
 
   override def outputVariables: Iterable[Variable] = {
@@ -308,25 +307,37 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   }
 }
 
+/**
+  * This abstract class defines a TransferFunction.
+  * The TransferFunction's main purpose is to compute
+  * the leaving time at a node or segment's end given
+  * the arrival time at the node or the segment's start.
+  * It uses three values
+  * @param ea the earliest arrival time at the node or segment's start
+  * @param la the latest arrival time at the node or segment's start
+  * @param el the earliest leaving time from node or segment's end
+  */
+abstract class TransferFunction(val ea: Int, val la: Int, val el: Int){
 
-abstract class TransferFunction(val e: Int, val d: Int, val l: Int){
-
+  // This method is used to compute the leaving time
   def apply(t: Int): Option[Int]
 
+  // If true it means that the TransferFunction isn't defined
+  // and that apply() return always None
   def isEmpty: Boolean
 
   override def toString: String = {
-    "e : " + e + "\n d : " + d + "\n l : " + l
+    "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el
   }
 }
 
-case class DefinedTransferFunction(override val e: Int, override val d: Int, override val l: Int) extends TransferFunction(e,d,l){
-  require(d >= e && l >= e, "e : " + e + ", d : " + d + ", l : " + l)
+case class DefinedTransferFunction(override val ea: Int, override val la: Int, override val el: Int) extends TransferFunction(ea,la,el){
+  require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
   override def apply(t: Int): Option[Int] = {
-    if(t <= e)
-      Some(l)
-    else if(t <= d)
-      Some(t + l - e)
+    if(t <= ea)
+      Some(el)
+    else if(t <= la)
+      Some(t + el - ea)
     else
       None
   }

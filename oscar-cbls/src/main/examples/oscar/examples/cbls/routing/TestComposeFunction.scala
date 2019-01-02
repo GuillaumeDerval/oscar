@@ -1,32 +1,43 @@
 package oscar.examples.cbls.routing
 
+/**
+  * This object's purpose is to test composition function for the TimeWindows Constraint.
+  * It won't be on the official release.
+  */
 object TestComposeFunction extends App{
 
-  private def composeFunction (f1: TransfertFunction, f2: TransfertFunction, m: Int): TransfertFunction ={
+  // The compose function that we are testing
+  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
+    if(f1.isEmpty)
+      return f1
+    else if(f2.isEmpty)
+      return f2
 
-    val earliestArrivalTimeAt2 = f1.l + m
-    val latestArrivalTimeAt2 = f1.d + f1.l - f1.e + m
+    val earliestArrivalTimeAt2 = f1.el + m
+    val latestArrivalTimeAt2 = f1.la + f1.el - f1.ea + m
 
-    val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.e
-    val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.d
-    val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.e
-    val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.d
+    val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
+    val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.la
+    val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.ea
+    val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.la
 
-    val (e3, d3, l3) =
+    val (ea3, ll3, el3) =
       (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
-          (f1.d, f1.d, f2.l)
+          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
+        // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
+        // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
-          (f2.e - f1.l - m + f1.e, f1.d, f2.l)
-        case (false,true,false,true) =>
-          (f1.e, f1.d,f1.l + f2.l - f2.e + m)
+          (f2.ea - f1.el - m + f1.ea, f1.la, f2.el)
         case (true,true,false,false) =>
-          (f2.e - f1.l - m + f1.e, f2.d - f1.l - m + f1.e, f2.l)
+          (f2.ea - f1.el - m + f1.ea, f2.la - f1.el - m + f1.ea, f2.el)
+        case (false,true,false,true) =>
+          (f1.ea, f1.la,f1.el + f2.el - f2.ea + m)
         case (false,true,false,false) =>
-          (f1.e, f2.d - f1.l - m + f1.e, f1.l + f2.l - f2.e + m)
+          (f1.ea, f2.la - f1.el - m + f1.ea, f1.el + f2.el - f2.ea + m)
         case (false,false,false,false) =>
           (1, -1, -1)
         case _ =>
@@ -36,16 +47,24 @@ object TestComposeFunction extends App{
             latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2))
       }
 
-    if(e3 > d3)
-      new TransfertFunction(Int.MaxValue,Int.MaxValue,Int.MaxValue)
+    if(ea3 > ll3)
+      EmptyTransferFunction
     else
-      new TransfertFunction(e3, d3, l3)
+      DefinedTransferFunction(ea3, ll3, el3)
   }
 
+  // This method tests the composition function with transfer functions
+  // generated based on the permutation of a List of Integer
   private def permutationMethod(): Unit ={
 
     val permutationValues = List(0,1,2,4,8,16,32)
     var permutations: Set[Array[Int]] = Set()
+
+    /**
+      * This method create all the possible permutation of the given list
+      * @param permValues The values to permute
+      * @param currentPermutation The permutation we are currently building
+      */
     def permute(permValues: List[Int], currentPermutation:  Array[Int] = Array.fill(permutationValues.size)(0)): Unit ={
       if(permValues.isEmpty)
         permutations = permutations + currentPermutation.clone()
@@ -56,6 +75,8 @@ object TestComposeFunction extends App{
         }
     }
     permute(permutationValues)
+
+    // Generate the TransferFunction and testing
     for(permutation <- permutations if permutation.toSet.size == permutation.length){
       val it = permutation.toIterator
       val e1 = it.next()
@@ -66,50 +87,55 @@ object TestComposeFunction extends App{
       val d2 = it.next()
       val l2 = it.next()
       if(e1 <= d1 && e2 <= d2 && e1 <= l1 && e2 <= l2) {
-        val f1 = new TransfertFunction(e1, d1, l1)
-        val f2 = new TransfertFunction(e2, d2, l2)
+        val f1 = DefinedTransferFunction(e1, d1, l1)
+        val f2 = DefinedTransferFunction(e2, d2, l2)
         test(f1,f2,m, (0 until permutationValues.max * 2).toArray)
       }
     }
   }
 
+  // This method tests the composition function with linearly generated transfer functions
   private def easyMethodWithEqualities() {
     val n = 10
 
     val timeMatrix = Array.tabulate(n)(x => Array.tabulate(n)(y => 10))
-    val earlylines = Array.tabulate(n)(x => 100 + 20 * x)
-    val deadlines = Array.tabulate(n)(x => 200 + 20 * x)
-    val taskDurations = Array.tabulate(n)(x => 0)
+    val earliestArrivalTimes = Array.tabulate(n)(x => 100 + 20 * x)
+    val latestArrivalTimes = Array.tabulate(n)(x => 200 + 20 * x)
 
-    val transfertFunctions = Array.tabulate(n)(x => new TransfertFunction(earlylines(x), deadlines(x), earlylines(x)))
+    val transfertFunctions = Array.tabulate(n)(x =>
+      DefinedTransferFunction(earliestArrivalTimes(x), latestArrivalTimes(x), earliestArrivalTimes(x)))
 
     for (x <- 0 until n) {
       for (y <- 0 until n) {
+        // Compare f3(t) with f2(f1(t) + M12)
+        // (f1, f2, M12, t varying from 0 to 500 by 5)
         test(transfertFunctions(y), transfertFunctions(x), timeMatrix(y)(x), (0 until 100).toArray.map(_*5))
       }
     }
   }
 
+  /**
+    * This method allows us to test custom problem that doesn't work
+    */
   private def customTest() {
-    val earlylines = Array(0, 40485, 69830, 70713, 78077, 100380, 60968, 41021, 64886, 39761, 78881, 100969, 41544, 61506, 65473, 70320, 71285)
-    val taskDurations = Array(0, 105, 84, 121, 263, 255, 101, 256, 82, 254, 65, 83, 234, 16, 266, 209, 117)
-    val deadlines = Array(282484, 41404, 70962, 71537, 79745, 101518, 61593, 42166, 65559, 40968, 79876, 102357, 41834, 61867, 66859, 71481, 72243).
-      zipWithIndex.map(x => x._1 - taskDurations(x._2))
-    val timeMatrix = Array(
-      Array.fill(16)(153), Array.fill(16)(470), Array.fill(16)(663), Array.fill(16)(267),
-      Array.fill(16)(264), Array.fill(16)(437), Array.fill(16)(199), Array.fill(16)(505),
-      Array.fill(16)(461), Array.fill(16)(189), Array.fill(16)(407), Array.fill(16)(631),
-      Array.fill(16)(227), Array.fill(16)(541), Array.fill(16)(211), Array.fill(16)(334), Array.fill(16)(178))
+    val earliestArrivalTimes = Array(8*3600, 15*3600)
+    val taskDurations = Array(0,0)
+    val latestArrivalTimes = Array(9*3600, 16*3600).zipWithIndex.map(x => x._1 - taskDurations(x._2))
+    val timeMatrix = Array(Array.fill(2)(0), Array.fill(2)(0))
 
-    val n = earlylines.length
-    val transfertFunctions = Array.tabulate(n)(x => new TransfertFunction(earlylines(x),deadlines(x), earlylines(x) + taskDurations(x)))
+    val n = earliestArrivalTimes.length
+    val transferFunctions = Array.tabulate(n)(x =>
+      DefinedTransferFunction(earliestArrivalTimes(x),latestArrivalTimes(x), earliestArrivalTimes(x) + taskDurations(x)))
 
     for (x <- 0 until n-1) {
-      test(transfertFunctions(x), transfertFunctions(x+1), timeMatrix(x)(x+1), (0 until deadlines.max*2/100).toArray.map(_*100))
+      test(transferFunctions(x),
+        transferFunctions(x+1),
+        timeMatrix(x)(x+1),
+        (0 until latestArrivalTimes.max*2/100).toArray.map(_*100))
     }
   }
 
-  private def test(f1: TransfertFunction, f2: TransfertFunction, travelDuration: Int, ts: Array[Int]): Unit ={
+  private def test(f1: TransferFunction, f2: TransferFunction, travelDuration: Int, ts: Array[Int]): Unit ={
     val composedFunction = composeFunction(f1, f2, travelDuration)
     val t2s = Array.fill(ts.length)(0)
     for (i <- ts.indices) {
@@ -127,40 +153,41 @@ object TestComposeFunction extends App{
 
       t2s(i) = trueRes
     }
-    val l3 = t2s.head
-    val l1m = f1.l + travelDuration
-    val l1d1e1m = f1.l + f1.d - f1.e + travelDuration
-    val l1mLessE2 = l1m <= f2.e
-    val l1mLessD2 = l1m <= f2.d
-    val l1d1e1mLessE2 = l1d1e1m <= f2.e
-    val l1d1e1mLessD2 = l1d1e1m <= f2.d
-    val e3 = t2s.reverse.dropWhile(x => x != l3).length - 1
-    val d3 = t2s.reverse.dropWhile(x => x == Int.MaxValue).length - 1
-    println("l1mLessE2 : " + l1mLessE2 +
-      "\nl1mLessD2 : " + l1mLessD2 +
-      "\nl1d1e1mLessE2 : " + l1d1e1mLessE2 +
-      "\nl1d1e1mLessD2 : " + l1d1e1mLessD2 +
-      "\ne1 : " + f1.e + ", d1 : " + f1.d + ", l1 : " + f1.l +
-      "\ne2 : " + f2.e + ", d2 : " + f2.d + ", l2 : " + f2.l +
-      "\ne3 : " + e3 + ", d3 : " + d3 +", l3 : " + l3 + ", m : " + travelDuration)
   }
 
-  permutationMethod()
+  easyMethodWithEqualities()
 }
 
+abstract class TransferFunction(val ea: Int, val la: Int, val el: Int){
 
-class TransfertFunction (val e: Int, val d: Int, val l: Int){
-  require(d >= e && l >= e)
-  def apply(t: Int): Option[Int] ={
-    if(t <= e)
-      Some(l)
-    else if(t <= d)
-      Some(t + l - e)
+  // This method is used to compute the leaving time
+  def apply(t: Int): Option[Int]
+
+  // If true it means that the TransferFunction isn't defined
+  // and that apply() return always None
+  def isEmpty: Boolean
+
+  override def toString: String = {
+    "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el
+  }
+}
+
+case class DefinedTransferFunction(override val ea: Int, override val la: Int, override val el: Int) extends TransferFunction(ea,la,el){
+  require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
+  override def apply(t: Int): Option[Int] = {
+    if(t <= ea)
+      Some(el)
+    else if(t <= la)
+      Some(t + el - ea)
     else
       None
   }
 
-  override def toString: String = {
-    "e : " + e + "\n d : " + d + "\n l : " + l
-  }
+  override def isEmpty: Boolean = false
+}
+
+case object EmptyTransferFunction extends TransferFunction(1,-1,-1){
+  override def apply(t: Int): Option[Int] = None
+
+  override def isEmpty: Boolean = true
 }
