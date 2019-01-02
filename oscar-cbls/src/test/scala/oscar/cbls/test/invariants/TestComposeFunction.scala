@@ -1,4 +1,4 @@
-package oscar.examples.cbls.routing
+package oscar.cbls.test.invariants
 
 /**
   * This object's purpose is to test composition function for the TimeWindows Constraint.
