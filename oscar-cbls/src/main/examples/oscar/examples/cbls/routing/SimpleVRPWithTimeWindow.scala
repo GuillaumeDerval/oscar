@@ -2,8 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.business.routing.invariants.{PDPConstraints, TimeWindowConstraint}
+import oscar.cbls.business.routing.invariants.TimeWindowConstraint
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
@@ -19,7 +18,7 @@ object SimpleVRPWithTimeWindow extends App{
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
-  val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
+  val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
 
   val myVRP =  new VRP(m,n,v)
 
@@ -38,13 +37,13 @@ object SimpleVRPWithTimeWindow extends App{
 
   //TimeWindow
   val timeWindowRoute = precedenceRoute.createClone()
-  val timeWindowExtension = timeWindow(earlylines, deadlines, taskDurations, maxWaitingDurations)
+  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
   val smartTimeWindowInvariant =
     TimeWindowConstraint(myVRP.routes, n, v,
-      earlylines,
-      deadlines,
+      earliestArrivalTimes,
+      latestLeavingTimes,
       taskDurations,
       timeMatrix, timeWindowViolations)
 

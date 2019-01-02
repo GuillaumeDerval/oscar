@@ -49,24 +49,29 @@ trait RoutingExtensions {
     new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate, title)
   type Display = oscar.cbls.business.routing.model.extensions.Display
 
+
   /**
     * This class is only used to simplify the constraints creation.
     * The invariant used to set the time constraint is not a time dedicated invariant
-    * so we need some extra information like earlylines, deadlines...
+    * so we need some extra information like earliestArrivalTimes, latestLeavingTimes...
     *
     * This class serve as a data package
     *
-    * @param earlylines For each node the time after which we can start our tasks
-    * @param deadlines For each node the time before which the task has to be finished
-    * @param taskDurations For each node the task's duration
+    * @param earliestArrivalTimes An array that contains the earliest arrival time of each node. If arriving before this value we must wait.
+    * @param latestArrivalTimes An array that contains the latest arrival time of each node. We can't start the task after this time.
+    * @param earliestLeavingTimes An array that contains the earliest leaving time of each node.
+    * @param latestLeavingTimes An array that contains the latest leaving time of each node.
+    * @param taskDurations An array that contains the task duration of each node.
     * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
     *                            e.g.: You can stay at a parking for a limited among of time.
     */
-  def timeWindow(earlylines: Array[Int],
-                 deadlines: Array[Int],
-                 taskDurations: Array[Int],
-                 maxWaitingDurations: Array[Int]) =
-    new TimeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
-  type TimeWindow = oscar.cbls.business.routing.model.extensions.TimeWindow
+  def timeWindows(earliestArrivalTimes: Option[Array[Int]] = None,
+                     latestArrivalTimes: Option[Array[Int]] = None,
+                     earliestLeavingTimes: Option[Array[Int]] = None,
+                     latestLeavingTimes: Option[Array[Int]] = None,
+                     taskDurations: Array[Int],
+                     maxWaitingDurations: Option[Array[Int]] = None): TimeWindows =
+    TimeWindows(earliestArrivalTimes,latestArrivalTimes,earliestLeavingTimes,latestLeavingTimes,taskDurations,maxWaitingDurations)
+  type TimeWindow = oscar.cbls.business.routing.model.extensions.TimeWindows
 
 }

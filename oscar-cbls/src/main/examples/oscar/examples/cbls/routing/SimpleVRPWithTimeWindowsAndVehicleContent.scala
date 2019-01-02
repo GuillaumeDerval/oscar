@@ -2,7 +2,6 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.PDPConstraints
 
 /**
   * Created by fg on 12/05/17.
@@ -19,13 +18,13 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
   val (listOfChains,precedences) = RoutingMatrixGenerator.generateChainsPrecedence(n,v,(n-v)/2)
-  val (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
-  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,earlylines,travelDurationMatrix)
+  val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
+  val maxTravelDurations = RoutingMatrixGenerator.generateMaxTravelDurations(listOfChains,earliestArrivalTimes,travelDurationMatrix)
   val contentsFlow = RoutingMatrixGenerator.generateContentFlow(n,listOfChains,maxVehicleContent)
   val vehiclesSize = RoutingMatrixGenerator.generateVehiclesSize(v,maxVehicleContent,minVehicleContent)
 
   val myVRP =  new VRP(m,n,v)
-  TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earlylines,deadlines,taskDurations)
+  TimeWindowHelper.reduceTimeWindows(myVRP,travelDurationMatrix,maxTravelDurations,earliestArrivalTimes,latestLeavingTimes,taskDurations)
 
   // Distance
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
@@ -53,7 +52,7 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
 
   //TimeWindow
   val timeWindowRoute = contentRoute.createClone()
-  val timeWindowExtension = timeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
+  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
   val timeWindowConstraints = new ConstraintSystem(m)
   val timeWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
     myVRP.routes,n,v,
@@ -61,11 +60,11 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
       val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
       val leaveTimeAtToNode =
         if(toNode < v) 0
-        else Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
+        else Math.max(arrivalTimeAtToNode,earliestArrivalTimes(toNode)) + taskDurations(toNode)
       (arrivalTimeAtToNode,leaveTimeAtToNode)
     },
     Array.tabulate(v)(x => new CBLSIntConst(0)),
-    Array.tabulate(v)(x => new CBLSIntConst(earlylines(x)+taskDurations(x))),
+    Array.tabulate(v)(x => new CBLSIntConst(earliestArrivalTimes(x)+taskDurations(x))),
     0,
     0,
     contentName = "Time at node"
@@ -80,13 +79,13 @@ object SimpleVRPWithTimeWindowsAndVehicleContent extends App{
   //Time window constraints
   val arrivalTimesAtEnd = timeWindowInvariant.content1AtEnd
   for(i <- 0 until n){
-    if(i < v && deadlines(i) != Int.MaxValue) {
-      timeWindowConstraints.post((arrivalTimesAtEnd(i) le deadlines(i)).nameConstraint("end of time for vehicle " + i))
+    if(i < v && latestLeavingTimes(i) != Int.MaxValue) {
+      timeWindowConstraints.post((arrivalTimesAtEnd(i) le latestLeavingTimes(i)).nameConstraint("end of time for vehicle " + i))
     } else {
-      if(deadlines(i) != Int.MaxValue)
-        timeWindowConstraints.post((leaveTimes(i) le deadlines(i)).nameConstraint("end of time window on node " + i))
+      if(latestLeavingTimes(i) != Int.MaxValue)
+        timeWindowConstraints.post((leaveTimes(i) le latestLeavingTimes(i)).nameConstraint("end of time window on node " + i))
       if(maxWaitingDurations(i) != Int.MaxValue)
-        timeWindowConstraints.post((arrivalTimes(i) ge earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
+        timeWindowConstraints.post((arrivalTimes(i) ge earliestArrivalTimes(i)).nameConstraint("start of time window on node (with duration)" + i))
     }
   }
   //Constraints & objective

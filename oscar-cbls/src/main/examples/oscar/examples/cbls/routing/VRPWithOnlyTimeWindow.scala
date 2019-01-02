@@ -62,8 +62,8 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
-  var (earlylines, deadlines, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix)
-  deadlines = deadlines.take(v).map(x => Math.min(deadlines.drop(v).max*2, Int.MaxValue/10*9)) ++ deadlines.drop(v)
+  var (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix)
+  latestLeavingTimes = latestLeavingTimes.take(v).map(x => Math.min(latestLeavingTimes.drop(v).max*2, Int.MaxValue/10*9)) ++ latestLeavingTimes.drop(v)
 
   val myVRP =  new VRP(m,n,v)
   var timeWindowConstraint: Option[TimeWindowConstraint] = None
@@ -72,8 +72,8 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
   // This class isn't meant to last but given the time left I don't want to modify it.
-  // It uses an old representation of time windows with earlylines and deadlines.
-  val timeWindowExtension: TimeWindow = timeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
+  // It uses an old representation of time windows with earliestArrivalTimes and latestLeavingTimes.
+  val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
 
   // Defintion of the objective function using naive constraint or global contraint
   val obj: CascadingObjective =
@@ -85,11 +85,11 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
           val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
           val leaveTimeAtToNode =
             if(toNode < v) 0
-            else Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
+            else Math.max(arrivalTimeAtToNode,earliestArrivalTimes(toNode)) + taskDurations(toNode)
           (arrivalTimeAtToNode,leaveTimeAtToNode)
         },
         Array.tabulate(v)(x => new CBLSIntConst(0)),
-        Array.tabulate(v)(x => new CBLSIntConst(earlylines(x)+taskDurations(x))),
+        Array.tabulate(v)(x => new CBLSIntConst(earliestArrivalTimes(x)+taskDurations(x))),
         0,
         0,
         contentName = "Time at node"
@@ -101,13 +101,13 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
 
       // Verification of violations
       for(i <- 0 until n){
-        if(i < v && deadlines(i) != Int.MaxValue) {
-          constraints.post(arrivalTimesAtEnd(i).le(deadlines(i)).nameConstraint("end of time for vehicle " + i))
+        if(i < v && latestLeavingTimes(i) != Int.MaxValue) {
+          constraints.post(arrivalTimesAtEnd(i).le(latestLeavingTimes(i)).nameConstraint("end of time for vehicle " + i))
         } else {
-          if(deadlines(i) != Int.MaxValue)
-            constraints.post(leaveTimes(i).le(deadlines(i)).nameConstraint("end of time window on node " + i))
+          if(latestLeavingTimes(i) != Int.MaxValue)
+            constraints.post(leaveTimes(i).le(latestLeavingTimes(i)).nameConstraint("end of time window on node " + i))
           if(maxWaitingDurations(i) != Int.MaxValue)
-            constraints.post(arrivalTimes(i).ge(earlylines(i)).nameConstraint("start of time window on node (with duration)" + i))
+            constraints.post(arrivalTimes(i).ge(earliestArrivalTimes(i)).nameConstraint("start of time window on node (with duration)" + i))
         }
       }
 
@@ -120,8 +120,8 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
       val smartTimeWindowInvariant =
         TimeWindowConstraint(myVRP.routes, n, v,
-          timeWindowExtension.earlylines,
-          timeWindowExtension.deadlines,
+          timeWindowExtension.earliestArrivalTimes,
+          timeWindowExtension.latestLeavingTimes,
           timeWindowExtension.taskDurations,
           timeMatrix, violations)
       timeWindowConstraint = Some(smartTimeWindowInvariant)
