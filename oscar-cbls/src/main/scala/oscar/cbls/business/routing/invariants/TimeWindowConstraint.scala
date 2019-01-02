@@ -123,7 +123,10 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       return f2
 
     val earliestArrivalTimeAt2 = f1.el + m
-    val latestArrivalTimeAt2 = f1.la + f1.el - f1.ea + m
+    val latestArrivalTimeAt2 =
+      if(f1.la + f1.el - f1.ea + m < 0)
+        Int.MaxValue
+      else f1.la + f1.el - f1.ea + m
 
     val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
     val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.la
@@ -304,6 +307,20 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
 
   override def outputVariables: Iterable[Variable] = {
     violations
+  }
+
+  /**
+    * Return all transfer functions of the problem.
+    * Meant for post-optimisation. Don't use it during optimisation.
+    * @return A 2-dimension table of TransferFunction
+    */
+  def transferFunctions(routes: IntSequence): Array[Array[TransferFunction]] ={
+    val transferFunctions: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
+    for(curV <- 2 to 2){
+      performPreCompute(curV, routes, transferFunctions)
+    }
+
+    transferFunctions
   }
 }
 

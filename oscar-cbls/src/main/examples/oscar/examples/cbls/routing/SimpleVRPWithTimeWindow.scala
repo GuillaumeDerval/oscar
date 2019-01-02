@@ -3,8 +3,9 @@ package oscar.examples.cbls.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.lib.invariant.seq.Precedence
-import oscar.cbls.business.routing.invariants.PDPConstraints
+import oscar.cbls.business.routing.invariants.{PDPConstraints, TimeWindowConstraint}
 import oscar.cbls.core.search.Best
+import oscar.cbls.lib.constraint.EQ
 
 /**
   * Created by fg on 12/05/17.
@@ -25,35 +26,31 @@ object SimpleVRPWithTimeWindow extends App{
   // Distance
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
-  //TimeWindow
-  val tiweWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
-    myVRP.routes,n,v,
-    (fromNode,toNode,arrivalTimeAtFromNode,leaveTimeAtFromNode)=> {
-      val arrivalTimeAtToNode = leaveTimeAtFromNode + travelDurationMatrix.getTravelDuration(fromNode,0,toNode)
-      val leaveTimeAtToNode =
-        if(toNode < v) 0
-        else Math.max(arrivalTimeAtToNode,earlylines(toNode)) + taskDurations(toNode)
-      (arrivalTimeAtToNode,leaveTimeAtToNode)
-    },
-    Array.tabulate(v)(x => new CBLSIntConst(0)),
-    Array.tabulate(v)(x => new CBLSIntConst(earlylines(x)+taskDurations(x))),
-    0,
-    0,
-    contentName = "Time at node"
-  )
-  val timeWindowExtension = timeWindow(earlylines,deadlines,taskDurations,maxWaitingDurations)
-
   //Chains
-  val precedenceInvariant = new Precedence(myVRP.routes,precedences)
+  val precedenceRoute = myVRP.routes.createClone()
+  val precedenceInvariant = precedence(precedenceRoute,precedences)
+  val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
+  val precedencesConstraints = new ConstraintSystem(m)
+  for(start <- precedenceInvariant.nodesStartingAPrecedence)
+    precedencesConstraints.add(EQ(vehicleOfNodesNow(start),vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head)))
+  precedencesConstraints.add(EQ(0,precedenceInvariant))
   val chainsExtension = chains(myVRP,listOfChains)
 
-  //Constraints & objective
-  val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,
-    timeWindow = Some(timeWindowExtension),
-    timeWindowInvariant = Some(tiweWindowInvariant),
-    precedences = Some(precedenceInvariant))
-  val obj = new CascadingObjective(fastConstrains,
-    new CascadingObjective(slowConstraints,
+  //TimeWindow
+  val timeWindowRoute = precedenceRoute.createClone()
+  val timeWindowExtension = timeWindow(earlylines, deadlines, taskDurations, maxWaitingDurations)
+  val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
+  val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+  val smartTimeWindowInvariant =
+    TimeWindowConstraint(myVRP.routes, n, v,
+      earlylines,
+      deadlines,
+      taskDurations,
+      timeMatrix, timeWindowViolations)
+
+  //Objective function
+  val obj = new CascadingObjective(precedencesConstraints,
+    new CascadingObjective(sum(timeWindowViolations),
       totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
