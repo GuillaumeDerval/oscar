@@ -25,7 +25,7 @@ object TesterCBLS extends App{
   }
 
   val maxX = 1100
-  val maxY = 1100
+  val maxY = 1380
 
   val outerFrame = geometry.factory.createLinearRing(Array(
     new Coordinate(0,0),
@@ -43,7 +43,7 @@ object TesterCBLS extends App{
 
   val placedCirles = Array.tabulate(nbCircle){i =>
     new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),
-      new CBLSGeometryConst(store,if(i%2 ==0) geometry.createSquare(radiusArray(i)*2) else geometry.createCircle(radiusArray(i),nbEdges = 40),"circle_" + i))
+      new CBLSGeometryConst(store,if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2) else geometry.createCircle(radiusArray(i),nbEdges = 30),"circle_" + i))
   }
 
   val intersectionAreasHalfMatrix:Array[Array[IntValue]] =
@@ -185,7 +185,7 @@ object TesterCBLS extends App{
 
   val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
   var lastDisplay = System.nanoTime()
-  val search = (Profile(BestSlopeFirst( //TODO: this is not adapted for single shot neighborhoods such as gradient
+  val search = (Profile(BestSlopeFirst( //TODO: this is not the best approach for single shot neighborhoods such as gradient
     List(
       Profile(gradientOnOneShape(0)),  //TODO: try gradient on multiple shapes at the same time.
       Profile(gradientOnOneShape(1)),
@@ -214,12 +214,12 @@ object TesterCBLS extends App{
   }
   } showObjectiveFunction obj)
 
-  //Thread.sleep(10000)
-  //println("start")
-  //Thread.sleep(1000)
+ // Thread.sleep(20000)
+ // println("start")
+ // Thread.sleep(1000)
 
   search.verbose = 1
-  search.doAllMoves(obj=obj)
+  search.doAllMoves(obj=obj, shouldStop = _ => obj.value == 0)
 
   updateDisplay() //after finish
 

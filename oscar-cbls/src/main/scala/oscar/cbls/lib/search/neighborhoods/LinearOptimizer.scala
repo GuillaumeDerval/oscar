@@ -3,7 +3,7 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.Store
 import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.invariant.numeric.Sum2
+import oscar.cbls.lib.invariant.numeric.{Square, Sum2}
 import oscar.cbls.lib.search.neighborhoods.TestRN.maxIt
 import oscar.cbls.modeling.CBLSModel
 
@@ -54,8 +54,10 @@ abstract class LinearOptimizer{
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
     val newStartPoint = a.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
-    //println("CarryOnTo(newStartPoint:" + newStartPoint + ")")
-    b.search(newStartPoint._1, newStartPoint._2, minValue: Int, maxValue: Int, obj: Int => Int)
+  //  println("CarryOnTo(newStartPoint:" + newStartPoint + ")")
+    val r = b.search(newStartPoint._1, newStartPoint._2, minValue: Int, maxValue: Int, obj: Int => Int)
+    //println("final:" + r)
+    r
   }
 
   override def toString: String = "(" + a + " carryOnTo " + b + ")"
@@ -348,6 +350,28 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Int, maxIt: Int) extends Li
   }
 }
 
+
+
+
+abstract class Differentiation(f:Int => Int){
+  def apply(x:Int):Int
+}
+
+class NewtonDifferentiation(f:Int => Int,deltaX:Int){
+  def apply(x:Int):Int = (f(x + deltaX) - f(x)) / deltaX
+}
+
+/**
+  *
+  * this one is exact for second order functions
+  * @param f
+  * @param deltaX
+  */
+class SymmetricDerivative(f:Int => Int,deltaX:Int){
+  def apply(x:Int):Int = (f(x + deltaX) - f(x - deltaX)) / (2*deltaX)
+}
+
+
 object TestRN extends App{
 
   def f1:Int => Int = x => {x*x - 150*x + 5090}
@@ -383,9 +407,7 @@ object Paraboloide extends App{
   val x = new CBLSIntVar(m,10,0 to 1000,"x")
   val y = new CBLSIntVar(m,10,0 to 1000,"y")
 
-  val a:IntValue = (x - 300) * (x - 300)
-  val b:IntValue = (y - 100) * (y - 100)
-  val f:IntValue = Sum2(a,b)
+  val f:IntValue = Sum2(Square(x - 300),Square(y - 100))
   val obj = Objective(f)
 
   m.close()
@@ -396,15 +418,15 @@ object Paraboloide extends App{
     println(y)
     println("f:" + f)
   }
-  val search = GradientDescent(Array(x,y),
+  val gradient = GradientDescent(Array(x,y),
     selectVars= 0 to 1,
     variableIndiceToDeltaForGradientDefinition = _ => 10,
-    linearSearch = new NarrowingStepSlide(3, minStep = 1),
+    linearSearch = new NewtonRaphsonMinimize(5, 10) carryOnTo new Slide(step = 1, maxIt = 10), // new NarrowingStepSlide(3, minStep = 1),
     trySubgradient = true)
 
-  search.verbose = 2
+  gradient.verbose = 2
 
-  search.doAllMoves(obj = obj)
+  gradient.doAllMoves(obj = obj)
 
   printModel()
 }

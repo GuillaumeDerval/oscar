@@ -358,6 +358,15 @@ case class Abs(v: IntValue)
     (if (v.min <= 0) 0 else v.min) to v.max.max(-v.min))
 
 /**
+  * abs(v) (absolute value)
+  * where output and v are IntVar
+  * @author renaud.delandtsheer@cetic.be
+  */
+case class Square(v: IntValue)
+  extends Int2Int(v, ((x: Int) => x*x),
+    (if (v.min <= 0) 0 else (v.min)*(v.min)) to (v.max.max(-v.min))*(v.max.max(-v.min)))
+
+/**
  * This invariant implements a step function. Values higher than pivot are mapped to ifval
  * values lower or equal to pivot are mapped to elseval
  * @author renaud.delandtsheer@cetic.be, suggested by Jean-Noël Monette

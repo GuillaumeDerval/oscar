@@ -24,6 +24,18 @@ package object geometry {
       new Coordinate(halfSide,halfSide))).convexHull()
   }
 
+  def createRectangle(height:Double,width:Double):Geometry = {
+
+    val halfHeight = height /2
+    val halfWidth = width/2
+
+    geometry.factory.createLinearRing(Array(
+      new Coordinate(halfWidth,halfHeight),
+      new Coordinate(halfWidth,-halfHeight),
+      new Coordinate(-halfWidth,-halfHeight),
+      new Coordinate(-halfWidth,halfHeight),
+      new Coordinate(halfWidth,halfHeight))).convexHull()
+  }
 
   def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
     println("creating circle ")
