@@ -145,7 +145,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
     val precomputes = vehicleToPrecomputes(vehicle)
     println(precomputes.map(_.toString).mkString("\n"))
   }
-  override final def performPreCompute(vehicle:Int,
+  override def performPreCompute(vehicle:Int,
                                                  routes:IntSequence,
                                                  preComputedVals:Array[VehicleAndPosition]): Unit ={
 
