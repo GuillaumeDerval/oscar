@@ -77,7 +77,7 @@ object TestGeometryPacking extends App{
     Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2)))
   }})
 
-  val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
+  //val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
   val obj:Objective = Sum2(totalIntersectionArea,new Sum(distancesArray))
   store.close()
@@ -92,7 +92,7 @@ object TestGeometryPacking extends App{
     val colorsIt = randomColors.toIterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
-        (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
+        //(convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
         Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList,
       centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }

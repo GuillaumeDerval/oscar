@@ -22,6 +22,8 @@ import oscar.cbls.modeling.CBLSModel
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+
+
 /**
   * this is a class that explores a range of value between 0 and maxValue.
   * It only needs to poll the value, not to return anything
@@ -42,12 +44,34 @@ abstract class LinearOptimizer{
              maxValue: Int,
              obj: Int => Int):(Int, Int)
 
+  /**
+    * once this optimlizer has found its best value, it starts the optimizer b
+    * @param b
+    * @return a new global linear optimizer that tries this, and carries on to b
+    */
   def carryOnTo(b:LinearOptimizer) = new CarryOnTo(this,b)
 
+  /**
+    * call the optimizer b whenever a new point is evaluated by this optimizer
+    * @param b
+    * @return a new global linear optimizer that explores b whenever this evaluates a point
+    */
   def andThen(b:LinearOptimizer) = new AndThen(this,b)
 
+  /**
+    * restricts the bound of this optimizer to newMinValue to newMaxValue
+    * @param newMinValue
+    * @param newMaxValue
+    * @return a new global linear optimizer with restricted bounds
+    */
   def restrictBounds(newMinValue:Int, newMaxValue:Int) =  new RestrictBounds(this, newMinValue:Int, newMaxValue:Int)
 
+  /**
+    * restricts the bound of this optimizer to a limited interval around the starting value
+    * @param maxIncrease
+    * @param maxDecrease
+    * @return a new global linear optimizer with restricted bounds
+    */
   def restrictSlide(maxIncrease:Int, maxDecrease:Int) = new RestrictSlide(this, maxIncrease:Int, maxDecrease:Int)
 }
 
@@ -95,15 +119,18 @@ case class RestrictSlide(a:LinearOptimizer, maxIncrease:Int, maxDecrease:Int) ex
     a.search(startPos: Int, startObj: Int, minValue max (startPos - maxDecrease), maxValue min (startPos + maxIncrease), obj)
 }
 
-class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends LinearOptimizer{
+/**
+  * tries all values in "minValue to maxValue by step"
+  * @param step
+  * @param skipInitial further tells the strategy to skip the initial value
+  */
+class Exhaustive(step:Int = 1,skipInitial:Boolean = true) extends LinearOptimizer{
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
 
-    var it = maxIt
     var bestX = startPos
     var bestF = startObj
 
-    for(value <- minValue to maxValue by step if it > 0 && (!skipInitial || value != startPos)){
-      it = it - 1
+    for(value <- minValue to maxValue by step if (!skipInitial || value != startPos)){
 
       val newF = obj(value)
 
@@ -118,6 +145,11 @@ class Exhaustive(step:Int = 1,skipInitial:Boolean = false, maxIt: Int) extends L
   override def toString: String = "Exhaustive(step:" + step + ")"
 }
 
+/**
+  *
+  * @param dividingRatio
+  * @param minStep
+  */
 class NarrowingStepSlide(dividingRatio:Int, minStep: Int)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
@@ -142,14 +174,14 @@ class NarrowingExhaustive(dividingRatio:Int, minStep: Int)  extends LinearOptimi
     val width = maxValue - minValue
 
     if(width < dividingRatio) {
-      val search = new Exhaustive(step = 1, skipInitial = true,maxIt = Int.MaxValue)
+      val search = new Exhaustive(step = 1, skipInitial = true)
       search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
     }else{
       val step = width/dividingRatio
       if(step < minStep){
         (startPos, startObj)
       }else {
-        val search = new Exhaustive(step = step, skipInitial = true, maxIt = Int.MaxValue)
+        val search = new Exhaustive(step = step, skipInitial = true)
         val (newVal, newObj) = search.search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int)
 
         this.search(newVal: Int, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Int => Int)
@@ -158,7 +190,9 @@ class NarrowingExhaustive(dividingRatio:Int, minStep: Int)  extends LinearOptimi
   }
 }
 
-
+/**
+  * Only tries the two extremes value of the range, and returns the min among these and the initial value
+  */
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
     println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
@@ -170,6 +204,13 @@ class TryExtremes() extends LinearOptimizer {
   override def toString: String = "TryExtremes()"
 }
 
+/**
+  * slides on the range of possible value with the first step given in the list of stepSequence.
+  * Once in a minima, slides with the next given step, and so on.
+  * @param stepSequence the sequence of steps to follow, must
+  * @param gradualIncrease
+  * @param maxIt
+  */
 class SlideVaryingSteps(stepSequence:List[Int] = List(1), gradualIncrease:Boolean,maxIt:Int)
   extends LinearOptimizer{
   override def search(startPos: Int, startObj: Int, minValue: Int, maxValue: Int, obj: Int => Int): (Int, Int) = {
@@ -388,16 +429,15 @@ object TestRN extends App{
 
   //slide should be avoided at all cost; cfr the stop criterion on numerical methods that stop earlier.
   //we should consider numbers as floats even if they are not because the range of value is very large.
-  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50) carryOnTo new Slide(step = 1, maxIt: Int))
   eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new  TryExtremes())
   eval(new Slide(step = 10, maxIt: Int))
   eval(new NarrowingStepSlide(10, minStep = 1))
   eval(new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
-  eval(new Exhaustive(step = 50, maxIt = maxIt) carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
-  eval(new Exhaustive(step = 50, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
+  eval(new Exhaustive(step = 50) carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int))
+  eval(new Exhaustive(step = 50) andThen (new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step = 1, maxIt: Int)))
   eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1, maxIt: Int) carryOnTo new Slide(step=1, maxIt: Int))
-  eval(new NarrowingExhaustive(100, maxIt: Int))
-
+  eval(new NarrowingExhaustive(100, maxIt: Int) carryOnTo new Slide(step=1, 10))
 }
 
 object Paraboloide extends App{
