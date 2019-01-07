@@ -1,6 +1,6 @@
-package oscar.cbls.business.routing.invariants
+package oscar.cbls.business.routing.invariants.timeWindow
 
-import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core.computation._
 
@@ -107,7 +107,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       DefinedTransferFunction(
         earliestArrivalTime(node),
         latestArrivalTime(node),
-        earliestLeavingTime(node)))
+        earliestLeavingTime(node),node,node))
 
   /**
     * This method makes the composition of two TransferFunction
@@ -162,7 +162,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     if(ea3 > ll3)
       EmptyTransferFunction
     else
-      DefinedTransferFunction(ea3, ll3, el3)
+      DefinedTransferFunction(ea3, ll3, el3, f1.from, f2.to)
   }
 
   private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Int, Int, TransferFunction) ={
@@ -322,48 +322,4 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
 
     transferFunctions
   }
-}
-
-/**
-  * This abstract class defines a TransferFunction.
-  * The TransferFunction's main purpose is to compute
-  * the leaving time at a node or segment's end given
-  * the arrival time at the node or the segment's start.
-  * It uses three values
-  * @param ea the earliest arrival time at the node or segment's start
-  * @param la the latest arrival time at the node or segment's start
-  * @param el the earliest leaving time from node or segment's end
-  */
-abstract class TransferFunction(val ea: Int, val la: Int, val el: Int){
-
-  // This method is used to compute the leaving time
-  def apply(t: Int): Option[Int]
-
-  // If true it means that the TransferFunction isn't defined
-  // and that apply() return always None
-  def isEmpty: Boolean
-
-  override def toString: String = {
-    "earliest arrival time : " + ea + "\n latest arrival time : " + la + "\n earliest leaving time : " + el
-  }
-}
-
-case class DefinedTransferFunction(override val ea: Int, override val la: Int, override val el: Int) extends TransferFunction(ea,la,el){
-  require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
-  override def apply(t: Int): Option[Int] = {
-    if(t <= ea)
-      Some(el)
-    else if(t <= la)
-      Some(t + el - ea)
-    else
-      None
-  }
-
-  override def isEmpty: Boolean = false
-}
-
-case object EmptyTransferFunction extends TransferFunction(1,-1,-1){
-  override def apply(t: Int): Option[Int] = None
-
-  override def isEmpty: Boolean = true
 }

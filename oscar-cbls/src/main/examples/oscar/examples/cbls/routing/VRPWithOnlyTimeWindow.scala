@@ -2,26 +2,27 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.TimeWindowConstraint
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 
 object VRPWithOnlyTimeWindow extends App {
 
   def runConfiguration(ns: List[Int], vs: List[Int],
-                       timeWindowConstraints: List[Boolean],
+                       timeWindowConstraints: List[Int],
                        bests: List[Boolean], procedures: List[Int],
                        iterations: Int): Unit ={
     for(twc <- timeWindowConstraints){
       println("================================================")
-      println(if(twc) "Using old invariant ..." else "Using new invariant ...")
+      println(if(twc == 0) "Using old invariant ..." else if(twc == 1) "Using Global Constraint ..." else "Using Global Constraint With Log Reduction ...")
       for(best <- bests){
+        println("------------------------------------------------")
         println(if(best) "\n\nStarting best mod !" else "Starting first mod !")
         for(procedure <- procedures){
           procedure match {
-            case 1 => println("\nStarting insertPoint procedure")
-            case 2 => println("\nStarting insertPoint exhaust onePtMove procedure")
-            case 3 => println("\nStarting insertPoint exhaust threeOpt procedure")
+            case 1 => println("\n++++++ Starting insertPoint procedure ++++++")
+            case 2 => println("\n++++++ Starting insertPoint exhaust onePtMove procedure ++++++")
+            case 3 => println("\n++++++ Starting insertPoint exhaust threeOpt procedure ++++++")
           }
           for(n <- ns){
             for(v <- vs){
@@ -42,22 +43,26 @@ object VRPWithOnlyTimeWindow extends App {
     }
   }
 
-  // Add false for global time window constraint and/or true for naive one
-  val timeWindowConstraints = List(false, true)
+  // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
+  val timeWindowConstraints = List(2)
   // Add true if you want to run with Best and/or false if you want to run with First
-  val bests = List(false, true)
+  val bests = List(true)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2,3)
+  val procedures = List(1,2)
   // The variations of n values
-  val ns = List(100, 500, 1000)
+  val ns_1 = List(50, 100, 200, 500, 1000)
+  val ns_2 = List(1000)
   // The variations of v values
-  val vs = List(1,2,5,10)
+  val vs_1 = List(10)
+  val vs_2 = List(5, 10, 20, 50, 100)
   // The number of iterations of each configuration
-  val iterations = 5
-  runConfiguration(ns,vs,timeWindowConstraints,bests, procedures,iterations)
+  val iterations = 20
+  runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
+  println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
+  runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
-class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
+class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10){
   val m = new Store(noCycle = false)
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
@@ -66,7 +71,6 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
   latestLeavingTimes = latestLeavingTimes.take(v).map(x => Math.min(latestLeavingTimes.drop(v).max*2, Int.MaxValue/10*9)) ++ latestLeavingTimes.drop(v)
 
   val myVRP =  new VRP(m,n,v)
-  var timeWindowConstraint: Option[TimeWindowConstraint] = None
 
   // Distance
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
@@ -77,7 +81,7 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
 
   // Defintion of the objective function using naive constraint or global contraint
   val obj: CascadingObjective =
-    if(oldVersion){
+    if(version == 0){
       // Naive constraint
       val oldTimeWindowInvariant = forwardCumulativeIntegerIntegerDimensionOnVehicle(
         myVRP.routes,n,v,
@@ -114,7 +118,7 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
       new CascadingObjective(constraints,
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
-    else{
+    else if(version == 1){
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
@@ -124,7 +128,18 @@ class VRPWithOnlyTimeWindow(oldVersion: Boolean, n: Int = 100, v: Int = 10){
           timeWindowExtension.latestLeavingTimes,
           timeWindowExtension.taskDurations,
           timeMatrix, violations)
-      timeWindowConstraint = Some(smartTimeWindowInvariant)
+      new CascadingObjective(sum(violations),
+        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+    } else {
+      // Global constraint with log reduction
+      val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
+      val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+      val smartTimeWindowInvariant =
+        TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
+          timeWindowExtension.earliestArrivalTimes,
+          timeWindowExtension.latestLeavingTimes,
+          timeWindowExtension.taskDurations,
+          timeMatrix, violations)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }

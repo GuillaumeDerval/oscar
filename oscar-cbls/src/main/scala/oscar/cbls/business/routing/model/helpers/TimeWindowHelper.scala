@@ -30,7 +30,7 @@ object TimeWindowHelper{
     * So we can use them to precompute the relevant predecessors.
     *
     * @param vrp The vehicle routing problem
-    * @param timeExtension The timeExtension model
+    * @param timeWindows The timeExtension model
     * @param timeMatrix The time matrix
     * @param parallelizeNodes whether or not the nodes are allowed to be made in parallel.
     *                      If it's the case and the nodes are parallelisable (same place and with overlapping time windows),
@@ -38,12 +38,13 @@ object TimeWindowHelper{
     * @return true if the node is relevant
     */
   def relevantPredecessorsOfNodes(vrp: VRP,
-                                  timeExtension: TimeWindows,
+                                  timeWindows: TimeWindows,
                                   timeMatrix: TTFMatrix,
                                   parallelizeNodes: Boolean = true): Map[Int,HashSet[Int]] = {
-    val earliestArrivalTimes = timeExtension.earliestArrivalTimes
-    val latestLeavingTimes = timeExtension.latestLeavingTimes
-    val taskDurations = timeExtension.taskDurations
+    val earliestArrivalTimes = timeWindows.earliestArrivalTimes
+    val earliestLeavingTimes = timeWindows.earliestLeavingTimes
+    val latestLeavingTimes = timeWindows.latestLeavingTimes
+    val taskDurations = timeWindows.taskDurations
 
     def areNodesParallelisable(predecessor: Int, node: Int): Boolean = {
       parallelizeNodes &&
@@ -53,15 +54,15 @@ object TimeWindowHelper{
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
       case predecessor if areNodesParallelisable(predecessor,node) &&
-          (Math.max(earliestArrivalTimes(predecessor) + taskDurations(predecessor),
-            earliestArrivalTimes(node) + taskDurations(node)) <= latestLeavingTimes(node)) &&
-          predecessor != node => predecessor
+        (Math.max(earliestLeavingTimes(predecessor), earliestLeavingTimes(node)) <= latestLeavingTimes(node)) &&
+        predecessor != node =>
+        predecessor
       case predecessor if !areNodesParallelisable(predecessor,node) &&
-        (earliestArrivalTimes(predecessor) +
-          taskDurations(predecessor) +
-          timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) +
-          taskDurations(node)) <= latestLeavingTimes(node) &&
-        predecessor != node => predecessor
+        (earliestLeavingTimes(predecessor) +
+          timeMatrix.getTravelDuration(predecessor, earliestLeavingTimes(predecessor), node) + taskDurations(node)) <=
+          latestLeavingTimes(node) &&
+        predecessor != node =>
+        predecessor
     }: _*)).toMap
   }
 
@@ -93,16 +94,14 @@ object TimeWindowHelper{
   def relevantSuccessorsOfNodes(vrp: VRP,
                                 timeExtension: TimeWindows,
                                 timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
-    val earliestArrivalTimes = timeExtension.earliestArrivalTimes
+    val earliestLeavingTimes= timeExtension.earliestLeavingTimes
     val latestLeavingTimes = timeExtension.latestLeavingTimes
     val taskDurations = timeExtension.taskDurations
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
       case successor if
-        latestLeavingTimes(successor)
-        >= (earliestArrivalTimes(node) +
-          taskDurations(node) +
-          timeMatrix.getTravelDuration(node, earliestArrivalTimes(node) + taskDurations(node), successor) +
+        latestLeavingTimes(successor) >=
+          (earliestLeavingTimes(node) + timeMatrix.getTravelDuration(node, earliestLeavingTimes(node), successor) +
           taskDurations(successor)) &&
         successor != node
         => successor

@@ -2,7 +2,7 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.TimeWindowConstraint
+import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
@@ -11,9 +11,9 @@ import oscar.cbls.lib.constraint.EQ
   */
 
 object SimpleVRPWithTimeWindow extends App{
-  val m = new Store(noCycle = false)
-  val v = 10
-  val n = 1000
+  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
+  val v = 5
+  val n = 100
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
@@ -41,7 +41,7 @@ object SimpleVRPWithTimeWindow extends App{
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
   val smartTimeWindowInvariant =
-    TimeWindowConstraint(myVRP.routes, n, v,
+    TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
       earliestArrivalTimes,
       latestLeavingTimes,
       taskDurations,
@@ -188,8 +188,8 @@ object SimpleVRPWithTimeWindow extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 1
-  //search.verboseWithExtraInfo(4, ()=> "" + myVRP)
+  //search.verbose = 1
+  search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 
 

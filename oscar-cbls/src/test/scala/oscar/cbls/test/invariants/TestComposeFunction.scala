@@ -16,10 +16,18 @@ object TestComposeFunction extends App{
     val earliestArrivalTimeAt2 = f1.el + m
     val latestArrivalTimeAt2 = f1.la + f1.el - f1.ea + m
 
+    println(earliestArrivalTimeAt2)
+    println(latestArrivalTimeAt2)
+
     val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
     val earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.la
     val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.ea
     val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.la
+
+    println((earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
+      earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
+      latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
+      latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2))
 
     val (ea3, ll3, el3) =
       (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
@@ -118,10 +126,10 @@ object TestComposeFunction extends App{
     * This method allows us to test custom problem that doesn't work
     */
   private def customTest() {
-    val earliestArrivalTimes = Array(8*3600, 15*3600)
-    val taskDurations = Array(0,0)
-    val latestArrivalTimes = Array(9*3600, 16*3600).zipWithIndex.map(x => x._1 - taskDurations(x._2))
-    val timeMatrix = Array(Array.fill(2)(0), Array.fill(2)(0))
+    val earliestArrivalTimes = Array(6, 13)
+    val taskDurations = Array(6,3)
+    val latestArrivalTimes = Array(6, 15)
+    val timeMatrix = Array(Array.fill(2)(2), Array.fill(2)(2))
 
     val n = earliestArrivalTimes.length
     val transferFunctions = Array.tabulate(n)(x =>
@@ -137,6 +145,7 @@ object TestComposeFunction extends App{
 
   private def test(f1: TransferFunction, f2: TransferFunction, travelDuration: Int, ts: Array[Int]): Unit ={
     val composedFunction = composeFunction(f1, f2, travelDuration)
+    println(composedFunction)
     val t2s = Array.fill(ts.length)(0)
     for (i <- ts.indices) {
       val composedRes = composedFunction.apply(ts(i)).getOrElse(Int.MaxValue)
@@ -155,7 +164,7 @@ object TestComposeFunction extends App{
     }
   }
 
-  easyMethodWithEqualities()
+  customTest()
 }
 
 abstract class TransferFunction(val ea: Int, val la: Int, val el: Int){
