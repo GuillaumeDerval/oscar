@@ -52,10 +52,10 @@ object TesterBasic extends App{
     polygon5,
     circle1)
 
-  val drawing = new GeometryDrawing()
+  val drawing = new GeometryDrawing(List.empty)
 
   val randomColors = ColorGenerator.generateRandomTransparentColors(allPolygons.size,175).toIterator
-  drawing.drawShapes(shapes = allPolygons.map(shape => (shape,None,Some(randomColors.next),"area:" + shape.getArea)))
+  drawing.drawShapes(shapes = allPolygons.map(shape => (shape,None,Some(randomColors.next),"area:" + shape.getArea)),centers = List.empty)
 
   SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console")
 
