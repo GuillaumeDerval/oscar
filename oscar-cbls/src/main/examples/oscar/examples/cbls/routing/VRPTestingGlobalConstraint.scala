@@ -123,19 +123,23 @@ object VRPTestingGlobalConstraint extends App {
 
   val (symetricDistanceMatrix,_) = RoutingMatrixGenerator(nbNode)
 
-  val nbNodesPerVehicle : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
+
 
   val routeLengthPerVehicle = constantRoutingDistance(problem.routes,nbNode,nbVehicle,perVehicle = true,symetricDistanceMatrix,false,false,false)
 
   val totalRouteLength = sum(routeLengthPerVehicle)
 
+  val nbNodesPerVehicle : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
   val nbNodeConstraint = new LogReducedNumberOfNodes(problem.routes,nbVehicle,nbNodesPerVehicle)
+  val nbNodesPerVehicle2 : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
+  val nbNodeConstraint2 = new LogReducedNumberOfNodesWithExtremes(problem.routes,nbVehicle,nbNodesPerVehicle2)
 
 
   val c = new ConstraintSystem(model)
 
   for(vehicle <- 0 until nbVehicle){
     c.add(nbNodesPerVehicle(vehicle) le 100)
+    c.add(nbNodesPerVehicle2(vehicle) le 100)
   }
 
   c.close()
