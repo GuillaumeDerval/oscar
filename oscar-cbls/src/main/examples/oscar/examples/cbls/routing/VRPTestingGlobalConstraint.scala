@@ -131,15 +131,15 @@ object VRPTestingGlobalConstraint extends App {
 
   val nbNodesPerVehicle : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
   val nbNodeConstraint = new LogReducedNumberOfNodes(problem.routes,nbVehicle,nbNodesPerVehicle)
-  val nbNodesPerVehicle2 : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
-  val nbNodeConstraint2 = new LogReducedNumberOfNodesWithExtremes(problem.routes,nbVehicle,nbNodesPerVehicle2)
+  //val nbNodesPerVehicle2 : Array[CBLSIntVar] = Array.tabulate(nbVehicle)({_ => CBLSIntVar(model,0)})
+  //val nbNodeConstraint2 = new LogReducedNumberOfNodesWithExtremes(problem.routes,nbVehicle,nbNodesPerVehicle2)
 
 
   val c = new ConstraintSystem(model)
 
   for(vehicle <- 0 until nbVehicle){
     c.add(nbNodesPerVehicle(vehicle) le 100)
-    c.add(nbNodesPerVehicle2(vehicle) le 100)
+    //c.add(nbNodesPerVehicle2(vehicle) le 100)
   }
 
   c.close()

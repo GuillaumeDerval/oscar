@@ -33,16 +33,14 @@ case class NodesOnSubsequence(nbNodes:Int,
 
 class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
   extends LogReducedGlobalConstraint[NodesOnSubsequence,Int](routes,v){
+
   /**
-    * this method delivers the value of stepping from node "fromNode" to node "toNode.
-    * you can consider that these two nodes are adjacent.
+    * this method delivers the value of the node
     *
-    * @param fromNode
-    * @param toNode
-    * @return the type T associated with the step "fromNode -- toNode"
+    * @return the type T associated with the node "node"
     */
-  override def step(fromNode: Int, toNode: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(2, level = 1,fromNode,toNode)
+  override def nodeValue(node: Int): NodesOnSubsequence = {
+    NodesOnSubsequence(1, level = 0,node,node)
   }
 
   /**
@@ -54,7 +52,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
     require(firstStep.level == secondStep.level)
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes - 1, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
   }
 
   /**
@@ -66,7 +64,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
-    //println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
+    println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.map({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, _)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
@@ -110,7 +108,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
   override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
 
-
+/*
 class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
   extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Int](routes,v){
   /**
@@ -189,3 +187,4 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
   override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
 
+*/

@@ -51,31 +51,26 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
 
     //forward precompute
     if (nv > 1) {
-      extremePrecomputesOfCurrentVehicle(0).forward =
-        step(
-          extremePrecomputesOfCurrentVehicle(0).node,
-          extremePrecomputesOfCurrentVehicle(1).node)
+      extremePrecomputesOfCurrentVehicle(0).forward = nodeValue(extremePrecomputesOfCurrentVehicle(0).node)
+
       for (i <- 1 until nv) {
         extremePrecomputesOfCurrentVehicle(i).forward =
           composeSteps(
             extremePrecomputesOfCurrentVehicle(i - 1).forward,
-            step(
-              extremePrecomputesOfCurrentVehicle(i - 1).node,
-              extremePrecomputesOfCurrentVehicle(i).node))
+            nodeValue(extremePrecomputesOfCurrentVehicle(i).node))
       }
 
       extremePrecomputesOfCurrentVehicle(nv - 1).backward =
-        step(
-          extremePrecomputesOfCurrentVehicle(nv - 2).node,
-          extremePrecomputesOfCurrentVehicle(nv - 1).node)
+        composeSteps(
+          nodeValue(extremePrecomputesOfCurrentVehicle(nv - 1).node),
+          nodeValue(extremePrecomputesOfCurrentVehicle(0).node)
+        ) //returning to home
 
       //backward precompute
       for (i <- (0 until nv - 1).reverse) {
         extremePrecomputesOfCurrentVehicle(i).backward =
           composeSteps(
-            step(
-              extremePrecomputesOfCurrentVehicle(i).node,
-              extremePrecomputesOfCurrentVehicle(i+1).node),
+            nodeValue(extremePrecomputesOfCurrentVehicle(i).node),
             extremePrecomputesOfCurrentVehicle(i+1).backward)
       }
     }
@@ -86,11 +81,11 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]):U = {
 
-    computeVehicleValueComposed(vehicle,decorateSegments(vehicle,segments,isFirst = true))
+    computeVehicleValueComposed(vehicle,decorateSegmentsEXTREME(vehicle,segments,isFirst = true))
 
   }
 
-  def decorateSegments(vehicle:Int, segments:List[Segment[VehicleAndPosition]],isFirst:Boolean):List[LogReducedSegment[T]] = {
+  def decorateSegmentsEXTREME(vehicle:Int, segments:List[Segment[VehicleAndPosition]],isFirst:Boolean):List[LogReducedSegment[T]] = {
 
     segments match{
       case Nil => Nil
@@ -131,7 +126,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
 
           case NewNode(node: Int) =>
             LogReducedNewNode[T](node: Int)
-        }) :: decorateSegments(vehicle:Int, segments = tail,isFirst = false)
+        }) :: decorateSegmentsEXTREME(vehicle:Int, segments = tail,isFirst = false)
     }
   }
 }
