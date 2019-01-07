@@ -366,6 +366,13 @@ case class Square(v: IntValue)
   extends Int2Int(v, ((x: Int) => x*x),
     (if (v.min <= 0) 0 else (v.min)*(v.min)) to (v.max.max(-v.min))*(v.max.max(-v.min)))
 
+case class Sqrt(v: IntValue)
+  extends Int2Int(v, ((x: Int) => math.sqrt(x).floor.toInt),
+    math.sqrt(v.min).floor.toInt to math.sqrt(v.max).floor.toInt){
+  require(v.min >= 0)
+}
+
+
 /**
  * This invariant implements a step function. Values higher than pivot are mapped to ifval
  * values lower or equal to pivot are mapped to elseval

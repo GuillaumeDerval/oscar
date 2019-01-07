@@ -1,5 +1,6 @@
 package oscar.cbls.business.geometry.visu
 
+import java.awt.geom.Line2D
 import java.awt.geom.Rectangle2D
 import java.awt.{Color, Shape}
 
@@ -7,18 +8,20 @@ import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
 import oscar.cbls.business.geometry.Overlap
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualRectangle, VisualShape}
+import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
 
 
-class GeometryDrawing()
+class GeometryDrawing(relevantDistances:List[(Int,Int)])
   extends VisualDrawing(false,false) {
 
   class VisualShapeConcrete(d: VisualDrawing, s: Shape) extends VisualShape(d) {
 
+    override def move(x: Double, y: Double): Unit = {}
+
     type S = Shape
     protected val shape = s
 
-    override def move(x: Double, y: Double): Unit = {}
+
   }
 
   override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
@@ -32,7 +35,7 @@ class GeometryDrawing()
     * @param boundingBoxOn
     * @param shapes shape,bordercolor,innercolor,toltipText
     */
-  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)]) ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]) ={
     super.clear(false)
 
     val (minX,maxX,minY,maxY) = boundingBoxOn match {
@@ -85,6 +88,19 @@ class GeometryDrawing()
 
 
     paintSomeHoles(shapes.map(_._1))
+
+    for((fromID,toID) <- relevantDistances){
+      val (x1,y1) = centers(fromID)
+      val (x2,y2) = centers(toID)
+
+      val line = new VisualLine(this, new Line2D.Double(
+        x1,
+        y1,
+        x2,
+        y2))
+      line.dashed = false
+      line.innerCol = Color.BLUE
+    }
 
     repaint()
   }

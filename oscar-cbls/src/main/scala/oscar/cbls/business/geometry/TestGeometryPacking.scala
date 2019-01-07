@@ -8,13 +8,13 @@ import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.visu.GeometryDrawing
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.core.search._
-import oscar.cbls.lib.invariant.numeric.Sum
+import oscar.cbls.lib.invariant.numeric.{Sqrt, Square, Sum, Sum2}
 import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
 
-object TesterCBLS extends App{
+object TestGeometryPacking extends App{
 
   val store = Store()
 
@@ -34,16 +34,21 @@ object TesterCBLS extends App{
     new Coordinate(maxX,0),
     new Coordinate(0,0))).convexHull()
 
-
   //declaring the optimization model
   val coordArray = Array.tabulate(nbCircle){ i =>
     (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"circle_" + i + ".x"),
       new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"circle_" + i + ".y"))
   }
 
+  val constantFiguresAt00 = Array.tabulate(nbCircle){i =>
+        new CBLSGeometryConst(store,
+          if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
+          else geometry.createCircle(radiusArray(i),nbEdges = 30),
+          "shape_" + i)
+    }
+
   val placedCirles = Array.tabulate(nbCircle){i =>
-    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),
-      new CBLSGeometryConst(store,if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2) else geometry.createCircle(radiusArray(i),nbEdges = 30),"circle_" + i))
+    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),constantFiguresAt00(i))
   }
 
   val intersectionAreasHalfMatrix:Array[Array[IntValue]] =
@@ -63,23 +68,33 @@ object TesterCBLS extends App{
     Sum(intersectionAreaFullMatrix(circleID)).setName("overlapArea(shape_" + circleID + ")")
   )
 
+
+  val relevantDistances = List((0,1),(1,2),(1,3),(2,4),(3,5),(4,5),(5,6))
+
+  val distancesArray = relevantDistances.map({case (fromId,toId) => {
+    val (x1, y1) = coordArray(fromId)
+    val (x2, y2) = coordArray(toId)
+    Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2)))
+  }})
+
   val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
-  val obj:Objective = totalIntersectionArea
+  val obj:Objective = Sum2(totalIntersectionArea,new Sum(distancesArray))
   store.close()
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   val randomColors = ColorGenerator.generateRandomTransparentColors(nbCircle,175).toList
 
-  val drawing = new GeometryDrawing()
+  val drawing = new GeometryDrawing(relevantDistances)
 
   def updateDisplay() {
     val colorsIt = randomColors.toIterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
         (convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
-        Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList)
+        Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList,
+      centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
 
   updateDisplay()
@@ -144,7 +159,7 @@ object TesterCBLS extends App{
         })
       })
     },
-    neighborhoodName = "moveToHole"
+    neighborhoodName = "toHole"
   )
 
   class MoveCircleTo(val circleID:Int,targetX:Int,targetY:Int,oldX:Int,oldY:Int,newObj:Int)
@@ -157,7 +172,7 @@ object TesterCBLS extends App{
         coordArray(circleID)._2 := oldY
       }
     },
-      neighborhoodName = "moveToHole",
+      neighborhoodName = "toHole",
       objAfter = newObj){}
 
 
@@ -165,7 +180,7 @@ object TesterCBLS extends App{
     moveToHole dynAndThen(moveCircleTo => new Atomic(
       gradientOnOneShape(moveCircleTo.circleID),
       _>10,
-      stopAsSoonAsAcceptableMoves=true)) name "moveToHoleAndGradient"
+      stopAsSoonAsAcceptableMoves=true)) name "toHole&Gradient"
 
   def gradientOnOneShape(shapeID:Int) = new GradientDescent(
     vars = Array(coordArray(shapeID)._1,coordArray(shapeID)._2),
@@ -180,10 +195,10 @@ object TesterCBLS extends App{
     swapYSlave(swapMove.idI,swapMove.idJ)
       andThen new Atomic(gradientOnOneShape(swapMove.idI),
       _>10,
-      stopAsSoonAsAcceptableMoves=true))) name "swapAndGradient"
+      stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
 
-  val displayDelay:Long = 1000.toLong * 1000 * 500 //.5 seconds
+  val displayDelay:Long = 1000.toLong * 1000 * 1000 //1 seconds
   var lastDisplay = System.nanoTime()
   val search = (Profile(BestSlopeFirst( //TODO: this is not the best approach for single shot neighborhoods such as gradient
     List(
@@ -214,9 +229,9 @@ object TesterCBLS extends App{
   }
   } showObjectiveFunction obj)
 
- // Thread.sleep(20000)
- // println("start")
- // Thread.sleep(1000)
+  // Thread.sleep(20000)
+  // println("start")
+  // Thread.sleep(1000)
 
   search.verbose = 1
   search.doAllMoves(obj=obj, shouldStop = _ => obj.value == 0)
