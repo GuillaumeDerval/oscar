@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometry
+package oscar.cbls.business.geometry.model
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,7 +15,6 @@ package oscar.cbls.business.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
 import oscar.cbls.core.computation._

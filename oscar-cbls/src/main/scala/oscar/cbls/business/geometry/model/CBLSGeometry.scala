@@ -1,4 +1,4 @@
-package oscar.cbls.business.geometry
+package oscar.cbls.business.geometry.model
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
