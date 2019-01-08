@@ -19,11 +19,11 @@
  ******************************************************************************/
 
 
-package oscar.examples.cbls
+package oscar.examples.cbls.old
 
 import java.awt.Color
-import javax.swing.border.LineBorder
 
+import javax.swing.border.LineBorder
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.AllDiff

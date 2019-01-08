@@ -176,11 +176,10 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
     def threeOptOnVehicle(vehicle:Int) = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
       //insertions points are position where we perform the insert,
-      // basically the segment will start in plae of the insertion point and the insertion point will be moved upward
+      // basically the segment will start in place of the insertion point and the insertion point will be moved upward
       val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
-      val insertionPoints = if(vehicle != v-1) vehicle+1 :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
 
-      threeOpt(() => insertionPoints,
+      threeOpt(() => nodesOfTargetVehicle,
         () => _ => nodesOfTargetVehicleButVehicle,
         myVRP,
         breakSymmetry = false).afterMove(graphical.drawRoutes())
@@ -219,7 +218,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       removeNodeAndReInsert = removeAndReInsertVLSN,
 
       reOptimizeVehicle = Some(vehicle => Some(threeOptOnVehicle(vehicle))),
-      useDirectInsert = true,
+      useDirectInsert = false,
 
       objPerVehicle,
       unroutedPenaltyObj,

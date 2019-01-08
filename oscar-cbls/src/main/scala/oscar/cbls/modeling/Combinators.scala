@@ -581,7 +581,7 @@ class NeighborhoodOps(n:Neighborhood){
    */
   def showObjectiveFunction(obj: Objective,
                             stopWatch: StopWatch = new StopWatch {startWatch()},
-                            withZoom:Boolean = false,
+                            withZoom:Boolean = false
                            ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom)
 
   /**

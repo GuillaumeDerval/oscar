@@ -59,4 +59,5 @@ object WarehouseLocation extends App{
   neighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)
+
 }

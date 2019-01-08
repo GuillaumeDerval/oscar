@@ -354,11 +354,11 @@ class VLSN(v:Int,
                         println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
                       }
 
-                      val vehicleObjDelta =  vehicleToObjective(vehicle).value - oldObjVehicle
+                      val vehicleObjDelta = vehicleToObjective(vehicle).value - oldObjVehicle
                       val globalObjDelta = globalObjective.value - oldGlobalObjective
 
                       require(vehicleObjDelta == globalObjDelta,
-                        "re-optimization of vehicle " + vehicle + " wih" + n + " did impact other vehicle")
+                        "re-optimization of vehicle " + vehicle + " wih" + n + " did impact other vehicle, vehicleObjDelta:" + vehicleObjDelta + " globalObjDelta:" + globalObjDelta)
 
                   }
                 }

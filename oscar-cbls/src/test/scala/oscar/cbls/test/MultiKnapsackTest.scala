@@ -1,7 +1,6 @@
-package oscar.examples.cbls
+package oscar.cbls.test
 
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue, Store}
-import oscar.cbls.core.constraint.ConstraintSystem
+import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.invariants.lib.logic.BinPackingLoad
 import oscar.cbls.lib.invariant.numeric.Sum2
 import oscar.cbls.modeling.CBLSModel
