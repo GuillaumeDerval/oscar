@@ -43,6 +43,18 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     NodesOnSubsequence(1, level = 0,node,node)
   }
 
+
+  /**
+    * this one is similar to the nodeValue except that it only is applied on vehicle,
+    * to represent the return to the vehicle start at teh end of its route
+    *
+    * @param vehicle
+    * @return
+    */
+  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
+    NodesOnSubsequence(0, level = 0, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
+  }
+
   /**
     * this method is for composing steps into bigger steps.
     *
@@ -74,7 +86,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
         if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
-      case s@LogReducedNewNode(node) =>
+      case s@LogReducedNewNode(node, _) =>
         1
     }).sum
   }
@@ -108,19 +120,28 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
   override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
 
-/*
+
 class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
   extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Int](routes,v){
   /**
-    * this method delivers the value of stepping from node "fromNode" to node "toNode.
-    * you can consider that these two nodes are adjacent.
+    * this method delivers the value of the node
     *
-    * @param fromNode
-    * @param toNode
-    * @return the type T associated with the step "fromNode -- toNode"
+    * @return the type T associated with the node "node"
     */
-  override def step(fromNode: Int, toNode: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(2, level = 1,fromNode,toNode)
+  override def nodeValue(node: Int): NodesOnSubsequence = {
+    NodesOnSubsequence(1, level = 0,node,node)
+  }
+
+
+  /**
+    * this one is similar to the nodeValue except that it only is applied on vehicle,
+    * to represent the return to the vehicle start at teh end of its route
+    *
+    * @param vehicle
+    * @return
+    */
+  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
+    NodesOnSubsequence(0, level = 0, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
   }
 
   /**
@@ -131,9 +152,9 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @return the type T associated with the first step followed by the second step
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
-    //require(firstStep.level == secondStep.level)
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes - 1, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
   }
+
 
   /**
     * this method is called by the framework when the value of a vehicle must be computed.
@@ -153,7 +174,7 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
         if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
-      case s@LogReducedNewNode(node) =>
+      case s@LogReducedNewNode(node,_) =>
         1
     }).sum
   }
@@ -187,4 +208,3 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
   override def outputVariables: Iterable[Variable] = nbNodesPerRoute
 }
 
-*/

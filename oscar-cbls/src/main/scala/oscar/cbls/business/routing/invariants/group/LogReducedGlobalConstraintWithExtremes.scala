@@ -7,10 +7,10 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   extends LogReducedGlobalConstraint[T,U](routes:ChangingSeqValue,v :Int){
 
   class NodeAndExtremePreComputes(val node:Int,
-                                  var forward:T = null.asInstanceOf[T],
-                                  var backward:T = null.asInstanceOf[T]){
+                                  var fromStart:T = null.asInstanceOf[T],
+                                  var toEnd:T = null.asInstanceOf[T]){
     override def toString: String = {
-      "NodeAndExtremePreComputes(node:" + node + " forward:" + forward + " backward:" + backward + ")"
+      "NodeAndExtremePreComputes(node:" + node + " fromStart:" + fromStart + " toEnd:" + toEnd + ")"
     }
   }
 
@@ -23,11 +23,13 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
     e match {
       case None =>
         //end
-        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute)(null)
+        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+        vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)
 
       case  Some(x) if x.value < v && x.value != vehicle => ;
         //end
-        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute)(null)
+        vehicleToExtremePrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+        vehicleToExtremePrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndExtremePreComputes(vehicle)
 
       case Some(ex) =>
         identifyNodesAndAllocateExtremePrecomputes(ex.next, vehicle, positionInVehicleRoute + 1, preComputedVals)
@@ -47,32 +49,32 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
       preComputedVals)
 
     val extremePrecomputesOfCurrentVehicle = vehicleToExtremePrecomputes(vehicle)
-    val nv = extremePrecomputesOfCurrentVehicle.length
-
+    val nv = extremePrecomputesOfCurrentVehicle.length-1 //return is ignored here, corrected later
+    require(nv >= 1, nv)
     //forward precompute
-    if (nv > 1) {
-      extremePrecomputesOfCurrentVehicle(0).forward = nodeValue(extremePrecomputesOfCurrentVehicle(0).node)
 
-      for (i <- 1 until nv) {
-        extremePrecomputesOfCurrentVehicle(i).forward =
-          composeSteps(
-            extremePrecomputesOfCurrentVehicle(i - 1).forward,
-            nodeValue(extremePrecomputesOfCurrentVehicle(i).node))
-      }
+    extremePrecomputesOfCurrentVehicle(0).fromStart = nodeValue(vehicle)
 
-      extremePrecomputesOfCurrentVehicle(nv - 1).backward =
+    for (i <- 1 until nv) {
+      extremePrecomputesOfCurrentVehicle(i).fromStart =
         composeSteps(
-          nodeValue(extremePrecomputesOfCurrentVehicle(nv - 1).node),
-          nodeValue(extremePrecomputesOfCurrentVehicle(0).node)
-        ) //returning to home
+          extremePrecomputesOfCurrentVehicle(i - 1).fromStart,
+          nodeValue(extremePrecomputesOfCurrentVehicle(i).node))
+    }
 
-      //backward precompute
-      for (i <- (0 until nv - 1).reverse) {
-        extremePrecomputesOfCurrentVehicle(i).backward =
-          composeSteps(
-            nodeValue(extremePrecomputesOfCurrentVehicle(i).node),
-            extremePrecomputesOfCurrentVehicle(i+1).backward)
-      }
+    extremePrecomputesOfCurrentVehicle(nv).fromStart =
+      composeSteps(
+        extremePrecomputesOfCurrentVehicle(nv - 1).fromStart,
+        endNodeValue(vehicle))
+
+    extremePrecomputesOfCurrentVehicle(nv).toEnd = endNodeValue(vehicle)
+
+    //backward precompute
+    for (i <- (0 until nv).reverse) {
+      extremePrecomputesOfCurrentVehicle(i).toEnd =
+        composeSteps(
+          nodeValue(extremePrecomputesOfCurrentVehicle(i).node),
+          extremePrecomputesOfCurrentVehicle(i+1).toEnd)
     }
   }
 
@@ -81,38 +83,59 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]):U = {
 
-    computeVehicleValueComposed(vehicle,decorateSegmentsEXTREME(vehicle,segments,isFirst = true))
+    computeVehicleValueComposed(
+      vehicle,
+      decorateSegmentsExtremes(
+        vehicle,
+        segments,
+        isFirst = true))
 
   }
 
-  def decorateSegmentsEXTREME(vehicle:Int, segments:List[Segment[VehicleAndPosition]],isFirst:Boolean):List[LogReducedSegment[T]] = {
+  def decorateSegmentsExtremes(vehicle:Int,
+                               segments:List[Segment[VehicleAndPosition]],
+                               isFirst:Boolean):List[LogReducedSegment[T]] = {
 
     segments match{
-      case Nil => Nil
+      case Nil =>
+        //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
+        List(LogReducedPreComputedSubSequence[T](
+          vehicle: Int, vehicle: Int,
+          stepGenerator = () => List(endNodeValue(vehicle))))
       case head :: tail =>
-        (head match{
+        head match{
           case PreComputedSubSequence
             (startNode: Int, startNodeValue: VehicleAndPosition,
             endNode: Int, endNodeValue: VehicleAndPosition) =>
 
-            if(isFirst && endNodeValue.positionInVehicleRoute > startNodeValue.positionInVehicleRoute+1){
+            if(isFirst){
+              require(vehicle == startNodeValue.vehicle)
+              //println("FROM START EXTREME!")
+
               LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(startNodeValue.vehicle)(endNodeValue.positionInVehicleRoute).forward)
-              )
-            } else if (tail.isEmpty && startNode != endNode) {
-              LogReducedPreComputedSubSequence[T](
+                  List(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
+              ) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
+
+            } else if(tail.isEmpty
+                && startNodeValue.vehicle == vehicle
+                && endNodeValue.positionInVehicleRoute == vehicleToExtremePrecomputes(vehicle).length-2){
+              //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
+
+              //println("TO END EXTREME!")
+
+              List(LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(startNodeValue.vehicle)(startNodeValue.positionInVehicleRoute).backward)
-              )
+                  List(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
+              ))
             }else{
               LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () => extractSequenceOfT(
-                  startNodeValue.vehicle, startNode, startNodeValue.positionInVehicleRoute,
-                  endNode, endNodeValue.positionInVehicleRoute, flipped = false))
+                  startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
+                  endNodeValue.positionInVehicleRoute, flipped = false)) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
             }
           case FlippedPreComputedSubSequence(
           startNode: Int, startNodeValue: VehicleAndPosition,
@@ -121,12 +144,12 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
             LogReducedFlippedPreComputedSubSequence[T](
               startNode: Int, endNode: Int,
               stepGenerator = () => extractSequenceOfT(
-                startNodeValue.vehicle, startNode, startNodeValue.positionInVehicleRoute,
-                endNode, endNodeValue.positionInVehicleRoute, flipped = true))
+                startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
+                endNodeValue.positionInVehicleRoute, flipped = true)) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
 
           case NewNode(node: Int) =>
-            LogReducedNewNode[T](node: Int)
-        }) :: decorateSegmentsEXTREME(vehicle:Int, segments = tail,isFirst = false)
+            LogReducedNewNode[T](node: Int, nodeValue(node)) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
+        }
     }
   }
 }

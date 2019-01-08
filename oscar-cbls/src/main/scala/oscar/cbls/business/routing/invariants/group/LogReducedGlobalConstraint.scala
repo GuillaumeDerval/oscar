@@ -75,7 +75,7 @@ case class LogReducedFlippedPreComputedSubSequence[T](startNode:Int,
   * when pre-computation was performed.
   * @param node
   */
-case class LogReducedNewNode[T](node:Int) extends LogReducedSegment[T]{
+case class LogReducedNewNode[T](node:Int, value:T) extends LogReducedSegment[T]{
   override def toString: String = {
     "LogReducedNewNode(node:" + node + ")"
   }
@@ -110,6 +110,14 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
     * @return the type T associated with the node "node"
     */
   def nodeValue(node: Int): T
+
+  /**
+    * this one is similar to the nodeValue except that it only is applied on vehicle,
+    * to represent the return to the vehicle start at teh end of its route
+    * @param vehicle
+    * @return
+    */
+  def endNodeValue(vehicle:Int):T
 
   /**
     * this method is for composing steps into bigger steps.
@@ -153,7 +161,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
     identifyNodesAndAllocate(routes.explorerAtAnyOccurrence(vehicle),vehicle,0,preComputedVals)
 
     if(vehicleToPrecomputes(vehicle).length > 1) {
-      var sequenceOfLevels = decomposeToBitNumbersMSBFirst(vehicleToPrecomputes(vehicle).length - 1)
+      var sequenceOfLevels = decomposeToBitNumbersMSBFirst(vehicleToPrecomputes(vehicle).length)
       //println("length of vehicle :" + vehicleToPrecomputes(vehicle).length)
       //println("sequence of levels: " + sequenceOfLevels)
 
@@ -178,11 +186,13 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
     e match {
       case None =>
         //end
-        vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute)(null)
+        vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+        vehicleToPrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndPreComputes(vehicle)
 
       case  Some(x) if x.value < v && x.value != vehicle => ;
         //end
-        vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute)(null)
+        vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+        vehicleToPrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndPreComputes(vehicle)
 
       case Some(ex) =>
         preComputedVals(ex.value) = new VehicleAndPosition(vehicle, positionInVehicleRoute, node = ex.value)
@@ -219,7 +229,15 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
     }
 
     if(level == 0){
-      vehicleToPrecomputes(vehicle)(positionInRoute).precomputes(0) = nodeValue(vehicleToPrecomputes(vehicle)(positionInRoute).node)
+      val precompute = vehicleToPrecomputes(vehicle)(positionInRoute)
+      val node = precompute.node
+
+      if(node == vehicle && positionInRoute != 0){
+        precompute.precomputes(0) = endNodeValue(node)
+      }else{
+        precompute.precomputes(0) = nodeValue(node)
+      }
+
     }else{
 
       val stepSize = 1 << (level-1)
@@ -238,47 +256,60 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
                                    segments:List[Segment[VehicleAndPosition]],
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]):U = {
-    computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments, isFirst = true))
+   // println("routes:" + routes)
+    computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
   }
 
-  def decorateSegments(vehicle:Int,segments:List[Segment[VehicleAndPosition]],isFirst:Boolean):List[LogReducedSegment[T]] = {
+  def decorateSegments(vehicle:Int,segments:List[Segment[VehicleAndPosition]]):List[LogReducedSegment[T]] = {
 
     segments match{
-      case Nil => Nil
+      case Nil =>
+        //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
+        List(LogReducedPreComputedSubSequence[T](
+          vehicle: Int, vehicle: Int,
+          stepGenerator = () => List(endNodeValue(vehicle))))
+
       case head :: tail =>
+        head match {
+          case PreComputedSubSequence
+            (startNode: Int, startNodeValue: VehicleAndPosition,
+            endNode: Int, endNodeValue: VehicleAndPosition) =>
 
+            if(tail.isEmpty
+              && startNodeValue.vehicle == vehicle
+              && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2){
+              //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
+              List(LogReducedPreComputedSubSequence[T](
+                startNode: Int, vehicle:Int, //we set vehicle as the real end
+                stepGenerator = () => extractSequenceOfT(
+                  startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
+                  vehicleToPrecomputes(vehicle).length-1, flipped = false)))
 
+            }else {
+              LogReducedPreComputedSubSequence[T](
+                startNode: Int, endNode: Int,
+                stepGenerator = () => extractSequenceOfT(
+                  startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
+                  endNodeValue.positionInVehicleRoute, flipped = false)) :: decorateSegments(vehicle, tail)
+            }
+          case FlippedPreComputedSubSequence(
+          startNode: Int, startNodeValue: VehicleAndPosition,
+          endNode: Int, endNodeValue: VehicleAndPosition) =>
+
+            LogReducedFlippedPreComputedSubSequence[T](
+              startNode: Int, endNode: Int,
+              stepGenerator = () => extractSequenceOfT(
+                startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
+                endNodeValue.positionInVehicleRoute, flipped = true))  :: decorateSegments(vehicle, tail)
+
+          case NewNode(node: Int) =>
+            LogReducedNewNode[T](node: Int, value = nodeValue(vehicle))  :: decorateSegments(vehicle, tail)
+        }
     }
-    segments.map({
-      case PreComputedSubSequence
-        (startNode: Int, startNodeValue: VehicleAndPosition,
-        endNode: Int, endNodeValue: VehicleAndPosition) =>
-
-        LogReducedPreComputedSubSequence[T](
-          startNode:Int, endNode:Int,
-          stepGenerator = () => extractSequenceOfT(
-            startNodeValue.vehicle,startNode,startNodeValue.positionInVehicleRoute,
-            endNode,endNodeValue.positionInVehicleRoute,flipped=false))
-
-      case FlippedPreComputedSubSequence(
-      startNode:Int,startNodeValue:VehicleAndPosition,
-      endNode:Int, endNodeValue:VehicleAndPosition) =>
-
-        LogReducedFlippedPreComputedSubSequence[T](
-          startNode:Int, endNode:Int,
-          stepGenerator = () => extractSequenceOfT(
-            startNodeValue.vehicle,startNode,startNodeValue.positionInVehicleRoute,
-            endNode,endNodeValue.positionInVehicleRoute,flipped=true))
-
-      case NewNode(node:Int) =>
-        LogReducedNewNode[T](node:Int)
-    })
   }
 
   def extractSequenceOfT(vehicle:Int,
-                         startNode:Int,
                          startPositionInRoute:Int,
-                         endNode:Int,
                          endPositionInRoute:Int,
                          flipped:Boolean):List[T] = {
 
@@ -297,13 +328,13 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
                                                  startPositionInRoute:Int,
                                                  endPositionInRoute:Int):List[T] = {
 
-    if(startPositionInRoute == endPositionInRoute) return List.empty
+    if(startPositionInRoute == endPositionInRoute+1) return List.empty
 
     val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1
     val levelStep = 1 << maxLevel
 
 
-    if(startPositionInRoute + levelStep > endPositionInRoute){
+    if(startPositionInRoute + levelStep > endPositionInRoute+1){
       //we need to go down
       extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
         startPositionInRoute:Int,
@@ -323,11 +354,11 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
                                                    endPositionInRoute:Int,
                                                    maxLevel:Int):List[T] = {
 
-    if(startPositionInRoute == endPositionInRoute) return List.empty
+    if(startPositionInRoute == endPositionInRoute+1) return List.empty
 
     val levelStep = 1 << maxLevel
 
-    if(startPositionInRoute + levelStep > endPositionInRoute) {
+    if(startPositionInRoute + levelStep > endPositionInRoute+1) {
       //too far, go down further
       extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
         startPositionInRoute:Int,
