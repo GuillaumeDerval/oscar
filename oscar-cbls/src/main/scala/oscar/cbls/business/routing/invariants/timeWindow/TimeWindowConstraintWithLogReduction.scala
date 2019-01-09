@@ -146,18 +146,6 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
   }
 
   /**
-    * this method delivers the value of stepping from node "fromNode" to node "toNode.
-    * you can consider that these two nodes are adjacent.
-    *
-    * @param fromNode
-    * @param toNode
-    * @return the type T associated with the step "fromNode -- toNode"
-    */
-  override def step(fromNode: Int, toNode: Int): TransferFunction = {
-    transferFunctionOfNode(fromNode)
-  }
-
-  /**
     * this method is for composing steps into bigger steps.
     *
     * @param firstStep  the type T associated with stepping over a sequence of nodes (which can be minial two)
@@ -200,34 +188,13 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                  previousLeavingTime: Option[Int] = Some(0)): Option[Int] ={
       val (newLastNode, newLeavingTime): (Int,Option[Int]) = logReducedSegments.head match{
         case s@LogReducedPreComputedSubSequence(startNode, endNode, _) =>
-          println(s)
-          if(s.steps.isEmpty)
-            (endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(endNode)))
-          else {
-            val leavingTimeWithoutLastNode = composeTransferFunctions(s.steps, previousLeavingTime, lastNode)
-            val leavingTimeWithLastNode =
-              if(leavingTimeWithoutLastNode.isEmpty)
-                None
-              else
-                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(endNode))
-            (endNode,leavingTimeWithLastNode)
-          }
+          (endNode,composeTransferFunctions(s.steps, previousLeavingTime, lastNode))
 
         case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
-          if(s.steps.isEmpty)
-            (endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(endNode)))
-          else{
-            val leavingTimeWithoutLastNode = composeTransferFunctions(s.steps, previousLeavingTime, lastNode)
-            val leavingTimeWithLastNode =
-              if(leavingTimeWithoutLastNode.isEmpty)
-                None
-              else
-                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(endNode))
-            (endNode,leavingTimeWithLastNode)
-          }
+          (endNode,composeTransferFunctions(s.steps, previousLeavingTime, lastNode))
 
-        case s@LogReducedNewNode(node) =>
-          (node, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(node)))
+        case s@LogReducedNewNode(node, transferFunctionOfNode) =>
+          (node, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode))
         }
 
       if (newLeavingTime.nonEmpty && logReducedSegments.tail.nonEmpty)
@@ -236,8 +203,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
         newLeavingTime
     }
 
-    val logSegmentLeavingTime = composeLogReduceSegments(segments)
-    logSegmentLeavingTime.isEmpty || logSegmentLeavingTime.getOrElse(Int.MaxValue) > latestLeavingTime(vehicle)
+    composeLogReduceSegments(segments).isEmpty
   }
 
   /**
@@ -290,6 +256,22 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
   }
 
   override def outputVariables: Iterable[Variable] = violations
+
+  /**
+    * this method delivers the value of the node
+    *
+    * @return the type T associated with the node "node"
+    */
+  override def nodeValue(node: Int): TransferFunction = transferFunctionOfNode(node)
+
+  /**
+    * this one is similar to the nodeValue except that it only is applied on vehicle,
+    * to represent the return to the vehicle start at teh end of its route
+    *
+    * @param vehicle
+    * @return
+    */
+  override def endNodeValue(vehicle: Int): TransferFunction = transferFunctionOfNode(vehicle)
 }
 
 
