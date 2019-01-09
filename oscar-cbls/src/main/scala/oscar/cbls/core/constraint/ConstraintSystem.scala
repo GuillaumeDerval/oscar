@@ -35,6 +35,8 @@ import oscar.cbls.lib.invariant.numeric.{ExtendableSum, Prod, Prod2, Sum}
 case class ConstraintSystem(model:Store) extends Constraint with Objective{
   //ConstraintSystems do not act as invariant because everything is subcontracted
 
+  //TODO: remove the distributed storage stuff
+
   model.addToCallBeforeClose(() => this.close())
 
   class GlobalViolationDescriptor(val Violation:ExtendableSum){
