@@ -1,6 +1,7 @@
 package oscar.cbls.business.routing.invariants.timeWindow
 
 import oscar.cbls._
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core._
@@ -174,7 +175,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[TransferFunction]]): Boolean = {
 
-    def composeTransferFunctions(transferFunctions: List[TransferFunction], previousLeavingTime: Option[Int], lastNode: Int): Option[Int] ={
+    def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Option[Int], lastNode: Int): Option[Int] ={
       val currentTransferFunction = transferFunctions.head
       val newLeavingTime = computeLeavingTime(previousLeavingTime.get, lastNode, currentTransferFunction)
       if(newLeavingTime.nonEmpty && transferFunctions.tail.nonEmpty)
