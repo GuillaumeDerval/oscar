@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.invariants.group
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
@@ -102,7 +103,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
         List(LogReducedPreComputedSubSequence[T](
           vehicle: Int, vehicle: Int,
-          stepGenerator = () => List(endNodeValue(vehicle))))
+          stepGenerator = () => QList(endNodeValue(vehicle))))
       case head :: tail =>
         head match{
           case PreComputedSubSequence
@@ -116,7 +117,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
+                  QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
               ) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
 
             } else if(
@@ -131,7 +132,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               List(LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
+                  QList(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
               ))
             }else{
               LogReducedPreComputedSubSequence[T](
