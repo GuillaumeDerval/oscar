@@ -20,18 +20,16 @@ package oscar.flatzinc.cbls
 
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.constraint.{Constraint => CBLSConstraint}
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, CBLSSetConst, ChangingIntValue, IntValue, Store, Variable => CBLSVariable}
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar,  ChangingIntValue, IntValue, Store}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.lib.constraint._
 import oscar.flatzinc.model._
 import oscar.flatzinc.model.Variable
 import oscar.flatzinc.model.Constraint
 
 import scala.Array.canBuildFrom
 import scala.Array.fallbackCanBuildFrom
-import scala.collection.mutable.{Map => MMap}
 import scala.collection.immutable.SortedMap
 import oscar.flatzinc.NoSuchConstraintException
 import oscar.cbls.lib.constraint._
@@ -591,15 +589,14 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
       case Some(v) =>
         val inv = constructCBLSIntInvariant(constraint,v.id)
         if(ensureDomain) {
-          val dom = v match {
-            case IntegerVariable(i, d, ann) => EnsureDomain(inv, d, c)
+          v match {
+            case IntegerVariable(_, d, _) => EnsureDomain(inv, d, c)
             case bv: BooleanVariable =>
               FzDomainRange(if (bv.isTrue) 1 else 0, if (bv.isFalse) 0 else 1)
               //WARNING: removing ensuredom from booleanvariables...
               //EnsureDomain(inv,dom,c)
           }
         }
-
         inv
     }
   }

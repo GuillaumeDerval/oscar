@@ -58,7 +58,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
   registerConstrainedVariables(amount)
 
   finishInitialization()
-  private val horizon = start.map(_.max).max + duration.map(_.max).max
+  private val horizon:(Int,Int) = (start.map(_.min).min,start.map(_.max).max + duration.map(_.max).max)
   private val profile = new CumulativeProfile(model,start.length,horizon,amount.map(_.max).sum,limit)
   for(v <- profile.blocks){
     v.height.setDefiningInvariant(this)
@@ -70,11 +70,11 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     profile.addToProfile(start(v).value, duration(v).value, amount(v).value)
   }
 
-  val variableViolation = start.map(i => CBLSIntVar(model, 0, 0 to amount.map(_.max).sum))
+  val variableViolation: Array[CBLSIntVar] = start.map(_ => CBLSIntVar(model, 0, 0 to amount.map(_.max).sum))
   for(v <- variableViolation) v.setDefiningInvariant(this)
-  updateVarViolation(0,start.map(_.max).max + duration.map(_.max).max)
+  updateVarViolation(horizon._1, horizon._2)
 
-  override def violation = Violation
+  override def violation: Sum = Violation
   override def violation(v: Value): IntValue = {
     if(start.indexOf(v.asInstanceOf[IntValue]) != -1){
       variableViolation(start.indexOf(v.asInstanceOf[IntValue]))
@@ -85,7 +85,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     }
   }
 
-  def updateVarViolation(s:Int, d:Int) = {
+  def updateVarViolation(s:Int, d:Int): Unit = {
     //Verify that these bounds are correct
     for(i <- start.indices
         if(start(i).value >= s && start(i).value < s+d) ||
@@ -98,7 +98,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
   @inline
   override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     if(index == -1){
-      updateVarViolation(0,horizon)
+      updateVarViolation(horizon._1,horizon._2)
     }else if (start(index) == v && amount(index).value >0) {
       //start
       val d = duration(index).value
@@ -124,12 +124,14 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
       }
     } else if (duration(index) == v && amount(index).value > 0) {
       //duration
-      if (OldVal > NewVal) {
-        profile.addToProfile(NewVal + start(index).value, OldVal - NewVal, -amount(index).value)
-        updateVarViolation(NewVal + start(index).value, OldVal - NewVal)
+      val AdjustedOldVal = Math.max(0,OldVal)
+      val AdjustedNewVal = Math.max(0,NewVal)
+      if (AdjustedOldVal > AdjustedNewVal) {
+        profile.addToProfile(AdjustedNewVal + start(index).value, AdjustedOldVal - AdjustedNewVal, -amount(index).value)
+        updateVarViolation(AdjustedNewVal + start(index).value, AdjustedOldVal - AdjustedNewVal)
       } else {
-        profile.addToProfile(OldVal + start(index).value, NewVal - OldVal, amount(index).value)
-        updateVarViolation(OldVal + start(index).value, NewVal - OldVal)
+        profile.addToProfile(AdjustedOldVal + start(index).value, AdjustedNewVal - AdjustedOldVal, amount(index).value)
+        updateVarViolation(AdjustedOldVal + start(index).value, AdjustedNewVal - AdjustedOldVal)
       }
     } else if(amount(index) == v){
       profile.addToProfile(start(index).value, duration(index).value, NewVal - OldVal)
@@ -138,24 +140,27 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     //println(violation)
   }
 
-  override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
+  override def checkInternals(c: Checker) {c.check(verity = false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
-class CumulativeProfile(m:Store, val nTasks:Int, val horizon:Int, val maxHeight:Int, var limit:IntValue){
-  val blocks:Array[ProfileBlock] = Array.tabulate(2*nTasks+4)( i => new ProfileBlock(0,0,CBLSIntVar(m,0,0 to maxHeight),limit,horizon))
+class CumulativeProfile(m:Store, val nTasks:Int, val horizon:(Int,Int), val maxHeight:Int, var limit:IntValue){
+  val horizonStart = horizon._1
+  val horizonEnd = horizon._2
 
-  val freeBlocks = blocks(0)
+  val blocks:Array[ProfileBlock] = Array.tabulate(2*nTasks+4)( i => new ProfileBlock(horizonStart,horizonStart,CBLSIntVar(m,0,0 to maxHeight),limit,horizon))
+
+  val freeBlocks: ProfileBlock = blocks(0)
   for( i <- 1 until blocks.length)
     freeBlocks.insertBlock(blocks(i))
 
-  val endBlock = new ProfileBlock(-2,-3,CBLSIntVar(m,-2,-3 to -2,"DummyEndBlock"),limit,horizon,true)
-  val profile = new ProfileBlock(-1,-2,CBLSIntVar(m,-1,-2 to -1,"DummyBlock"),limit,horizon,true)
+  val endBlock = new ProfileBlock(horizonStart-2,horizonStart-3,CBLSIntVar(m,-2,-3 to -2,"DummyEndBlock"),limit,horizon,true)
+  val profile = new ProfileBlock(horizonStart-1,horizonStart-2,CBLSIntVar(m,-1,-2 to -1,"DummyBlock"),limit,horizon,true)
   profile.insertBlock(endBlock)
-  val initialBlock = freeBlocks.popNext()
-  initialBlock.setProfile(0,horizon,0)
+  val initialBlock: ProfileBlock = freeBlocks.popNext()
+  initialBlock.setProfile(horizonStart,horizonEnd,0)
   profile.insertBlock(initialBlock)
 
-  def printProfile() = {
+  def printProfile(): Unit = {
     println("-------------")
     var idx = 0
     var current = profile
@@ -175,19 +180,25 @@ class CumulativeProfile(m:Store, val nTasks:Int, val horizon:Int, val maxHeight:
     }
   }
 
-  def addToProfile(start:Int, duration:Int, height:Int) = {
+  def addToProfile(start:Int, duration:Int, height:Int): Unit = {
     if(duration > 0 && height != 0) {
       if (freeBlocks.next == null) {
         printProfile()
       }
-//      println("@@@@@@@@")
+//      println("@@@@@@@@" +  s"$start $duration $height" )
 //      printProfile()
 
       var currentProfile = profile.next
 
+      if(currentProfile.start > start){
+        println("Something is wrong here")
+      }
+
       while (currentProfile != endBlock && !currentProfile.contains(start)) currentProfile = currentProfile.next
 
       currentProfile.changeInterval(start, start + duration - 1, height, freeBlocks)
+    }else if(duration < 0){
+      System.err.println("% Warning: Duration of task less than 0 in cumulative")
     }
 
   }
@@ -204,42 +215,42 @@ class CumulativeProfile(m:Store, val nTasks:Int, val horizon:Int, val maxHeight:
     var currentStart = start
     while(currentProfile.contains(currentStart) && currentStart <= end){
       val tmpEnd = Math.min(end,currentProfile.end)
-      total = total + (tmpEnd-currentStart+1)*currentProfile.getInternalOverLimit()
+      total = total + (tmpEnd-currentStart+1)*currentProfile.getInternalOverLimit
       currentStart = tmpEnd + 1
       currentProfile = currentProfile.next
     }
 
-    return total
+    total
   }
 }
 
 
 
 //Note that a block where start = end -> width = 1
-class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var height:CBLSIntVar, val limit:IntValue, horizon:Int, val immutable:Boolean = false ){
+class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var height:CBLSIntVar, val limit:IntValue, horizon:(Int,Int), val immutable:Boolean = false ){
   var prev:ProfileBlock = null
   var next:ProfileBlock = null
 
-  val width = CBLSIntVar(height.model, 0, 0 to horizon )
+  val width = CBLSIntVar(height.model, horizon._1, horizon._1 to horizon._2 )
   val overLimit = MinusOffsetPos(height,limit,0)
   val blockViolation = Prod2(width,overLimit)
 
-  def start = _start
-  def start_=(newStart:Int) = {
+  def start: Int = _start
+  def start_=(newStart:Int): Unit = {
     _start = newStart
     width := _end-_start+1
   }
 
-  def end = _end
-  def end_=(newEnd:Int) = {
+  def end: Int = _end
+  def end_=(newEnd:Int): Unit = {
     _end = newEnd
     width := _end-_start+1
   }
 
-  def getInternalOverLimit():Int = {
+  def getInternalOverLimit:Int = {
     Math.max(0, height.newValue-limit.value)
   }
-  def insertBlock(block:ProfileBlock) = {
+  def insertBlock(block:ProfileBlock): Unit = {
     block.next = next
     block.prev = this
     if(next != null)
@@ -247,7 +258,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     next = block
   }
 
-  def removeBlock() = {
+  def removeBlock(): Unit = {
     if(immutable) {
       println("% Warning: Attempted to remove an immutable block.")
     }
@@ -262,7 +273,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     tmp
   }
 
-  def setProfile(newStart:Int, newEnd:Int, newHeight:Int) = {
+  def setProfile(newStart:Int, newEnd:Int, newHeight:Int): Unit = {
     _start = newStart
     _end = newEnd
     height := newHeight
@@ -301,7 +312,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     }
   }
 
-  def changeEntireBlock(iHeight:Int, freeBlocks:ProfileBlock) = {
+  def changeEntireBlock(iHeight:Int, freeBlocks:ProfileBlock): Unit = {
     if(prev.height.newValue == next.height.newValue && prev.height.newValue == height.newValue+iHeight){
       //Merge left and right block
       next.start = prev.start
@@ -325,7 +336,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     }
   }
 
-  def changeStartOfBlock(iEnd:Int, iHeight:Int, freeBlocks:ProfileBlock) = {
+  def changeStartOfBlock(iEnd:Int, iHeight:Int, freeBlocks:ProfileBlock): Unit = {
     if(prev.height.newValue == height.newValue+iHeight){
       prev.end = iEnd
       start = iEnd + 1
@@ -337,7 +348,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     }
   }
 
-  def changeEndOfBlock(iStart:Int, iHeight:Int, freeBlocks:ProfileBlock) = {
+  def changeEndOfBlock(iStart:Int, iHeight:Int, freeBlocks:ProfileBlock): Unit = {
     if(next.height.newValue == height.newValue+iHeight){
       next.start = iStart
       end = iStart - 1
@@ -349,7 +360,7 @@ class ProfileBlock(private[this] var _start:Int, private[this] var _end:Int, var
     }
   }
 
-  def splitBlock(iStart:Int, iEnd:Int, iHeight:Int, freeBlocks:ProfileBlock) = {
+  def splitBlock(iStart:Int, iEnd:Int, iHeight:Int, freeBlocks:ProfileBlock): Unit = {
     val middleBlock = freeBlocks.popNext()
     val endBlock = freeBlocks.popNext()
     endBlock.setProfile(iEnd+1,end,height.newValue)

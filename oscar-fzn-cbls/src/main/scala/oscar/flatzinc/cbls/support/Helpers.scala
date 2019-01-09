@@ -42,7 +42,7 @@ object Helpers {
       * @param d Domain to intersect with
       */
 
-    def intersectDomain(d:Domain) = {
+    def intersectDomain(d:Domain): Unit = {
       if(c.isControlledVariable && !d.contains(c.newValue)){
         System.err.println("% Warning: reduced domain of controlled variable resulted in current value outside domain.")
       }else if(!d.contains(c.newValue)){
@@ -58,9 +58,9 @@ object Helpers {
       * removed from the domain using intersectDomain.
       * If the domain is relaxed to a include values that were not in the
       * domain when the model was closed, then things can explode.
-      * @param d
+      * @param d domain to relax to
       */
-    def relaxDomain(d:Domain) = {
+    def relaxDomain(d:Domain): Unit = {
       c.overrideDomain(c.domain.union(d))
     }
   }
@@ -79,7 +79,7 @@ class CBLSBoolVar(model: Store, initialValue: Int, initialDomain:Domain, n: Stri
 
 //TODO: Should not extend it anymore!
 //Need the store while it extends CBLSIntVar, as sometimes it is requested (e.g., to find the Model in some invariants)
-class StoredCBLSIntConst(model:Store,_value:Int) extends CBLSIntVar(model,_value, DomainRange(_value, _value), _value.toString()){
+class StoredCBLSIntConst(model:Store,_value:Int) extends CBLSIntVar(model,_value, DomainRange(_value, _value), _value.toString){
   override def value:Int = _value
   override def toString:String = "IntConst("+ _value + ") := " + value
 }
@@ -94,12 +94,12 @@ object CBLSIntVarDom {
 */
 
 object EnsureDomain{
-  val weight = CBLSIntConst(20);
-  def apply(i:IntValue, d: FzDomain, c: ConstraintSystem) = {
+  val weight = CBLSIntConst(20)
+  def apply(i:IntValue, d: FzDomain, c: ConstraintSystem): Unit = {
     //System.err.println("% Using variables for in domain weights")
     //val weight = CBLSIntVar(c.model,10,1 to 1000000, "in domain weight")
     d match{
-      case FzDomainRange(min, max) =>{
+      case FzDomainRange(min, max) =>
         if(min == max){
           c.add(EQ(i,min),weight)
         }else{
@@ -112,8 +112,7 @@ object EnsureDomain{
             c.add(LE(i, max),weight)
           }
         }
-      } 
-      case FzDomainSet(vals) => {
+      case FzDomainSet(vals) =>
         if(i.min < d.min){
           c.add(GE(i, d.min),weight)
 //          Console.err.println("added "+i)
@@ -124,7 +123,6 @@ object EnsureDomain{
         }
 //        Console.err.println("addedX "+i)
         c.add(BelongsToConst(i,vals) /*.nameConstraint("EnsureDomain constraint of " + c)*/)//no weight
-      }
     }
   }
 }
