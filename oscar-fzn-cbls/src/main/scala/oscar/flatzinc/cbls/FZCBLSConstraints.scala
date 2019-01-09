@@ -20,7 +20,7 @@ package oscar.flatzinc.cbls
 
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.core.constraint.{Constraint => CBLSConstraint}
-import oscar.cbls.core.computation.{Variable => CBLSVariable}
+import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, CBLSSetConst, ChangingIntValue, IntValue, Store, Variable => CBLSVariable}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
@@ -34,17 +34,10 @@ import scala.Array.fallbackCanBuildFrom
 import scala.collection.mutable.{Map => MMap}
 import scala.collection.immutable.SortedMap
 import oscar.flatzinc.NoSuchConstraintException
-import oscar.cbls.core.computation.CBLSIntConst
-import oscar.cbls.core.computation.CBLSSetConst
-import oscar.cbls.core.computation.Store
-import oscar.cbls.core.computation.IntValue
-import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.lib.constraint._
+import oscar.flatzinc.cbls.support._
 
-import scala.collection.immutable.SortedSet
-import oscar.flatzinc.cbls.support.Weight
-import oscar.flatzinc.cbls.support.EnsureDomain
-import oscar.cbls.lib.invariant.numeric.Step
+import oscar.flatzinc.cbls.support.Helpers.FznChangingIntValue
 
 
 
@@ -234,7 +227,7 @@ class FZCBLSConstraintPoster(val c: ConstraintSystem, implicit val getCBLSVar: V
     } else {
       //Ensure domain before restricting it in case something has been posted on the old domain.
       EnsureDomain(getCBLSVar(y), FzDomainRange(0, 1), c)
-      getCBLSVar(y).restrictDomain(0 to 1)
+      getCBLSVar(y).asInstanceOf[ChangingIntValue].intersectDomain(0 to 1)
       Minus(1,getCBLSVar(y))
     }
   }
