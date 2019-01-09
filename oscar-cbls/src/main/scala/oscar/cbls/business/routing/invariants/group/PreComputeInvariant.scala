@@ -158,7 +158,12 @@ abstract class PreComputeInvariant[@specialized(Int) T : Manifest, @specialized(
   //          val realEndNodePosition = bijection(endNodePosition)
   //          println("Start Node position : " + startNodePosition + " - Node at startNodePosition : " + prevRoutes.valueAtPosition(startNodePosition).get + " -- RealStartNodePosition : " + realStartNodePosition + " - Node atRealStartNodePOsitiono : " + prevRoutes.valueAtPosition(realStartNodePosition).get)
   //          println("End Node position : " + endNodePosition + " - Node at endNodePosition : " + prevRoutes.valueAtPosition(endNodePosition).get + " -- RealEndNodePosition : " + realEndNodePosition + " - Node atRealEndNodePOsitiono : " + prevRoutes.valueAtPosition(realEndNodePosition).get)
-            val startNode = prevRoutes.valueAtPosition(startNodePosition).get
+
+            //TODO: the invariant wastes a lot of time on these calls. This coulb be improved, notably
+            // by indexing the precomputes by position instead of indexing by node identyty
+            // or by improving the seq data structure with a cache for these pivotal nodes that define boundary of segments.
+
+          val startNode = prevRoutes.valueAtPosition(startNodePosition).get
             val endNode = prevRoutes.valueAtPosition(endNodePosition).get
             //println("NextEndNode : " + explorer.get.value)
             if (!rev) {
