@@ -79,14 +79,14 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
   override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
     println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.map({
-      case s@LogReducedPreComputedSubSequence(startNode, endNode, _)=>
+      case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
-      case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
+        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+      case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
+        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
       case s@LogReducedNewNode(_, _) =>
         1
     }).sum
@@ -166,16 +166,17 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
+    println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.map({
-      case s@LogReducedPreComputedSubSequence(startNode, endNode, _)=>
+      case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
-      case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
+        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+      case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
-      case s@LogReducedNewNode(node,_) =>
+        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+      case s@LogReducedNewNode(_, _) =>
         1
     }).sum
   }
