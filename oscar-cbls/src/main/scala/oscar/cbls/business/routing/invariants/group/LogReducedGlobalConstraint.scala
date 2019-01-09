@@ -332,8 +332,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
 
     val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1
     val levelStep = 1 << maxLevel
-
-
+    
     if(startPositionInRoute + levelStep > endPositionInRoute+1){
       //we need to go down
       extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
