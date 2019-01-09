@@ -101,9 +101,9 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
     segments match{
       case Nil =>
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
-        List(LogReducedPreComputedSubSequence[T](
+        List(LogReducedPreComputedSubSequenceGiven[T](
           vehicle: Int, vehicle: Int,
-          stepGenerator = () => QList(endNodeValue(vehicle))))
+          QList(endNodeValue(vehicle))))
       case head :: tail =>
         head match{
           case PreComputedSubSequence
@@ -114,28 +114,26 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               require(vehicle == startNodeValue.vehicle)
               //println("FROM START EXTREME!")
 
-              LogReducedPreComputedSubSequence[T](
+              LogReducedPreComputedSubSequenceGiven[T](
                 startNode: Int, endNode: Int,
-                stepGenerator = () =>
-                  QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
+                QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
               ) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
 
             } else if(
               startNodeValue.vehicle == vehicle
                 && tail.isEmpty //tested second because more time consuming than the first condition
                 && endNodeValue.positionInVehicleRoute == vehicleToExtremePrecomputes(vehicle).length-2
-                ){
+            ){
               //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
 
               //println("TO END EXTREME!")
 
-              List(LogReducedPreComputedSubSequence[T](
+              List(LogReducedPreComputedSubSequenceGiven[T](
                 startNode: Int, endNode: Int,
-                stepGenerator = () =>
-                  QList(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
+                QList(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
               ))
             }else{
-              LogReducedPreComputedSubSequence[T](
+              LogReducedPreComputedSubSequenceLazy[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,

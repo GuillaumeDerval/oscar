@@ -822,6 +822,8 @@ class MovedIntSequence(val seq:IntSequence,
                        val flip:Boolean)
   extends StackedUpdateIntSequence{
 
+  //TODO: provide a cache on the values at the boundary of the move
+
   override def unorderedContentNoDuplicate : List[Int] = seq.unorderedContentNoDuplicate
 
   override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
