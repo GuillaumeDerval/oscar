@@ -73,7 +73,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                            earliestLeavingTime: Array[Int],
                                            latestLeavingTime: Array[Int],
                                            travelTimeMatrix: Array[Array[Int]],
-                                           violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraint [TransferFunction, Boolean](routes,v){
+                                           violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
@@ -199,34 +199,35 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                  lastNode: Int = vehicle,
                                  previousLeavingTime: Option[Int] = Some(0)): Option[Int] ={
       val (newLastNode, newLeavingTime): (Int,Option[Int]) = logReducedSegments.head match{
-        case s: LogReducedPreComputedSubSequence[TransferFunction] =>
+        case s@LogReducedPreComputedSubSequence(startNode, endNode, _) =>
+          println(s)
           if(s.steps.isEmpty)
-            (s.endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(s.endNode)))
+            (endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(endNode)))
           else {
             val leavingTimeWithoutLastNode = composeTransferFunctions(s.steps, previousLeavingTime, lastNode)
             val leavingTimeWithLastNode =
               if(leavingTimeWithoutLastNode.isEmpty)
                 None
               else
-                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(s.endNode))
-            (s.endNode,leavingTimeWithLastNode)
+                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(endNode))
+            (endNode,leavingTimeWithLastNode)
           }
 
-        case s: LogReducedFlippedPreComputedSubSequence[TransferFunction] =>
+        case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
           if(s.steps.isEmpty)
-            (s.endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(s.endNode)))
+            (endNode, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(endNode)))
           else{
             val leavingTimeWithoutLastNode = composeTransferFunctions(s.steps, previousLeavingTime, lastNode)
             val leavingTimeWithLastNode =
               if(leavingTimeWithoutLastNode.isEmpty)
                 None
               else
-                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(s.endNode))
-            (s.endNode,leavingTimeWithLastNode)
+                computeLeavingTime(leavingTimeWithoutLastNode.get, s.steps.last.to, transferFunctionOfNode(endNode))
+            (endNode,leavingTimeWithLastNode)
           }
 
-        case s: LogReducedNewNode[TransferFunction] =>
-          (s.node, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(s.node)))
+        case s@LogReducedNewNode(node) =>
+          (node, computeLeavingTime(previousLeavingTime.get, lastNode, transferFunctionOfNode(node)))
         }
 
       if (newLeavingTime.nonEmpty && logReducedSegments.tail.nonEmpty)

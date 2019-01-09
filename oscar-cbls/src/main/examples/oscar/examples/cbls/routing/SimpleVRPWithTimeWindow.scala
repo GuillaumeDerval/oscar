@@ -188,8 +188,8 @@ object SimpleVRPWithTimeWindow extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  //search.verbose = 1
-  search.verboseWithExtraInfo(2, ()=> "" + myVRP)
+  search.verbose = 1
+  //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 
 

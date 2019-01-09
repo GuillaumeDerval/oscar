@@ -46,7 +46,7 @@ object VRPWithOnlyTimeWindow extends App {
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
   val timeWindowConstraints = List(2)
   // Add true if you want to run with Best and/or false if you want to run with First
-  val bests = List(true)
+  val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(1,2)
   // The variations of n values
