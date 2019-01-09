@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.invariants.group
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
@@ -96,12 +97,13 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
                                segments:List[Segment[VehicleAndPosition]],
                                isFirst:Boolean):List[LogReducedSegment[T]] = {
 
+    //TODO: it seems that the list construction produces a significant overhead. These might be replaced by QLists.
     segments match{
       case Nil =>
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
         List(LogReducedPreComputedSubSequence[T](
           vehicle: Int, vehicle: Int,
-          stepGenerator = () => List(endNodeValue(vehicle))))
+          stepGenerator = () => QList(endNodeValue(vehicle))))
       case head :: tail =>
         head match{
           case PreComputedSubSequence
@@ -115,12 +117,14 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
+                  QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
               ) :: decorateSegmentsExtremes(vehicle:Int, segments = tail,isFirst = false)
 
-            } else if(tail.isEmpty
-                && startNodeValue.vehicle == vehicle
-                && endNodeValue.positionInVehicleRoute == vehicleToExtremePrecomputes(vehicle).length-2){
+            } else if(
+              startNodeValue.vehicle == vehicle
+                && tail.isEmpty //tested second because more time consuming than the first condition
+                && endNodeValue.positionInVehicleRoute == vehicleToExtremePrecomputes(vehicle).length-2
+                ){
               //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
 
               //println("TO END EXTREME!")
@@ -128,7 +132,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               List(LogReducedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () =>
-                  List(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
+                  QList(vehicleToExtremePrecomputes(vehicle)(startNodeValue.positionInVehicleRoute).toEnd)
               ))
             }else{
               LogReducedPreComputedSubSequence[T](

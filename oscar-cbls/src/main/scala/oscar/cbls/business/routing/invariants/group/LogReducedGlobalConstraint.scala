@@ -16,6 +16,7 @@ package oscar.cbls.business.routing.invariants.group
   ******************************************************************************/
 
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
@@ -36,9 +37,9 @@ sealed abstract class LogReducedSegment[T]()
   */
 case class LogReducedPreComputedSubSequence[T](startNode:Int,
                                                endNode:Int,
-                                               stepGenerator: () => List[T]) extends LogReducedSegment[T]{
+                                               stepGenerator: () => QList[T]) extends LogReducedSegment[T]{
 
-  lazy val steps:List[T] = stepGenerator()
+  lazy val steps:QList[T] = stepGenerator()
 
   override def toString: String = {
     "LogReducedPreComputedSubSequence(startNode:" + startNode +
@@ -60,9 +61,9 @@ case class LogReducedPreComputedSubSequence[T](startNode:Int,
   */
 case class LogReducedFlippedPreComputedSubSequence[T](startNode:Int,
                                                       endNode:Int,
-                                                      stepGenerator: () => List[T]) extends LogReducedSegment[T]{
+                                                      stepGenerator: () => QList[T]) extends LogReducedSegment[T]{
 
-  lazy val steps:List[T] = stepGenerator()
+  lazy val steps:QList[T] = stepGenerator()
 
   override def toString: String = {
     "LogReducedFlippedPreComputedSubSequence(startNode:" + startNode +
@@ -267,7 +268,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
         List(LogReducedPreComputedSubSequence[T](
           vehicle: Int, vehicle: Int,
-          stepGenerator = () => List(endNodeValue(vehicle))))
+          stepGenerator = () => QList(endNodeValue(vehicle))))
 
       case head :: tail =>
         head match {
@@ -311,7 +312,7 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
   def extractSequenceOfT(vehicle:Int,
                          startPositionInRoute:Int,
                          endPositionInRoute:Int,
-                         flipped:Boolean):List[T] = {
+                         flipped:Boolean):QList[T] = {
 
     if(flipped){
       extractSequenceOfTUnflippedGoingUp(vehicleToPrecomputes(vehicle),
@@ -326,14 +327,13 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
 
   private def extractSequenceOfTUnflippedGoingUp(vehiclePreComputes:Array[NodeAndPreComputes],
                                                  startPositionInRoute:Int,
-                                                 endPositionInRoute:Int):List[T] = {
+                                                 endPositionInRoute:Int):QList[T] = {
 
-    if(startPositionInRoute == endPositionInRoute+1) return List.empty
+    if(startPositionInRoute == endPositionInRoute+1) return null
 
     val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1
     val levelStep = 1 << maxLevel
-
-
+    
     if(startPositionInRoute + levelStep > endPositionInRoute+1){
       //we need to go down
       extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
@@ -342,19 +342,20 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
         maxLevel-1)
     }else{
       //take the step and go up
-      vehiclePreComputes(startPositionInRoute).precomputes(maxLevel) ::
+      QList(
+        vehiclePreComputes(startPositionInRoute).precomputes(maxLevel),
         extractSequenceOfTUnflippedGoingUp(vehiclePreComputes:Array[NodeAndPreComputes],
           startPositionInRoute + levelStep,
-          endPositionInRoute:Int)
+          endPositionInRoute:Int))
     }
   }
 
   private def extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
                                                    startPositionInRoute:Int,
                                                    endPositionInRoute:Int,
-                                                   maxLevel:Int):List[T] = {
+                                                   maxLevel:Int):QList[T] = {
 
-    if(startPositionInRoute == endPositionInRoute+1) return List.empty
+    if(startPositionInRoute == endPositionInRoute+1) return null
 
     val levelStep = 1 << maxLevel
 
@@ -366,11 +367,12 @@ abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:Changing
         maxLevel-1)
     }else{
       //take the step and go down
-      vehiclePreComputes(startPositionInRoute).precomputes(maxLevel) ::
+      QList(
+        vehiclePreComputes(startPositionInRoute).precomputes(maxLevel),
         extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
           startPositionInRoute + levelStep,
           endPositionInRoute:Int,
-          maxLevel-1)
+          maxLevel-1))
     }
   }
 }

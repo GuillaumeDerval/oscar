@@ -16,6 +16,7 @@ package oscar.cbls.business.routing.invariants.group
   ******************************************************************************/
 
 
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.{CBLSIntVar, Variable}
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
@@ -81,12 +82,12 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
       case s@LogReducedPreComputedSubSequence(startNode, endNode, _)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
+        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
       case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
-      case s@LogReducedNewNode(node, _) =>
+        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
+      case s@LogReducedNewNode(_, _) =>
         1
     }).sum
   }
@@ -169,11 +170,11 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
       case s@LogReducedPreComputedSubSequence(startNode, endNode, _)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
+        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
       case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, _) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        if(s.steps.isEmpty) 1 else s.steps.map(_.nbNodes-1).sum+1
+        QList.qFold[NodesOnSubsequence,Int](s.steps,(a,b) => a + b.nbNodes,0)
       case s@LogReducedNewNode(node,_) =>
         1
     }).sum

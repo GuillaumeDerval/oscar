@@ -59,6 +59,16 @@ object QList{
     if(q == null) null
     else q.qMap(fun)
   }
+
+  def qFold[T,@specialized(Int)X](q:QList[T],accF:(X,T) => X,initX:X):X = {
+    var l = q
+    var acc = initX
+    while(l != null){
+      acc = accF(acc,l.head)
+      l = l.tail
+    }
+    acc
+  }
 }
 
 class IterableQList[@specialized T](l:QList[T]) extends Iterable[T]{
