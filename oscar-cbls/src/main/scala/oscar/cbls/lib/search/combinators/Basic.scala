@@ -380,6 +380,9 @@ class Retry(a: Neighborhood, cond: Int => Boolean = _ <= 1) extends Neighborhood
   * @param f a function that generated the neighborhood to explore
   */
 class Dyn(f:() => Neighborhood) extends Neighborhood {
-  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
-    f().getMove(obj, initialObj, acceptanceCriterion)
+  override def getMove(obj: Objective, initialObj: Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    val neighborhood = f()
+    neighborhood.verbose = this.verbose
+    neighborhood.getMove(obj, initialObj, acceptanceCriterion)
+  }
 }
