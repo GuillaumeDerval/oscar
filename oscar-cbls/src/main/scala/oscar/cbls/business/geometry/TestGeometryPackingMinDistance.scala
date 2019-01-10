@@ -1,6 +1,5 @@
 package oscar.cbls.business.geometry
 
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -31,7 +30,7 @@ import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
 
-object TestGeometryPacking extends App{
+object TestGeometryPackingMinDistance extends App{
 
   val store = Store()
 
@@ -86,16 +85,24 @@ object TestGeometryPacking extends App{
     Sum(intersectionAreaFullMatrix(circleID)).setName("overlapArea(shape_" + circleID + ")")
   )
 
+  val relevantDistances = List((0,1),(1,2),(1,3),(2,4),(3,5),(4,5),(5,6))
+
+  val distancesArray = relevantDistances.map({case (fromId,toId) => {
+    val (x1, y1) = coordArray(fromId)
+    val (x2, y2) = coordArray(toId)
+    Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2)))
+  }})
+
   //val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
-  val obj:Objective = totalIntersectionArea
+  val obj:Objective = Sum2(totalIntersectionArea,new Sum(distancesArray))
   store.close()
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   val randomColors = ColorGenerator.generateRandomTransparentColors(nbCircle,175).toList
 
-  val drawing = new GeometryDrawing(List.empty)
+  val drawing = new GeometryDrawing(relevantDistances)
 
   def updateDisplay() {
     val colorsIt = randomColors.toIterator

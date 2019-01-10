@@ -1,8 +1,0 @@
-
-beaucoup de minima locaux en placement
-
-pour l'overlap, quantifier plut^pot par la "profondeur de pénétration"
-qui serait moins coûteuse à calculer que la surface d'overlap
-
-
-proposer une approche avec deux fonctions objectif: une pour les contraintes fortes, l'autre pour la fonction à minimizser.

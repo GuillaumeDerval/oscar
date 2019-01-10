@@ -71,9 +71,9 @@ object WarehouseLocationTabu extends App{
   val tabuTenure = 3
   val switchWithTabuNeighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouseTabu",
     searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
-    afterMove {case a:AssignMove =>
+    afterMoveOnMove {a:AssignMove =>
     TabuArray(a.id) := It.value + tabuTenure
-    It :+= 1 } acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
+    It :+= 1} acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 
   switchWithTabuNeighborhood.verbose = 1
 
@@ -82,3 +82,5 @@ object WarehouseLocationTabu extends App{
 
   println(openWarehouses)
 }
+
+

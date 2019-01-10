@@ -69,7 +69,7 @@ class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
 
 case class Intersection(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry], preCheck:Boolean)
   extends CBLSGeometryInvariant(store:Store,
-    initialValue= if (preCheck && !(a.value intersects b.value)) geometry.emptyPolygon else a.value intersection b.value)
+    initialValue = if (preCheck && !(a.value intersects b.value)) geometry.emptyPolygon else a.value intersection b.value)
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
