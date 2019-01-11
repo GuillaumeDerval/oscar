@@ -164,10 +164,13 @@ package object cbls extends ModelingAPI{
   final val ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
 
   //implicits
-  implicit def intToIntVarOps(i:Int):IntVarOps = IntVarOps(CBLSIntConst(i))
+  implicit def intToIntVarOps(i:Int):IntValOps = IntValOps(CBLSIntConst(i))
 
   //some implicit for the CBLS variables, to add infix operators
-  implicit class IntVarOps(x: IntValue) {
+
+  implicit def intVarOps(x:CBLSIntVar):IntValOps = new IntValOps(x)
+
+  implicit class IntValOps(x: IntValue) {
     def +(v: IntValue): IntInvariant = Sum2(x, v)
 
     def -(v: IntValue): IntInvariant = Minus(x, v)

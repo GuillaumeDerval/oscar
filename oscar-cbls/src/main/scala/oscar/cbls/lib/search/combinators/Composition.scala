@@ -176,6 +176,7 @@ class DynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChain
         //first, let's instantiate it:
         val currentMoveFromA = a.instantiateCurrentMove(intermediaryObjValue)
         currentB = b(currentMoveFromA)
+        currentB.verbose = a.verbose //passing verbosity to b, because b.verbose was not set when it was set of a
 
         class secondInstrumentedObjective(obj:Objective) extends Objective{
           override def detailedString(short : Boolean, indent : Int) : String = obj.detailedString(short,indent)
@@ -229,8 +230,11 @@ case class DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportFo
     (m:FirstMoveType) => b(m,instrumentedA.snapShot),
     maximalIntermediaryDegradation)
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
-    slave.getMove(obj,initialObj,acceptanceCriterion)
+
+  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+    slave.verbose = this.verbose
+    slave.getMove(obj, initialObj, acceptanceCriterion)
+  }
 }
 
 case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariable])

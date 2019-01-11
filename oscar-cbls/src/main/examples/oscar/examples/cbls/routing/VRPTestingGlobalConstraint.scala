@@ -1,7 +1,6 @@
 package oscar.examples.cbls.routing
 
 import oscar.cbls._
-import oscar.cbls.IntVarOps
 import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.group._
