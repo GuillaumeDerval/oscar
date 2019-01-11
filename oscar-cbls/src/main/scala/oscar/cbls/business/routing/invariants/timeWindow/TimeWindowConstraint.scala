@@ -236,22 +236,22 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       * @param prevLeavingTime The leave time at previous segment (0 if first one)
       * @return The leave time after going through all the segments
       */
-    def arrivalAtDepot(segments: List[Segment[Array[TransferFunction]]], previousSegmentEnd: Option[Int] = None, prevLeavingTime: Int = 0): Option[Int] ={
-      val segment = segments.head
+    def arrivalAtDepot(segments: Iterator[Segment[Array[TransferFunction]]], previousSegmentEnd: Int = vehicle, prevLeavingTime: Int = 0): Int ={
+      val segment = segments.next
       val (segmentStart, segmentEnd, transferFunction) = segmentsInfo(segment)
-      val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd.getOrElse(vehicle))(segmentStart)
+      val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd)(segmentStart)
       val leaveTimeAtSegment = transferFunction(arrivalTimeAtSegment)
-      if(leaveTimeAtSegment.isDefined) {
-        if (segments.tail.nonEmpty)
-          arrivalAtDepot(segments.tail, Some(segmentEnd), leaveTimeAtSegment.get)
+      if(leaveTimeAtSegment >= 0) {
+        if (segments.hasNext)
+          arrivalAtDepot(segments, segmentEnd, leaveTimeAtSegment)
         else
-          Some(leaveTimeAtSegment.get + travelTimeMatrix(segmentEnd)(vehicle))
+          leaveTimeAtSegment + travelTimeMatrix(segmentEnd)(vehicle)
       }
-      else None
+      else leaveTimeAtSegment
     }
 
-    val arrivalTimeAtDepot = arrivalAtDepot(segments)
-    arrivalTimeAtDepot.isEmpty || arrivalTimeAtDepot.get > latestLeavingTime(vehicle)
+    val arrivalTimeAtDepot = arrivalAtDepot(segments.toIterator)
+    arrivalTimeAtDepot < 0 || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**
@@ -316,7 +316,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     */
   def transferFunctions(routes: IntSequence): Array[Array[TransferFunction]] ={
     val transferFunctions: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
-    for(curV <- 2 to 2){
+    for(curV <- 0 to v){
       performPreCompute(curV, routes, transferFunctions)
     }
 

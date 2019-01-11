@@ -13,7 +13,7 @@ package oscar.cbls.business.routing.invariants.timeWindow
 abstract class TransferFunction(val ea: Int, val la: Int, val el: Int, val from: Int, val to: Int){
 
   // This method is used to compute the leaving time
-  def apply(t: Int): Option[Int]
+  def apply(t: Int): Int
 
   // If true it means that the TransferFunction isn't defined
   // and that apply() return always None
@@ -27,13 +27,13 @@ abstract class TransferFunction(val ea: Int, val la: Int, val el: Int, val from:
 case class DefinedTransferFunction(override val ea: Int, override val la: Int, override val el: Int,
                                    override val from: Int, override val to: Int) extends TransferFunction(ea,la,el,from,to){
   require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
-  override def apply(t: Int): Option[Int] = {
+  override def apply(t: Int): Int = {
     if(t <= ea)
-      Some(el)
+      el
     else if(t <= la)
-      Some(t + el - ea)
+      t + el - ea
     else
-      None
+      -1
   }
 
   override def isEmpty: Boolean = false
@@ -44,7 +44,7 @@ case class DefinedTransferFunction(override val ea: Int, override val la: Int, o
 }
 
 case object EmptyTransferFunction extends TransferFunction(1,-1,-1,-1,-1){
-  override def apply(t: Int): Option[Int] = None
+  override def apply(t: Int): Int = -1
 
   override def isEmpty: Boolean = true
 

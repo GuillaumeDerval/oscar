@@ -33,9 +33,9 @@ object VRPWithOnlyTimeWindow extends App {
                   case 2 => new VRPWithOnlyTimeWindow(twc, n, v).run2(best)
                   case 3 => new VRPWithOnlyTimeWindow(twc, n, v).run3(best)
                 }).
-                foldLeft(Array(0,0))((acc,item) =>
+                foldLeft(Array[Long](0,0,0,0,0,0,0,0,0,0,0))((acc,item) =>
                   Array(acc(0) + item._1,acc(1) + item._2)).toList.map(_/iterations)
-              println("Average quality : " + res.head + "\nAverage duration : " + res.last + "\n")
+              println("Average quality : " + res.head + "\nAverage duration (ms) : " + res(1) + "\n")
             }
           }
         }
@@ -44,11 +44,11 @@ object VRPWithOnlyTimeWindow extends App {
   }
 
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
-  val timeWindowConstraints = List(0)
+  val timeWindowConstraints = List(2)
   // Add true if you want to run with Best and/or false if you want to run with First
-  val bests = List(true)
+  val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2)
+  val procedures = List(1,2,3)
   // The variations of n values
   val ns_1 = List(50, 100, 200, 500, 1000)
   val ns_2 = List(1000)
@@ -57,13 +57,13 @@ object VRPWithOnlyTimeWindow extends App {
   val vs_2 = List(5, 10, 20, 50, 100)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 1
+  val iterations = 20
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
-class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10){
+class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10, fullInfo: Boolean = false){
   val m = new Store(noCycle = false)
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
@@ -73,6 +73,7 @@ class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10){
 
   val myVRP =  new VRP(m,n,v)
 
+  var globalConstraintWithLogReduc: Option[TimeWindowConstraintWithLogReduction] = None
   // Distance
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
@@ -141,6 +142,7 @@ class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10){
           timeWindowExtension.latestLeavingTimes,
           timeWindowExtension.taskDurations,
           timeMatrix, violations)
+      globalConstraintWithLogReduc = Some(smartTimeWindowInvariant)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
