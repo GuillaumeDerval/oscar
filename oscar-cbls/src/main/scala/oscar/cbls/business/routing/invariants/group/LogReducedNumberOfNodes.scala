@@ -77,7 +77,6 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
-    println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
@@ -166,7 +165,6 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
   override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
-    println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
