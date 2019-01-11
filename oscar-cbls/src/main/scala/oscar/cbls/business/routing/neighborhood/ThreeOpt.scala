@@ -64,7 +64,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
   val v = vrp.v
   val seq = vrp.routes
 
-  def exploreNeighborhood(): Unit = {
+  def exploreNeighborhood(initialObj: Int): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     val (iterationSchemeOnZone,notifyFound1) = selectInsertionPointBehavior.toIterable(

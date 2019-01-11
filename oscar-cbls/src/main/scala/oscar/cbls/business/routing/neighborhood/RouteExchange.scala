@@ -37,7 +37,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
   var positionOfVehicleNextToSecond:Int = -1
   var secondVehicleIsEmpty:Boolean = false
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(firstVehicles(), startFirstVehicle)

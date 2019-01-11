@@ -72,7 +72,7 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
   val v = vrp.v
   val seq = vrp.routes
 
-  override def exploreNeighborhood(): Unit = {
+  override def exploreNeighborhood(initialObj: Int): Unit = {
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 

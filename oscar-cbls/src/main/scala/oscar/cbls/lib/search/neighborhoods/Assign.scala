@@ -19,33 +19,34 @@ import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
 import oscar.cbls.core.computation.{Variable, CBLSIntVar}
 import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
+
 /**
- * will find a variable in the array, and find a value from its range that improves the objective function
- *
- * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
- * @param name the name of the neighborhood
- * @param selectIndiceBehavior how should it iterate on the variables?
- * @param selectValueBehavior how should it iterate over the possible values to affect to the variable?
- * @param searchZone a subset of the indices of vars to consider.
- *                   If none is provided, all the array will be considered each time
- * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
- *                      ony one of the variable in each class will be considered to make search faster
- *                      Int.MinValue is considered different to itself
- *                      if you set to None this will not be used at all
- *                      variables of the same class with different values will not be considered as symmetrical
- * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
- *                              and returns a symmetry class for this variable and value
- *                              only values belonging to different symmetry classes will be tested
- *                             Int.MinValue is considered different to itself
- *                             (this is only useful if your model is awfully expensive to evaluate)
- * @param domain a function that receives a variable and its Id in the vars array
- *               and returns the domain that is searched for the variable
- *               by default, the domain of the variable is explored
- * @param hotRestart  if true, the exploration order in case you ar not going for the best is a hotRestart
- *                    even if you specify a searchZone that is: the exploration starts again
- *                    at the position where it stopped, and consider the indices in increasing order
- *                    if false, consider the exploration range in natural order from the first position.
- */
+  * will find a variable in the array, and find a value from its range that improves the objective function
+  *
+  * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
+  * @param name the name of the neighborhood
+  * @param selectIndiceBehavior how should it iterate on the variables?
+  * @param selectValueBehavior how should it iterate over the possible values to affect to the variable?
+  * @param searchZone a subset of the indices of vars to consider.
+  *                   If none is provided, all the array will be considered each time
+  * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
+  *                      ony one of the variable in each class will be considered to make search faster
+  *                      Int.MinValue is considered different to itself
+  *                      if you set to None this will not be used at all
+  *                      variables of the same class with different values will not be considered as symmetrical
+  * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
+  *                              and returns a symmetry class for this variable and value
+  *                              only values belonging to different symmetry classes will be tested
+  *                             Int.MinValue is considered different to itself
+  *                             (this is only useful if your model is awfully expensive to evaluate)
+  * @param domain a function that receives a variable and its Id in the vars array
+  *               and returns the domain that is searched for the variable
+  *               by default, the domain of the variable is explored
+  * @param hotRestart  if true, the exploration order in case you ar not going for the best is a hotRestart
+  *                    even if you specify a searchZone that is: the exploration starts again
+  *                    at the position where it stopped, and consider the indices in increasing order
+  *                    if false, consider the exploration range in natural order from the first position.
+  */
 case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
@@ -63,7 +64,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
   var currentIndice:Int = 0
   var newVal:Int = 0
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val iterationZone =
       if (searchZone == null) vars.indices
@@ -105,6 +106,106 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
             notifyFound2()
           }
         }
+      }
+    }
+
+    startIndice = currentIndice + 1
+  }
+
+  override def instantiateCurrentMove(newObj:Int) =
+    AssignMove(currentVar, newVal, currentIndice, newObj, name)
+
+  //this resets the internal state of the Neighborhood
+  override def reset(): Unit = {
+    startIndice = 0
+  }
+}
+
+
+/**
+ * will find a variable in the array, and find a value from its range that improves the objective function
+ *
+ * @param vars an array of [[oscar.cbls.core.computation.CBLSIntVar]] defining the search space
+ * @param name the name of the neighborhood
+ * @param selectIndiceBehavior how should it iterate on the variables?
+ * @param selectValueBehavior how should it iterate over the possible values to affect to the variable?
+ * @param searchZone a subset of the indices of vars to consider.
+ *                   If none is provided, all the array will be considered each time
+ * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
+ *                      ony one of the variable in each class will be considered to make search faster
+ *                      Int.MinValue is considered different to itself
+ *                      if you set to None this will not be used at all
+ *                      variables of the same class with different values will not be considered as symmetrical
+ * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
+ *                              and returns a symmetry class for this variable and value
+ *                              only values belonging to different symmetry classes will be tested
+ *                             Int.MinValue is considered different to itself
+ *                             (this is only useful if your model is awfully expensive to evaluate)
+ * @param domain a function that receives a variable and its Id in the vars array
+ *               and returns the domain that is searched for the variable
+ *               by default, the domain of the variable is explored
+ * @param hotRestart  if true, the exploration order in case you ar not going for the best is a hotRestart
+ *                    even if you specify a searchZone that is: the exploration starts again
+ *                    at the position where it stopped, and consider the indices in increasing order
+ *                    if false, consider the exploration range in natural order from the first position.
+ */
+case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
+                              name:String = "NumericAssignNeighborhood",
+                              selectIndiceBehavior:LoopBehavior = First(),
+                              selectValueBehavior:LoopBehavior = First(),
+                              searchZone:() => Iterable[Int] = null,
+                              symmetryClassOfVariables:Option[Int => Int] = None,
+                              symmetryClassOfValues:Option[Int => Int => Int] = None,
+                              domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
+                              domainExplorer:LinearOptimizer,
+                              hotRestart:Boolean = true)
+  extends EasyNeighborhoodMultiLevel[AssignMove](name){
+  //the indice to start with for the exploration
+  var startIndice:Int = 0
+
+  var currentVar:CBLSIntVar = null
+  var currentIndice:Int = 0
+  var newVal:Int = 0
+
+  override def exploreNeighborhood(initialObj: Int){
+
+    val iterationZone =
+      if (searchZone == null) vars.indices
+      else searchZone()
+
+    val iterationSchemeOnZone =
+      if (hotRestart) HotRestart(iterationZone, startIndice)
+      else iterationZone
+
+    val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
+      case None => iterationSchemeOnZone
+      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index:Int) => (s(index),vars(index).value))
+    }
+
+    //iterating over the variables to consider
+    val (indicesIterator,notifyFound1) = selectIndiceBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
+    while(indicesIterator.hasNext){
+      currentIndice = indicesIterator.next()
+      currentVar = vars(currentIndice)
+      //now we have the current variable
+
+      val oldVal = currentVar.value
+
+      val domainIterationScheme = symmetryClassOfValues match {
+        case None => domain(currentVar, currentIndice)
+        case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
+      }
+
+      def eval(value:Int):Int = {
+        this.newVal = value
+        obj.assignVal(currentVar,value)
+      }
+
+      val (newVal,bestObj) = domainExplorer.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
+      this.newVal = newVal
+
+      if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
+        notifyFound1()
       }
     }
 
