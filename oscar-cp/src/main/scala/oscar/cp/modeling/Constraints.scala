@@ -194,10 +194,18 @@ trait Constraints {
   }
 
   /**
-    * atLeastNValue Constraint (Available Filtering: Weak, Strong)
+    * The atLeastNValue Constraint counts the number of different values.
+    * The available filtering are Weak, Strong.
+    * The constraint is called atLeastNValue because the upper-bound of nValue
+    * is not used to prune the domains of variables in vars.
+    * This constraint is typically used to maximize the number of different values
+    * in an objective function.
+    * It can be viewed as a soft/relaxed-version of an allDifferent contraint.
+    * see: Specific filtering algorithms for over-constrained problems
+    * Thierry Petit, Jean-Charles Régin, Christian Bessiere
     *
     * @param vars   an non empty collection of variables
-    * @param nValue the minimal number of different values in vars
+    * @param nValue the number of different values in vars
     * @return a constraint ensuring that nValue is the number of different values in vars
     */
   def atLeastNValue(vars: Iterable[CPIntVar], nValue: CPIntVar): Constraint = {

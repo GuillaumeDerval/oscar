@@ -18,7 +18,7 @@ package oscar.cbls.test.routing
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
-
+/*
 class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(m,n,v,maxPivot){
 
@@ -83,4 +83,4 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   search.doAllMoves(obj=myVRP.obj)
-}
+}*/
