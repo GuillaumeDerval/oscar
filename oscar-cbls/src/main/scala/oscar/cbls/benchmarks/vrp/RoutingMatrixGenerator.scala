@@ -99,9 +99,9 @@ object RoutingMatrixGenerator {
       * This method generate a time window for a given node on a given vehicle
       * It's divided in several step :
       *   1°  We add the travel time from the previous node to the current node to the endOfLastActionOfVehicles
-      *   2°  We set the earlyline of the node
+      *   2°  We set the earliestArrivalTime of the node
       *   3°  We add the taskDuration of the node to the endOfLastActionOfVehicles
-      *   4°  We set the deadline of the node by adding a random extraTravelTime and
+      *   4°  We set the latestLeavingTime of the node by adding a random extraTravelTime and
       *       the random extraTravelTime from the previous node to the endOfLastActionOfVehicles
       *   5°  We update the last node visited by the vehicle
       * @param node

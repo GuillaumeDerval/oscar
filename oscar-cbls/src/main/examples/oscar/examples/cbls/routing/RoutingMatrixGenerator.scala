@@ -167,11 +167,11 @@ object RoutingMatrixGenerator {
     * @param chains The chains of the problem
     * @return An updated chains list (with lonely nodes)
     */
-  private def addLonelyNodesToChains(n: Int, chains: List[List[Int]]): List[List[Int]]={
-    val lonelyNodes = Range(0,n).toList.diff(chains.flatten)
+  private def addLonelyNodesToChains(n: Int, v:Int, chains: List[List[Int]]): List[List[Int]]={
+    val lonelyNodes = Range(v,n).toList.diff(chains.flatten)
     var precedencesWithLonelyNodes = chains
     for(lonelyNode <- lonelyNodes)
-      lonelyNode :: precedencesWithLonelyNodes
+      precedencesWithLonelyNodes = List(lonelyNode) :: precedencesWithLonelyNodes
     precedencesWithLonelyNodes
   }
 
@@ -180,7 +180,7 @@ object RoutingMatrixGenerator {
     *
     * It works like this :
     *   We add each precedence to a randomly selected vehicle.
-    *     We randomly generate the earlyline, taskDuration and deadline for each node of the precedence
+    *     We randomly generate the earliestArrivalTime, taskDuration and latestLeavingTime for each node of the precedence
     *
     * This way there is always at least one solution for the problem.
     *
@@ -189,7 +189,7 @@ object RoutingMatrixGenerator {
     * @param timeMatrix The travel time matrix
     * @param precedences The list of precedences
     * @param maxIdlingTimeInSec The maximum idling time (the time between two precedences)
-    * @param maxExtraTravelTimeInSec The maximum extra travel time (time added to earlylines in order to have a more permissive time window)
+    * @param maxExtraTravelTimeInSec The maximum extra travel time (time added to earliestArrivalTimes in order to have a more permissive time window)
     * @param maxTaskDurationInSec The maximum duration of a task
     * @return The time window for each node
     */
@@ -205,7 +205,7 @@ object RoutingMatrixGenerator {
     def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
     def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
 
-    val precedencesWithLonelyNodes = addLonelyNodesToChains(n, precedences)
+    val precedencesWithLonelyNodes = addLonelyNodesToChains(n, v, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0)
     val lastNodeVisitedOfVehicles = Array.tabulate(v)(x => x)
     val extraTravelTimeOfNodes = Array.tabulate(n)(node => if(node < v)0 else randomExtraTravelTime)
@@ -218,9 +218,9 @@ object RoutingMatrixGenerator {
       * This method generate a time window for a given node on a given vehicle
       * It's divided in several step :
       *   1°  We add the travel time from the previous node to the current node to the endOfLastActionOfVehicles
-      *   2°  We set the earlyline of the node
+      *   2°  We set the earliestArrivalTime of the node
       *   3°  We add the taskDuration of the node to the endOfLastActionOfVehicles
-      *   4°  We set the deadline of the node by adding a random extraTravelTime and
+      *   4°  We set the latestLeavingTime of the node by adding a random extraTravelTime and
       *       the random extraTravelTime from the previous node to the endOfLastActionOfVehicles
       *   5°  We update the last node visited by the vehicle
       * @param node
@@ -249,7 +249,7 @@ object RoutingMatrixGenerator {
   }
 
   /**
-    * Based on precedences and earlylines, this methods generate a map of maxTravelDuration.
+    * Based on precedences and earliestArrivalTimes, this methods generate a map of maxTravelDuration.
     * These values, when added to the constraints system ensure that the travel duration between A and B
     * doesn't exceeds a specified value.
     *
@@ -262,18 +262,18 @@ object RoutingMatrixGenerator {
     *   leaveTime(A) + travel duration to C + taskDuration at C + travel duration to B <= 900
     *
     * @param precedences The list of precedences
-    * @param earlylines The array of earlylines (We can't start the task at this node before the earlyline value)
+    * @param earliestArrivalTimes The array of earliestArrivalTimes (We can't start the task at this node before the earliestArrivalTime value)
     * @param travelDurationMatrix The travel time matrix
     * @return A Map[(from,to) -> maxTravelDuration]
     */
   def generateMaxTravelDurations(precedences: List[List[Int]],
-                                 earlylines: Array[Int],
+                                 earliestArrivalTimes: Array[Int],
                                  travelDurationMatrix: TTFMatrix): Map[List[Int],Int] ={
     def maxTravelDurationOfPrecedence(from: Int, toProceed: List[Int], maxTravelDurations: List[(List[Int],Int)]): List[(List[Int],Int)] ={
       toProceed match{
         case Nil => maxTravelDurations
-        case to::Nil => (List(from,to),(travelDurationMatrix.getTravelDuration(from,earlylines(from),to)*1.5).toInt) :: maxTravelDurations
-        case to::tail => maxTravelDurationOfPrecedence(to, tail,(List(from,to),(travelDurationMatrix.getTravelDuration(from,earlylines(from),to)*1.5).toInt) :: maxTravelDurations)
+        case to::Nil => (List(from,to),(travelDurationMatrix.getTravelDuration(from,earliestArrivalTimes(from),to)*1.5).toInt) :: maxTravelDurations
+        case to::tail => maxTravelDurationOfPrecedence(to, tail,(List(from,to),(travelDurationMatrix.getTravelDuration(from,earliestArrivalTimes(from),to)*1.5).toInt) :: maxTravelDurations)
       }
     }
 
