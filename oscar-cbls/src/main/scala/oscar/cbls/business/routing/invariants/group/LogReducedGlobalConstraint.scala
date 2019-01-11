@@ -204,7 +204,7 @@ object LogReducedFlippedPreComputedSubSequence {
       * @return the value associated with the vehicle. This value should only be computed based on the provided segments
       */
     def computeVehicleValueComposed(vehicle: Int,
-                                    segments: List[LogReducedSegment[T]]): U
+                                    segments: QList[LogReducedSegment[T]]): U
 
     class NodeAndPreComputes(val node:Int,
                              var precomputes:Array[T] = null){
@@ -328,12 +328,12 @@ object LogReducedFlippedPreComputedSubSequence {
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Int,segments:List[Segment[VehicleAndPosition]]):List[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Int,segments:List[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
 
       segments match{
         case Nil =>
           //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
-          List(LogReducedPreComputedSubSequenceGiven[T](
+          QList(LogReducedPreComputedSubSequenceGiven[T](
             vehicle: Int, vehicle: Int,
             QList(endNodeValue(vehicle))))
 
@@ -348,31 +348,31 @@ object LogReducedFlippedPreComputedSubSequence {
                 && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2){
 
                 //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
-                List(LogReducedPreComputedSubSequenceLazy[T](
+                QList(LogReducedPreComputedSubSequenceLazy[T](
                   startNode: Int, vehicle:Int, //we set vehicle as the real end
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
                     vehicleToPrecomputes(vehicle).length-1, flipped = false)))
 
               }else {
-                LogReducedPreComputedSubSequenceLazy[T](
+                QList(LogReducedPreComputedSubSequenceLazy[T](
                   startNode: Int, endNode: Int,
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                    endNodeValue.positionInVehicleRoute, flipped = false)) :: decorateSegments(vehicle, tail)
+                    endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, tail))
               }
             case FlippedPreComputedSubSequence(
             startNode: Int, startNodeValue: VehicleAndPosition,
             endNode: Int, endNodeValue: VehicleAndPosition) =>
 
-              LogReducedFlippedPreComputedSubSequence[T](
+              QList(LogReducedFlippedPreComputedSubSequence[T](
                 startNode: Int, endNode: Int,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                  endNodeValue.positionInVehicleRoute, flipped = true))  :: decorateSegments(vehicle, tail)
+                  endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, tail))
 
             case NewNode(node: Int) =>
-              LogReducedNewNode[T](node: Int, value = nodeValue(vehicle))  :: decorateSegments(vehicle, tail)
+              QList(LogReducedNewNode[T](node: Int, value = nodeValue(vehicle)), decorateSegments(vehicle, tail))
           }
       }
     }

@@ -76,9 +76,9 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
     println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
-    segments.map({
+    segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
@@ -165,9 +165,9 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[NodesOnSubsequence]]): Int = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
     println("computeVehicleValueComposed(vehicle:" + vehicle + " segments:" + segments)
-    segments.map({
+    segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)

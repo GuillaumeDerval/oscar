@@ -173,7 +173,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: List[LogReducedSegment[TransferFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
 
     def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Int, lastNode: Int): Int ={
       val currentTransferFunction = transferFunctions.head
@@ -187,26 +187,25 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
       }
     }
 
-    def composeLogReduceSegments(logReducedSegments: List[LogReducedSegment[TransferFunction]],
+    def composeLogReduceSegments(logReducedSegments: QList[LogReducedSegment[TransferFunction]],
                                  lastNode: Int = vehicle,
                                  previousLeavingTime: Int = 0): Int ={
-      logReducedSegments match {
-        case Nil => previousLeavingTime
-        case head::tail =>
-          val (newLastNode, newLeavingTime): (Int,Int) = head match{
-            case s@LogReducedPreComputedSubSequence(_, endNode, steps) =>
-              (endNode,composeTransferFunctions(steps, previousLeavingTime, lastNode))
+      if(logReducedSegments == null) previousLeavingTime
+      else {
+        val (newLastNode, newLeavingTime): (Int, Int) = logReducedSegments.head match {
+          case s@LogReducedPreComputedSubSequence(_, endNode, steps) =>
+            (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode))
 
-            case s@LogReducedFlippedPreComputedSubSequence(_, endNode, steps) =>
-              (endNode,composeTransferFunctions(steps, previousLeavingTime, lastNode))
+          case s@LogReducedFlippedPreComputedSubSequence(_, endNode, steps) =>
+            (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode))
 
-            case s@LogReducedNewNode(node, transferFunctionOfNode) =>
-              (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode))
-          }
-          if(newLeavingTime >= 0)
-            composeLogReduceSegments(tail, newLastNode, newLeavingTime)
-          else
-            newLeavingTime
+          case s@LogReducedNewNode(node, transferFunctionOfNode) =>
+            (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode))
+        }
+        if (newLeavingTime >= 0)
+          composeLogReduceSegments(logReducedSegments.tail, newLastNode, newLeavingTime)
+        else
+          newLeavingTime
       }
     }
     composeLogReduceSegments(segments) < 0
