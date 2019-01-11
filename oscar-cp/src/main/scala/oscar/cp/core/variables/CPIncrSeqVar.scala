@@ -2,12 +2,12 @@ package oscar.cp.core.variables
 import oscar.algo.reversible.{ReversibleInt, ReversibleSet}
 import oscar.cp.core.CPStore
 
-class IncrSeqVar(
+class CPIncrSeqVar(
                   final val store: CPStore,
                   final val starts: Array[CPIntVar], //Starts of activities
                   final val ends: Array[CPIntVar], //Ends of activities
                   final val transitions: Array[Array[Int]], //Transition times
-                  final val dependencies: Array[(Int, Int)], //Dependencies between activities
+                  final val dependencies: Array[(Int, Int)] = Array(), //Dependencies between activities
                   final val minTime: Int = 0,
                   final val maxTime: Int = Integer.MAX_VALUE,
                   final val name: String = "SEQUENCE_VAR"
@@ -69,6 +69,11 @@ class IncrSeqVar(
     * @return true if the activity is possible
     */
   def isPossible(actId: Int): Boolean = ???
+
+  /**
+    * @return true if the activity is possible
+    */
+  def isPossibleNext(actId: Int): Boolean = ???
 
   /**
     * @return true if the activity is mandatory
