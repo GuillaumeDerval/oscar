@@ -108,7 +108,7 @@ object TestGeometryPacking extends App{
 
   updateDisplay()
 
-  SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console",1300,1300)
+  SingleFrameWindow.show(drawing,"searching for a packing without overlap",1300,1300)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

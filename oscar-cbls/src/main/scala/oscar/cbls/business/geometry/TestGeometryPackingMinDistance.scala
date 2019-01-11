@@ -115,7 +115,7 @@ object TestGeometryPackingMinDistance extends App{
 
   updateDisplay()
 
-  SingleFrameWindow.show(drawing,"a drawing with the standard oscar drawing console",1300,1300)
+  SingleFrameWindow.show(drawing,"Packing and minimizing some shape to shape distance",1300,1300)
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
