@@ -23,13 +23,13 @@ package oscar.cbls.business.routing.invariants.group
   * @param toPosAtCheckpoint0
   * @author Quentin Meurisse
   */
-abstract sealed class ComputationStep(val fromPosAtCheckpoint0: Int,
-                                      val toPosAtCheckpoint0: Int){
+abstract sealed class ComputationStep(val fromPosAtCheckpoint0: Long,
+                                      val toPosAtCheckpoint0: Long){
   def reverse() : ComputationStep
 }
 
-case class FetchFromPreCompute(override val fromPosAtCheckpoint0:Int,
-                               override val toPosAtCheckpoint0: Int,
+case class FetchFromPreCompute(override val fromPosAtCheckpoint0:Long,
+                               override val toPosAtCheckpoint0: Long,
                                flipPrecomputation:Boolean)
   extends ComputationStep(fromPosAtCheckpoint0, toPosAtCheckpoint0){
 
@@ -43,8 +43,8 @@ case class FetchFromPreCompute(override val fromPosAtCheckpoint0:Int,
   * @param topOfStack if the node is the inserted node for a InsertStackFunction
   * @author Quentin Meurisse
   * */
-case class FromScratch(override val fromPosAtCheckpoint0: Int,
-                       override val toPosAtCheckpoint0: Int,
+case class FromScratch(override val fromPosAtCheckpoint0: Long,
+                       override val toPosAtCheckpoint0: Long,
                        topOfStack:Boolean = false)
   extends ComputationStep(fromPosAtCheckpoint0, toPosAtCheckpoint0){
 

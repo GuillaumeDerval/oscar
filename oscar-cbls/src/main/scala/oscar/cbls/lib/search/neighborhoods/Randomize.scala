@@ -36,13 +36,13 @@ import scala.collection.immutable.SortedSet
  * @param name the name of the neighborhood
  */
 case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
-                                 degree:() => Int = ()=>1,
+                                 degree:() => Long = ()=>1L,
                                  name:String = "RandomizeNeighborhood",
-                                 searchZone:() => SortedSet[Int] = null,
-                                 valuesToConsider:(CBLSIntVar,Int) => Iterable[Int] = (variable,_) => variable.domain)
+                                 searchZone:() => SortedSet[Long] = null,
+                                 valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
@@ -53,19 +53,19 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
       //We move everything
       for(i <- searchZone()){
 
-        toReturn = AssignMove(vars(i),selectFrom(vars(i).domain),i,Int.MaxValue) :: toReturn
+        toReturn = AssignMove(vars(i),selectFrom(vars(i).domain),i,Long.MaxValue) :: toReturn
       }
     }else{
-      var touchedVars:Set[Int] = SortedSet.empty
-      for(r <- 1 to degreeNow){
-        val i = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
+      var touchedVars:Set[Long] = SortedSet.empty
+      for(r <- 1L to degreeNow){
+        val i = selectFrom(vars.indices,(j:Long) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
         touchedVars = touchedVars + i
         val oldVal = vars(i).value
-        toReturn = AssignMove(vars(i),selectFrom(valuesToConsider(vars(i),i),(_:Int) != oldVal),i,Int.MaxValue) :: toReturn
+        toReturn = AssignMove(vars(i),selectFrom(valuesToConsider(vars(i),i),(_:Long) != oldVal),i,Long.MaxValue) :: toReturn
       }
     }
     if(printExploredNeighborhoods) println(name + ": move found")
-    CompositeMove(toReturn, Int.MaxValue, name)
+    CompositeMove(toReturn, Long.MaxValue, name)
   }
 }
 
@@ -80,27 +80,27 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
  * @param name the name of the neighborhood
  */
 case class RandomSwapNeighborhood(vars:Array[CBLSIntVar],
-                                  degree:Int = 1,
+                                  degree:Long = 1L,
                                   name:String = "RandomSwapNeighborhood",
-                                  searchZone:() => SortedSet[Int] = null)  //TODO: search zone does not work!
+                                  searchZone:() => SortedSet[Long] = null)  //TODO: search zone does not work!
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
     var toReturn:List[Move] = List.empty
 
-    var touchedVars:Set[Int] = SortedSet.empty
+    var touchedVars:Set[Long] = SortedSet.empty
     val varsToMove = if (searchZone == null) vars.length else searchZone().size
-    for(r <- 1 to degree if varsToMove - touchedVars.size >= 2){
-      val i = selectFrom(vars.indices,(i:Int) => (searchZone == null || searchZone().contains(i)) && !touchedVars.contains(i))
+    for(r <- 1L to degree if varsToMove - touchedVars.size >= 2L){
+      val i = selectFrom(vars.indices,(i:Long) => (searchZone == null || searchZone().contains(i)) && !touchedVars.contains(i))
       touchedVars = touchedVars + i
-      val j = selectFrom(vars.indices,(j:Int) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
+      val j = selectFrom(vars.indices,(j:Long) => (searchZone == null || searchZone().contains(j)) && !touchedVars.contains(j))
       touchedVars = touchedVars + j
-      toReturn = SwapMove(vars(i), vars(j), i,j,Int.MaxValue) :: toReturn
+      toReturn = SwapMove(vars(i), vars(j), i,j,Long.MaxValue) :: toReturn
     }
 
     if(printExploredNeighborhoods) println(name + ": move found")
-    CompositeMove(toReturn, Int.MaxValue, name)
+    CompositeMove(toReturn, Long.MaxValue, name)
   }
 }

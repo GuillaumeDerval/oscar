@@ -42,7 +42,7 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   finishInitialization()
 
   //position in initial array -> position in sort
-  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0,0 to values.size,"ForwardPerm"))
+  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0L,0L to values.size,"ForwardPerm"))
 
   //reverse perm: position in sort -> position in initial array
 
@@ -53,7 +53,7 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
 
   {
     //initial sort of the variables, this is in brackets to free Sorting asap
-    val Sorting: Array[Int] = values.indices.toArray.sortBy(indice => values(indice).value)
+    val Sorting: Array[Long] = values.indices.toArray.sortBy(indice => values(indice).value)
     //sorting is position in sorting -> position in initial array
     for (i <- values.indices) {
       ReversePerm(i) := Sorting(i)
@@ -65,37 +65,37 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   def GetForwardPerm(): Array[CBLSIntVar] = ForwardPerm
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     if (NewVal > OldVal) BubbleUp(v, index)
     else BubbleDown(v, index)
   }
 
   @inline
-  private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Int) {
+  private def BubbleUp(v: ChangingIntValue, PositionInInitialArray: Long) {
     while (true) {
-      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValue
+      val PositionInSorting: Long = ForwardPerm(PositionInInitialArray).newValue
       if (PositionInSorting == values.indices.last) return //last position
-      val ValueAbove: Int = values(ReversePerm(PositionInSorting + 1).newValue).value //this shit returns the new value!!
-      if (ValueAbove < v.value) swap(PositionInSorting, PositionInSorting + 1)
+      val ValueAbove: Long = values(ReversePerm(PositionInSorting + 1L).newValue).value //this shit returns the new value!!
+      if (ValueAbove < v.value) swap(PositionInSorting, PositionInSorting + 1L)
       else return
     }
   }
 
   @inline
-  private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Int) {
+  private def BubbleDown(v: ChangingIntValue, PositionInInitialArray: Long) {
     while (true) {
-      val PositionInSorting: Int = ForwardPerm(PositionInInitialArray).newValue
-      if (PositionInSorting == 0) return //first position
-      val ValueBelow: Int = values(ReversePerm(PositionInSorting - 1).newValue).value
-      if (ValueBelow > v.value) swap(PositionInSorting, PositionInSorting - 1)
+      val PositionInSorting: Long = ForwardPerm(PositionInInitialArray).newValue
+      if (PositionInSorting == 0L) return //first position
+      val ValueBelow: Long = values(ReversePerm(PositionInSorting - 1L).newValue).value
+      if (ValueBelow > v.value) swap(PositionInSorting, PositionInSorting - 1L)
       else  return
     }
   }
 
   @inline
-  private def swap(PositionInSorting1: Int, PositionInSorting2: Int) {
-    val PositionInInitialArray1: Int = ReversePerm(PositionInSorting1).newValue
-    val PositionInInitialArray2: Int = ReversePerm(PositionInSorting2).newValue
+  private def swap(PositionInSorting1: Long, PositionInSorting2: Long) {
+    val PositionInInitialArray1: Long = ReversePerm(PositionInSorting1).newValue
+    val PositionInInitialArray2: Long = ReversePerm(PositionInSorting2).newValue
 
     ReversePerm(PositionInSorting1) := PositionInInitialArray2
     ReversePerm(PositionInSorting2) := PositionInInitialArray1
@@ -134,7 +134,7 @@ object Sort {
    */
   def MakeSort(values: Array[IntValue])  = {
     val m: Store = InvariantHelper.findModel(values)
-    val ReversePerm: Array[CBLSIntVar] = values.map(v => CBLSIntVar(m, 0, values.indices.start to values.indices.end, "reverse_perm"))
+    val ReversePerm: Array[CBLSIntVar] = values.map(v => CBLSIntVar(m, 0L, values.indices.start to values.indices.end, "reverse_perm"))
     new Sort(values, ReversePerm)
   }
 

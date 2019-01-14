@@ -38,7 +38,7 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  * THIS IS EXPERIMENTAL
  */
-class NonMoveableActivity(startDate: Int, duration: IntValue, planning: Planning,
+class NonMoveableActivity(startDate: Long, duration: IntValue, planning: Planning,
                           name: String = "")
   extends Activity(duration, planning, name) {
 
@@ -52,13 +52,13 @@ class NonMoveableActivity(startDate: Int, duration: IntValue, planning: Planning
   override def canAddPrecedence: Boolean = false
   override def close() {
 
-    additionalPredecessors := SortedSet.empty[Int]
-    allPrecedingActivities = SortedSet.empty[Int]
+    additionalPredecessors := SortedSet.empty[Long]
+    allPrecedingActivities = SortedSet.empty[Long]
     earliestStartDate := startDate
-    definingPredecessors = SortedSet.empty[Int]
-    potentiallyKilledPredecessors = SortedSet.empty[Int]
+    definingPredecessors = SortedSet.empty[Long]
+    potentiallyKilledPredecessors = SortedSet.empty[Long]
 
-    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount,
+    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0L until planning.activityCount,
       "succeeding_activities_of_" + name)
 
     //This is not correct. but since no task can be put before this one, this is not an issue.
@@ -72,6 +72,6 @@ class NonMoveableActivity(startDate: Int, duration: IntValue, planning: Planning
 }
 
 object NonMoveableActivity {
-  def apply(startDate: Int, duration: IntValue, planning: Planning, name: String = "") =
+  def apply(startDate: Long, duration: IntValue, planning: Planning, name: String = "") =
     new NonMoveableActivity(startDate, duration, planning, name)
 }

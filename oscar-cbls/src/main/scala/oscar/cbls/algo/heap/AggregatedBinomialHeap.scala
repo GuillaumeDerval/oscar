@@ -32,9 +32,9 @@ import scala.collection.Iterator
   *
   * @author renaud.delandtsheer@cetic.be
  */
-class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
+class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Long,val maxPosition:Long) extends AbstractHeap[T] {
 
-  private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
+  private[this] val b = new BinomialHeap[Long](a => a, maxPosition)
 
   private[this] val a:Array[QList[T]] = Array.tabulate (maxPosition)(_ => null)
 
@@ -55,7 +55,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
       b.insert(position)
       empty = false
     }else{
-      //this is the desired branch, as it is O(1)
+      //this is the desired branch, as it is O(1L)
       a(position) = QList(elem, otherWithSamePosition)
     }
   }
@@ -103,18 +103,18 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
   *
   * @author renaud.delandtsheer@cetic.be
   */
-class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
+class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Long,val maxPosition:Long, initialSizeForArrayList:Long = 10L)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
 
-  private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
+  private[this] val b = new BinomialHeap[Long](a => a, maxPosition)
 
   private[this] val a:Array[QArrayList[T]] = Array.tabulate (maxPosition)(_ => new QArrayList[T](initialSizeForArrayList))
 
-  private[this] var msize:Int = 0
+  private[this] var msize:Long = 0L
 
   /**makes the datastruct empty*/
   def dropAll(){
     for (i <- b) a(i).setEmpty()
-    msize = 0
+    msize = 0L
     b.dropAll()
   }
 

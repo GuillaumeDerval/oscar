@@ -26,7 +26,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
   for(v <- heights ){
     v.setDefiningInvariant(this)
   }
-  private val over = heights.map(h => MinusOffsetPos(h,limit,0).asInstanceOf[IntValue])
+  private val over = heights.map(h => MinusOffsetPos(h,limit,0L).asInstanceOf[IntValue])
   private val Violation = MaxArray(over)
 
   for(v <- start.indices){
@@ -37,7 +37,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
   override def violation(v: Value): IntValue = Violation
   
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       profile.remove(OldVal, duration(index).value, amount(index).value)
@@ -62,21 +62,21 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
   override def checkInternals(c: Checker) {c.check(false, Some("TODO: Implement checkinternal for CumulativeSparse"))}
 }
 
-class Profile(n: Int,maxh: Int,model:Store){
-  val profile_start = Array.fill(2*n+2)(-1)
-  val profile_length = Array.fill(2*n+2)(0) 
-  val profile_height = Array.fill(2*n+2)(new CBLSIntVar(model,0,0 to maxh,"height"))
-  val profile_next = Array.fill(2*n+2)(-1)
-  val profile_prev = Array.fill(2*n+2)(-1)
-  var first_free = 1
-  val next_free = Array.tabulate(2*n+2)(i => i+1)
-  profile_start(0) = 0
-  profile_length(0) = Int.MaxValue
+class Profile(n: Long,maxh: Long,model:Store){
+  val profile_start = Array.fill(2L*n+2L)(-1L)
+  val profile_length = Array.fill(2L*n+2L)(0L)
+  val profile_height = Array.fill(2L*n+2L)(new CBLSIntVar(model,0L,0L to maxh,"height"))
+  val profile_next = Array.fill(2L*n+2L)(-1L)
+  val profile_prev = Array.fill(2L*n+2L)(-1L)
+  var first_free = 1L
+  val next_free = Array.tabulate(2L*n+2L)(i => i+1L)
+  profile_start(0L) = 0L
+  profile_length(0L) = Long.MaxValue
   
-  def highest_peak(): Int = {
-    var cur = 0
-    var max = 0
-    while(cur != -1){
+  def highest_peak(): Long = {
+    var cur = 0L
+    var max = 0L
+    while(cur != -1L){
       max = math.max(max,profile_height(cur).value)
       cur = profile_next(cur)
     }
@@ -87,8 +87,8 @@ class Profile(n: Int,maxh: Int,model:Store){
     var s = ""
     var l = ""
     var h = ""
-    var cur = 0
-    while(cur != -1){
+    var cur = 0L
+    while(cur != -1L){
       s += profile_start(cur)+"\t"
       l += profile_length(cur)+"\t"
       h += profile_height(cur)+"\t"
@@ -98,28 +98,28 @@ class Profile(n: Int,maxh: Int,model:Store){
     println(l)
     println(h)
     if(check){
-	    cur = 0
-	    while(profile_next(cur)!= -1){
+	    cur = 0L
+	    while(profile_next(cur)!= -1L){
 	      if(profile_start(cur)+profile_length(cur)!=profile_start(profile_next(cur))){
 	        println("Problem of consistency")
-	        System.exit(0)
+	        System.exit(0L)
 	      }
 	      cur = profile_next(cur)
 	    }
     }
   }
-  def remove(s: Int, d: Int, h: Int){
+  def remove(s: Long, d: Long, h: Long){
 //    println("Before removing "+(s,d,h))
 //    print_profile()
-    if(h==0 || d==0) return
-    var cur = 0
+    if(h==0L || d==0L) return
+    var cur = 0L
     var rd = d//remaining duration
     while(s > profile_start(cur))cur = profile_next(cur)
     assert(s == profile_start(cur))
     if(s!=profile_start(cur)){
       println(s +"\t"+profile_start(cur))
     }
-    while(rd > 0){
+    while(rd > 0L){
 //      println(rd+"\t"+profile_start(cur)+"\t"+profile_length(cur))
       if(rd >= profile_length(cur)){
         profile_height(cur) :-= h
@@ -134,23 +134,23 @@ class Profile(n: Int,maxh: Int,model:Store){
         profile_length(cur) = rd
         profile_height(cur) :-= h
         profile_next(new_prof) = profile_next(cur)
-        if(profile_next(cur)!= -1)profile_prev(profile_next(cur)) = new_prof
+        if(profile_next(cur)!= -1L)profile_prev(profile_next(cur)) = new_prof
         profile_next(cur) = new_prof
         profile_next(new_prof) = cur
-        rd = 0
+        rd = 0L
       }
       //merge with previous one
-      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
+      if(profile_prev(cur)!= -1L && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
 //        println("HERE")
         val prev = profile_prev(cur)
         profile_length(prev) += profile_length(cur)
         profile_next(prev) = profile_next(cur)
         profile_prev(profile_next(cur)) = prev
-        profile_next(cur) = -1
-        profile_prev(cur) = -1
-        profile_start(cur) = -1
-        profile_length(cur) = 0
-        profile_height(cur) := 0
+        profile_next(cur) = -1L
+        profile_prev(cur) = -1L
+        profile_start(cur) = -1L
+        profile_length(cur) = 0L
+        profile_height(cur) := 0L
         next_free(cur) = first_free
         first_free = cur
         cur = prev
@@ -159,16 +159,16 @@ class Profile(n: Int,maxh: Int,model:Store){
       cur = profile_next(cur)
     }
     //merge with previous one
-      if(profile_prev(cur)!= -1 && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
+      if(profile_prev(cur)!= -1L && profile_height(profile_prev(cur)).newValue == profile_height(cur).newValue){
         val prev = profile_prev(cur)
         profile_length(prev) += profile_length(cur)
         profile_next(prev) = profile_next(cur)
-        if(profile_next(cur)!= -1)profile_prev(profile_next(cur)) = prev
-        profile_next(cur) = -1
-        profile_prev(cur) = -1
-        profile_start(cur) = -1
-        profile_length(cur) = 0
-        profile_height(cur) := 0
+        if(profile_next(cur)!= -1L)profile_prev(profile_next(cur)) = prev
+        profile_next(cur) = -1L
+        profile_prev(cur) = -1L
+        profile_start(cur) = -1L
+        profile_length(cur) = 0L
+        profile_height(cur) := 0L
         next_free(cur) = first_free
         first_free = cur
         cur = prev
@@ -177,15 +177,15 @@ class Profile(n: Int,maxh: Int,model:Store){
 //    print_profile()
   }
   
-  def insert(s: Int, d: Int, h: Int): Int = {
+  def insert(s: Long, d: Long, h: Long): Long = {
     println("Before inserting "+(s,d,h))
     print_profile()
-    if(h==0 || d==0) return -1
-    var cur = 0
+    if(h==0L || d==0L) return -1L
+    var cur = 0L
     var rd = d//remaining duration
     var cs = s//current start
     
-    while(profile_next(cur)!= -1 && cs >= profile_start(profile_next(cur)) ) cur = profile_next(cur)
+    while(profile_next(cur)!= -1L && cs >= profile_start(profile_next(cur)) ) cur = profile_next(cur)
     
     
     //var next = profile_next(cur)
@@ -203,7 +203,7 @@ class Profile(n: Int,maxh: Int,model:Store){
       profile_length(cur) = profile_start(new_prof) - profile_start(cur)
       
       profile_next(new_prof) = profile_next(cur)
-      if(profile_next(cur) != -1)profile_prev(profile_next(cur)) = new_prof
+      if(profile_next(cur) != -1L)profile_prev(profile_next(cur)) = new_prof
       profile_next(cur) = new_prof
       profile_prev(new_prof) = cur
       
@@ -211,11 +211,11 @@ class Profile(n: Int,maxh: Int,model:Store){
     }
     println("after initial")
     print_profile(false)
-    while(rd > 0){
+    while(rd > 0L){
       
       if(cs != profile_start(cur)){
         println("PROBLEM HERE")
-        println(profile_start(0)  + "\t"+ cur + "\t"+ cs + "\t"+ rd  + "\t"+ profile_start(cur) + "\t"+ d  + "\t"+ s  + "\t"+ h)
+        println(profile_start(0L)  + "\t"+ cur + "\t"+ cs + "\t"+ rd  + "\t"+ profile_start(cur) + "\t"+ d  + "\t"+ s  + "\t"+ h)
         print_profile()
       }
       next_h = profile_height(cur).newValue
@@ -226,15 +226,15 @@ class Profile(n: Int,maxh: Int,model:Store){
       cs = profile_start(cur) + profile_length(cur)
       rd = rd - profile_length(cur)
       
-      if(rd > 0) cur = profile_next(cur)
+      if(rd > 0L) cur = profile_next(cur)
     }
     
     //attach the last(cur) profile to a new next one.
-    if(profile_next(cur)== -1){
+    if(profile_next(cur)== -1L){
       val new_prof = first_free
       first_free = next_free(first_free)
       profile_start(new_prof) = cs
-      profile_length(new_prof) = Int.MaxValue - profile_start(new_prof)
+      profile_length(new_prof) = Long.MaxValue - profile_start(new_prof)
       profile_height(new_prof) := next_h
       profile_next(new_prof) = profile_next(cur)
       profile_next(cur) = new_prof

@@ -28,7 +28,7 @@ import oscar.cbls.core._
  * @param f is a function that is applied to every value in f prior to the sum
  * @author renaud.delandtsheer@cetic.be
  */
-case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
+case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
   extends IntInvariant()
   with SeqNotificationTarget{
 
@@ -39,17 +39,17 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
 
   this := computeSumFromScratch(v.value)
 
-  val checkpointStack = new SeqCheckpointedValueStack[Int]()
+  val checkpointStack = new SeqCheckpointedValueStack[Long]()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
     if (!digestChanges(changes)) {
       this := computeSumFromScratch(changes.newValue)
     }
   }
 
-  private def computeSumFromScratch(v:IntSequence):Int = {
+  private def computeSumFromScratch(v:IntSequence):Long = {
     var contentWithOccurences = v.unorderedContentNoDuplicateWithNBOccurences
-    var sum = 0
+    var sum = 0L
     while(contentWithOccurences match{
       case Nil => return sum
       case (value,occ) :: tail =>
@@ -57,25 +57,25 @@ case class SeqSum(v: SeqValue, f:(Int => Int) = (a:Int) => a)
         contentWithOccurences = tail
         true
     }){}
-    0
+    0L
   }
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this :+= f(value)
         true
 
-      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
          digestChanges(prev) //nothing to do :-)
 
-      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this :-= f(r.removedValue)
         true
 
-      case u@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+      case u@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Long) =>
         this := checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel)
         true
 

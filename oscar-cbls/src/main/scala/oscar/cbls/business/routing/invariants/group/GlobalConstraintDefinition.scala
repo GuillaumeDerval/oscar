@@ -14,11 +14,11 @@ import oscar.cbls.core._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
-abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @specialized(Int) U:Manifest](routes: ChangingSeqValue, v: Int)
+abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @specialized(Long) U:Manifest](routes: ChangingSeqValue, v: Long)
   extends Invariant with SeqNotificationTarget{
 
-  val n = routes.maxValue+1
-  val vehicles = 0 until v
+  val n = routes.maxValue+1L
+  val vehicles = 0L until v
 
   val preComputedValues: Array[T] = new Array[T](n)
   val vehicleValues : Array[U] = new Array[U](v)
@@ -33,9 +33,9 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
   private var stackDone = false // is the current bijection a stacked bijection or not
   private var prevRoutes = routes.newValue /* the route before teh last change. We use it
   in fromScratchToNode if the bijection is a stacked bijection*/
-  protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
+  protected var vehicleSearcher: VehicleLocation = VehicleLocation((0L until v).toArray)
 
-  var currentCheckpointLevel : Int = -1
+  var currentCheckpointLevel : Long = -1L
   var currentCheckpointRoute : IntSequence = routes.newValue
   var currentCheckpointBijection = bijForPreCompute
   var currentCheckpointSearcher = vehicleSearcher
@@ -67,7 +67,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     *               BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     * @param preComputedVals The array of precomputed values
     */
-  def performPreCompute(vehicle:Int,
+  def performPreCompute(vehicle:Long,
                         routes:IntSequence,
                         preComputedVals:Array[T])
 
@@ -81,7 +81,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
-  def computeVehicleValue(vehicle:Int,
+  def computeVehicleValue(vehicle:Long,
                           segments:List[Segment[T]],
                           routes:IntSequence,
                           preComputedVals:Array[T]):U
@@ -93,7 +93,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     * @param vehicle the vehicle number
     * @param value the value of the vehicle
     */
-  def assignVehicleValue(vehicle:Int,value:U)
+  def assignVehicleValue(vehicle:Long,value:U)
 
   /**
     * this method is defined for verification purpose. It computes the value of the vehicle from scratch.
@@ -103,7 +103,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     * @return the value of the constraint for the given vehicle
     */
 
-  def computeVehicleValueFromScratch(vehicle : Int, routes : IntSequence):U
+  def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence):U
 
 
   def restoreListValues(valueAtCheckpoint : List[ModifiedValues[U]]) : Unit = {
@@ -117,7 +117,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     }
   }
 
-  def restoreValueAtCheckpoint(checkpoint : IntSequence,checkpointLevel:Int): Unit ={
+  def restoreValueAtCheckpoint(checkpoint : IntSequence,checkpointLevel:Long): Unit ={
  //   println("Roll Back - Actual Chkpnt Lvl : " + currentCheckpointLevel + " Chkpnt to restore : " + checkpointLevel)
     if (checkpointLevel != currentCheckpointLevel){
       restoreListValues(currentCheckpointHowToRollBack)
@@ -187,7 +187,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
     * @param fs a segment which need from scratch computation
     * @return the nodes at the extremities of segment
     */
-  def fromScratchToNode (fs: FromScratch): (Int, Int) = {
+  def fromScratchToNode (fs: FromScratch): (Long, Long) = {
     if (!stackDone){
       // no stack donen so we can use the current route to know the nodes
       val fromNode = routes.newValue.valueAtPosition(fs.fromPosAtCheckpoint0).get
@@ -210,12 +210,12 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
   }
 
 
-  def bijection(x: Int): Int = {
+  def bijection(x: Long): Long = {
     bijForPreCompute.fun(x)
   }
 
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) : Unit = {
     val updates = digestUpdates(changes)
     updates match{
       case None => for (vehicle <- vehicles){
@@ -235,22 +235,22 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
         val prevUpdates = digestUpdates(prev)
 
         bijForPreCompute =
-          if (checkpoint0Defined && checkpointLevel != 0)
+          if (checkpoint0Defined && checkpointLevel != 0L)
             bijForPreCompute.commitStackedUpdatesToConcrete()
           else
           ConcreteFunctionForPreCompute(s.newValue)
 
         vehicleSearcher = vehicleSearcher.regularize
 
-        checkpointAtLevel0 = if (checkpointLevel == 0) s.newValue else checkpointAtLevel0
+        checkpointAtLevel0 = if (checkpointLevel == 0L) s.newValue else checkpointAtLevel0
 
         //println("Define Checkpoint : " + checkpointLevel)
         //println(changedVehiclesSinceCheckpoint0)
         if (!checkpoint0Defined){
           // we are creating the first checkpoint. We need to do pre-compute for all vehicle
-          for (vehicle <- 0 until v) performPreCompute(vehicle,checkpointAtLevel0,preComputedValues)
+          for (vehicle <- 0L until v) performPreCompute(vehicle,checkpointAtLevel0,preComputedValues)
         } else {
-          if(checkpointLevel == 0){
+          if(checkpointLevel == 0L){
             //println("PreCompute :")
             //println(s.newValue)
             //println(changedVehiclesSinceCheckpoint0)
@@ -268,7 +268,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
         prevRoutes = s.newValue
         applyUpdates(updates,changes.newValue) //we need to compute the output when we are defining a checkpoint for restoration
 
-        if (checkpointLevel != 0){
+        if (checkpointLevel != 0L){
           //println("Pushing ChckPnt")
           //println("At Checkpoint " + currentCheckpointLevel + " route is : " + currentCheckpointRoute)
           checkpointStack.defineCheckpoint(currentCheckpointRoute,currentCheckpointLevel,(currentCheckpointBijection,currentCheckpointSearcher,currentCheckpointHowToRollBack))
@@ -294,7 +294,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
         val toReturn = new UpdatedValues()
         Some(toReturn)
 
-      case s@SeqUpdateInsert(value: Int, pos: Int, prev: SeqUpdate) =>
+      case s@SeqUpdateInsert(value: Long, pos: Long, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match {
           case None => None
@@ -302,7 +302,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
             vehicleSearcher = vehicleSearcher.push(s.oldPosToNewPos)
             val vehicle  = vehicleSearcher.vehicleReachingPosition(pos)
             changedVehiclesSinceLastApplyUpdate(vehicle) = true
-            bijForPreCompute = if (checkpoint0Defined)  // if a level 0 checkpoint was defined, the bijection exists. So we can update it
+            bijForPreCompute = if (checkpoint0Defined)  // if a level 0L checkpoint was defined, the bijection exists. So we can update it
               bijForPreCompute.stackInsert(value, pos) // we stack an insert
             else // else, the bijection does not exist
               bijForPreCompute
@@ -311,7 +311,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
             Some(new UpdatedValues())
         }
 
-      case s@SeqUpdateRemove(pos: Int, prev: SeqUpdate) =>
+      case s@SeqUpdateRemove(pos: Long, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match {
           case None => None
@@ -330,7 +330,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
             Some(new UpdatedValues())
         }
 
-      case s@SeqUpdateMove(fromPosIncluded: Int, toPosIncluded: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) =>
+      case s@SeqUpdateMove(fromPosIncluded: Long, toPosIncluded: Long, afterPos: Long, flip: Boolean, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match{
           case None => None
@@ -371,7 +371,7 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
   private def applyUpdates(updates: UpdatedValues,routes : IntSequence): Unit = {
     for (vehicle <- changedVehiclesSinceLastApplyUpdate.indicesAtTrue){
       val posOfLastNode =
-        if(vehicle != this.v-1) routes.explorerAtAnyOccurrence(vehicle+1).get.position - 1
+        if(vehicle != this.v-1L) routes.explorerAtAnyOccurrence(vehicle+1L).get.position - 1L
         else bijForPreCompute.externalPositionOfLastRoutedNode
       val posOfFirstNode = vehicleSearcher.startPosOfVehicle(vehicle)
       val value = computeVehicleValue(vehicle,convertComputationStepToSegment(bijForPreCompute.kindOfComputation(posOfFirstNode,posOfLastNode),routes,prevRoutes),routes,preComputedValues)
@@ -401,13 +401,13 @@ abstract class GlobalConstraintDefinition[@specialized(Int) T : Manifest, @speci
   * class which contains values updated by digestUpdates
   * @param updatedBij bijection modify by last changes
   * @param vehicleSearcher vehicle searcher modified by last changes
-  * @param checkpoint0Defined if a checkpoint of level 0 was defined
+  * @param checkpoint0Defined if a checkpoint of level 0L was defined
   * @param stackDone if the current bijection is a stacked bijection
   * @param prevRoutes routes before the last change
   */
 class UpdatedValues()
 
-class ModifiedValues[@specialized(Int) U](val vehicle : Int,
+class ModifiedValues[@specialized(Long) U](val vehicle : Long,
                         val value : U,
                         val hasChangedSinceCheckpoint0 : Boolean){
   override def toString: String = {
@@ -415,7 +415,7 @@ class ModifiedValues[@specialized(Int) U](val vehicle : Int,
   }
 }
 
-sealed abstract class Segment[@specialized(Int)T]()
+sealed abstract class Segment[@specialized(Long)T]()
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -426,9 +426,9 @@ sealed abstract class Segment[@specialized(Int)T]()
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class PreComputedSubSequence[@specialized(Int)T](startNode:Int,
+case class PreComputedSubSequence[@specialized(Long)T](startNode:Long,
                                                       startNodeValue:T,
-                                                      endNode:Int,
+                                                      endNode:Long,
                                                       endNodeValue:T) extends Segment[T]{
   override def toString: String = {
     "PreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
@@ -445,9 +445,9 @@ case class PreComputedSubSequence[@specialized(Int)T](startNode:Int,
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class FlippedPreComputedSubSequence[@specialized(Int)T](startNode:Int,
+case class FlippedPreComputedSubSequence[@specialized(Long)T](startNode:Long,
                                                              startNodeValue:T,
-                                                             endNode:Int,
+                                                             endNode:Long,
                                                              endNodeValue:T) extends Segment[T]{
   override def toString: String = {
     "FlippedPreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
@@ -458,7 +458,7 @@ case class FlippedPreComputedSubSequence[@specialized(Int)T](startNode:Int,
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNode[@specialized(Int)T](node:Int) extends Segment[T]{
+case class NewNode[@specialized(Long)T](node:Long) extends Segment[T]{
   override def toString: String = {
     "NewNode - Node : " + node
   }

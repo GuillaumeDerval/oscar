@@ -22,22 +22,22 @@ import scala.util.control.Breaks._
 
 object Benchmark extends StopWatch{
 
-  case class RunValues(it:Int,duration:Int,quality:Int)
+  case class RunValues(it:Long,duration:Long,quality:Long)
   case class RunStatistics(it:Statistics,duration:Statistics,quality:Statistics){
     override def toString: String = "(it:" + it + " dur:" + duration + " obj:" + quality+")"
     def denseString:String = it.denseString + "|" + duration.denseString + "|" + quality.denseString
     def csvString: String = it.csvString + ";" + duration.csvString + ";" + quality.csvString
   }
 
-  val firstColumnForStatisticsString = 40
-  def nSpace(n:Int):String = if(n <= 0) "" else " " + nSpace(n-1)
-  private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
-  def benchToStatistics(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Int, verbose: Int) =
+  val firstColumnForStatisticsString = 40L
+  def nSpace(n:Long):String = if(n <= 0L) "" else " " + nSpace(n-1L)
+  private def padToLength(s: String, l: Long) = (s + nSpace(l)).substring(0L, l)
+  def benchToStatistics(obj: Objective, nRuns: Long, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Long, verbose: Long) =
     benchToTrace(obj, nRuns, strategies, warmupTimeInSeconds, verbose).map {
       case (s: String, t: IndexedSeq[RunValues]) => (s, aggregate(t.toList))
     }
 
-  def benchToStringSimple(obj:Objective, nRuns:Int, strategies:Iterable[Neighborhood],verbose:Int = 0):String = {
+  def benchToStringSimple(obj:Objective, nRuns:Long, strategies:Iterable[Neighborhood],verbose:Long = 0L):String = {
     benchToStringFull(obj,nRuns,strategies.map(n => (() => {n.reset(); (n.toString,n)})),verbose)
   }
 
@@ -47,27 +47,27 @@ object Benchmark extends StopWatch{
       stats.map({ case (s: String, stats: RunStatistics) => padToLength(s, firstColumnForStatisticsString) + "|" + stats.denseString }).mkString("\n")
   }
 
-  def benchToStringFull(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmup: Int = 1, verbose: Int = 0): String = {
+  def benchToStringFull(obj: Objective, nRuns: Long, strategies: Iterable[() => (String, Neighborhood)], warmup: Long = 1L, verbose: Long = 0L): String = {
     val stats = benchToStatistics(obj, nRuns, strategies, warmup, verbose)
 
     statsToString(stats)
   }
 
-  def benchToTrace(obj: Objective, nRuns: Int, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Int, verbose: Int) = {
+  def benchToTrace(obj: Objective, nRuns: Long, strategies: Iterable[() => (String, Neighborhood)], warmupTimeInSeconds: Long, verbose: Long) = {
     val m = obj.model
     val initialSolution = m.solution()
 
     // warm run
-    if (verbose > 1) println("Warming up for " + warmupTimeInSeconds + " seconds...")
-    val warmupInMs = warmupTimeInSeconds * 1000
+    if (verbose > 1L) println("Warming up for " + warmupTimeInSeconds + " seconds...")
+    val warmupInMs = warmupTimeInSeconds * 1000L
     this.startWatch()
     breakable {
       while (this.getWatch < warmupInMs) {
         for (n <- strategies) {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
-          strategyInstance._2.verbose = 0
-          if (verbose > 1) println("Warm up run of " + strategyInstance._1)
+          strategyInstance._2.verbose = 0L
+          if (verbose > 1L) println("Warm up run of " + strategyInstance._1)
           strategyInstance._2.doAllMoves(_ => false, obj)
           if (this.getWatch >= warmupInMs) break
         }
@@ -75,13 +75,13 @@ object Benchmark extends StopWatch{
     }
 
     for (n <- strategies) yield {
-      if (verbose > 1) println("Benchmarking " + n()._1)
+      if (verbose > 1L) println("Benchmarking " + n()._1)
       (n()._1,
-        for (trial <- 1 to nRuns) yield {
+        for (trial <- 1L to nRuns) yield {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
-          strategyInstance._2.verbose = if (verbose > 0) verbose else 0
-          if (verbose > 1) println("Benchmarking " + strategyInstance._1 + " run " + trial + " of " + nRuns)
+          strategyInstance._2.verbose = if (verbose > 0L) verbose else 0L
+          if (verbose > 1L) println("Benchmarking " + strategyInstance._1 + " run " + trial + " of " + nRuns)
           this.startWatch()
           val it = strategyInstance._2.doAllMoves(_ => false, obj)
           val time = this.getWatch
@@ -98,20 +98,20 @@ object Benchmark extends StopWatch{
   }
 }
 
-case class Statistics(min:Int, max:Int, avg:Int, med:Int){
+case class Statistics(min:Long, max:Long, avg:Long, med:Long){
   override def toString: String = "(min:" + min + " max:" + max + " avg:" + avg + " med:" + med + ")"
-  def denseString:String = padToLength("" + min,8) + " " + padToLength("" + max,8) + " " + padToLength("" + avg,8) + " " + padToLength("" + med,9)
+  def denseString:String = padToLength("" + min,8L) + " " + padToLength("" + max,8L) + " " + padToLength("" + avg,8L) + " " + padToLength("" + med,9L)
   def csvString:String = min + ";" + max + ";" + avg + ";" + med
-  def nSpace(n:Int):String = if(n <= 0) "" else " " + nSpace(n-1)
-  private def padToLength(s: String, l: Int) = (s + nSpace(l)).substring(0, l)
+  def nSpace(n:Long):String = if(n <= 0L) "" else " " + nSpace(n-1L)
+  private def padToLength(s: String, l: Long) = (s + nSpace(l)).substring(0L, l)
 }
 
 object Statistics {
-  def apply(l: List[Int]): Statistics = {
+  def apply(l: List[Long]): Statistics = {
     require(l.nonEmpty)
     val sorted = l.sorted
     val size = l.size
-    Statistics(min=sorted.head, max = sorted.last, avg=l.sum/size, med= if(size ==1) sorted.head else sorted.apply( size/2))
+    Statistics(min=sorted.head, max = sorted.last, avg=l.sum/size, med= if(size ==1L) sorted.head else sorted.apply( size/2L))
   }
 
   val statisticsHeader = "min      max      avg      med      "

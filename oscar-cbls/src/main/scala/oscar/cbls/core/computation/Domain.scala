@@ -23,63 +23,63 @@ import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 import scala.util.Random
 
-//TODO: remplacer çà par Option(Int,Int)
+//TODO: remplacer çà par Option(Long,Long)
 
 object Domain{
 
-  def empty:Domain = Domain(0 to 0)  //TODO: improve!
+  def empty:Domain = Domain(0L to 0L)  //TODO: improve!
 
   implicit def rangeToDomain(r:Range):Domain = {
     DomainRange(r.head,r.last)
   }
 
-  implicit def setToDomain(s:Set[Int]):Domain = {
+  implicit def setToDomain(s:Set[Long]):Domain = {
     DomainSet(s)
   }
 
-  implicit def coupleToDomain(i:(Int,Int)):Domain = {
+  implicit def coupleToDomain(i:(Long,Long)):Domain = {
     if(i._1 == i._2) SingleValueDomain(i._1)
     else DomainRange(i._1,i._2)
   }
 
-  implicit def intToDomain(i:Int) = SingleValueDomain(i)
+  implicit def intToDomain(i:Long) = SingleValueDomain(i)
 
-  def apply(v:Iterable[Int]):Domain =
+  def apply(v:Iterable[Long]):Domain =
     v match{
       case r:Range => r
-      case s:SortedSet[Int] => s.firstKey to s.lastKey
+      case s:SortedSet[Long] => s.firstKey to s.lastKey
     }
 }
 
-sealed abstract class Domain extends Iterable[Int]{
-  def min: Int
-  def max: Int
-  def size: Int
-  def contains(v:Int): Boolean
+sealed abstract class Domain extends Iterable[Long]{
+  def min: Long
+  def max: Long
+  def size: Long
+  def contains(v:Long): Boolean
   //  def intersect(d:Domain):Domain
-  def values:Iterable[Int]
-  def randomValue():Int
+  def values:Iterable[Long]
+  def randomValue():Long
   def restrict(d:Domain):Domain = intersect(d)
   def intersect(d:Domain):Domain
 
   def union(d:Domain):Domain
 
-  override def iterator: Iterator[Int] = values.iterator
+  override def iterator: Iterator[Long] = values.iterator
 
-  override def isEmpty: Boolean = size == 0
+  override def isEmpty: Boolean = size == 0L
 }
 
 
 /**this is an inclusive domain*/
-case class DomainRange(override val min: Int, override val max: Int) extends Domain {
+case class DomainRange(override val min: Long, override val max: Long) extends Domain {
   if (min > max) throw new EmptyDomainException
-  def contains(v:Int): Boolean = min <= v && max >= v
+  def contains(v:Long): Boolean = min <= v && max >= v
   override def size =
-    if(min + Int.MaxValue <= max) Int.MaxValue
-    else if(max==Int.MaxValue && min==Int.MinValue) Int.MaxValue
-    else math.max(max-min+1,0)
-  override def values: Iterable[Int] = min to max
-  override def randomValue(): Int = (min to max)(Random.nextInt(max-min+1))
+    if(min + Long.MaxValue <= max) Long.MaxValue
+    else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
+    else math.max(max-min+1L,0L)
+  override def values: Iterable[Long] = min to max
+  override def randomValue(): Long = (min to max)(Random.nextInt(max-min+1L))
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange => math.max(r.min,min) to math.min(r.max,max)
@@ -112,15 +112,15 @@ case class DomainRange(override val min: Int, override val max: Int) extends Dom
   override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
 }
 
-case class DomainSet(val s:Set[Int]) extends Domain {
-  override def min: Int = s.min
-  override def max: Int = s.max
-  override def size: Int = s.size
+case class DomainSet(val s:Set[Long]) extends Domain {
+  override def min: Long = s.min
+  override def max: Long = s.max
+  override def size: Long = s.size
   if (min > max) throw new EmptyDomainException
 
-  def contains(v:Int): Boolean = s.contains(v)
-  override def values: Iterable[Int] = s
-  override def randomValue(): Int = s.toList.apply(Random.nextInt(size))
+  def contains(v:Long): Boolean = s.contains(v)
+  override def values: Iterable[Long] = s
+  override def randomValue(): Long = s.toList.apply(Random.nextInt(size))
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange =>
@@ -152,27 +152,27 @@ case class DomainSet(val s:Set[Int]) extends Domain {
 }
 
 case object FullRange extends Domain{
-  override def min: Int = Int.MinValue
-  override def max: Int = Int.MaxValue
-  override def size: Int = Int.MaxValue
-  override def randomValue(): Int = Random.nextInt()
-  override def contains(v: Int): Boolean = true
-  override def values: Iterable[Int] =  min to max
+  override def min: Long = Long.MinValue
+  override def max: Long = Long.MaxValue
+  override def size: Long = Long.MaxValue
+  override def randomValue(): Long = Random.nextInt()
+  override def contains(v: Long): Boolean = true
+  override def values: Iterable[Long] =  min to max
   override def intersect(d: Domain): Domain = d
   override def union(d: Domain): Domain = this
   override def toString(): String = "FullRange"
 }
 
-object PositiveOrNullRange extends DomainRange(0, Int.MaxValue)
+object PositiveOrNullRange extends DomainRange(0L, Long.MaxValue)
 
 
-case class SingleValueDomain(value:Int) extends Domain{
-  override def min: Int = value
-  override def max: Int = value
-  override def size: Int = 1
-  override def contains(v: Int): Boolean = v == value
+case class SingleValueDomain(value:Long) extends Domain{
+  override def min: Long = value
+  override def max: Long = value
+  override def size: Long = 1L
+  override def contains(v: Long): Boolean = v == value
 
-  override def randomValue(): Int = value
+  override def randomValue(): Long = value
 
   override def intersect(d: Domain): Domain =
     if (d.contains(value)) this else throw new EmptyDomainException
@@ -181,12 +181,12 @@ case class SingleValueDomain(value:Int) extends Domain{
     d match {
       case SingleValueDomain(v) =>
         if(v == value) this
-        else if(math.abs(v-value) == 1) math.min(v,value) to math.max(v,value)
+        else if(math.abs(v-value) == 1L) math.min(v,value) to math.max(v,value)
         else Set(v) union Set(value)
       case _ => d.union(this)
     }
   }
-  override def values: Iterable[Int] = List(value)
+  override def values: Iterable[Long] = List(value)
 
   override def toString(): String = "SingleValueDomain(" + value + ")"
 }
@@ -195,27 +195,27 @@ class EmptyDomainException extends Exception("domain is empty")
 
 object DomainHelper{
 
-  def safeAddMax(a:Int,b:Int):Int = {
+  def safeAddMax(a:Long,b:Long):Long = {
     val tmp = a.toLong + b.toLong
-    if(tmp > Int.MaxValue) Int.MaxValue
+    if(tmp > Long.MaxValue) Long.MaxValue
     else tmp.toInt
   }
 
-  def safeAddMin(a:Int,b:Int):Int = {
+  def safeAddMin(a:Long,b:Long):Long = {
     val tmp = a.toLong + b.toLong
-    if(tmp < Int.MinValue) Int.MinValue
+    if(tmp < Long.MinValue) Long.MinValue
     else tmp.toInt
   }
 
-  def safeMulMax(a:Int,b:Int):Int = {
+  def safeMulMax(a:Long,b:Long):Long = {
     val tmp = a.toLong * b.toLong
-    if(tmp > Int.MaxValue) Int.MaxValue
+    if(tmp > Long.MaxValue) Long.MaxValue
     else tmp.toInt
   }
 
-  def safeMulMin(a:Int,b:Int):Int = {
+  def safeMulMin(a:Long,b:Long):Long = {
     val tmp = a.toLong * b.toLong
-    if(tmp < Int.MinValue) Int.MaxValue
+    if(tmp < Long.MinValue) Long.MaxValue
     else tmp.toInt
   }
 }

@@ -11,29 +11,29 @@ object TimeWindows{
     * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
     *                            e.g.: You can stay at a parking for a limited among of time.
     */
-  def apply(earliestArrivalTimes: Option[Array[Int]] = None,
-            latestArrivalTimes: Option[Array[Int]] = None,
-            earliestLeavingTimes: Option[Array[Int]] = None,
-            latestLeavingTimes: Option[Array[Int]] = None,
-            taskDurations: Array[Int],
-            maxWaitingDurations: Option[Array[Int]] = None): TimeWindows ={
+  def apply(earliestArrivalTimes: Option[Array[Long]] = None,
+            latestArrivalTimes: Option[Array[Long]] = None,
+            earliestLeavingTimes: Option[Array[Long]] = None,
+            latestLeavingTimes: Option[Array[Long]] = None,
+            taskDurations: Array[Long],
+            maxWaitingDurations: Option[Array[Long]] = None): TimeWindows ={
     val eat =
       if(earliestArrivalTimes.isDefined) earliestArrivalTimes.get
       else if(earliestLeavingTimes.isDefined) Array.tabulate(taskDurations.length)(x => earliestLeavingTimes.get(x) - taskDurations(x))
-      else Array.fill(taskDurations.length)(0)
+      else Array.fill(taskDurations.length)(0L)
     val lat =
       if(latestArrivalTimes.isDefined) latestArrivalTimes.get
       else if(latestLeavingTimes.isDefined) Array.tabulate(taskDurations.length)(x => latestLeavingTimes.get(x) - taskDurations(x))
-      else Array.fill(taskDurations.length)(Int.MaxValue)
+      else Array.fill(taskDurations.length)(Long.MaxValue)
     val elt =
       if(earliestLeavingTimes.isDefined) earliestLeavingTimes.get
       else if(earliestArrivalTimes.isDefined) Array.tabulate(taskDurations.length)(x => earliestArrivalTimes.get(x) + taskDurations(x))
-      else Array.fill(taskDurations.length)(0)
+      else Array.fill(taskDurations.length)(0L)
     val llt =
       if(latestLeavingTimes.isDefined) latestLeavingTimes.get
       else if(latestArrivalTimes.isDefined) Array.tabulate(taskDurations.length)(x => latestArrivalTimes.get(x) + taskDurations(x))
-      else Array.fill(taskDurations.length)(Int.MaxValue)
-    new TimeWindows(eat,lat,elt,llt,taskDurations,maxWaitingDurations.getOrElse(Array.fill(taskDurations.length)(Int.MaxValue)))
+      else Array.fill(taskDurations.length)(Long.MaxValue)
+    new TimeWindows(eat,lat,elt,llt,taskDurations,maxWaitingDurations.getOrElse(Array.fill(taskDurations.length)(Long.MaxValue)))
   }
 }
 
@@ -52,10 +52,10 @@ object TimeWindows{
   * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
   *                            e.g.: You can stay at a parking for a limited among of time.
   */
-class TimeWindows(val earliestArrivalTimes: Array[Int],
-                  val latestArrivalTimes: Array[Int],
-                  val earliestLeavingTimes: Array[Int],
-                  val latestLeavingTimes: Array[Int],
-                  val taskDurations: Array[Int],
-                  val maxWaitingDurations: Array[Int]){
+class TimeWindows(val earliestArrivalTimes: Array[Long],
+                  val latestArrivalTimes: Array[Long],
+                  val earliestLeavingTimes: Array[Long],
+                  val latestLeavingTimes: Array[Long],
+                  val taskDurations: Array[Long],
+                  val maxWaitingDurations: Array[Long]){
 }

@@ -12,8 +12,8 @@ import scala.collection.immutable.SortedSet
  * @param routes the routes
  * @param v the number of vehicle
  */
-case class MovingVehicles(routes:ChangingSeqValue, v:Int)
-  extends SetInvariant(initialDomain = 0 until v) with SeqNotificationTarget{
+case class MovingVehicles(routes:ChangingSeqValue, v:Long)
+  extends SetInvariant(initialDomain = 0L until v) with SeqNotificationTarget{
 
   setName("MovingVehicles in route" + routes.name)
 
@@ -22,7 +22,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
 
   this := computeValueFromScratch(routes.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes:SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes:SeqUpdate){
     if(!digestUpdates(changes)) {
       this := computeValueFromScratch(changes.newValue)
     }
@@ -31,19 +31,19 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   private def digestUpdates(changes:SeqUpdate):Boolean = {
 
     changes match {
-      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
 
-        require(pos != 0, "cannot insert at pos zero in routing")
-        val prevValue = prev.newValue.valueAtPosition(pos-1).get
+        require(pos != 0L, "cannot insert at pos zero in routing")
+        val prevValue = prev.newValue.valueAtPosition(pos-1L).get
         if(prevValue < v && !this.newValue.contains(prevValue)){
           //prevValue is a vehicle that now goes out
           this.insertValue(prevValue)
         }
 
         true
-      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if(!digestUpdates(prev)) false
@@ -53,20 +53,20 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
         }else {
 
           //chek what is before the moved segment; if it is a vehicle start, we should also check what is after the segment start
-          val prevValueOfMovedSegment = prev.newValue.valueAtPosition(fromIncluded-1).get
+          val prevValueOfMovedSegment = prev.newValue.valueAtPosition(fromIncluded-1L).get
           if(prevValueOfMovedSegment < v){
             assert(this.newValue.contains(prevValueOfMovedSegment))
 
             //We removed this segment from vehicle prevValueOfMovedSegment,
             // and it starts at vehicle start, so check that domething is left after the moved segment in this vehicle
-            prev.newValue.valueAtPosition(toIncluded+1) match{
+            prev.newValue.valueAtPosition(toIncluded+1L) match{
               case None =>
-                require(prevValueOfMovedSegment == v-1)
+                require(prevValueOfMovedSegment == v-1L)
                 assert(toIncluded == prev.newValue.size)
                 this.deleteValue(prevValueOfMovedSegment)
               case Some(node) if node < v =>
                 //we reach another vehicle, so there is nothing left in vehicle prevValueOfMovedSegment
-                require(node == prevValueOfMovedSegment +1)
+                require(node == prevValueOfMovedSegment +1L)
                 this.deleteValue(prevValueOfMovedSegment)
               case _ =>
                 ;
@@ -82,26 +82,26 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
           true
         }
 
-      case x@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position: Long, prev : SeqUpdate) =>
         if(!digestUpdates(prev)) return false
 
-        require(position != 0, "cannot remove at pos zero in routing")
+        require(position != 0L, "cannot remove at pos zero in routing")
 
-        val prevValue = prev.newValue.valueAtPosition(position-1).get
+        val prevValue = prev.newValue.valueAtPosition(position-1L).get
         if(prevValue < v) {
           val vehicleOfRemove = prevValue
           assert(this.newValue.contains(vehicleOfRemove))
           //prevValue is a vehicle that used to go out, and we remove its first node,
           // so we check that the node after the deleted one is not a vehicle start
-          prev.newValue.valueAtPosition(position + 1) match {
+          prev.newValue.valueAtPosition(position + 1L) match {
             case None =>
               //we remove at the last position in the sequence,
               // so we removed the only point of the last vehicle
-              require(vehicleOfRemove == v - 1)
+              require(vehicleOfRemove == v - 1L)
               this.deleteValuePreviouslyIn(vehicleOfRemove)
             case Some(vehicleAfterRemove) if vehicleAfterRemove < v =>
               //the node after the remove is another vehicle start, so we removed the only node reached by the vehicle of remove
-              require(vehicleAfterRemove == vehicleOfRemove + 1)
+              require(vehicleAfterRemove == vehicleOfRemove + 1L)
               this.deleteValuePreviouslyIn(vehicleOfRemove)
             case _ =>
             //nothing to do
@@ -121,10 +121,10 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
     }
   }
 
-  private def computeValueFromScratch(s:IntSequence):SortedSet[Int] = {
-    var toReturn:SortedSet[Int] = SortedSet.empty
-    var currentExplorer:IntSequenceExplorer = s.explorerAtPosition(0).get
-    for(vehicle <- 0 until v){
+  private def computeValueFromScratch(s:IntSequence):SortedSet[Long] = {
+    var toReturn:SortedSet[Long] = SortedSet.empty
+    var currentExplorer:IntSequenceExplorer = s.explorerAtPosition(0L).get
+    for(vehicle <- 0L until v){
       if(currentExplorer.value != vehicle){
         //instantiate an explorer because we do not have a proper one
         currentExplorer = s.explorerAtAnyOccurrence(vehicle).get
@@ -132,11 +132,11 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
       currentExplorer.next match{
         case None =>
           //we are at the last vehicle, and it does not move
-          require(vehicle == v-1)
-        case Some(e) if e.value != vehicle + 1 || e.value >= v =>
+          require(vehicle == v-1L)
+        case Some(e) if e.value != vehicle + 1L || e.value >= v =>
           //there is a node after, and it is not the next vehicle, so vehicle is moving
           toReturn += vehicle
-        case Some(e) if e.value == vehicle + 1 && e.value < v =>
+        case Some(e) if e.value == vehicle + 1L && e.value < v =>
           //there is a node after, and it is the next vehicle, so vehicle is not moving
           //and we have an explorer at the next vehicle, so we save it for the next iteration
           currentExplorer = e

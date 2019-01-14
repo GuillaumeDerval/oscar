@@ -45,31 +45,31 @@ case class AllDiff(variables: Iterable[IntValue])
   finishInitialization()
   val (minValueOfVars,maxValueOfVars) = InvariantHelper.getMinMaxBounds(variables)
 
-  //le degré global de violation est la somme des tailles -1 des ensembles de var ayant meme value
-  // et on ne prend que les ensembles de cardinalite > 1
-  private val violationVariable: CBLSIntVar = new CBLSIntVar(model, 0, 0 to n, "ViolationsOfAllDiff")
+  //le degré global de violation est la somme des tailles -1L des ensembles de var ayant meme value
+  // et on ne prend que les ensembles de cardinalite > 1L
+  private val violationVariable: CBLSIntVar = new CBLSIntVar(model, 0L, 0L to n, "ViolationsOfAllDiff")
   violationVariable.setDefiningInvariant(this)
 
-  private val N0: Int = maxValueOfVars
+  private val N0: Long = maxValueOfVars
 
-  private val offset: Int = -minValueOfVars
+  private val offset: Long = -minValueOfVars
 
   private val N = N0 + offset
-  private val range = 0 to N
+  private val range = 0L to N
 
-  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1)((i: Int) => {
-    val tmp = new CBLSIntVar(model,0, 0 to n, "alldiff_count_of_value_" + (i - offset))
+  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1L)((i: Long) => {
+    val tmp = new CBLSIntVar(model,0L, 0L to n, "alldiff_count_of_value_" + (i - offset))
     tmp.setDefiningInvariant(this)
     tmp
   })
 
   for (v <- variables) {
-    valueMinusOffsetToNbOccurrence(v.value + offset) :+= 1
+    valueMinusOffsetToNbOccurrence(v.value + offset) :+= 1L
   }
 
   for (i <- range) {
-    val tmp = valueMinusOffsetToNbOccurrence(i).newValue - 1
-    if (tmp > 0) violationVariable :+= tmp
+    val tmp = valueMinusOffsetToNbOccurrence(i).newValue - 1L
+    if (tmp > 0L) violationVariable :+= tmp
   }
 
   /**the degree of violation of a variable is the number of other variables that have the same value as it. */
@@ -82,18 +82,18 @@ case class AllDiff(variables: Iterable[IntValue])
     variables.foldLeft(
       SortedMap.empty[IntValue, IntValue])(
         (acc, intvar) => {
-          val newvar = valueMinusOffsetToNbOccurrence.element(intvar + offset) - 1
+          val newvar = valueMinusOffsetToNbOccurrence.element(intvar + offset) - 1L
           accumulate(acc , intvar, newvar)
         })
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    valueMinusOffsetToNbOccurrence(OldVal + offset) :-= 1
-    valueMinusOffsetToNbOccurrence(NewVal + offset) :+= 1
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    valueMinusOffsetToNbOccurrence(OldVal + offset) :-= 1L
+    valueMinusOffsetToNbOccurrence(NewVal + offset) :+= 1L
 
-    val deltaOldVal = if (valueMinusOffsetToNbOccurrence(OldVal + offset).newValue == 0) 0 else -1
-    val deltaNewVal = if (valueMinusOffsetToNbOccurrence(NewVal + offset).newValue == 1) 0 else 1
+    val deltaOldVal = if (valueMinusOffsetToNbOccurrence(OldVal + offset).newValue == 0L) 0L else -1L
+    val deltaNewVal = if (valueMinusOffsetToNbOccurrence(NewVal + offset).newValue == 1L) 0L else 1L
     violationVariable :+= (deltaNewVal + deltaOldVal)
   }
 
@@ -115,8 +115,8 @@ case class AllDiff(variables: Iterable[IntValue])
   }
 
   override def checkInternals(c: Checker) {
-    val myValueCount: Array[Int] = (for (i <- 0 to N) yield 0).toArray
-    for (v <- variables) myValueCount(v.value + offset) += 1
+    val myValueCount: Array[Long] = (for (i <- 0L to N) yield 0L).toArray
+    for (v <- variables) myValueCount(v.value + offset) += 1L
     for (v <- range) {
       c.check(valueMinusOffsetToNbOccurrence(v).newValue == myValueCount(v),
         Some("valueMinusOffsetToNbOccurrence(" + v + ").newValue (" + valueMinusOffsetToNbOccurrence(v).newValue
@@ -124,14 +124,14 @@ case class AllDiff(variables: Iterable[IntValue])
     }
 
     for (v <- variables) {
-      c.check(violation(v).value == myValueCount(v.value + offset) - 1,
+      c.check(violation(v).value == myValueCount(v.value + offset) - 1L,
         Some("violation(" + v.name + ").value (" + violation(v).value
-          + ") != myValueCount(" + v.name + ".value + offset) - 1 ("
-          + (myValueCount(v.value + offset) - 1) + ")"))
+          + ") != myValueCount(" + v.name + ".value + offset) - 1L ("
+          + (myValueCount(v.value + offset) - 1L) + ")"))
     }
 
-    var MyViol: Int = 0
-    for (v <- range) MyViol += (0.max(myValueCount(v) - 1))
+    var MyViol: Long = 0L
+    for (v <- range) MyViol += (0.max(myValueCount(v) - 1L))
     c.check(MyViol == violationVariable.value, Some("MyViol (" + MyViol
         + ") == violationVariable.value (" + violationVariable.value + ")"))
   }

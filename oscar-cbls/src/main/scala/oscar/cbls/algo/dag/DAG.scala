@@ -32,18 +32,18 @@ import scala.collection.immutable.SortedSet
 trait DAGNode extends Ordered[DAGNode]{
 
   /**the position in the topological sort*/
-  var position: Int = 0
+  var position: Long = 0L
 
   /**supposed to be false between each pass of the algorithm*/
   var visited: Boolean = false
 
   /**it gives the unique ID of the PropagationElement.
-    * those uniqueID are expected to start at 0 and to increase continuously
-    * An exception is tolerated: uniqueID is set to -1
+    * those uniqueID are expected to start at 0L and to increase continuously
+    * An exception is tolerated: uniqueID is set to -1L
     * if the Propagation Element is not mentioned in the propagation structure, such as for constants
     * yet is mentioned in the dependencies of registered propagation elements
     */
-  var uniqueID:Int = -1
+  var uniqueID:Long = -1L
 
   protected[dag] def getDAGPrecedingNodes: Iterable[DAGNode]
 
@@ -146,7 +146,7 @@ trait DAG {
 
       //reassignment
 
-      val FreePositionsToDistribute: QList[Int] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
+      val FreePositionsToDistribute: QList[Long] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
 
       val FreePositionsForForwardRegion = realloc(SortedBackwardsRegion, FreePositionsToDistribute)
       realloc(SortedForwardRegion, FreePositionsForForwardRegion )
@@ -164,7 +164,7 @@ trait DAG {
     //on marque visite quand on poppe de la DFS ou quand on est retombe sur le debut du cycle
     var ExploredStack:List[DAGNode] = List.empty //upside down
 
-    var visited2:SortedSet[Int] = SortedSet.empty
+    var visited2:SortedSet[Long] = SortedSet.empty
 
     def DFS(n:DAGNode):Boolean = { //return true si on a trouve un cycle
       if(n.visited) return false
@@ -207,18 +207,18 @@ trait DAG {
     nodes.foreach(n => {
       val pos = - n.getDAGPrecedingNodes.size
       n.position = pos
-      if(pos == 0) front = QList(n,front)
+      if(pos == 0L) front = QList(n,front)
     })
 
-    var position = 0 //la position du prochain noeud place.
+    var position = 0L //la position du prochain noeud place.
     while (front != null) {
       val n = front.head
       front = front.tail
       n.position = position
-      position += 1
+      position += 1L
       n.getDAGSucceedingNodes.foreach(p => {
-        p.position +=1
-        if (p.position == 0) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
+        p.position +=1L
+        if (p.position == 0L) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
       })
     }
     if (position != nodes.size) {
@@ -227,7 +227,7 @@ trait DAG {
   }
 
   /*
-  private def findForwardRegion(n: DAGNode, ub: Int): List[DAGNode] = {
+  private def findForwardRegion(n: DAGNode, ub: Long): List[DAGNode] = {
     def dfsF(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
       n.visited = true
       var newlist = n :: acc
@@ -248,7 +248,7 @@ trait DAG {
   val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.position,nodes.size)
 
   /**@return forward region, sorted by increasing position*/
-  private def findSortedForwardRegion(n: DAGNode, ub: Int): QList[DAGNode] = {
+  private def findSortedForwardRegion(n: DAGNode, ub: Long): QList[DAGNode] = {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
@@ -278,7 +278,7 @@ trait DAG {
   }
 
   /*
-  private def findBackwardsRegion(n: DAGNode, lb: Int): List[DAGNode] = {
+  private def findBackwardsRegion(n: DAGNode, lb: Long): List[DAGNode] = {
     def dfsB(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
       n.visited = true
       var newlist = n :: acc
@@ -293,7 +293,7 @@ trait DAG {
   }
 */
   /**@return forward region, sorted by increasing position*/
-  private def findSortedBackwardRegion(n: DAGNode, lb: Int): QList[DAGNode] = {
+  private def findSortedBackwardRegion(n: DAGNode, lb: Long): QList[DAGNode] = {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
@@ -320,7 +320,7 @@ trait DAG {
 
 
   //merge deux listes de noeuds triee par position, donne la position triee de ces noeuds
-  private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Int] = {
+  private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Long] = {
     if (a == null && b == null){
       null
     }else if (a == null) {
@@ -334,7 +334,7 @@ trait DAG {
     }
   }
 
-  private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Int]):QList[Int] = {
+  private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Long]):QList[Long] = {
     if (OrderedNodeForReinsertion != null) {
       OrderedNodeForReinsertion.head.visited = false
       OrderedNodeForReinsertion.head.position = FreePositionsToDistribute.head

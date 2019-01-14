@@ -25,14 +25,14 @@ package oscar.cbls.algo.dag
   * @author renaud.delandtsheer@cetic.be
   * @param _UniqueID: an ID to be used as comparison for storage in sorted data structures
   */
-class ConcreteDAGNode(val _UniqueID:Int) extends DAGNode{
+class ConcreteDAGNode(val _UniqueID:Long) extends DAGNode{
 
   uniqueID = _UniqueID
 
   var PrecedingNodes: List[DAGNode] = List.empty
   var SucceedingNodes:List[DAGNode] = List.empty
 
-  final def compare(that: DAGNode):Int = {
+  final def compare(that: DAGNode):Long = {
     assert(this.uniqueID != that.uniqueID || this == that)
     this.uniqueID - that.uniqueID
   }

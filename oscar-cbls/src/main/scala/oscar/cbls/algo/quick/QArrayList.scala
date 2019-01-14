@@ -16,9 +16,9 @@ package oscar.cbls.algo.quick
   ******************************************************************************/
 
 
-class QArrayList[@specialized T](initialLength:Int)(implicit val X:Manifest[T]) {
+class QArrayList[@specialized T](initialLength:Long)(implicit val X:Manifest[T]) {
   private[this] var internalArray:Array[T] = new Array[T](initialLength)
-  private[this] var size:Int = 0
+  private[this] var size:Long = 0L
   private[this] var maxSize = initialLength
   private[this] val nullT = null.asInstanceOf[T]
 
@@ -26,34 +26,34 @@ class QArrayList[@specialized T](initialLength:Int)(implicit val X:Manifest[T]) 
     if(size == maxSize) {
       //need to double the size of the array
 
-      maxSize *= 10
+      maxSize *= 10L
       val newArray = new Array[T](maxSize)
 
       var toMove = size
-      while (toMove != 0) {
-        toMove -= 1
+      while (toMove != 0L) {
+        toMove -= 1L
         newArray(toMove) = internalArray(toMove)
       }
 
       internalArray = newArray
     }
     internalArray(size) = elem
-    size += 1
+    size += 1L
   }
 
   /**returns null if was empty*/
   def pop():T = {
-    if(size == 0){
+    if(size == 0L){
       nullT
     }else{
-      size -=1
+      size -=1L
       internalArray(size)
     }
   }
 
-  def isEmpty:Boolean = size == 0
+  def isEmpty:Boolean = size == 0L
 
   def setEmpty(){
-    size = 0
+    size = 0L
   }
 }

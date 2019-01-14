@@ -23,9 +23,9 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
-                                searchZone1:()=>Iterable[Int] = null,
-                                searchZone2:() => (Int,Int)=>Iterable[Int] = null,
-                                searchZoneForDelta:() => (Int,Int) => (Int,Int) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                                searchZone1:()=>Iterable[Long] = null,
+                                searchZone2:() => (Long,Long)=>Iterable[Long] = null,
+                                searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
                                 selectFirstVariableBehavior:LoopBehavior = First(),
                                 selectSecondVariableBehavior:LoopBehavior = First(),
@@ -33,20 +33,20 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   extends EasyNeighborhoodMultiLevel[TransferMove](name){
 
   //the indice to start with for the exploration
-  var firstVarIndice:Int = 0
+  var firstVarIndice:Long = 0L
   var firstVar:CBLSIntVar = null
 
-  var secondVarIndice:Int = -1
+  var secondVarIndice:Long = -1L
   var secondVar:CBLSIntVar = null
 
-  var delta:Int = 0
+  var delta:Long = 0L
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (firstVarIndice >= vars.length) firstVarIndice = 0
+          if (firstVarIndice >= vars.length) firstVarIndice = 0L
           vars.indices startBy firstVarIndice
         } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
@@ -81,14 +81,14 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
           //TODO: il faut cadrer dans le domaine des variables!!
 
-          def evaluate(delta:Int): Int ={
+          def evaluate(delta:Long): Long ={
             val newObj = obj.assignVal(Seq((firstVar,firstVar.value + delta),(secondVar,secondVar.value - delta)))
             newObj
           }
           val minValueForDelta = (secondVar.min - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.max)
           val maxValueForDelta = (secondVar.max - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.min)
 
-          val (bestDelta,objForDelta) = iterationOnDelta.search(0, initialObj, minValueForDelta, maxValueForDelta, evaluate)
+          val (bestDelta,objForDelta) = iterationOnDelta.search(0L, initialObj, minValueForDelta, maxValueForDelta, evaluate)
 
           this.delta = bestDelta
 
@@ -99,17 +99,17 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
-    firstVarIndice = firstVarIndice +1
-    secondVarIndice = -1
+    firstVarIndice = firstVarIndice +1L
+    secondVarIndice = -1L
   }
 
 
-  override def instantiateCurrentMove(newObj: Int) =
-    TransferMove(firstVar, secondVar, delta:Int, firstVarIndice,secondVarIndice,newObj, name)
+  override def instantiateCurrentMove(newObj: Long) =
+    TransferMove(firstVar, secondVar, delta:Long, firstVarIndice,secondVarIndice,newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    firstVarIndice = 0
+    firstVarIndice = 0L
   }
 }
 
@@ -122,7 +122,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class TransferMove(firstVar:CBLSIntVar, secondVar:CBLSIntVar, delta:Int, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+case class TransferMove(firstVar:CBLSIntVar, secondVar:CBLSIntVar, delta:Long, idI:Long, idJ:Long, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {

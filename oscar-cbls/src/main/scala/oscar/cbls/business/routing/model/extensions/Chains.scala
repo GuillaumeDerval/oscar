@@ -6,19 +6,19 @@ import scala.collection.immutable.{HashSet, List}
 import scala.collection.mutable
 
 /**
-  * Created by fg on 12/09/17.
+  * Created by fg on 12L/09L/1L7.
   */
-class Chains(vrp: VRP, chains: List[List[Int]]){
+class Chains(vrp: VRP, chains: List[List[Long]]){
 
   val (chainOfNode, nextNodeInChain, prevNodeInChain, nextNodesInChain, prevNodesInChain) = {
 
-    val chainOfNode: Array[List[Int]] = Array.fill(vrp.n)(List.empty)
-    val nextNodeInChain: Array[Option[Int]] = Array.fill(vrp.n)(None)
-    val prevNodeInChain: Array[Option[Int]] = Array.fill(vrp.n)(None)
-    val nextNodesInChain: Array[List[Int]] = Array.fill(vrp.n)(List.empty)
-    val prevNodesInChain: Array[List[Int]] = Array.fill(vrp.n)(List.empty)
+    val chainOfNode: Array[List[Long]] = Array.fill(vrp.n)(List.empty)
+    val nextNodeInChain: Array[Option[Long]] = Array.fill(vrp.n)(None)
+    val prevNodeInChain: Array[Option[Long]] = Array.fill(vrp.n)(None)
+    val nextNodesInChain: Array[List[Long]] = Array.fill(vrp.n)(List.empty)
+    val prevNodesInChain: Array[List[Long]] = Array.fill(vrp.n)(List.empty)
 
-    def proceedChain(toProceed: List[Int], previousNodes:List[Int],chain:List[Int]): Unit ={
+    def proceedChain(toProceed: List[Long], previousNodes:List[Long],chain:List[Long]): Unit ={
       toProceed match {
         case Nil =>
         case head :: tail =>
@@ -39,9 +39,9 @@ class Chains(vrp: VRP, chains: List[List[Int]]){
 
   val heads = chains.map(_.head)
 
-  def firstNodeInChainOfNode(node: Int): Int = chainOfNode(node).head
-  def lastNodeInChainOfNode(node: Int): Int = chainOfNode(node).last
+  def firstNodeInChainOfNode(node: Long): Long = chainOfNode(node).head
+  def lastNodeInChainOfNode(node: Long): Long = chainOfNode(node).last
 
-  def isHead(node: Int): Boolean = !vrp.isADepot(node) && chainOfNode(node).head == node
-  def isLast(node: Int): Boolean = chainOfNode(node).last == node
+  def isHead(node: Long): Boolean = !vrp.isADepot(node) && chainOfNode(node).head == node
+  def isLast(node: Long): Boolean = chainOfNode(node).last == node
 }

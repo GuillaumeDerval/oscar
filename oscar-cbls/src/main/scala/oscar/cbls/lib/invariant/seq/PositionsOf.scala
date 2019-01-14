@@ -35,7 +35,7 @@ object PositionsOf{
    * @param a an integer
    * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
    */
-  def apply(v: SeqValue, a:Int):ChangingSetValue  =
+  def apply(v: SeqValue, a:Long):ChangingSetValue  =
     new PositionsOfConst(v, a)
 }
 
@@ -45,7 +45,7 @@ object PositionsOf{
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOf(v: SeqValue, a:IntValue)
-  extends SetInvariant(v.value.positionsOfValueSet(a.value), 0 to DomainHelper.safeAddMax(v.max,1))
+  extends SetInvariant(v.value.positionsOfValueSet(a.value), 0L to DomainHelper.safeAddMax(v.max,1L))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("PositionOf(" + a.name + " in " + v.name + ")")
@@ -55,11 +55,11 @@ class PositionsOf(v: SeqValue, a:IntValue)
 
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
     scheduleForPropagation()
   }
 
-  override def notifyIntChanged(v : ChangingIntValue, id : Int, OldVal : Int, NewVal : Int){
+  override def notifyIntChanged(v : ChangingIntValue, id : Long, OldVal : Long, NewVal : Long){
     scheduleForPropagation()
   }
 
@@ -77,8 +77,8 @@ class PositionsOf(v: SeqValue, a:IntValue)
  * @param v is a SeqValue
  * @param a is the value that is to locate in the sequence
  */
-class PositionsOfConst(v: SeqValue, a:Int)
-  extends SetInvariant(v.value.positionsOfValueSet(a), 0 to DomainHelper.safeAddMax(v.max,1))
+class PositionsOfConst(v: SeqValue, a:Long)
+  extends SetInvariant(v.value.positionsOfValueSet(a), 0L to DomainHelper.safeAddMax(v.max,1L))
   with SeqNotificationTarget{
 
   setName("PositionOf(" + a + " in " + v.name + ")")
@@ -86,7 +86,7 @@ class PositionsOfConst(v: SeqValue, a:Int)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
     scheduleForPropagation()
   }
 

@@ -24,24 +24,24 @@ import oscar.cbls.core.computation.{CBLSIntVar, DomainRange, IntValue}
 /**
  * Author: Jean-Noël Monette
  */
-case class SparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar])
+case class SparseCount(values: Array[IntValue], counts: Map[Long,CBLSIntVar])
   extends Invariant
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   
   finishInitialization()
-  for (count <- counts.values) { count := 0 }
+  for (count <- counts.values) { count := 0L }
   for (v <- values.indices){
-    counts.get(values(v).value).foreach(c => c :+= 1)
+    counts.get(values(v).value).foreach(c => c :+= 1L)
   }
   for(c <- counts.values) c.setDefiningInvariant(this)
     
    @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
-    counts.get(OldVal).foreach(c => c :-= 1)
-    counts.get(NewVal).foreach(c => c :+= 1)
+    counts.get(OldVal).foreach(c => c :-= 1L)
+    counts.get(NewVal).foreach(c => c :+= 1L)
   }
 }
 
@@ -49,19 +49,19 @@ case class SparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar])
  * Maintains a count of the indexes of array: count(j) = #{i in index of values | values[i]+offset == j}
  * This is considered as a dense count because counts is an array and must cover all the possibles values of the values in the array ''values''
  *
- * it is expected that the values are always >= 0
+ * it is expected that the values are always >= 0L
  * @author renaud.delandtsheer@cetic.be
  * */
-case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset:Int = 0)
+case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset:Long = 0L)
   extends Invariant
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
 
-  for (count <- counts) { count := 0 }
+  for (count <- counts) { count := 0L }
 
   for (v <- values.indices) {
-    counts(values(v).value+offset) :+= 1
+    counts(values(v).value+offset) :+= 1L
   }
 
   finishInitialization()
@@ -69,10 +69,10 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   for (c <- counts) { c.setDefiningInvariant(this) }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
-    counts(OldVal + offset) :-= 1
-    counts(NewVal + offset) :+= 1
+    counts(OldVal + offset) :-= 1L
+    counts(NewVal + offset) :+= 1L
   }
 
   override def checkInternals(c: Checker) {
@@ -83,10 +83,10 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
      * an array and must cover all the possibles values of the values
      * in the array ''values''
      */
-    val myCounts = Array.fill[Int](counts.length)(0)
+    val myCounts = Array.fill[Long](counts.length)(0L)
     for (i <- values.indices) {
       val v = values(i).value
-      myCounts(v+offset) = myCounts(v+offset) + 1
+      myCounts(v+offset) = myCounts(v+offset) + 1L
     }
 
     for (j <- counts.indices) {
@@ -103,8 +103,8 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   * @author gustav.bjordal@it.uu.se
   * */
 
-case class ConstCount(values: Array[IntValue], c: Int)
-  extends IntInvariant(values.count(v => v.value == c), DomainRange(0,values.length))
+case class ConstCount(values: Array[IntValue], c: Long)
+  extends IntInvariant(values.count(v => v.value == c), DomainRange(0L,values.length))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(values)
@@ -112,11 +112,11 @@ case class ConstCount(values: Array[IntValue], c: Int)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     if(NewVal == c){
-      this :+= 1
+      this :+= 1L
     }else if(OldVal == c){
-      this :-= 1
+      this :-= 1L
     }
   }
 
@@ -128,10 +128,10 @@ case class ConstCount(values: Array[IntValue], c: Int)
 object DenseCount{
   def makeDenseCount(vars: Array[IntValue]):DenseCount = {
     val ((minMin,maxMax)) = InvariantHelper.getMinMaxBounds(vars)
-    val mbValues = maxMax - minMin + 1
+    val mbValues = maxMax - minMin + 1L
     val m:Store = InvariantHelper.findModel(vars)
     val nbVars = vars.length
-    val counts = Array.tabulate(mbValues)(i => CBLSIntVar(m,0, 0 to nbVars, "count_" + (i-minMin)))
+    val counts = Array.tabulate(mbValues)(i => CBLSIntVar(m,0L, 0L to nbVars, "count_" + (i-minMin)))
     DenseCount(vars,counts,-minMin)
   }
 }

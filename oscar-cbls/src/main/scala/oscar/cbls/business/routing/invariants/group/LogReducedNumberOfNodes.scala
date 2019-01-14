@@ -21,27 +21,27 @@ import oscar.cbls.{CBLSIntVar, Variable}
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 
-case class NodesOnSubsequence(nbNodes:Int,
-                              level:Int,
-                              firstNode:Int,
-                              lastNode:Int){
-//  require(nbNodes == ((1 << (level-1))  -1))
+case class NodesOnSubsequence(nbNodes:Long,
+                              level:Long,
+                              firstNode:Long,
+                              lastNode:Long){
+//  require(nbNodes == ((1L << (level-1L))  -1L))
 
   override def toString: String = {
     "NodesOnSubsequence(nbNodes:" + nbNodes + ",level:" + level + ",firstNode:" + firstNode + ",lastNode:" + lastNode + ")"
   }
 }
 
-class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraint[NodesOnSubsequence,Int](routes,v){
+class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Long, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](routes,v){
 
   /**
     * this method delivers the value of the node
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(1, level = 0,node,node)
+  override def nodeValue(node: Long): NodesOnSubsequence = {
+    NodesOnSubsequence(1L, level = 0L,node,node)
   }
 
 
@@ -52,8 +52,8 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(0, level = 0, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
+  override def endNodeValue(vehicle: Long): NodesOnSubsequence = {
+    NodesOnSubsequence(0L, level = 0L, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
   }
 
   /**
@@ -65,7 +65,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
     require(firstStep.level == secondStep.level)
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
 
   /**
@@ -76,18 +76,18 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+        QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+        QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
-        1
+        1L
     }).sum
   }
 
@@ -99,7 +99,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
     nbNodesPerRoute(vehicle) := value
   }
 
@@ -109,11 +109,11 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
-    if(vehicle == v-1){
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    if(vehicle == v-1L){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
-      routes.positionOfAnyOccurrence(vehicle+1).get - routes.positionOfAnyOccurrence(vehicle).get
+      routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
     }
   }
 
@@ -121,15 +121,15 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Ar
 }
 
 
-class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
-  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Int](routes,v){
+class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Long, nbNodesPerRoute:Array[CBLSIntVar])
+  extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](routes,v){
   /**
     * this method delivers the value of the node
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(1, level = 0,node,node)
+  override def nodeValue(node: Long): NodesOnSubsequence = {
+    NodesOnSubsequence(1L, level = 0L,node,node)
   }
 
 
@@ -140,8 +140,8 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Int): NodesOnSubsequence = {
-    NodesOnSubsequence(0, level = 0, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
+  override def endNodeValue(vehicle: Long): NodesOnSubsequence = {
+    NodesOnSubsequence(0L, level = 0L, vehicle, vehicle) //since it is the number of nodes, return is not counted as a node
   }
 
   /**
@@ -152,7 +152,7 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @return the type T associated with the first step followed by the second step
     */
   override def composeSteps(firstStep: NodesOnSubsequence, secondStep: NodesOnSubsequence): NodesOnSubsequence = {
-    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1,firstStep.firstNode,secondStep.lastNode)
+    NodesOnSubsequence(firstStep.nbNodes + secondStep.nbNodes, firstStep.level + 1L,firstStep.firstNode,secondStep.lastNode)
   }
 
 
@@ -164,18 +164,18 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. this value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Int = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[NodesOnSubsequence]]): Long = {
     segments.qMap({
       case s@LogReducedPreComputedSubSequence(startNode, endNode, steps)=>
         //require(steps.isEmpty || steps.head.firstNode == startNode)
         //require(steps.isEmpty || steps.last.lastNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+        QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedFlippedPreComputedSubSequence(startNode, endNode, steps) =>
         //require(steps.isEmpty || steps.last.lastNode == startNode, steps)
         //require(steps.isEmpty || steps.head.firstNode == endNode)
-        QList.qFold[NodesOnSubsequence,Int](steps,(a,b) => a + b.nbNodes,0)
+        QList.qFold[NodesOnSubsequence,Long](steps,(a,b) => a + b.nbNodes,0L)
       case s@LogReducedNewNode(_, _) =>
-        1
+        1L
     }).sum
   }
 
@@ -187,7 +187,7 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
     nbNodesPerRoute(vehicle) := value
   }
 
@@ -197,11 +197,11 @@ class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNode
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
-    if(vehicle == v-1){
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
+    if(vehicle == v-1L){
       routes.size - routes.positionOfAnyOccurrence(vehicle).get
     }else{
-      routes.positionOfAnyOccurrence(vehicle+1).get - routes.positionOfAnyOccurrence(vehicle).get
+      routes.positionOfAnyOccurrence(vehicle+1L).get - routes.positionOfAnyOccurrence(vehicle).get
     }
   }
 

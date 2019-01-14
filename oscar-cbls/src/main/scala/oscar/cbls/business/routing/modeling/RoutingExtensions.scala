@@ -6,7 +6,7 @@ import oscar.cbls.business.routing.model.extensions._
 import scala.collection.immutable.List
 
 /**
-  * Created by fg on 9/10/17.
+  * Created by fg on 9L/10L/1L7.
   */
 trait RoutingExtensions {
 
@@ -19,7 +19,7 @@ trait RoutingExtensions {
     * @param chains The list of chains => List of List of nodes
     * @return A Chains object
     */
-  def chains(vrp: VRP, chains: List[List[Int]]) =
+  def chains(vrp: VRP, chains: List[List[Long]]) =
     new Chains(vrp, chains)
   type Chains = oscar.cbls.business.routing.model.extensions.Chains
 
@@ -31,7 +31,7 @@ trait RoutingExtensions {
     * To use it after. Add this at the end of your search procedure : afterMove(myDisplayObject.drawRoutes())
     *
     * @param vrp The basic vehicle routing problem
-    * @param nodePositions A list of node's position. nodePosition(0) represent the position of the first node
+    * @param nodePositions A list of node's position. nodePosition(0L) represent the position of the first node
     * @param displayOnRealMap true if you want to display on a real map
     * @param selectRouteToDisplay true if you want a way to select the route to display (deprecated)
     * @param sizeOfMap The size of your map
@@ -42,8 +42,8 @@ trait RoutingExtensions {
               nodePositions: List[(Double,Double)],
               displayOnRealMap: Boolean = false,
               selectRouteToDisplay: Boolean = false,
-              sizeOfMap: Option[Int] = None,
-              refreshRate: Int = 100,
+              sizeOfMap: Option[Long] = None,
+              refreshRate: Long = 100L,
               title:String = "VRP with OscaR.cbls"
              ) =
     new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate, title)
@@ -65,12 +65,12 @@ trait RoutingExtensions {
     * @param maxWaitingDurations For each node the maximum among of time we can wait before starting the task.
     *                            e.g.: You can stay at a parking for a limited among of time.
     */
-  def timeWindows(earliestArrivalTimes: Option[Array[Int]] = None,
-                     latestArrivalTimes: Option[Array[Int]] = None,
-                     earliestLeavingTimes: Option[Array[Int]] = None,
-                     latestLeavingTimes: Option[Array[Int]] = None,
-                     taskDurations: Array[Int],
-                     maxWaitingDurations: Option[Array[Int]] = None): TimeWindows =
+  def timeWindows(earliestArrivalTimes: Option[Array[Long]] = None,
+                     latestArrivalTimes: Option[Array[Long]] = None,
+                     earliestLeavingTimes: Option[Array[Long]] = None,
+                     latestLeavingTimes: Option[Array[Long]] = None,
+                     taskDurations: Array[Long],
+                     maxWaitingDurations: Option[Array[Long]] = None): TimeWindows =
     TimeWindows(earliestArrivalTimes,latestArrivalTimes,earliestLeavingTimes,latestLeavingTimes,taskDurations,maxWaitingDurations)
   type TimeWindow = oscar.cbls.business.routing.model.extensions.TimeWindows
 

@@ -46,7 +46,7 @@ case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar])
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     for (added <- addedValues) referencing(added).insertValue(d)
     for (deleted <- removedValues)  referencing(deleted).deleteValue(d)
   }
@@ -71,8 +71,8 @@ object DenseRef{
   def makeDenseRef(references:Array[SetValue]) = {
     val (minMin,maxMax) = InvariantHelper.getMinMaxBoundsSet(references)
     val m:Store = InvariantHelper.findModel(references)
-    assert(minMin == 0)
-    val referencing = Array.tabulate(maxMax + 1)(i => new CBLSSetVar(m,SortedSet.empty, references.indices, "referencing_" + i))
+    assert(minMin == 0L)
+    val referencing = Array.tabulate(maxMax + 1L)(i => new CBLSSetVar(m,SortedSet.empty, references.indices, "referencing_" + i))
     new DenseRef(references,referencing)
   }
 }

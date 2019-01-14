@@ -42,37 +42,37 @@ import oscar.cbls.algo.search.LazyQuicksort
   * @author fabian.germeau@student.vinci.be
   */
 trait Zoom extends ObjFunctionGraphicContainer{
-  val zoomSlider = new JSlider(SwingConstants.VERTICAL,1,100,1)
-  zoomSlider.setMajorTickSpacing(10)
-  zoomSlider.setMinorTickSpacing(1)
+  val zoomSlider = new JSlider(SwingConstants.VERTICAL,1L,100L,1L)
+  zoomSlider.setMajorTickSpacing(10L)
+  zoomSlider.setMinorTickSpacing(1L)
   zoomSlider.setPaintTicks(true)
   zoomSlider.addChangeListener(new ChangeListener{
     override def stateChanged(e: ChangeEvent): Unit = {
       adjustScrollBar()
-      graphic.minXValueDisplayed = Math.max(Math.floor((graphic.maxXValue()/rightLeftSlider.getMaximum)*(rightLeftSlider.getValue-1)).toLong,graphic.minXValue())
+      graphic.minXValueDisplayed = Math.max(Math.floor((graphic.maxXValue()/rightLeftSlider.getMaximum)*(rightLeftSlider.getValue-1L)).toLong,graphic.minXValue())
       graphic.maxXValueDisplayed = Math.max(Math.ceil((graphic.maxXValue()/rightLeftSlider.getMaximum)*rightLeftSlider.getValue).toLong,graphic.diffWidth()+graphic.minXValue())
-      graphic.minYValueDisplayed = Math.max(Math.floor((graphic.maxYValue()/upDownSlider.getMaximum)*(upDownSlider.getValue-1)).toLong,graphic.minYValue())
+      graphic.minYValueDisplayed = Math.max(Math.floor((graphic.maxYValue()/upDownSlider.getMaximum)*(upDownSlider.getValue-1L)).toLong,graphic.minYValue())
       graphic.maxYValueDisplayed = Math.min(Math.ceil((graphic.maxYValue()/upDownSlider.getMaximum)*upDownSlider.getValue).toLong,graphic.maxYValue())
     }
   })
   add(zoomSlider, BorderLayout.EAST)
 
-  val rightLeftSlider = new JSlider(SwingConstants.HORIZONTAL,1,1,1)
+  val rightLeftSlider = new JSlider(SwingConstants.HORIZONTAL,1L,1L,1L)
   rightLeftSlider.setPaintTicks(true)
   rightLeftSlider.addChangeListener(new ChangeListener {
     override def stateChanged(e: ChangeEvent): Unit = {
-      graphic.minXValueDisplayed = Math.max(Math.floor((graphic.maxXValue()/rightLeftSlider.getMaximum)*(rightLeftSlider.getValue-1)).toLong,graphic.minXValue())
+      graphic.minXValueDisplayed = Math.max(Math.floor((graphic.maxXValue()/rightLeftSlider.getMaximum)*(rightLeftSlider.getValue-1L)).toLong,graphic.minXValue())
       graphic.maxXValueDisplayed = Math.max(Math.ceil((graphic.maxXValue()/rightLeftSlider.getMaximum)*rightLeftSlider.getValue).toLong,graphic.diffWidth()+graphic.minXValue())
       graphic.drawGlobalCurve()
     }
   })
   add(rightLeftSlider, BorderLayout.SOUTH)
 
-  val upDownSlider = new JSlider(SwingConstants.VERTICAL,1,1,1)
+  val upDownSlider = new JSlider(SwingConstants.VERTICAL,1L,1L,1L)
   upDownSlider.setPaintTicks(true)
   upDownSlider.addChangeListener(new ChangeListener{
     override def stateChanged(e: ChangeEvent): Unit = {
-      graphic.minYValueDisplayed = Math.max(Math.floor((graphic.maxYValue()/upDownSlider.getMaximum)*(upDownSlider.getValue-1)).toLong,graphic.minYValue())
+      graphic.minYValueDisplayed = Math.max(Math.floor((graphic.maxYValue()/upDownSlider.getMaximum)*(upDownSlider.getValue-1L)).toLong,graphic.minYValue())
       graphic.maxYValueDisplayed = Math.min(Math.ceil((graphic.maxYValue()/upDownSlider.getMaximum)*upDownSlider.getValue).toLong,graphic.maxYValue())
       graphic.drawGlobalCurve()
     }
@@ -82,17 +82,17 @@ trait Zoom extends ObjFunctionGraphicContainer{
   /*
     This method, called by the zoomScrollBar adjust the values of the rightLeftScrollBar and the upDownScrollBar
     so that their values are adjusted to the new zoom level.
-    After adjusting the values, it sets the value of the scrollbar to 0 (top left of the graphic)
+    After adjusting the values, it sets the value of the scrollbar to 0L (top left of the graphic)
    */
   def adjustScrollBar(): Unit ={
-    rightLeftSlider.setValue(1)
-    upDownSlider.setValue(1)
+    rightLeftSlider.setValue(1L)
+    upDownSlider.setValue(1L)
     rightLeftSlider.setMaximum(Math.min(Math.ceil(graphic.diffXValue()/graphic.diffWidth()), getLogZoom(zoomSlider.getValue)).toInt)
-    rightLeftSlider.setMajorTickSpacing(rightLeftSlider.getMaximum/100)
-    rightLeftSlider.setMinorTickSpacing(rightLeftSlider.getMaximum/10)
+    rightLeftSlider.setMajorTickSpacing(rightLeftSlider.getMaximum/100L)
+    rightLeftSlider.setMinorTickSpacing(rightLeftSlider.getMaximum/10L)
     upDownSlider.setMaximum(Math.min(graphic.diffYValue(),getLogZoom(zoomSlider.getValue)).toInt)
-    upDownSlider.setMajorTickSpacing(upDownSlider.getMaximum/100)
-    upDownSlider.setMinorTickSpacing(upDownSlider.getMaximum/10)
+    upDownSlider.setMajorTickSpacing(upDownSlider.getMaximum/100L)
+    upDownSlider.setMinorTickSpacing(upDownSlider.getMaximum/10L)
   }
 
   /*
@@ -111,8 +111,8 @@ trait Zoom extends ObjFunctionGraphicContainer{
     * @return the new zoom level
     */
   def getLogZoom(i:Double): Double ={
-    if(i == 0)1
-    else Math.max(1.0,100*Math.pow(Math.log(i), 2) / Math.pow(Math.log(100), 2))
+    if(i == 0L)1L
+    else Math.max(1.0,100L*Math.pow(Math.log(i), 2L) / Math.pow(Math.log(100L), 2L))
   }
 }
 
@@ -120,16 +120,16 @@ trait Zoom extends ObjFunctionGraphicContainer{
   * This trait, attached to a ObjFunctionGraphicContainer add a scrollbar on the right side of the graphic.
   * This scrollbar allow the user to increase or decrease the number of value displayed on the graphic.
   * The number of displayed value is represented in percentages and always begin with the lower value.
-  * The minimum value is 1% and the maximum value 100%.
+  * The minimum value is 1L% and the maximum value 100L%.
   *
   * @author fabian.germeau@student.vinci.be
   */
 trait AdjustMaxValue extends ObjFunctionGraphicContainer{
   var sortedYValues:LazyQuicksort = null
 
-  val adjustMaxValueSlider = new JSlider(SwingConstants.VERTICAL,1,100,100)
-  adjustMaxValueSlider.setMajorTickSpacing(10)
-  adjustMaxValueSlider.setMinorTickSpacing(1)
+  val adjustMaxValueSlider = new JSlider(SwingConstants.VERTICAL,1L,100L,100L)
+  adjustMaxValueSlider.setMajorTickSpacing(10L)
+  adjustMaxValueSlider.setMinorTickSpacing(1L)
   adjustMaxValueSlider.setPaintTicks(true)
   adjustMaxValueSlider.addChangeListener(new ChangeListener {
     /*
@@ -139,11 +139,11 @@ trait AdjustMaxValue extends ObjFunctionGraphicContainer{
      */
     override def stateChanged(e: ChangeEvent): Unit = {
       sortedYValues = new LazyQuicksort(graphic.yValues.toArray,+_)
-      sortedYValues.sortUntil(Math.max(1,(adjustMaxValueSlider.getValue.toDouble/100 * sortedYValues.size).toInt))
+      sortedYValues.sortUntil(Math.max(1L,(adjustMaxValueSlider.getValue.toDouble/100L * sortedYValues.size).toInt))
       val iteratorXValues = sortedYValues.iterator
-      for(i <- 0 until Math.max(1, (adjustMaxValueSlider.getValue.toDouble / 100 * sortedYValues.size).toInt)){
+      for(i <- 0L until Math.max(1L, (adjustMaxValueSlider.getValue.toDouble / 100L * sortedYValues.size).toInt)){
         val temp = iteratorXValues.next()
-        if(i == (adjustMaxValueSlider.getValue.toDouble/100 * sortedYValues.size).toInt-1) {
+        if(i == (adjustMaxValueSlider.getValue.toDouble/100L * sortedYValues.size).toInt-1L) {
           graphic.maxYValueDisplayed = temp
         }
       }

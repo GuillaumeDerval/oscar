@@ -60,19 +60,19 @@ abstract class JumpNeighborhood extends Neighborhood {
 
   def shortDescription(): String
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
     if (canDoIt) CallBackMove(() => doIt(), valueAfter, this.getClass.getSimpleName, shortDescription _)
     else NoMoveFound
   }
 
   /**
    * returns the value after the move
-   * called by getMove, by default, this is Int.MaxValue, which is the correct value for a jump
+   * called by getMove, by default, this is Long.MaxValue, which is the correct value for a jump
    * in case your jump does not modify the obj function and you want to include this in the move description, override this method
    *
    * @return
    */
-  def valueAfter = Int.MaxValue
+  def valueAfter = Long.MaxValue
 }
 
 abstract class JumpNeighborhoodParam[T] extends Neighborhood {
@@ -87,10 +87,10 @@ abstract class JumpNeighborhoodParam[T] extends Neighborhood {
   def getParam: T
   def getShortDescription(param: T): String
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val param: T = getParam
     if (param == null) NoMoveFound
-    else CallBackMove((param: T) => doIt(param), Int.MaxValue, this.getClass.getSimpleName, () => getShortDescription(param), param)
+    else CallBackMove((param: T) => doIt(param), Long.MaxValue, this.getClass.getSimpleName, () => getShortDescription(param), param)
   }
 }
 
@@ -117,7 +117,7 @@ abstract class Neighborhood(name:String = null) {
    * @param acceptanceCriterion
    * @return
    */
-  def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult
+  def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult
 
 
   //this resets the internal state of the Neighborhood
@@ -129,14 +129,14 @@ abstract class Neighborhood(name:String = null) {
 
   //TODO: ajouter un niveau qui montre les exhausted
   /**
-   * verbosity: 0: none
-   * 1: moves
-   * 2: moves + failed searches
-   * 3: moves + explored neighbors
+   * verbosity: 0L: none
+   * 1L: moves
+   * 2L: moves + failed searches
+   * 3L: moves + explored neighbors
    */
-  var _verbose: Int = 0
-  def verbose: Int = _verbose
-  def verbose_=(i: Int) {
+  var _verbose: Long = 0L
+  def verbose: Long = _verbose
+  def verbose_=(i: Long) {
     _verbose = i
     additionalStringGenerator = null
   }
@@ -144,24 +144,24 @@ abstract class Neighborhood(name:String = null) {
   var additionalStringGenerator: () => String = null
 
   /**
-   * sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1)
-   *   or for each explored neighbor (level = 2)
+   * sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1L)
+   *   or for each explored neighbor (level = 2L)
    */
-  def verboseWithExtraInfo(verbosity: Int, additionalString: () => String) {
+  def verboseWithExtraInfo(verbosity: Long, additionalString: () => String) {
     verbose = verbosity
     additionalStringGenerator = additionalString
   }
 
-  protected def printMoveSythesis:Boolean = verbose == 1
-  protected def printTakenMoves: Boolean = verbose >= 2
-  protected def printExploredNeighborhoods: Boolean = verbose >= 3
-  protected def printExploredNeighbors: Boolean = verbose >= 4
+  protected def printMoveSythesis:Boolean = verbose == 1L
+  protected def printTakenMoves: Boolean = verbose >= 2L
+  protected def printExploredNeighborhoods: Boolean = verbose >= 3L
+  protected def printExploredNeighbors: Boolean = verbose >= 4L
 
 
   /**
    * @return true if a move has been performed, false otherwise
    */
-  def doImprovingMove(obj: Objective): Boolean = 0 != doAllMoves(_ >= 1, obj)
+  def doImprovingMove(obj: Objective): Boolean = 0L != doAllMoves(_ >= 1L, obj)
 
   /**
    * @param shouldStop a function that takes the iteration number and returns true if search should be stopped
@@ -174,36 +174,36 @@ abstract class Neighborhood(name:String = null) {
    *                            because their purpose is to randomize the current solution.
    * @return the number of moves performed
    */
-  def doAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): Int = {
+  def doAllMoves(shouldStop: Long => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): Long = {
 
-    def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
-    def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
-    def trimToLength(s: String, l: Int) = if (s.length >= l) s.substring(0, l) else s
+    def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
+    def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
+    def trimToLength(s: String, l: Long) = if (s.length >= l) s.substring(0L, l) else s
 
-    if (verbose != 0){
+    if (verbose != 0L){
       println("start doAllMove at " + java.time.LocalDateTime.now)
       println("initial objective function:" + obj)
     }
-    var moveSynthesis = SortedMap.empty[String,Int]
+    var moveSynthesis = SortedMap.empty[String,Long]
 
     val startSearchNanotime = System.nanoTime()
-    var nanoTimeAtNextSynthesis = startSearchNanotime + (1000*1000*100) //100ms
+    var nanoTimeAtNextSynthesis = startSearchNanotime + (1000L*1000L*100L) //100Lms
 
-    var bestObj = Int.MaxValue
-    var prevObj = Int.MaxValue
-    var toReturn = 0
-    var moveCount = 0
+    var bestObj = Long.MaxValue
+    var prevObj = Long.MaxValue
+    var toReturn = 0L
+    var moveCount = 0L
     val enrichedObj = if (additionalStringGenerator == null) obj else new ObjWithStringGenerator(obj, additionalStringGenerator)
     while (!shouldStop(moveCount)) {
       getMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
-          if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
+          if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000L).toInt + " ms ")
           return toReturn;
         case m: MoveFound =>
           if(printMoveSythesis){
             //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
             val neighborhoodName = m.m.neighborhoodName
-            moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
+            moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0L)+1L))
 
             val printSynthesis = (System.nanoTime() >= nanoTimeAtNextSynthesis)
 
@@ -215,28 +215,28 @@ abstract class Neighborhood(name:String = null) {
 
               prevObj = m.objAfter
 
-              val smallPaddingLength = 20
+              val smallPaddingLength = 20L
 
               val secondPrefix = (if (m.objAfter < bestObj) {
                 bestObj = m.objAfter
                 " # "
               } else if (m.objAfter == bestObj) " ° "
               else "   ") + padToLength(m.objAfter.toString,smallPaddingLength)
-              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4)+ ":"+n, smallPaddingLength)}).mkString(" "))
+              println(firstPrefix + secondPrefix + moveSynthesis.toList.map({case ((name,n)) => padToLength(trimToLength(name, smallPaddingLength-4L)+ ":"+n, smallPaddingLength)}).mkString(" "))
 
-              moveSynthesis = SortedMap.empty[String,Int]
-              nanoTimeAtNextSynthesis = System.nanoTime() + (1000*1000*100) //100ms
+              moveSynthesis = SortedMap.empty[String,Long]
+              nanoTimeAtNextSynthesis = System.nanoTime() + (1000L*1000L*100L) //100Lms
             }
 
             m.commit()
             //TODO: additionalString should be handled with synthesis!
             if (printSynthesis && additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
-            if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
+            require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else if (printTakenMoves) {
 
-            if (m.objAfter != Int.MaxValue) {
+            if (m.objAfter != Long.MaxValue) {
               val firstPrefix = if (m.objAfter < prevObj) "-"
               else if (m.objAfter == prevObj) "="
               else "+"
@@ -257,26 +257,26 @@ abstract class Neighborhood(name:String = null) {
 
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
-            if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
+            require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
 
           }else{
             m.commit()
             if (additionalStringGenerator != null) println("after move is committed: " + additionalStringGenerator())
-            if (obj.value == Int.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
-            require(m.objAfter == Int.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
+            if (obj.value == Long.MaxValue) println("Warning : objective == MaxInt, maybe you have some strong constraint violated?")
+            require(m.objAfter == Long.MaxValue || obj.value == m.objAfter, "neighborhood was lying!:" + m + " got " + obj)
           }
       }
-      toReturn += 1
-      moveCount += 1
+      toReturn += 1L
+      moveCount += 1L
     }
     if (printTakenMoves || printMoveSythesis) {
-      println("stop criteria of doAllMove met after " + moveCount + " moves, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms")
+      println("stop criteria of doAllMove met after " + moveCount + " moves, " + ((System.nanoTime() - startSearchNanotime)/1000000L).toInt + " ms")
     }
     toReturn
   }
 
-  def getAllMoves(shouldStop: Int => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Int, Int) => Boolean = (oldObj, newObj) => oldObj > newObj): List[Move] = {
+  def getAllMoves(shouldStop: Long => Boolean = _ => false, obj: Objective, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): List[Move] = {
 
     var toReturn : List[Move] = List.empty
 
@@ -294,15 +294,15 @@ abstract class Neighborhood(name:String = null) {
  * a neighborhood that never finds any move (quite useless, actually)
  */
 case object NoMoveNeighborhood extends Neighborhood {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = NoMoveFound
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = NoMoveFound
 }
 
 
 trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
 
-  def instantiateCurrentMove(newObj:Int):MoveType
+  def instantiateCurrentMove(newObj:Long):MoveType
 
-  def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Int = Int.MaxValue):DynAndThen[MoveType] = {
+  def dynAndThen(other:MoveType => Neighborhood,maximalIntermediaryDegradation: Long = Long.MaxValue):DynAndThen[MoveType] = {
     new DynAndThen[MoveType](this,other,maximalIntermediaryDegradation)
   }
 
@@ -338,7 +338,7 @@ trait SupportForAndThenChaining[MoveType<:Move] extends Neighborhood{
  *
  * to implement a neighborhood, you must implement the method exploreNeighborhood
  * in this method, you evaluate moves, and to notify that a move has been
- * explored you call the method evaluateCurrentMoveObjTrueIfStopRequired(newObj:Int)
+ * explored you call the method evaluateCurrentMoveObjTrueIfStopRequired(newObj:Long)
  *
  * this method tells you if the search must be stopped, or not.
  *
@@ -360,18 +360,18 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
   override def toString: String = neighborhoodNameToString
 
   //passing parameters, and getting return values from the search
-  private var oldObj: Int = 0
-  private var acceptanceCriterion: (Int, Int) => Boolean = null
+  private var oldObj: Long = 0L
+  private var acceptanceCriterion: (Long, Long) => Boolean = null
   private var toReturnMove: Move = null
-  private var bestNewObj: Int = Int.MaxValue
+  private var bestNewObj: Long = Long.MaxValue
   protected var obj: Objective = null
 
-  override final def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Int.MaxValue
+    bestNewObj = Long.MaxValue
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
@@ -398,11 +398,11 @@ abstract class EasyNeighborhood[M<:Move](best:Boolean = false, neighborhoodName:
    */
   def exploreNeighborhood()
 
-  def instantiateCurrentMove(newObj: Int): M
+  def instantiateCurrentMove(newObj: Long): M
 
-  var tmpNewObj: Int = 0
+  var tmpNewObj: Long = 0L
 
-  def evaluateCurrentMoveObjTrueIfStopRequired(newObj: Int): Boolean = {
+  def evaluateCurrentMoveObjTrueIfStopRequired(newObj: Long): Boolean = {
     //cas à gérer:
     //verbose (on affiche le mouvement; qu'on instancie donc avec obj)
     //andThen (pas utile de l'instancier sns obj pq on va de tt façons propager en commençant le voisinage suivant.
@@ -457,14 +457,14 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
   override def toString: String = neighborhoodNameToString
 
   //passing parameters, and getting return values from the search
-  private var oldObj: Int = 0
-  private var acceptanceCriterion: (Int, Int) => Boolean = null
+  private var oldObj: Long = 0L
+  private var acceptanceCriterion: (Long, Long) => Boolean = null
   private var toReturnMove: Move = null
-  private var bestNewObj: Int = Int.MaxValue
+  private var bestNewObj: Long = Long.MaxValue
   protected var obj: Objective = null
   private var exploring = false // to check that it is not called recursiely because it is not reentrant
 
-  override final def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override final def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
     require(!exploring,this + " is not a re-entrant neighborhood")
     exploring = true
@@ -499,13 +499,13 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
    * as explained in the documentation of this class
    */
-  def exploreNeighborhood(initialObj: Int): Unit
+  def exploreNeighborhood(initialObj: Long): Unit
 
-  def instantiateCurrentMove(newObj: Int): M
+  def instantiateCurrentMove(newObj: Long): M
 
   def moveHasBeenFound:Boolean = toReturnMove != null
 
-  def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int): Boolean = {
+  def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Long): Boolean = {
     //on teste l'acceptance criterion sur tout
     //on garde toujours le meilleur mouvement
     //on dit juste si un mouvement a été accepté et améliore le best so far ou pas
@@ -535,11 +535,11 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
 
 class ObjWithStringGenerator(obj: Objective, additionalStringGenerator: () => String) extends Objective {
-  override def detailedString(short: Boolean, indent: Int): String = {
-    obj.detailedString(short,indent)+ "\n" + nSpace(indent) + additionalStringGenerator().split("\\R",-1).mkString("\n" + nSpace(indent)) + "\n"
+  override def detailedString(short: Boolean, indent: Long): String = {
+    obj.detailedString(short,indent)+ "\n" + nSpace(indent) + additionalStringGenerator().split("\\R",-1L).mkString("\n" + nSpace(indent)) + "\n"
   }
 
   override def model: Store = obj.model
 
-  override def value: Int = obj.value
+  override def value: Long = obj.value
 }

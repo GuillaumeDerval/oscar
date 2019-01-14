@@ -31,14 +31,14 @@ import scala.collection.immutable.SortedSet
   * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
   * @author renaud.delandtsheer@cetic.be
   * */
-case class SumConstants(vars: Array[Int], cond: SetValue)
-  extends IntInvariant(cond.value.foldLeft(0)((acc, i) => acc + vars(i)))
+case class SumConstants(vars: Array[Long], cond: SetValue)
+  extends IntInvariant(cond.value.foldLeft(0L)((acc, i) => acc + vars(i)))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     for (added <- addedValues)  this :+= vars(added)
     for (deleted <- removedValues) this :-= vars(deleted)
   }
@@ -48,8 +48,8 @@ case class SumConstants(vars: Array[Int], cond: SetValue)
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker){
-    c.check(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i)),
-      Some("output.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value)"))
+    c.check(this.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i)),
+      Some("output.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value)"))
   }
 }
 
@@ -59,13 +59,13 @@ case class SumConstants(vars: Array[Int], cond: SetValue)
   * @author renaud.delandtsheer@cetic.be
   * */
 case class SumElements(vars: Array[IntValue], cond: SetValue)
-  extends IntInvariant(initialValue=cond.value.foldLeft(0)((acc, i) => acc + vars(i).value))
+  extends IntInvariant(initialValue=cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value))
   with Bulked[IntValue, Unit]
   with VaryingDependencies
   with IntNotificationTarget
   with SetNotificationTarget{
 
-  assert(vars.size > 0, "Invariant SumElements declared with zero vars to max")
+  assert(vars.size > 0L, "Invariant SumElements declared with zero vars to max")
   assert(cond != null, "cond cannot be null for SumElements")
 
   val keyForRemoval: Array[KeyForElementRemoval] =  Array.fill(vars.length) {null}
@@ -81,20 +81,20 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     //it is always a listened one, but we could check this here
     assert(vars(index)==v)
     assert(keyForRemoval(index)!=null)
     this :+= (NewVal - OldVal)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     assert(keyForRemoval(value) == null)
     keyForRemoval(value) = registerDynamicDependency(vars(value),value)
@@ -103,7 +103,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     assert(keyForRemoval(value) != null)
     keyForRemoval(value).performRemove()
@@ -113,8 +113,8 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   }
 
   override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value),
-        Some("output.value == cond.value.foldLeft(0)((acc, i) => acc + vars(i).value)"))
+    c.check(this.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value),
+        Some("output.value == cond.value.foldLeft(0L)((acc, i) => acc + vars(i).value)"))
   }
 }
 
@@ -124,37 +124,37 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
   * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
   * @author renaud.delandtsheer@cetic.be
   * */
-case class ProdConstants(vars: Array[Int], cond: SetValue)
+case class ProdConstants(vars: Array[Long], cond: SetValue)
   extends IntInvariant()
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
 
-  var NullVarCount = cond.value.count(i => vars(i) == 0)
-  var NonNullProd = cond.value.foldLeft(1)((acc,i) => if(vars(i) == 0){acc}else{acc*vars(i)})
+  var NullVarCount = cond.value.count(i => vars(i) == 0L)
+  var NonNullProd = cond.value.foldLeft(1L)((acc,i) => if(vars(i) == 0L){acc}else{acc*vars(i)})
   affectOutput()
 
   @inline
   private def affectOutput(){
-    if (NullVarCount == 0){
+    if (NullVarCount == 0L){
       this := NonNullProd
     }else{
-      this := 0
+      this := 0L
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
 
-    if(vars(value) == 0){
-      NullVarCount += 1
+    if(vars(value) == 0L){
+      NullVarCount += 1L
     }else{
       NonNullProd *= vars(value)
     }
@@ -162,10 +162,10 @@ case class ProdConstants(vars: Array[Int], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
 
-    if(vars(value) == 0){
-      NullVarCount -= 1
+    if(vars(value) == 0L){
+      NullVarCount -= 1L
     }else{
       NonNullProd = NonNullProd / vars(value)
     }
@@ -173,10 +173,10 @@ case class ProdConstants(vars: Array[Int], cond: SetValue)
   }
 
   override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i)),
+    c.check(this.value == cond.value.foldLeft(1L)((acc, i) => acc * vars(i)),
       Some("output.value (" + this.value
-        + ") == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) ("
-        + cond.value.foldLeft(1)((acc, i) => acc * vars(i)) + ")"))
+        + ") == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) ("
+        + cond.value.foldLeft(1L)((acc, i) => acc * vars(i)) + ")"))
   }
 }
 
@@ -208,29 +208,29 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
 
   finishInitialization()
 
-  var NullVarCount = cond.value.count(i => vars(i).value == 0)
-  var NonNullProd = cond.value.foldLeft(1)((acc,i) => if(vars(i).value == 0){acc}else{acc*vars(i).value})
+  var NullVarCount = cond.value.count(i => vars(i).value == 0L)
+  var NonNullProd = cond.value.foldLeft(1L)((acc,i) => if(vars(i).value == 0L){acc}else{acc*vars(i).value})
   affectOutput()
 
   @inline
   private def affectOutput(){
-    if (NullVarCount == 0){
+    if (NullVarCount == 0L){
       this := NonNullProd
     }else{
-      this := 0
+      this := 0L
     }
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
     //it is always a listened one, but we could check this here
     assert(vars(index) == v)
     assert(keyForRemoval(index)!=null)
-    if (OldVal == 0 && NewVal != 0){
-      NullVarCount -=1
+    if (OldVal == 0L && NewVal != 0L){
+      NullVarCount -=1L
       NonNullProd *=NewVal
-    }else if(OldVal != 0 && NewVal == 0){
-      NullVarCount +=1
+    }else if(OldVal != 0L && NewVal == 0L){
+      NullVarCount +=1L
       NonNullProd =NonNullProd/OldVal
     }else{
       NonNullProd = NonNullProd/OldVal
@@ -239,19 +239,19 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
     affectOutput()
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     assert(keyForRemoval(value) == null)
     keyForRemoval(value) = registerDynamicDependency(vars(value),value)
 
-    if(vars(value).value == 0){
-      NullVarCount += 1
+    if(vars(value).value == 0L){
+      NullVarCount += 1L
     }else{
       NonNullProd *= vars(value).value
     }
@@ -259,15 +259,15 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     assert(keyForRemoval(value) != null)
 
     keyForRemoval(value).performRemove()
     keyForRemoval(value) = null
 
-    if(vars(value).value == 0){
-      NullVarCount -= 1
+    if(vars(value).value == 0L){
+      NullVarCount -= 1L
     }else{
       NonNullProd = NonNullProd / vars(value).value
     }
@@ -275,9 +275,9 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
   }
 
   override def checkInternals(c:Checker) {
-    c.check(this.value == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value),
+    c.check(this.value == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value),
         Some("output.value (" + this.value
-            + ") == cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) ("
-            + cond.value.foldLeft(1)((acc, i) => acc * vars(i).value) + ")"))
+            + ") == cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) ("
+            + cond.value.foldLeft(1L)((acc, i) => acc * vars(i).value) + ")"))
   }
 }

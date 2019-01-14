@@ -37,7 +37,7 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  */
 class SuperActivity(start: Activity, end: Activity,  override val name: String = "")
-  extends Activity(CBLSIntVar(start.planning.model, start.duration.value, 0 to start.planning.maxDuration
+  extends Activity(CBLSIntVar(start.planning.model, start.duration.value, 0L to start.planning.maxDuration
     , "duration of " + name), start.planning, name) {
 
   require(end.canAddPrecedence, "end task of SuperActivity must support precedence constraints (eg: cannot be a NonMoveableActivity")
@@ -64,13 +64,13 @@ class SuperActivity(start: Activity, end: Activity,  override val name: String =
 
     potentiallyKilledPredecessors = start.potentiallyKilledPredecessors
 
-    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount, "succeeding_jobs")
+    allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0L until planning.activityCount, "succeeding_jobs")
 
     latestEndDate <== end.latestEndDate
 
     this.duration = end.earliestEndDate - start.earliestStartDate
 
-    //ParasiticPrecedences = SortedSet.empty[Int]
+    //ParasiticPrecedences = SortedSet.empty[Long]
   }
 
   override def addDynamicPredecessor(t: Activity, Verbose: Boolean = false) {

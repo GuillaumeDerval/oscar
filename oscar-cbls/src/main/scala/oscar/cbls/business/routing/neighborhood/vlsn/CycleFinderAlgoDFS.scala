@@ -36,9 +36,9 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
     val isLabelReached = Array.fill(nbLabels)(false)
     val isNodeFullyExplored = Array.fill(nbNodes)(false)
     var rootNode:Node = null
-    var rooNodeID:Int = -1
+    var rooNodeID:Long = -1L
 
-    def dfsExplore(node:Node,summedDelta:Int):Option[List[Edge]] ={
+    def dfsExplore(node:Node,summedDelta:Long):Option[List[Edge]] ={
       var outgoingEdges = node.outgoing
 
       while(outgoingEdges != Nil){
@@ -53,7 +53,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
 
         if(isLiveNode(targetNodeID) && !isNodeFullyExplored(targetNodeID)) {
           if (targetNode == rootNode) {
-            if (newSummedDelta < 0) {
+            if (newSummedDelta < 0L) {
               //we just found a negative cycle
               return Some(List(currentEdge))
             } //else e found a cycle, but it is not negative
@@ -86,7 +86,7 @@ class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends Cy
       isLabelReached(rootNode.label) = true
       isNodeReached(rooNodeID) = true
 
-      dfsExplore(rootNode,0) match{
+      dfsExplore(rootNode,0L) match{
         case None => ;
         case a => return a
       }
@@ -103,7 +103,7 @@ class ReacheabilityFloydWarshall(graph:VLSNGraph){
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0 until nbNodes
+  private val nodeRange = 0L until nbNodes
 
 
   def buildRechabilityMatrix():Array[Array[Boolean]] = {

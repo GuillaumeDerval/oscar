@@ -32,12 +32,12 @@ class RoutingMapContainer(vrp:VRP,
                           title:String = "Routing map",
                           geolocalisationMap: Boolean = false,
                           routeToDisplay:Boolean = false,
-                          refreshRate: Int = 100
+                          refreshRate: Long = 100L
                             ) extends JFrame with StopWatch {
   setLayout(new BorderLayout())
 
   startWatch()
-  private var lastRefresh: Long = 0
+  private var lastRefresh: Long = 0L
 
   def refresh(force:Boolean = false) = {
     val currentTime = getWatch
@@ -47,7 +47,7 @@ class RoutingMapContainer(vrp:VRP,
     }
   }
 
-  setPreferredSize(new Dimension(960,960))
+  setPreferredSize(new Dimension(960L,960L))
   add(routingMap, BorderLayout.CENTER)
   pack()
   revalidate()

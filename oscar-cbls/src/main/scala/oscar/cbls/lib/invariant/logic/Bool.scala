@@ -26,32 +26,32 @@ import scala.collection.immutable.SortedSet
 /**
   * And(vars)
   *
-  * outputs true (0) iff all vars are true (0) otherwise false (sum(vars))
+  * outputs true (0L) iff all vars are true (0L) otherwise false (sum(vars))
   *
   * Calculates false as the sum of all vars.
   * This could be done differently to get a violation function that behaves differently,
   * we could, for example, compute the squared error, average, or median value.
   * But sum will do for now.
   *
-  * @param vars is an iterable of IntVars representing booleans that are true iff 0, otherwise false.
+  * @param vars is an iterable of IntVars representing booleans that are true iff 0L, otherwise false.
   * @author gustav.bjordal@it.uu.se
   */
 case class And(vars: Iterable[IntValue])
   extends IntInvariant(
-    vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value),
-    0 to vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
+    vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
+    0L to vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
     this :+= NewVal - OldVal
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
-            Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
+    c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
+            Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
 
@@ -59,27 +59,27 @@ case class And(vars: Iterable[IntValue])
 /**
   * Or(vars)
   *
-  * outputs true (0) iff any vars are true (0) otherwise false (min(vars))
+  * outputs true (0L) iff any vars are true (0L) otherwise false (min(vars))
   *
   * Calculates false as the minimum value of vars.
   * This could be done differently to get a violation function that behaves differently,
-  * we could, for example, return 0 if true and otherwise compute the squared error, average, or median value.
+  * we could, for example, return 0L if true and otherwise compute the squared error, average, or median value.
   * But min will do for now.
   *
-  * @param vars is an iterable of IntVars representing booleans that are true iff 0, otherwise false.
+  * @param vars is an iterable of IntVars representing booleans that are true iff 0L, otherwise false.
   * @author gustav.bjordal@it.uu.se
   */
 /*
-case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft(0)((acc,intvar) => Math.min(acc, intvar.max))) {
+case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft(0L)((acc,intvar) => Math.min(acc, intvar.max))) {
 
-  override def Ord(v: IntValue): Int = v.value
+  override def Ord(v: IntValue): Long = v.value
 
   override def ExtremumName: String = "Or"
 
   //More precise bounds
   override def performBulkComputation(bulkedVar: Array[IntValue]) =
-      (bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => Math.min(intvar.min, acc)),
-        bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) =>Math.min(intvar.max, acc)))
+      (bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => Math.min(intvar.min, acc)),
+        bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) =>Math.min(intvar.max, acc)))
 
   override def checkInternals(c: Checker) {
     for (v <- this.vars) {
@@ -92,24 +92,24 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
 
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
-    if(vars.exists(_.value == 0)) { 0 } else { vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value)/vars.length },
-    0 to vars.foldLeft(0)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
+    if(vars.exists(_.value == 0L)) { 0L } else { vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value)/vars.length },
+    0L to vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    if(vars.exists(_.value == 0)) {
-      this := 0
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    if(vars.exists(_.value == 0L)) {
+      this := 0L
     }else{
-      this := vars.foldLeft(0)((a: Int, b: IntValue) => a + b.value) /vars.length
+      this := vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value) /vars.length
     }
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value == vars.foldLeft(0)((acc, intvar) => acc + intvar.value),
-            Some("output.value == vars.foldLeft(0)((acc,intvar) => acc+intvar.value)"))
+    c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
+            Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
 
@@ -117,22 +117,22 @@ case class Or(vars: Array[IntValue])
 /**
   * bool2int(var)
   *
-  * outputs 1 iff var is true (0) otherwise 0
+  * outputs 1L iff var is true (0L) otherwise 0L
   *
-  * Warning: Note that this breaks the representation of booleans, where 0 is true.
+  * Warning: Note that this breaks the representation of booleans, where 0L is true.
   *
   * @param v an IntValue
   * @author gustav.bjordal@it.uu.se
   */
 case class Bool2Int(v: IntValue)
-  extends IntInvariant(if(v.value == 0) 1 else 0, 0 to 1)
+  extends IntInvariant(if(v.value == 0L) 1L else 0L, 0L to 1L)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    this := (if(NewVal == 0) 1 else 0)
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    this := (if(NewVal == 0L) 1L else 0L)
   }
 }
 
@@ -140,7 +140,7 @@ case class Bool2Int(v: IntValue)
 /**
   * boolLE(a,b)
   *
-  * outputs true (0) iff a <= b otherwise false (a)
+  * outputs true (0L) iff a <= b otherwise false (a)
   *
   *
   * @param a IntValue
@@ -148,35 +148,35 @@ case class Bool2Int(v: IntValue)
   * @author gustav.bjordal@it.uu.se
   */
 case class BoolLEInv(a: IntValue, b:IntValue)
-  extends IntInvariant(if(a.value > 0 && b.value == 0) a.value else 0, 0 to a.max)
+  extends IntInvariant(if(a.value > 0L && b.value == 0L) a.value else 0L, 0L to a.max)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
     this :=
       (if(v == a){
-        if(NewVal > 0 && b.value == 0){
-          NewVal+1
+        if(NewVal > 0L && b.value == 0L){
+          NewVal+1L
         }else{
-          0
+          0L
         }
       }else{
-        if(NewVal == 0 && a.value >0){
-          a.value+1
+        if(NewVal == 0L && a.value >0L){
+          a.value+1L
         }else{
-          0
+          0L
         }
-      }) / 2
+      }) / 2L
   }
 }
 
 /**
   * boolLT(a,b)
   *
-  * outputs true (0) iff a < b otherwise false (a+1)
+  * outputs true (0L) iff a < b otherwise false (a+1L)
   *
   *
   * @param a IntValue
@@ -184,26 +184,26 @@ case class BoolLEInv(a: IntValue, b:IntValue)
   * @author gustav.bjordal@it.uu.se
   */
 case class BoolLTInv(a: IntValue, b:IntValue)
-  extends IntInvariant(if(a.value > 0) a.value else if(b.value == 0) 1 else 0, 0 to a.max)
+  extends IntInvariant(if(a.value > 0L) a.value else if(b.value == 0L) 1L else 0L, 0L to a.max)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
     this :=
       (if(v == a){
-        if(NewVal == 0 && b.value>0)
-          0
+        if(NewVal == 0L && b.value>0L)
+          0L
         else
-          (NewVal + b.value + 1)
+          (NewVal + b.value + 1L)
       }else{
-        if(NewVal >0 && a.value == 0)
-          0
+        if(NewVal >0L && a.value == 0L)
+          0L
         else
-         (NewVal + a.value + 1)
-      }) / 2
+         (NewVal + a.value + 1L)
+      }) / 2L
 
   }
 }
@@ -211,7 +211,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
 /**
   * xor(a,b)
   *
-  * outputs true (0) iff a != b otherwise false (min(a,b)+1)
+  * outputs true (0L) iff a != b otherwise false (min(a,b)+1L)
   *
   *
   * @param a IntValue
@@ -219,23 +219,23 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   * @author gustav.bjordal@it.uu.se
   */
 case class XOR(a: IntValue, b:IntValue)
-  extends IntInvariant(if((a.value > 0 && b.value > 0) || (a.value == 0 && b.value == 0)) (a.value + b.value + 1) else 0,
-                       0 to Math.max(a.max,b.max))
+  extends IntInvariant(if((a.value > 0L && b.value > 0L) || (a.value == 0L && b.value == 0L)) (a.value + b.value + 1L) else 0L,
+                       0L to Math.max(a.max,b.max))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    if((NewVal > 0 && OldVal == 0) || (NewVal == 0 && OldVal > 0)){
-      if(this.value > 0){
-        this := 0
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
+      if(this.value > 0L){
+        this := 0L
       }else {
         if (v == a) {
-          this := (NewVal + b.value + 1)/2
+          this := (NewVal + b.value + 1L)/2L
         } else {
-          this := (a.value + NewVal + 1)/2
+          this := (a.value + NewVal + 1L)/2L
         }
       }
     }
@@ -245,26 +245,26 @@ case class XOR(a: IntValue, b:IntValue)
 /**
   * xor(var)
   *
-  * outputs true (0) iff a != b otherwise false (min(a,b)+1)
+  * outputs true (0L) iff a != b otherwise false (min(a,b)+1L)
   *
   *
   * @param vars  array of IntValue
   * @author gustav.bjordal@it.uu.se
   */
 case class XORArray(vars: Array[IntValue])
-  extends IntInvariant((vars.foldLeft(1)((acc,v) => if(v.value > 0) acc+1 else acc)%2)*vars.length,
-                       0 to vars.foldLeft(0)((acc,v)=>acc+v.max))
+  extends IntInvariant((vars.foldLeft(1L)((acc,v) => if(v.value > 0L) acc+1L else acc)%2L)*vars.length,
+                       0L to vars.foldLeft(0L)((acc,v)=>acc+v.max))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(vars)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    if((NewVal > 0 && OldVal == 0) || (NewVal == 0 && OldVal > 0)){
-      if(this.value > 0){
-        this := 0
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
+      if(this.value > 0L){
+        this := 0L
       }else {
-        this := vars.foldLeft(Int.MaxValue)((acc,v) => if(v.value>0) v.value + acc else acc)+1
+        this := vars.foldLeft(Long.MaxValue)((acc,v) => if(v.value>0L) v.value + acc else acc)+1L
       }
     }
   }
@@ -281,21 +281,21 @@ object BoolNE{
 /**
   * not(a)
   *
-  * outputs true (0) iff a > 0 otherwise false (1)
+  * outputs true (0L) iff a > 0L otherwise false (1L)
   *
   *
   * @param a IntValue
   * @author gustav.bjordal@it.uu.se
   */
 case class Not(a: IntValue)
-  extends IntInvariant(if(a.value > 0) 0 else 1,
-                       0 to 1)
+  extends IntInvariant(if(a.value > 0L) 0L else 1L,
+                       0L to 1L)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    this := (if(NewVal > 0) 0 else 1)
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    this := (if(NewVal > 0L) 0L else 1L)
   }
 }

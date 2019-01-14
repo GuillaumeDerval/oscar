@@ -20,10 +20,10 @@ import oscar.cbls.algo.seq.{IntSequence, Token}
 
 object RoutingConventionMethods {
 
-  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):((IntSequence,Int) => Int) = {
+  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Long):((IntSequence,Long) => Long) = {
 
-    val batch = batchVehicleReachingPosition(checkpoint,v:Int)
-    def getVehicleReachingPosition(seq:IntSequence,position:Int):Int = {
+    val batch = batchVehicleReachingPosition(checkpoint,v:Long)
+    def getVehicleReachingPosition(seq:IntSequence,position:Long):Long = {
       if(seq quickEquals checkpoint) batch(position)
       else searchVehicleReachingPosition(position, seq, v)
     }
@@ -31,15 +31,15 @@ object RoutingConventionMethods {
     getVehicleReachingPosition
   }
 
-  def batchVehicleReachingPosition(seq:IntSequence,v:Int):(Int=>Int) = {
-    val vehiclePositionArray:Array[(Int,Int)] =
+  def batchVehicleReachingPosition(seq:IntSequence,v:Long):(Long=>Long) = {
+    val vehiclePositionArray:Array[(Long,Long)] =
       Array.tabulate(v)(vehicle => (seq.positionOfAnyOccurrence(vehicle).get, vehicle))
 
     val vehiclePositionRB = RedBlackTreeMap.makeFromSorted(vehiclePositionArray)
 
-    def findVehicleReachingPosition(position:Int):Int = {
+    def findVehicleReachingPosition(position:Long):Long = {
       vehiclePositionRB.biggestLowerOrEqual(position) match {
-        case None => v - 1
+        case None => v - 1L
         case Some((_, vehicle)) => vehicle
       }
     }
@@ -47,20 +47,20 @@ object RoutingConventionMethods {
   }
 
   @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
-  def searchVehicleReachingPosition(position:Int, seq:IntSequence, v:Int):Int = {
-    var upperVehicle = v-1
+  def searchVehicleReachingPosition(position:Long, seq:IntSequence, v:Long):Long = {
+    var upperVehicle = v-1L
     var upperVehiclePosition = seq.positionOfAnyOccurrence(upperVehicle).get
 
     if(position >= upperVehiclePosition) return upperVehicle
 
-    var lowerVehicle = 0
-    var lowerVehiclePosition = 0
+    var lowerVehicle = 0L
+    var lowerVehiclePosition = 0L
 
-    assert(seq.positionOfAnyOccurrence(lowerVehicle).get == 0)
+    assert(seq.positionOfAnyOccurrence(lowerVehicle).get == 0L)
     require(lowerVehiclePosition <= upperVehiclePosition)
 
-    while(lowerVehicle + 1 < upperVehicle){
-      val midVehicle = (lowerVehicle + upperVehicle) /2
+    while(lowerVehicle + 1L < upperVehicle){
+      val midVehicle = (lowerVehicle + upperVehicle) /2L
       val midVehiclePosition = seq.positionOfAnyOccurrence(midVehicle).get
       if(midVehiclePosition == position){
         return midVehicle
@@ -76,64 +76,64 @@ object RoutingConventionMethods {
     lowerVehicle
   }
 
-  def routingSuccVal2Val(value:Int, seq:IntSequence, v:Int):Int =
+  def routingSuccVal2Val(value:Long, seq:IntSequence, v:Long):Long =
     routingSuccPos2Val(seq.positionOfAnyOccurrence(value).get, seq, v)
 
-  def routingSuccPos2Val(position:Int, seq:IntSequence, v:Int):Int = {
-    seq.valueAtPosition(position + 1) match{
-      case None => v-1
-      case Some(succToIfNoLoop) => if (succToIfNoLoop < v) succToIfNoLoop-1 else succToIfNoLoop
+  def routingSuccPos2Val(position:Long, seq:IntSequence, v:Long):Long = {
+    seq.valueAtPosition(position + 1L) match{
+      case None => v-1L
+      case Some(succToIfNoLoop) => if (succToIfNoLoop < v) succToIfNoLoop-1L else succToIfNoLoop
     }
   }
 
-  def routingPredVal2Val(value:Int, seq:IntSequence, v:Int):Int = {
+  def routingPredVal2Val(value:Long, seq:IntSequence, v:Long):Long = {
     if(value < v) {
       //looking for the end node of vehicle value
-      if(value == v-1) {
+      if(value == v-1L) {
         //it is the last vehicle
-        seq.valueAtPosition(seq.size-1).get
+        seq.valueAtPosition(seq.size-1L).get
       }else {
         //there is oe vehicle above
-        seq.valueAtPosition(seq.positionOfAnyOccurrence(value+1).get-1).get
+        seq.valueAtPosition(seq.positionOfAnyOccurrence(value+1L).get-1L).get
       }
     }else {
       //simple predecessor
-      seq.valueAtPosition(seq.positionOfAnyOccurrence(value).get-1).get
+      seq.valueAtPosition(seq.positionOfAnyOccurrence(value).get-1L).get
     }
   }
 
 
-  def routingPredPos2Val(position:Int, seq:IntSequence, v:Int):Int = {
+  def routingPredPos2Val(position:Long, seq:IntSequence, v:Long):Long = {
     routingPredVal2Val(seq.valueAtPosition(position).get, seq, v)
   }
 
-  def isVehicleMoving(vehicle:Int, seq:IntSequence, v:Int):Boolean = {
-    routingSuccVal2Val(vehicle, seq:IntSequence, v:Int) != vehicle
+  def isVehicleMoving(vehicle:Long, seq:IntSequence, v:Long):Boolean = {
+    routingSuccVal2Val(vehicle, seq:IntSequence, v:Long) != vehicle
   }
 }
 
 
-class CachedPositionOf(maxValue:Int){
+class CachedPositionOf(maxValue:Long){
 
   private var tokenOfCurrentCheckpoint:Token = null
-  private val checkpointIDOfSavedValue:Array[Token] = Array.fill(maxValue+1)(null)
-  //-1 stands for NONE, -2 is an error
-  private val cachedAnyPosition:Array[Int] = Array.fill(maxValue+1)(-2)
+  private val checkpointIDOfSavedValue:Array[Token] = Array.fill(maxValue+1L)(null)
+  //-1L stands for NONE, -2L is an error
+  private val cachedAnyPosition:Array[Long] = Array.fill(maxValue+1L)(-2L)
 
   def updateToCheckpoint(checkpoint:IntSequence){
     tokenOfCurrentCheckpoint = checkpoint.token
   }
-  def positionOfAnyOccurrence(seq:IntSequence,value:Int):Option[Int] = {
+  def positionOfAnyOccurrence(seq:IntSequence,value:Long):Option[Long] = {
     val seqID = seq.token
     if(tokenOfCurrentCheckpoint == seqID){
       if(checkpointIDOfSavedValue(value) == seqID){
         val pos = cachedAnyPosition(value)
-        if (pos == -1) None else Some(pos)
+        if (pos == -1L) None else Some(pos)
       }else{
         val pos = seq.positionOfAnyOccurrence(value)
         checkpointIDOfSavedValue(value) = tokenOfCurrentCheckpoint
         pos match{
-          case None => cachedAnyPosition(value) = -1
+          case None => cachedAnyPosition(value) = -1L
           case Some(x) => cachedAnyPosition(value) = x
         }
         pos
@@ -143,11 +143,11 @@ class CachedPositionOf(maxValue:Int){
     }
   }
 
-  def savePos(seq:IntSequence,value:Int,position:Option[Int]){
+  def savePos(seq:IntSequence,value:Long,position:Option[Long]){
     if(seq.token == tokenOfCurrentCheckpoint){
       checkpointIDOfSavedValue(value) = tokenOfCurrentCheckpoint
       position match{
-        case None => cachedAnyPosition(value) = -1
+        case None => cachedAnyPosition(value) = -1L
         case Some(x) => cachedAnyPosition(value) = x
       }
     }

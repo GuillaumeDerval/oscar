@@ -42,12 +42,12 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  * @param symmetryClassOfVariables1 a function that input the ID of a variable and returns a symmetry class;
  *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone1
  *                      this makes search faster
- *                      Int.MinValue is considered different to itself
+ *                      Long.MinValue is considered different to itself
  *                      if you set to None this will not be used at all
  * @param symmetryClassOfVariables2 a function that input the ID of a variable and returns a symmetry class;
  *                      for each role of the move, ony one of the variable in each class will be considered for the vars in searchZone2
  *                      this makes search faster
- *                      Int.MinValue is considered different to itself
+ *                      Long.MinValue is considered different to itself
  *                      if you set to None this will not be used at all
  * @param hotRestart  if true, the exploration order in case you ar not going for the best
  *                    is a hotRestart for the first swapped variable
@@ -57,30 +57,30 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  **/
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
-                             searchZone1:()=>Iterable[Int] = null,
-                             searchZone2:() => (Int,Int)=>Iterable[Int] = null,
+                             searchZone1:()=>Iterable[Long] = null,
+                             searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
                              selectFirstVariableBehavior:LoopBehavior = First(),
                              selectSecondVariableBehavior:LoopBehavior = First(),
-                             symmetryClassOfVariables1:Option[Int => Int] = None,
-                             symmetryClassOfVariables2:Option[Int => Int] = None,
+                             symmetryClassOfVariables1:Option[Long => Long] = None,
+                             symmetryClassOfVariables2:Option[Long => Long] = None,
                              hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[SwapMove](name){
 
   //also used as the indice to start with for the exploration
-  var firstVarIndice:Int = 0
+  var firstVarIndice:Long = 0L
   var firstVar:CBLSIntVar = null
 
-  var secondVarIndice:Int = 0
+  var secondVarIndice:Long = 0L
   var secondVar:CBLSIntVar = null
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (firstVarIndice >= vars.length) firstVarIndice = 0
+          if (firstVarIndice >= vars.length) firstVarIndice = 0L
           vars.indices startBy firstVarIndice
         } else vars.indices
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
@@ -126,14 +126,14 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
-    firstVarIndice = firstVarIndice +1
+    firstVarIndice = firstVarIndice +1L
   }
 
-  override def instantiateCurrentMove(newObj: Int) = SwapMove(firstVar, secondVar, firstVarIndice,secondVarIndice,newObj, name)
+  override def instantiateCurrentMove(newObj: Long) = SwapMove(firstVar, secondVar, firstVarIndice,secondVarIndice,newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    firstVarIndice = 0
+    firstVarIndice = 0L
   }
 }
 
@@ -146,7 +146,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Long, idJ:Long, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i :=: j}

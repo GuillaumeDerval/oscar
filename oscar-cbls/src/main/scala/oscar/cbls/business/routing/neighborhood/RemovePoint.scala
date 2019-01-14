@@ -55,7 +55,7 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
+case class RemovePoint(relevantPointsToRemove:()=>Iterable[Long],
                        vrp: VRP,
                        neighborhoodName:String = "RemovePoint",
                        selectNodeBehavior:LoopBehavior = First(),
@@ -64,19 +64,19 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
   extends EasyNeighborhoodMultiLevel[RemovePointMove](neighborhoodName){
 
   //the indice to start with for the exploration
-  var startIndice: Int = 0
+  var startIndice: Long = 0L
 
-  var pointToRemove:Int = -1
-  var positionOfPointToRemove:Int = -1
+  var pointToRemove:Long = -1L
+  var positionOfPointToRemove:Long = -1L
 
   val v = vrp.v
   val seq = vrp.routes
 
-  override def exploreNeighborhood(initialObj: Int): Unit = {
+  override def exploreNeighborhood(initialObj: Long): Unit = {
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
@@ -101,23 +101,23 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = pointToRemove + 1
+    startIndice = pointToRemove + 1L
   }
 
-  override def instantiateCurrentMove(newObj: Int) =
+  override def instantiateCurrentMove(newObj: Long) =
     RemovePointMove(positionOfPointToRemove, pointToRemove, positionIndependentMoves,vrp, newObj, this, neighborhoodNameToString)
 
-  def doMove(positionOfPointToRemove: Int) {
+  def doMove(positionOfPointToRemove: Long) {
     seq.remove(positionOfPointToRemove)
   }
 
-  def doMovePositionIndependent(valueToRemove: Int) {
+  def doMovePositionIndependent(valueToRemove: Long) {
     val s = seq.newValue
     seq.remove(s.positionOfAnyOccurrence(valueToRemove).get)
   }
 
   //this resets the internal state of the Neighborhood
-  override def reset(){startIndice = 0}
+  override def reset(){startIndice = 0L}
 }
 
 /**
@@ -129,16 +129,16 @@ case class RemovePoint(relevantPointsToRemove:()=>Iterable[Int],
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class RemovePointMove(positionOfPointToRemove: Int,
-                           pointToRemove:Int,
+case class RemovePointMove(positionOfPointToRemove: Long,
+                           pointToRemove:Long,
                            positionIndependentMoves:Boolean,
                            vrp:VRP,
-                           override val objAfter:Int,
+                           override val objAfter:Long,
                            override val neighborhood:RemovePoint,
                            override val neighborhoodName:String = null)
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, vrp){
 
-  override def impactedPoints: List[Int] = List(pointToRemove)
+  override def impactedPoints: List[Long] = List(pointToRemove)
 
   override def commit() {
     if(positionIndependentMoves){

@@ -108,7 +108,7 @@ case class Store(override val verbose:Boolean = false,
     * @param v the variable
     * @return a unique identifier that will be used to distinguish variables. basically, variables use this value to set up an arbitrary ordering for use in dictionnaries.
     */
-  def registerVariable(v:AbstractVariable):Int = {
+  def registerVariable(v:AbstractVariable):Long = {
     require(!closed,"model is closed, cannot add variables")
     //ici on utilise des listes parce-que on ne peut pas utiliser des dictionnaires
     // vu que les variables n'ont pas encore recu leur unique ID.
@@ -121,7 +121,7 @@ case class Store(override val verbose:Boolean = false,
     * @param i the invariant
     * @return a unique identifier that will be used to distinguish invariants. basically, invariants use this value to set up an arbitrary ordering for use in dictionnaries.
     */
-  def registerInvariant(i:Invariant):Int = {
+  def registerInvariant(i:Invariant):Long = {
     require(!closed,"model is closed, cannot add invariant")
     propagationElements = QList(i,propagationElements)
     GetNextID()
@@ -269,7 +269,7 @@ object Invariant{
 trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
 
   /**register to determining element. It must be in the static dependency graph*/
-  def registerDeterminingDependency(v:Value,i:Int = -1){
+  def registerDeterminingDependency(v:Value,i:Long = -1L){
     registerDeterminingElement(v,i)
   }
 
@@ -280,7 +280,7 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return a handle that is required to remove the listened var from the dynamically listened ones
     */
-  override def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
+  override def registerDynamicDependency(v:Value,i:Long = -1L):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
   }
 
@@ -290,8 +290,8 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
    * @param v the variable that are registered
    * @param offset and offset applied to the position in the array when registering the dynamic dependency
    */
-  override def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Int = 0):Array[KeyForElementRemoval] = {
-    Array.tabulate(v.size)((i:Int) => {
+  override def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Long = 0L):Array[KeyForElementRemoval] = {
+    Array.tabulate(v.size)((i:Long) => {
       registerStaticDependency(v(i))
       registerDynamicDependency(v(i),i + offset)
     })
@@ -327,11 +327,11 @@ trait Invariant extends PropagationElement{
     */
   final def finishInitialization(model:Store = null){
     val m:Store = preFinishInitialization(model)
-    assert(uniqueID == -1)
+    assert(uniqueID == -1L)
     if (m != null){
       uniqueID = m.registerInvariant(this)
     }else{
-      uniqueID = -1
+      uniqueID = -1L
     }
   }
 
@@ -353,12 +353,12 @@ trait Invariant extends PropagationElement{
     * @param v the variable that we want to register to
     * @param i the integer value that will be passed to the invariant to notify some changes in the value of this variable
     */
-  def registerStaticAndDynamicDependency(v:Value,i:Int = -1){
+  def registerStaticAndDynamicDependency(v:Value,i:Long = -1L){
     registerStaticDependency(v)
     registerDynamicDependency(v,i)
   }
 
-  def registerStaticAndDynamicDependencies(v:((Value,Int))*){
+  def registerStaticAndDynamicDependencies(v:((Value,Long))*){
     for (varint <- v){
       registerStaticDependency(varint._1)
       registerDynamicDependency(varint._1,varint._2)
@@ -372,8 +372,8 @@ trait Invariant extends PropagationElement{
    * @param offset and offset applied to the position in the array when registering the dynamic dependency
    * @return null
    */
-  def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Int = 0):Array[KeyForElementRemoval] =  {
-    for (i <- 0 until v.size) {
+  def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Long = 0L):Array[KeyForElementRemoval] =  {
+    for (i <- 0L until v.size) {
       registerStaticDependency(v(i))
       registerDynamicDependency(v(i), i + offset)
     }
@@ -404,7 +404,7 @@ trait Invariant extends PropagationElement{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return null
     */
-  def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
+  def registerDynamicDependency(v:Value,i:Long = -1L):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
     null
   }
@@ -419,8 +419,8 @@ trait Invariant extends PropagationElement{
 
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:
-    * 1: it has been registered for propagation since the last time it was propagated
-    * 2: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
+    * 1L: it has been registered for propagation since the last time it was propagated
+    * 2L: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
     * it only propagates the ones that come in the predecessors of the targeted propagation element
     * overriding this method is optional, so an empty body is provided by default */
   override def performPropagation(){performInvariantPropagation()}
@@ -457,9 +457,9 @@ object InvariantHelper{
     null
   }
 
-  def getMinMaxBounds(variables:Iterable[IntValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBounds(variables:Iterable[IntValue]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v.max) MyMax = v.max
       if (MyMin > v.min) MyMin = v.min
@@ -472,9 +472,9 @@ object InvariantHelper{
     min to max
   }
 
-  def getMinMaxBoundsInt(variables:Iterable[Int]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsInt(variables:Iterable[Long]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v) MyMax = v
       if (MyMin > v) MyMin = v
@@ -482,14 +482,14 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRangeInt(variables:Iterable[Int]):Range = {
+  def getMinMaxRangeInt(variables:Iterable[Long]):Range = {
     val (min,max) = getMinMaxBoundsInt(variables)
     min to max
   }
 
-  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v.max) MyMax = v.max
       if (MyMin > v.min) MyMin = v.min
@@ -519,7 +519,7 @@ trait Variable extends AbstractVariable{
     if(definingInvariant == null){
       definingInvariant = i
       registerStaticallyListenedElement(i)
-      registerDynamicallyListenedElement(i,0)
+      registerDynamicallyListenedElement(i,0L)
     }else{
       throw new Exception("variable [" + name + "] cannot have more than one controlling invariant, already has " + definingInvariant)
     }
@@ -564,8 +564,8 @@ trait AbstractVariable
 
   final def model_=(s:Store): Unit ={
     schedulingHandler = s
-    assert(uniqueID == -1)
-    uniqueID = if (s == null) -1 else s.registerVariable(this)
+    assert(uniqueID == -1L)
+    uniqueID = if (s == null) -1L else s.registerVariable(this)
   }
   def model = propagationStructure.asInstanceOf[Store]
 

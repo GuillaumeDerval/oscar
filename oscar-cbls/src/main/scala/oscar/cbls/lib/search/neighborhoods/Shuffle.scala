@@ -34,16 +34,16 @@ import scala.util.Random
  * @param checkNoMoveFound checks that the variables to shuffle have different values, return NoMoveFound if this is not the case
  */
 case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
-                               indicesToConsider:()=>Iterable[Int] = null,
-                               numberOfShuffledPositions:() => Int = () => Int.MaxValue,
+                               indicesToConsider:()=>Iterable[Long] = null,
+                               numberOfShuffledPositions:() => Long = () => Long.MaxValue,
                                name:String = "ShuffleNeighborhood",
                                checkNoMoveFound:Boolean = true)
   extends Neighborhood(name) with LinearSelectors{
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean = null): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
-    val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =
+    val (realIndicesToConsider:List[Long],numberOfIndicesToConsider:Long) =
       if(indicesToConsider == null) (vars.indices.toList,vars.length)
       else { val tmp = indicesToConsider(); (tmp.toList,tmp.size) }
 
@@ -53,7 +53,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     }
 
     val numberOfShuffledPositionsThisTime = numberOfShuffledPositions()
-    val subsetOfIndicesToConsider:List[Int] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
+    val subsetOfIndicesToConsider:List[Long] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
       realIndicesToConsider
     }else{
       //shuffle only a subset; select it randomly
@@ -65,9 +65,9 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
     val newValues = Random.shuffle(values)
 
     val moves:List[AssignMove] = subsetOfIndicesToConsider.zip(newValues).
-      map({case ((indice,newValue)) => AssignMove(vars(indice),newValue,indice,Int.MaxValue)})
+      map({case ((indice,newValue)) => AssignMove(vars(indice),newValue,indice,Long.MaxValue)})
 
     if(printExploredNeighborhoods) println(name + ": move found")
-    CompositeMove(moves, Int.MaxValue, name)
+    CompositeMove(moves, Long.MaxValue, name)
   }
 }

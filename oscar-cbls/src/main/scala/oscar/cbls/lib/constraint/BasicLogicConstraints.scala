@@ -42,22 +42,22 @@ protected class LEA(val left: IntValue, val right: IntValue) extends Constraint 
   registerConstrainedVariables(left, right)
 
   /**
-   * the violation is Max(0,right-left)
+   * the violation is Max(0L,right-left)
    */
   override val violation =
-    MinusOffsetPos(left,right,0).setName(this.getClass.getSimpleName + ".violation")
-    //Max2(0, left - right).setName(this.getClass().getSimpleName() + ".violation")
+    MinusOffsetPos(left,right,0L).setName(this.getClass.getSimpleName + ".violation")
+    //Max2(0L, left - right).setName(this.getClass().getSimpleName() + ".violation")
 
   /**
    * The violation of each variable is equal to the global violation of the constraint
    */
-  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
+  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0L }
 
   override def checkInternals(c: Checker) {
     val diff = left.value - right.value
-    c.check(violation.value == (if (diff <= 0) 0 else diff),
+    c.check(violation.value == (if (diff <= 0L) 0L else diff),
       Some("Violation.value (" + violation.value
-        + ") == (if (left.value - right.value (" + diff + ") <= 0) 0 else " + diff + ")"))
+        + ") == (if (left.value - right.value (" + diff + ") <= 0L) 0L else " + diff + ")"))
   }
 }
 
@@ -82,23 +82,23 @@ protected class LA(val left: IntValue, val right: IntValue) extends Constraint {
   registerConstrainedVariables(left, right)
 
   /**
-   * the violation is Max(0,left - right + 1)
+   * the violation is Max(0L,left - right + 1L)
    */
   override val violation =
-    MinusOffsetPos(left,right,1).setName(this.getClass.getSimpleName + ".violation")
+    MinusOffsetPos(left,right,1L).setName(this.getClass.getSimpleName + ".violation")
     //TODO: If the constraint is always satisfied, given the domains, should set to a constant invariant. 
-    //Max2(0, left - right + 1)
+    //Max2(0L, left - right + 1L)
 
   /**
    * The violation of each variable is equal to the global violation of the constraint
    */
-  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
+  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0L }
 
   override def checkInternals(c: Checker) {
     val diff = left.value - right.value
-    c.check(violation.value == (if (diff < 0) 0 else diff + 1),
+    c.check(violation.value == (if (diff < 0L) 0L else diff + 1L),
       Some("Violation.value (" + violation.value
-        + ") == (if (left.value - right.value (" + diff + ") < 0) 0 else " + (diff + 1) + ")"))
+        + ") == (if (left.value - right.value (" + diff + ") < 0L) 0L else " + (diff + 1L) + ")"))
   }
 }
 
@@ -124,23 +124,23 @@ case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint
   registerStaticAndDynamicDependenciesNoID(left, right)
   finishInitialization()
 
-  /** the violation is 1 if the variables are equal, 0 otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, if (left.value == right.value) 1 else 0, 0 to 1, "equals")
+  /** the violation is 1L if the variables are equal, 0L otherwise*/
+  override val violation: CBLSIntVar = CBLSIntVar(model, if (left.value == right.value) 1L else 0L, 0L to 1L, "equals")
 
   violation.setDefiningInvariant(this)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    violation := (if (left.value == right.value) 1 else 0)
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+    violation := (if (left.value == right.value) 1L else 0L)
   }
 
-  /** the violation is 1 if the variables are equal, 0 otherwise*/
-  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0 }
+  /** the violation is 1L if the variables are equal, 0L otherwise*/
+  override def violation(v: Value): IntValue = { if (left == v || right == v) violation else 0L }
 
   override def checkInternals(c: Checker) {
-    c.check(violation.value == (if (left.value == right.value) 1 else 0),
+    c.check(violation.value == (if (left.value == right.value) 1L else 0L),
       Some("Violation.value (" + violation.value
-        + ") == (if (left.value (" + left.value + ") == right.value (" + right.value + ")) 1 else 0)"))
+        + ") == (if (left.value (" + left.value + ") == right.value (" + right.value + ")) 1L else 0L)"))
   }
 }
 
@@ -156,14 +156,14 @@ case class EQ(left: IntValue, right: IntValue) extends Constraint {
 
   override val violation = Dist(left, right)
 
-  override def violation(v: Value) = { if (left == v || right == v) violation else 0 }
+  override def violation(v: Value) = { if (left == v || right == v) violation else 0L }
 
   override def checkInternals(c: Checker) {
     val myViolation = abs(left.value - right.value)
-    c.check(violation.value == (if (left.value == right.value) 0 else myViolation),
+    c.check(violation.value == (if (left.value == right.value) 0L else myViolation),
       Some("Violation.value (" + violation.value
         + ") == (if (left.value (" + left.value + ") == right.value (" + right.value
-        + ")) 0 else " + myViolation + ")"))
+        + ")) 0L else " + myViolation + ")"))
   }
 }
 
@@ -174,15 +174,15 @@ case class BoolEQ(a: IntValue, b: IntValue) extends Constraint {
 
   override val violation = BoolEQInv(a, b)
 
-  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
-  //override def violation(v: Value) = { if (a == v) Max2(0,Minus(violation,b)) else if (b == v) Max2(0,Minus(violation,a)) else 0 }
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0L }
+  //override def violation(v: Value) = { if (a == v) Max2(0L,Minus(violation,b)) else if (b == v) Max2(0L,Minus(violation,a)) else 0L }
 }
 
 
 /**
   * BoolEQInv(a,b)
   *
-  * ouputs true (0) iff a == b otherwise violation is equal to (max(a,b)+1)
+  * ouputs true (0L) iff a == b otherwise violation is equal to (max(a,b)+1L)
   *
   *
   * @param a IntValue
@@ -190,20 +190,20 @@ case class BoolEQ(a: IntValue, b: IntValue) extends Constraint {
   * @author gustav.bjordal@it.uu.se
   */
 case class BoolEQInv(a: IntValue, b:IntValue)
-  extends IntInvariant(if((a.value > 0 && b.value > 0) || (a.value == 0 && b.value == 0)) 0 else a.value+b.value+1,
-                       0 to Math.max(a.max,b.max))
+  extends IntInvariant(if((a.value > 0L && b.value > 0L) || (a.value == 0L && b.value == 0L)) 0L else a.value+b.value+1L,
+                       0L to Math.max(a.max,b.max))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
     val other = if(a==v) b else a
-    if((NewVal>0 && other.value >0) || (NewVal==0 && other.value ==0)){
-      this := 0
+    if((NewVal>0L && other.value >0L) || (NewVal==0L && other.value ==0L)){
+      this := 0L
     }else{
-      this := (NewVal + other.value + 1) / 2
+      this := (NewVal + other.value + 1L) / 2L
     }
   }
 }
@@ -215,7 +215,7 @@ case class BoolLE(a: IntValue, b: IntValue) extends Constraint {
 
   override val violation = BoolLEInv(a, b)
 
-  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0L }
 }
 
 case class BoolLT(a: IntValue, b: IntValue) extends Constraint {
@@ -224,7 +224,7 @@ case class BoolLT(a: IntValue, b: IntValue) extends Constraint {
 
   override val violation = BoolLTInv(a, b)
 
-  override def violation(v: Value) = { if (a == v || b == v) violation else 0 }
+  override def violation(v: Value) = { if (a == v || b == v) violation else 0L }
 }
 
 
@@ -235,6 +235,6 @@ case class BoolLT(a: IntValue, b: IntValue) extends Constraint {
 case class Reif(b: IntValue, c: Constraint) extends Constraint { 
   registerConstrainedVariables(b, c.violation)
   override val violation = ReifViol(b,c.violation)
-  override def violation(v: Value) =  { if (b == v || c.violation == v) violation else 0 }
+  override def violation(v: Value) =  { if (b == v || c.violation == v) violation else 0L }
   //TODO: Check internals
 }

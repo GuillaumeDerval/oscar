@@ -39,13 +39,13 @@ class ActivityWithDeadline(
   shifter: (IntValue, IntValue) => IntValue= (a: IntValue, _) => a)
   extends Activity(duration, planning, name, shifter) {
 
-  val tardiness = CBLSIntVar(planning.model, 0, FullRange, name + "_tardiness")
+  val tardiness = CBLSIntVar(planning.model, 0L, FullRange, name + "_tardiness")
 
   planning.addActivityWithDeadline(this)
 
   def setDeadline(deadline: IntValue, weight: IntValue) {
-    tardiness <== Max2(0, (earliestEndDate - deadline) * weight)
+    tardiness <== Max2(0L, (earliestEndDate - deadline) * weight)
   }
 
-  def isLate: Boolean = tardiness.value > 0
+  def isLate: Boolean = tardiness.value > 0L
 }

@@ -27,19 +27,19 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes
   private val edges:Array[Edge] = graph.edges
   private val nbNodes = nodes.length
-  private val nodeRange = 0 until nbNodes
+  private val nodeRange = 0L until nbNodes
 
   private val isLabelOnPath = MagicBoolArray(graph.nbLabels,false)
   private val isNodeOnPath = MagicBoolArray(nbNodes,false)
 
   private val selectedIncomingEdges:Array[Edge] = Array.fill(nbNodes)(null)
-  private val distanceToNode:Array[Int]= Array.fill(nbNodes)(Int.MaxValue)
+  private val distanceToNode:Array[Long]= Array.fill(nbNodes)(Long.MaxValue)
 
   var isLiveNode:Array[Boolean] = null
 
   val isInQueue:Array[Boolean]= Array.fill(nbNodes)(false)
-  val queue = new mutable.Queue[Int]()
-  def enqueue(nodeID:Int): Unit ={
+  val queue = new mutable.Queue[Long]()
+  def enqueue(nodeID:Long): Unit ={
     if(isLiveNode(nodeID)) {
       if (!isInQueue(nodeID)) {
         queue.enqueue(nodeID)
@@ -48,7 +48,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
     }
   }
 
-  def dequeue():Option[Int] = {
+  def dequeue():Option[Long] = {
     if(queue.isEmpty){
       None
     }else{
@@ -99,7 +99,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
       if(currentNode == rootNode){
         val sum = toReturn.map(_.deltaObj).sum
-        require(sum < 0)
+        require(sum < 0L)
         return CycleFound(toReturn)
       }
     }
@@ -127,7 +127,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
           val toNode = currentEdge.to
           val toNodeID = toNode.nodeID
-          if(isNodeOnPath(toNodeID) && distanceToNode(nodeID) - distanceToNode(toNodeID) + currentEdge.deltaObj < 0) {
+          if(isNodeOnPath(toNodeID) && distanceToNode(nodeID) - distanceToNode(toNodeID) + currentEdge.deltaObj < 0L) {
             //we found a negative cycle
             selectedIncomingEdges(toNodeID) = currentEdge
             return extractCycle(toNode)
@@ -137,7 +137,7 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
           if(!isLabelOnPath(toNode.label)) {
             val oldDistance = distanceToNode(toNodeID)
             val newDistance = distanceToNode(nodeID) + currentEdge.deltaObj
-            if(newDistance < oldDistance && newDistance < 0){
+            if(newDistance < oldDistance && newDistance < 0L){
               distanceToNode(toNodeID) = newDistance
               selectedIncomingEdges(toNodeID) = currentEdge
               enqueue(toNodeID)
@@ -156,12 +156,12 @@ class CycleFinderAlgoMouthuy(graph:VLSNGraph) extends CycleFinderAlgo{
 
     for(nodeID <- nodeRange) {
       selectedIncomingEdges(nodeID) = null
-      distanceToNode(nodeID) = Int.MaxValue
+      distanceToNode(nodeID) = Long.MaxValue
     }
 
     val rootNodeID = rootNode.nodeID
     enqueue(rootNodeID)
-    distanceToNode(rootNodeID) = 0
+    distanceToNode(rootNodeID) = 0L
 
     while(true){
       dequeue() match{

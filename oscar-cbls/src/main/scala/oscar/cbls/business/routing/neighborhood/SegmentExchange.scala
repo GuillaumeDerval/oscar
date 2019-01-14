@@ -33,8 +33,8 @@ import scala.collection.immutable.{HashSet, SortedSet}
  * @param tryFlip if false, will not flip any segment (maybe you do not want flipping if using time windows?)
  */
 case class SegmentExchange(val vrp: VRP,
-                           relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
-                           vehicles:() => Iterable[Int],
+                           relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
+                           vehicles:() => Iterable[Long],
                            neighborhoodName:String = "SegmentExchange",
                            hotRestart:Boolean = true,
 
@@ -47,24 +47,24 @@ case class SegmentExchange(val vrp: VRP,
                            tryFlip:Boolean = true)
   extends EasyNeighborhoodMultiLevel[SegmentExchangeMove](neighborhoodName) {
 
-  var firstSegmentStartPosition:Int = -1
-  var firstSegmentEndPosition:Int = -1
+  var firstSegmentStartPosition:Long = -1L
+  var firstSegmentEndPosition:Long = -1L
   var flipFirstSegment:Boolean = false
-  var secondSegmentStartPosition: Int = -1
-  var secondSegmentEndPosition: Int = -1
+  var secondSegmentStartPosition: Long = -1L
+  var secondSegmentEndPosition: Long = -1L
   var flipSecondSegment:Boolean = false
-  var startVehicle = 0
+  var startVehicle = 0L
 
   val v = vrp.v
   val seq = vrp.routes
 
   val n = vrp.n
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
@@ -72,13 +72,13 @@ case class SegmentExchange(val vrp: VRP,
 
     val relevantNeighborsNow = relevantNeighbors()
 
-    val nodeToRoute:Array[Int] = vrp.vehicleOfNode.map(_.value)
+    val nodeToRoute:Array[Long] = vrp.vehicleOfNode.map(_.value)
 
     val listOfVehiclesToIterateOn = (if (hotRestart) HotRestart(vehicles(), startVehicle) else vehicles()).toList
-    var allVehiclesToIterateOn = SortedSet.empty[Int] ++ listOfVehiclesToIterateOn
+    var allVehiclesToIterateOn = SortedSet.empty[Long] ++ listOfVehiclesToIterateOn
 
     val (listOfVehiclesToIterateOnIterable,notifyFound1) = selectFirstVehicleBehavior.toIterable(listOfVehiclesToIterateOn)
-    var firstVehicle = -1
+    var firstVehicle = -1L
 
     for(firstVehicleTmp <- listOfVehiclesToIterateOnIterable){
 
@@ -86,11 +86,11 @@ case class SegmentExchange(val vrp: VRP,
 
       allVehiclesToIterateOn = allVehiclesToIterateOn - firstVehicle
 
-      val routeOfVehicle1: List[Int] = vrp.getRouteOfVehicle(firstVehicle)
+      val routeOfVehicle1: List[Long] = vrp.getRouteOfVehicle(firstVehicle)
 
-      val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Int,Int,Map[Int,Iterable[(Int,Int,Int)]])] = routeOfVehicle1.map(node =>
+      val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Long,Long,Map[Long,Iterable[(Long,Long,Long)]])] = routeOfVehicle1.map(node =>
         (node, seqValue.positionOfAnyOccurrence(node).head, relevantNeighborsNow(node)
-          .map(node => (node,if(node >=v && nodeToRoute(node)!=n) nodeToRoute(node) else -1))
+          .map(node => (node,if(node >=v && nodeToRoute(node)!=n) nodeToRoute(node) else -1L))
           .filter({case (nodeNr,routeNr) => nodeNr >= v && allVehiclesToIterateOn.contains(routeNr)})
           .map(nodeAndRoute => (nodeAndRoute._1,nodeAndRoute._2,seqValue.positionOfAnyOccurrence(nodeAndRoute._1).head))
           .groupBy(nodeAndRoute => nodeAndRoute._2))
@@ -109,25 +109,25 @@ case class SegmentExchange(val vrp: VRP,
 
           val isReversedFromFirstSecondNodesFirstSegment =
             if (positionOfFirstNode < positionOfSecondNode) {
-              firstSegmentStartPosition = positionOfFirstNode + 1
-              firstSegmentEndPosition = positionOfSecondNode - 1
+              firstSegmentStartPosition = positionOfFirstNode + 1L
+              firstSegmentEndPosition = positionOfSecondNode - 1L
               false
             } else {
-              firstSegmentStartPosition = positionOfSecondNode + 1
-              firstSegmentEndPosition = positionOfFirstNode - 1
+              firstSegmentStartPosition = positionOfSecondNode + 1L
+              firstSegmentEndPosition = positionOfFirstNode - 1L
               true
             }
 
           //we check that the first segment is not empty
           if(firstSegmentStartPosition <= firstSegmentEndPosition) {
             //now we search for nodes in other vehicles
-            val otherVehicles : Iterable[Int] = firstNodeVehicleToNodeRoutePosition.keys.filter((v : Int) => secondNodeVehicleToNodeRoutePosition.isDefinedAt(v))
+            val otherVehicles : Iterable[Long] = firstNodeVehicleToNodeRoutePosition.keys.filter((v : Long) => secondNodeVehicleToNodeRoutePosition.isDefinedAt(v))
             for (otherVehicle <- otherVehicles) {
 
-              val (relevantNeighborsForFirstNodeNodeVPos:Iterable[(Int, Int, Int)],notifyFound4) =
+              val (relevantNeighborsForFirstNodeNodeVPos:Iterable[(Long, Long, Long)],notifyFound4) =
                 selectFirstNodeOfSecondSegmentBehavior.toIterable(firstNodeVehicleToNodeRoutePosition(otherVehicle))
 
-              val (relevantNeighborsForSecondNodeNodeVPos:Iterable[(Int, Int, Int)],notifyFound5) =
+              val (relevantNeighborsForSecondNodeNodeVPos:Iterable[(Long, Long, Long)],notifyFound5) =
                 selectSecondNodeOfSecondSegmentBehavior.toIterable(secondNodeVehicleToNodeRoutePosition(otherVehicle))
 
               //TODO: double loop and some post-filtering is naive, some pre-filtering could be done before, eg based on a sort of the relevant neighbors by position
@@ -137,12 +137,12 @@ case class SegmentExchange(val vrp: VRP,
 
                   val isReversedFromFirstSecondNodesSecondSegment =
                     if (relevantFirstPos < relevantSecondPos) {
-                      secondSegmentStartPosition = relevantFirstPos + 1
-                      secondSegmentEndPosition = relevantSecondPos - 1
+                      secondSegmentStartPosition = relevantFirstPos + 1L
+                      secondSegmentEndPosition = relevantSecondPos - 1L
                       false
                     } else {
-                      secondSegmentStartPosition = relevantSecondPos + 1
-                      secondSegmentEndPosition = relevantFirstPos - 1
+                      secondSegmentStartPosition = relevantSecondPos + 1L
+                      secondSegmentEndPosition = relevantFirstPos - 1L
                       true
                     }
 
@@ -173,18 +173,18 @@ case class SegmentExchange(val vrp: VRP,
 
     }//end loop on vehicles
     seq.releaseTopCheckpoint()
-    startVehicle = firstVehicle + 1
+    startVehicle = firstVehicle + 1L
   } //end def
 
-  override def instantiateCurrentMove(newObj: Int): SegmentExchangeMove = {
+  override def instantiateCurrentMove(newObj: Long): SegmentExchangeMove = {
     SegmentExchangeMove(
       firstSegmentStartPosition, firstSegmentEndPosition,flipFirstSegment,
       secondSegmentStartPosition, secondSegmentEndPosition, flipSecondSegment,
       newObj, this, neighborhoodName)
   }
 
-  def doMove(firstSegmentStartPosition:Int, firstSegmentEndPosition:Int, flipFirstSegment:Boolean,
-             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment:Boolean){
+  def doMove(firstSegmentStartPosition:Long, firstSegmentEndPosition:Long, flipFirstSegment:Boolean,
+             secondSegmentStartPosition: Long, secondSegmentEndPosition: Long, flipSecondSegment:Boolean){
     seq.swapSegments(firstSegmentStartPosition,
       firstSegmentEndPosition,
       flipFirstSegment,
@@ -215,9 +215,9 @@ case class SegmentExchange(val vrp: VRP,
   * @param hotRestart true if you doesn't wan't to test all the route each time the neighborhood is called
   */
 case class SegmentExchangeOnSegments(vrp: VRP,
-                                     segmentsToExchangeGroupedByVehicle: () => Map[Int, List[(Int,Int)]],
-                                     relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
-                                     vehicles: () => Iterable[Int],
+                                     segmentsToExchangeGroupedByVehicle: () => Map[Long, List[(Long,Long)]],
+                                     relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
+                                     vehicles: () => Iterable[Long],
                                      neighborhoodName:String = "PickupDeliverySegmentExchange",
                                      hotRestart:Boolean = true,
 
@@ -230,12 +230,12 @@ case class SegmentExchangeOnSegments(vrp: VRP,
                                     )
   extends EasyNeighborhoodMultiLevel[SegmentExchangeOnSegmentsMove](neighborhoodName){
 
-  var firstSegmentStartPosition:Int = -1
-  var firstSegmentEndPosition:Int = -1
-  var secondSegmentStartPosition: Int = -1
-  var secondSegmentEndPosition: Int = -1
+  var firstSegmentStartPosition:Long = -1L
+  var firstSegmentEndPosition:Long = -1L
+  var secondSegmentStartPosition: Long = -1L
+  var secondSegmentEndPosition: Long = -1L
   var tryFlip: Boolean = false
-  var startVehicle = 0
+  var startVehicle = 0L
 
   val n = vrp.n
   val v = vrp.v
@@ -243,7 +243,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
   val seq = vrp.routes
 
 
-  override def exploreNeighborhood(initialObj: Int): Unit = {
+  override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicle()
@@ -260,13 +260,13 @@ case class SegmentExchangeOnSegments(vrp: VRP,
     val prevNodeOfAllNodes = vrp.getGlobalPrevNodeOfAllNodes
     val nextNodeOfAllNodes = vrp.getGlobalNextNodeOfAllNodes
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
     }
 
-    def areSegmentExchangeable(segment1: (Int,Int), segment2: (Int,Int)): Boolean ={
+    def areSegmentExchangeable(segment1: (Long,Long), segment2: (Long,Long)): Boolean ={
       val (start1,end1) = segment1
       val (start2,end2) = segment2
       isNodeInRelevantNeighborsOfNodes(start1)(prevNodeOfAllNodes(start2)) &&
@@ -275,7 +275,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
         (nextNodeOfAllNodes(end2) < v || isNodeInRelevantNeighborsOfNodes(nextNodeOfAllNodes(end2))(end1))
     }
 
-    if(!hotRestart)startVehicle = 0
+    if(!hotRestart)startVehicle = 0L
 
     val (listOfVehicleForFirstVehicle,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehiclesNow.drop(startVehicle))
     for(firstVehicle <- listOfVehicleForFirstVehicle){
@@ -299,19 +299,19 @@ case class SegmentExchangeOnSegments(vrp: VRP,
         }
       }
     }
-    startVehicle += 1
+    startVehicle += 1L
     seq.releaseTopCheckpoint()
   }
 
-  override def instantiateCurrentMove(newObj: Int): SegmentExchangeOnSegmentsMove = {
+  override def instantiateCurrentMove(newObj: Long): SegmentExchangeOnSegmentsMove = {
     SegmentExchangeOnSegmentsMove(
       firstSegmentStartPosition, firstSegmentEndPosition, false,
       secondSegmentStartPosition, secondSegmentEndPosition, false,
       newObj, this, neighborhoodName)
   }
 
-  def doMove(firstSegmentStartPosition:Int, firstSegmentEndPosition:Int, flipFirstSegment: Boolean,
-             secondSegmentStartPosition: Int, secondSegmentEndPosition: Int, flipSecondSegment: Boolean){
+  def doMove(firstSegmentStartPosition:Long, firstSegmentEndPosition:Long, flipFirstSegment: Boolean,
+             secondSegmentStartPosition: Long, secondSegmentEndPosition: Long, flipSecondSegment: Boolean){
     seq.swapSegments(firstSegmentStartPosition,
       firstSegmentEndPosition,
       flipFirstSegment,
@@ -321,17 +321,17 @@ case class SegmentExchangeOnSegments(vrp: VRP,
   }
 }
 
-case class SegmentExchangeOnSegmentsMove(firstSegmentStartPosition:Int,
-                               firstSegmentEndPosition:Int,
+case class SegmentExchangeOnSegmentsMove(firstSegmentStartPosition:Long,
+                               firstSegmentEndPosition:Long,
                                flipFirstSegment:Boolean,
-                               secondSegmentStartPosition: Int,
-                               secondSegmentEndPosition: Int,
+                               secondSegmentStartPosition: Long,
+                               secondSegmentEndPosition: Long,
                                flipSecondSegment:Boolean,
-                               override val objAfter: Int,override val neighborhood:SegmentExchangeOnSegments,
+                               override val objAfter: Long,override val neighborhood:SegmentExchangeOnSegments,
                                override val neighborhoodName:String = "SegmentExchangeOnSegmentsMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp){
 
-  override def impactedPoints: Iterable[Int] =
+  override def impactedPoints: Iterable[Long] =
     neighborhood.vrp.routes.value.valuesBetweenPositionsQList(firstSegmentStartPosition,firstSegmentEndPosition) ++
       neighborhood.vrp.routes.value.valuesBetweenPositionsQList(secondSegmentStartPosition,secondSegmentEndPosition)
 
@@ -347,17 +347,17 @@ case class SegmentExchangeOnSegmentsMove(firstSegmentStartPosition:Int,
   }
 }
 
-case class SegmentExchangeMove(firstSegmentStartPosition:Int,
-                               firstSegmentEndPosition:Int,
+case class SegmentExchangeMove(firstSegmentStartPosition:Long,
+                               firstSegmentEndPosition:Long,
                                flipFirstSegment:Boolean,
-                               secondSegmentStartPosition: Int,
-                               secondSegmentEndPosition: Int,
+                               secondSegmentStartPosition: Long,
+                               secondSegmentEndPosition: Long,
                                flipSecondSegment:Boolean,
-                               override val objAfter: Int,override val neighborhood:SegmentExchange,
+                               override val objAfter: Long,override val neighborhood:SegmentExchange,
                                override val neighborhoodName:String = "SegmentExchangeMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp){
 
-  override def impactedPoints: Iterable[Int] =
+  override def impactedPoints: Iterable[Long] =
     neighborhood.vrp.routes.value.valuesBetweenPositionsQList(firstSegmentStartPosition,firstSegmentEndPosition) ++
       neighborhood.vrp.routes.value.valuesBetweenPositionsQList(secondSegmentStartPosition,secondSegmentEndPosition)
 

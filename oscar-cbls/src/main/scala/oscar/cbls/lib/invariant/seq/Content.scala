@@ -28,39 +28,39 @@ import scala.collection.immutable.SortedSet
  * @author renaud.delandtsheer@cetic.be
  */
 case class Content(v:SeqValue)
-  extends SetInvariant(SortedSet.empty[Int] ++ v.value.unorderedContentNoDuplicate,v.domain)
+  extends SetInvariant(SortedSet.empty[Long] ++ v.value.unorderedContentNoDuplicate,v.domain)
   with SeqNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) : Unit = {
     if(!digestUpdates(changes)) {
       updateFromScratch(changes.newValue)
     }
   }
 
   private def updateFromScratch(u:IntSequence){
-    this := (SortedSet.empty[Int] ++ u.unorderedContentNoDuplicate)
+    this := (SortedSet.empty[Long] ++ u.unorderedContentNoDuplicate)
   }
 
   //true if could be incremental, false otherwise
   def digestUpdates(changes : SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         this :+= value
         true
-      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
         digestUpdates(prev)
-      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         val value = r.removedValue
-        if (changes.newValue.nbOccurrence(value) == 0){
+        if (changes.newValue.nbOccurrence(value) == 0L){
           this :-= value
         }
         true
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Long) =>
         digestUpdates(r.howToRollBack)
 
       case SeqUpdateLastNotified(value) =>

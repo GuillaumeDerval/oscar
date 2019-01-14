@@ -37,53 +37,53 @@ import oscar.cbls.core.search.{Move, EasyNeighborhood}
 //TODO: hotRestart
 case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
                                     name:String = "WideningFlipNeighborhood",
-                                    allowedPositions:()=>Iterable[Int] = null,
-                                    maxFlipSize:Int = Int.MaxValue,
-                                    minFlipSize:Int = 2,
+                                    allowedPositions:()=>Iterable[Long] = null,
+                                    maxFlipSize:Long = Long.MaxValue,
+                                    minFlipSize:Long = 2L,
                                     exploreLargerOpportunitiesFirst:Boolean = true,
                                     best:Boolean = false,
                                     hotRestart:Boolean = true)
   extends EasyNeighborhood[FlipMove](best,name) {
-  require(minFlipSize > 1, "minFlipSize should be >1")
+  require(minFlipSize > 1L, "minFlipSize should be >1L")
 
   val varSize = vars.length
-  val lastPosition = varSize - 1
+  val lastPosition = varSize - 1L
 
   val allAllowed = if (allowedPositions == null) {
     Array.fill(varSize)(true)
   } else null
 
-  var currentFromPosition = 0
-  var currentToPosition = 0
+  var currentFromPosition = 0L
+  var currentToPosition = 0L
 
   def computeDistanceFromFirstUnauthorizedPosition(isAllowed: Array[Boolean]) = {
-    val distanceFromFirstUnauthorizedPosition: Array[Int] = Array.fill(varSize)(0)
-    var lastUnauthorizedPosition = -1
-    var currentPOsition = 0
+    val distanceFromFirstUnauthorizedPosition: Array[Long] = Array.fill(varSize)(0L)
+    var lastUnauthorizedPosition = -1L
+    var currentPOsition = 0L
     while (currentPOsition <= lastPosition) {
       if (isAllowed(currentPOsition)) {
         distanceFromFirstUnauthorizedPosition(currentPOsition) = currentPOsition - lastUnauthorizedPosition
       } else {
         lastUnauthorizedPosition = currentPOsition
-        distanceFromFirstUnauthorizedPosition(currentPOsition) = 0
+        distanceFromFirstUnauthorizedPosition(currentPOsition) = 0L
       }
-      currentPOsition += 1
+      currentPOsition += 1L
     }
     distanceFromFirstUnauthorizedPosition
   }
 
   def computeDistanceToFirstUnauthorizedPosition(isAllowed: Array[Boolean]) = {
-    val distanceToFirstUnauthorizedPosition = Array.fill(varSize)(0)
+    val distanceToFirstUnauthorizedPosition = Array.fill(varSize)(0L)
     var currentPosition = lastPosition
     var lastUnahtorizedPOsition = varSize
-    while (currentPosition > 0) {
+    while (currentPosition > 0L) {
       if (isAllowed(currentPosition)) {
         distanceToFirstUnauthorizedPosition(currentPosition) = lastUnahtorizedPOsition - currentPosition
       } else {
         lastUnahtorizedPOsition = currentPosition
-        distanceToFirstUnauthorizedPosition(currentPosition) = 0
+        distanceToFirstUnauthorizedPosition(currentPosition) = 0L
       }
-      currentPosition -= 1
+      currentPosition -= 1L
     }
     distanceToFirstUnauthorizedPosition
   }
@@ -99,7 +99,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
       allAllowed
     }
 
-    val flipCenterIterable:Iterable[(Int,Int,Int)] =
+    val flipCenterIterable:Iterable[(Long,Long,Long)] =
       if(exploreLargerOpportunitiesFirst) computeFlipCentersLargestFirst(isAllowed)
       else computeFlipCentersLeftFirst(isAllowed)
 
@@ -112,57 +112,57 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
     }
   }
 
-  def computeFlipCentersCanonicalHotRestart(isAllowed:Array[Boolean]):Iterable[(Int,Int,Int)] = {
+  def computeFlipCentersCanonicalHotRestart(isAllowed:Array[Boolean]):Iterable[(Long,Long,Long)] = {
     throw new Error("not implemented") //TODO
   }
 
-  def computeFlipCenters(isAllowed:Array[Boolean]):Iterable[(Int,Int,Int)] = {
+  def computeFlipCenters(isAllowed:Array[Boolean]):Iterable[(Long,Long,Long)] = {
     //compute distance to and from unauthorized positions
     val distanceFromFirstUnauthorizedPosition = computeDistanceFromFirstUnauthorizedPosition(isAllowed)
     val distanceToFirstUnauthorizedPosition = computeDistanceToFirstUnauthorizedPosition(isAllowed)
 
     //will contain all the flip centers
-    var flipCenters: List[(Int, Int, Int)] = List.empty
+    var flipCenters: List[(Long, Long, Long)] = List.empty
 
-    val thresholdForNeareseFlipEven = 1 max (minFlipSize / 2)
+    val thresholdForNeareseFlipEven = 1L max (minFlipSize / 2L)
     //compute allowed centres for even flips (pairs)
-    var currentPosition = 0
-    while (currentPosition <= lastPosition - 1) {
+    var currentPosition = 0L
+    while (currentPosition <= lastPosition - 1L) {
       val initialFromPosition = currentPosition
-      val initialToPosition = currentPosition + 1
+      val initialToPosition = currentPosition + 1L
       if ((distanceFromFirstUnauthorizedPosition(initialFromPosition) >= thresholdForNeareseFlipEven)
         && (distanceToFirstUnauthorizedPosition(initialToPosition) >= thresholdForNeareseFlipEven)) {
         val centre = (initialFromPosition, initialToPosition, distanceFromFirstUnauthorizedPosition(initialFromPosition) min distanceToFirstUnauthorizedPosition(initialToPosition))
         flipCenters = centre :: flipCenters
       }
-      currentPosition += 1
+      currentPosition += 1L
     }
 
     //compute allowed centres for odd (impair) flips
-    currentPosition = 0
-    val thresholdForNeareseFlipOdd = 1 max ((minFlipSize - 1) / 2)
+    currentPosition = 0L
+    val thresholdForNeareseFlipOdd = 1L max ((minFlipSize - 1L) / 2L)
 
-    while (currentPosition <= lastPosition - 2) {
+    while (currentPosition <= lastPosition - 2L) {
       val initialFromPosition = currentPosition
-      val initialToPosition = currentPosition + 2
+      val initialToPosition = currentPosition + 2L
       if ((distanceFromFirstUnauthorizedPosition(initialFromPosition) >= thresholdForNeareseFlipOdd)
         && (distanceToFirstUnauthorizedPosition(initialToPosition) >= thresholdForNeareseFlipOdd)) {
-        val centre = (initialFromPosition, initialToPosition, 1 + (distanceFromFirstUnauthorizedPosition(initialFromPosition) min distanceToFirstUnauthorizedPosition(initialToPosition)))
+        val centre = (initialFromPosition, initialToPosition, 1L + (distanceFromFirstUnauthorizedPosition(initialFromPosition) min distanceToFirstUnauthorizedPosition(initialToPosition)))
         flipCenters = centre :: flipCenters
       }
-      currentPosition += 1
+      currentPosition += 1L
     }
     flipCenters
   }
 
-  def computeFlipCentersLargestFirst(isAllowed:Array[Boolean]):Iterable[(Int,Int,Int)] = {
+  def computeFlipCentersLargestFirst(isAllowed:Array[Boolean]):Iterable[(Long,Long,Long)] = {
     val flipCenters = computeFlipCenters(isAllowed)
     val allCentersInarray = flipCenters.toArray
     val referenceArray = Array.tabulate(allCentersInarray.length)(i => i)
     new LazyMap(KSmallest.lazySort(referenceArray,id => -allCentersInarray(id)._3),id => allCentersInarray(id))
   }
 
-  def computeFlipCentersLeftFirst(isAllowed:Array[Boolean]):Iterable[(Int,Int,Int)] = {
+  def computeFlipCentersLeftFirst(isAllowed:Array[Boolean]):Iterable[(Long,Long,Long)] = {
     val flipCenters = computeFlipCenters(isAllowed)
     val allCentersInArray = flipCenters.toArray
     val flipCenterCount = allCentersInArray.length
@@ -181,18 +181,18 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
    * @param isAllowed
    * @return true if search must be stopped, false otherwise; the segment will already be flipped back on return (to have a  terminal recursion)
    * */
-  def exploreAndflipToMinimalFlipSize(fromPosition:Int,toPosition:Int, isAllowed:Array[Boolean]):Boolean = {
+  def exploreAndflipToMinimalFlipSize(fromPosition:Long,toPosition:Long, isAllowed:Array[Boolean]):Boolean = {
     if(fromPosition + minFlipSize <= toPosition){
       //we can start
       explore(fromPosition,toPosition, isAllowed)
-    }else if(fromPosition >= 0 && isAllowed(fromPosition) && toPosition <= lastPosition && isAllowed(toPosition) && (toPosition - fromPosition) <= maxFlipSize){
+    }else if(fromPosition >= 0L && isAllowed(fromPosition) && toPosition <= lastPosition && isAllowed(toPosition) && (toPosition - fromPosition) <= maxFlipSize){
       //still to incrase the skipSize
       vars(fromPosition) :=: vars(toPosition)
 
-      exploreAndflipToMinimalFlipSize(fromPosition-1,toPosition+1,isAllowed)
+      exploreAndflipToMinimalFlipSize(fromPosition-1L,toPosition+1L,isAllowed)
     }else{
       //reached some stop condition (should not happen if centers are properly chosen)
-      FlipMove.doFlip(fromPosition+1,toPosition-1,vars)
+      FlipMove.doFlip(fromPosition+1L,toPosition-1L,vars)
       false
     }
   }
@@ -203,8 +203,8 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
    *  the positions in-between are already flipped
    * @return true if search must be stopped, false otherwise; the segment will already be flipped back on return (to have a  terminal recursion)
    */
-  def explore(fromPosition:Int,toPosition:Int, isAllowed:Array[Boolean]): Boolean = {
-    if(fromPosition >= 0 && isAllowed(fromPosition) && toPosition <= lastPosition && isAllowed(toPosition) && (toPosition - fromPosition) <= maxFlipSize){
+  def explore(fromPosition:Long,toPosition:Long, isAllowed:Array[Boolean]): Boolean = {
+    if(fromPosition >= 0L && isAllowed(fromPosition) && toPosition <= lastPosition && isAllowed(toPosition) && (toPosition - fromPosition) <= maxFlipSize){
       vars(fromPosition) :=: vars(toPosition)
       currentFromPosition = fromPosition
       currentToPosition = toPosition
@@ -213,29 +213,29 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
         FlipMove.doFlip(fromPosition,toPosition,vars)
         return true
       } else {
-        explore(fromPosition-1,toPosition+1,isAllowed)
+        explore(fromPosition-1L,toPosition+1L,isAllowed)
       }
     } else {
       //exploration is over, no interrupting move found
-      FlipMove.doFlip(fromPosition+1,toPosition-1,vars)
+      FlipMove.doFlip(fromPosition+1L,toPosition-1L,vars)
       return false
     }
   }
 
-  override def instantiateCurrentMove(newObj: Int): FlipMove = FlipMove(currentFromPosition,currentToPosition,vars,newObj,name)
+  override def instantiateCurrentMove(newObj: Long): FlipMove = FlipMove(currentFromPosition,currentToPosition,vars,newObj,name)
 }
 
 
 object FlipMove{
-  def doFlip(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar]){
+  def doFlip(fromPosition:Long,toPosition:Long,variables:Array[CBLSIntVar]){
     if(fromPosition < toPosition){
       variables(fromPosition) :=: variables(toPosition)
-      doFlip(fromPosition+1,toPosition-1,variables)
+      doFlip(fromPosition+1L,toPosition-1L,variables)
     }
   }
 }
 
-case class FlipMove(fromPosition:Int,toPosition:Int,variables:Array[CBLSIntVar], override val objAfter:Int, override val neighborhoodName:String = null)
+case class FlipMove(fromPosition:Long,toPosition:Long,variables:Array[CBLSIntVar], override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName) {
 
   require(fromPosition < toPosition)

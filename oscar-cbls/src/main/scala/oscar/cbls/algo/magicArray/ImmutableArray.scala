@@ -34,14 +34,14 @@ object ImmutableArray{
 }
 
 class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
-                        override val size:Int,
+                        override val size:Long,
                         updates:RedBlackTreeMap[T]) extends Iterable[T]{
-  def apply(id: Int): T =
+  def apply(id: Long): T =
     if(id >= size) throw new ArrayIndexOutOfBoundsException
     else updates.getOrElse(id,baseValueNeverModified(id))
 
-  def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
-    val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
+  def update(id: Long, value: T, fast: Boolean): ImmutableArray[T] = {
+    val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1L,updates.insert(id,value))
     else if (id < size) new ImmutableArray[T](baseValueNeverModified,size,updates.insert(id,value))
     else throw new ArrayIndexOutOfBoundsException
     if(fast) tmp else tmp.flatten()
@@ -53,31 +53,31 @@ class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
 }
 
 class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
-  var nextPos = 0
+  var nextPos = 0L
 
   override def hasNext: Boolean = nextPos < on.size
 
   override def next(): T = {
     val toReturn = on(nextPos)
-    nextPos+=1
+    nextPos+=1L
     toReturn
   }
 }
 
 object TestImmutableArray extends App{
 
-  val n = 100
-  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id+1))
+  val n = 100L
+  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id+1L))
   var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
 
-  for(i <- 1 to 1000){
+  for(i <- 1L to 1000L){
     val modifiedId = Random.nextInt(n)
-    val newValue = Random.nextInt(n * (modifiedId+1))
+    val newValue = Random.nextInt(n * (modifiedId+1L))
 
     referenceArray(modifiedId) = newValue
     immutableArray = immutableArray.update(modifiedId,newValue,Random.nextBoolean())
 
-    for(id <- 0 until n){
+    for(id <- 0L until n){
       require(referenceArray(id) == immutableArray(id))
     }
   }

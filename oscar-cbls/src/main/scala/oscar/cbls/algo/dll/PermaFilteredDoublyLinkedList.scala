@@ -71,7 +71,7 @@ class DelayedPermaFilter[T, F <: AnyRef](mFilter:(T,()=>Unit, ()=> Boolean) => U
 }
 
 /**this is a mutable data structure that is able to represent sets through doubly-lined lists, with insert
-  * and delete in O(1) through reference
+  * and delete in O(1L) through reference
   * and to update in parallel another set that is a filter of the first one through a specified function
   * the filter can be specified anytime and filtering can be cascaded, but a PermaFilteresDLL can have only one filter
   *
@@ -99,7 +99,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   /**returns the size of the PermaFilteredDLL*/
   override def size = msize
 
-  private var msize:Int = 0
+  private var msize:Long = 0L
 
   /**adds an a item in the PermaFilteredDLL, and if accepted by the filter, adds it in the slave PermaFilteredDLL.
     * returns a reference that should be used to remove the item from all those structures at once.
@@ -108,7 +108,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     val d = new PFDLLStorageElement[T](elem)
     d.setNext(phantom.next)
     phantom.setNext(d)
-    msize +=1
+    msize +=1L
 
     //TODO: could be faster if we generate a dedicated PFDLL when PF is activated
     if(permaFilter != null) permaFilter.notifyInsert(d)
@@ -128,7 +128,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   def deleteElem(elemkey:PFDLLStorageElement[T]):T = {
     elemkey.prev.setNext(elemkey.next)
     elemkey.prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMIGNLY USELESS INSTRUCTION
-    msize -=1
+    msize -=1L
 
     //TODO: could be faster if we generate a dedicated PFDLL when PF is activated
     if (permaFilter != null) permaFilter.notifyDelete(elemkey)
@@ -136,7 +136,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     elemkey.elem
   }
 
-  override def isEmpty:Boolean = size == 0
+  override def isEmpty:Boolean = size == 0L
 
   override def iterator = new PFDLLIterator[T](phantom, phantom)
 

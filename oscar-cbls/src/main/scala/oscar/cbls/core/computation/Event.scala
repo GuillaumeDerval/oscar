@@ -53,7 +53,7 @@ object Event{
     * @param v the variable whose change will trigger the execution of action
     */
   def apply(v:Variable, w:Variable,
-            intaction:Int=>Unit):Event = {
+            intaction:Long=>Unit):Event = {
     val toreturn = new Event(v,w,null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
@@ -66,7 +66,7 @@ object Event{
     * @param ModifiedVars the variables that could be modified by the Event
     */
   def apply(v:Variable, w:Variable,
-            intaction:Int=>Unit,
+            intaction:Long=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(v,w,ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
@@ -74,7 +74,7 @@ object Event{
   }
 
   def apply(v:Variable,
-            intaction:Int=>Unit,
+            intaction:Long=>Unit,
             ModifiedVars:Iterable[Variable]):Event = {
     val toreturn = new Event(v,null,ModifiedVars)
     if (intaction != null) toreturn.setIntAction(intaction)
@@ -82,7 +82,7 @@ object Event{
   }
 
   def apply(v:IntValue,
-            intaction:Int=>Unit):Event = {
+            intaction:Long=>Unit):Event = {
     val toreturn = new Event(v,null,null)
     if (intaction != null) toreturn.setIntAction(intaction)
     toreturn
@@ -90,12 +90,12 @@ object Event{
 
   /*  def apply(v:Variable, w:Variable,
               action: =>Unit = null,
-              intaction:Int=>Unit = null,
-              intsetaction:SortedSet[Int]=>Unit = null,
-              intintaction: (Int,Int)=>Unit = null,
-              intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit = null,
-              intsetintaction:(SortedSet[Int],Int) => Unit = null,
-              intintsetaction:(Int,SortedSet[Int]) => Unit = null,
+              intaction:Long=>Unit = null,
+              intsetaction:SortedSet[Long]=>Unit = null,
+              intintaction: (Long,Long)=>Unit = null,
+              intsetintsetaction:(SortedSet[Long],SortedSet[Long]) => Unit = null,
+              intsetintaction:(SortedSet[Long],Long) => Unit = null,
+              intintsetaction:(Long,SortedSet[Long]) => Unit = null,
               ModifiedVars:Iterable[Variable] = null):Event = {
       val toreturn = new Event(v,w,ModifiedVars)
       toreturn.setAction((_:Unit) => {action})
@@ -117,50 +117,50 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   //unfortunately, it is not possible to pass a type "=>Unit" as parameter to a case class.
 
   private var action: (()=>Unit)=null
-  private var actionIntParam: (Int=>Unit) = null
-  private var actionIntSetParam: (SortedSet[Int] => Unit) = null
+  private var actionIntParam: (Long=>Unit) = null
+  private var actionIntSetParam: (SortedSet[Long] => Unit) = null
 
-  private var oldIntv = 0
-  private var oldIntSetv:SortedSet[Int] = SortedSet.empty
-  private var oldIntw = 0
-  private var oldIntSetw:SortedSet[Int] = SortedSet.empty
+  private var oldIntv = 0L
+  private var oldIntSetv:SortedSet[Long] = SortedSet.empty
+  private var oldIntw = 0L
+  private var oldIntSetw:SortedSet[Long] = SortedSet.empty
 
-  private var intintaction: ((Int,Int) => Unit) = null
-  private var intsetintsetaction:((SortedSet[Int],SortedSet[Int]) => Unit) = null
-  private var intsetintaction:((SortedSet[Int],Int) => Unit) = null
-  private var intintsetaction:((Int,SortedSet[Int]) => Unit) = null
+  private var intintaction: ((Long,Long) => Unit) = null
+  private var intsetintsetaction:((SortedSet[Long],SortedSet[Long]) => Unit) = null
+  private var intsetintaction:((SortedSet[Long],Long) => Unit) = null
+  private var intintsetaction:((Long,SortedSet[Long]) => Unit) = null
 
   def setAction(action: ()=>Unit){
     this.action = action
   }
-  def setIntAction(action: Int=>Unit){
+  def setIntAction(action: Long=>Unit){
     this.actionIntParam = action
     oldIntv = v.asInstanceOf[IntValue].value
   }
-  def setIntSetAction(action: SortedSet[Int] => Unit){
+  def setIntSetAction(action: SortedSet[Long] => Unit){
     this.actionIntSetParam = action
     oldIntSetv = v.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintintaction(intintaction: (Int,Int)=>Unit){
+  def setintintaction(intintaction: (Long,Long)=>Unit){
     this.intintaction = intintaction
     this.oldIntv = v.asInstanceOf[CBLSIntVar].value
     this.oldIntw = w.asInstanceOf[CBLSIntVar].value
   }
 
-  def setintsetintsetaction(intsetintsetaction:(SortedSet[Int],SortedSet[Int]) => Unit){
+  def setintsetintsetaction(intsetintsetaction:(SortedSet[Long],SortedSet[Long]) => Unit){
     this.intsetintsetaction = intsetintsetaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
   }
 
-  def setintsetintaction(intsetintaction:(SortedSet[Int],Int) => Unit){
+  def setintsetintaction(intsetintaction:(SortedSet[Long],Long) => Unit){
     this.intsetintaction = intsetintaction
     this.oldIntSetv = v.asInstanceOf[CBLSSetVar].value
     this.oldIntw = w.asInstanceOf[CBLSIntVar].value
   }
 
-  def setintintsetaction(intintsetaction:(Int,SortedSet[Int]) => Unit){
+  def setintintsetaction(intintsetaction:(Long,SortedSet[Long]) => Unit){
     this.intintsetaction = intintsetaction
     this.oldIntv = v.asInstanceOf[CBLSIntVar].value
     this.oldIntSetw = w.asInstanceOf[CBLSSetVar].value
@@ -172,15 +172,15 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   if (ModifiedVars != null)
     for(variable <- ModifiedVars){variable.setDefiningInvariant(this)}
 
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Long, OldVal: Long, NewVal: Long) {
     scheduleForPropagation()
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int,
-                                addedValues: Iterable[Int],
-                                removedValues: Iterable[Int],
-                                oldValue: SortedSet[Int],
-                                newValue: SortedSet[Int]) {
+  override def notifySetChanges(v: ChangingSetValue, d: Long,
+                                addedValues: Iterable[Long],
+                                removedValues: Iterable[Long],
+                                oldValue: SortedSet[Long],
+                                newValue: SortedSet[Long]) {
     scheduleForPropagation()
   }
 

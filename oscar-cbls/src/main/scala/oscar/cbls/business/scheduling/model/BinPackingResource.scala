@@ -36,38 +36,38 @@ import scala.collection.SortedMap
  *
  * We suppose that the bins cover the full history that is available in the planning.
  */
-class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], MaxBPSteps:Int)
+class BinPackingResource(planning:Planning, n:String, bins:Long => List[Long], MaxBPSteps:Long)
   extends  Resource(planning:Planning, n:String) {
 
-  val maxBinsPerTimeUnit:Int = (0 to planning.maxDuration).foldLeft(0)((acc,t) => scala.math.max(acc,bins(t).length))
+  val maxBinsPerTimeUnit:Long = (0L to planning.maxDuration).foldLeft(0L)((acc,t) => scala.math.max(acc,bins(t).length))
 
-  case class ResourceAtTime(t:Int,
+  case class ResourceAtTime(t:Long,
                             bins:Array[ShiftedBin],
                             var overallViolation:Objective = null,
                             var mostViolatedBins:CBLSSetVar=null){
   }
 
-  class ShiftedItem(override val number:Int,
-                    override val size:Int,
+  class ShiftedItem(override val number:Long,
+                    override val size:Long,
                     bin:CBLSIntVar, //this is the bin of he day
                     offset:CBLSIntVar //this is the offset, taken as the time unit where it happens
                      ) extends Item(number, size, bin){
     val shiftedBin = bin + (offset * maxBinsPerTimeUnit) //this is the absolute bin
   }
 
-  class ShiftedBin(override val number:Int,
-                   override val size:Int,
-                   val shiftedNumber:Int) extends Bin(number, size)
+  class ShiftedBin(override val number:Long,
+                   override val size:Long,
+                   val shiftedNumber:Long) extends Bin(number, size)
 
   //for each activity using the resource, we have an item representing it (
   // this also keeps trac of the level of usage of the activity
   //As well as the bin to which the activity is set.
   var ActivitiesAndItems: SortedMap[Activity, ShiftedItem] = SortedMap.empty
 
-  var itemCount = 0;
-  private def newItemNumber():Int = {
-    itemCount +=1
-    itemCount -1
+  var itemCount = 0L;
+  private def newItemNumber():Long = {
+    itemCount +=1L
+    itemCount -1L
   }
 
   /**called by activities to register itself to the resource*/
@@ -87,16 +87,16 @@ class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], Max
     }
   }
 
-  val binCount:Int = planning.maxDuration * maxBinsPerTimeUnit
+  val binCount:Long = planning.maxDuration * maxBinsPerTimeUnit
 
   private val binsAtAllTimes:Array[ResourceAtTime] = Array.tabulate(planning.maxDuration)(t => {
     val standardBinSizes = bins(t)
-    val extendedBinSizes = standardBinSizes ::: List.fill(maxBinsPerTimeUnit - standardBinSizes.length)(0)
+    val extendedBinSizes = standardBinSizes ::: List.fill(maxBinsPerTimeUnit - standardBinSizes.length)(0L)
     val shift = t * maxBinsPerTimeUnit
 
     val binArray:Array[ShiftedBin] = Array.tabulate(maxBinsPerTimeUnit)(null)
     extendedBinSizes.zipWithIndex.map(
-    {case (binSize:Int, index:Int) =>
+    {case (binSize:Long, index:Long) =>
       binArray(index) = new ShiftedBin(number = index,
                                        binSize,
                                        shiftedNumber = index + shift)})
@@ -108,7 +108,7 @@ class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], Max
   private val highestViolationPositions: CBLSSetVar = violationTracker
 
   val overShoot: CBLSIntVar = violationTracker.
-  def worseOverShootTime: Int = highestViolationPositions.value.firstKey
+  def worseOverShootTime: Long = highestViolationPositions.value.firstKey
 
   /** This method is called by the framework before starting the scheduling
     * put anything that needs to be done after instantiation here
@@ -132,7 +132,7 @@ class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], Max
     val mkp = MultiKnapsack(
       activityArray.map((a:Activity) => ActivitiesAndItems(a).bin),
       activityArray.map((a:Activity) => CBLSIntConst(ActivitiesAndItems(a).size)),
-      binArray.map(bin => bin.size).map((i:Int) => CBLSIntConst(i)))
+      binArray.map(bin => bin.size).map((i:Long) => CBLSIntConst(i)))
 
     sc.post(mkp)
 
@@ -152,8 +152,8 @@ class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], Max
   /** This method builds a bin packing problem regrouping the items etc.
     * of a bin packing happening at the given point in time
     */
-  private def getBinPackingProblem(t:Int):BinPackingProblem = {
-    val activitiesStartingAtT:Iterable[Activity] = use(t).value.map((activityID:Int) => planning.activityArray(activityID))
+  private def getBinPackingProblem(t:Long):BinPackingProblem = {
+    val activitiesStartingAtT:Iterable[Activity] = use(t).value.map((activityID:Long) => planning.activityArray(activityID))
 
     BinPackingProblem(
       activitiesStartingAtT.map((a:Activity) => {val item = ActivitiesAndItems(a); (item.number,item)}).toMap,
@@ -162,23 +162,23 @@ class BinPackingResource(planning:Planning, n:String, bins:Int => List[Int], Max
       binsAtAllTimes(t).mostViolatedBins)
   }
 
-  override def toAsciiArt(headerLength: Int): String = ""
+  override def toAsciiArt(headerLength: Long): String = ""
 
   /** these are the activities that you can use for ejecting one of the conflicting activities */
-  override def baseActivityForEjection(t: Int): Iterable[Activity] = null
+  override def baseActivityForEjection(t: Long): Iterable[Activity] = null
 
   /** you need to eject one of these to solve the conflict
     * this can be null if the problem is actually solved in between, or if the problem cannot be solved */
-  override def conflictingActivities(t: Int): Iterable[Activity] = {
+  override def conflictingActivities(t: Long): Iterable[Activity] = {
 
     val binPackingProblem = getBinPackingProblem(t)
-    BinPackingSolver.solveBinPacking(binPackingProblem, 4)
+    BinPackingSolver.solveBinPacking(binPackingProblem, 4L)
 
     //either the problem can be solved, or all activities could be moved later
-    if(binPackingProblem.overallViolation.value == 0)
+    if(binPackingProblem.overallViolation.value == 0L)
       return null
 
-    use(t).value.map((activityID:Int) => planning.activityArray(activityID))
+    use(t).value.map((activityID:Long) => planning.activityArray(activityID))
   }
 }
 */

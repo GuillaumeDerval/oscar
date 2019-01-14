@@ -113,12 +113,12 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * of the propagation elements
    * The method is expected to return consistent result once the setupPropagationStructure method is called
    */
-  private var MaxID: Int = -1
+  private var MaxID: Long = -1L
 
   def getMaxID = MaxID
 
-  def GetNextID(): Int = {
-    MaxID += 1
+  def GetNextID(): Long = {
+    MaxID += 1L
     MaxID
   }
 
@@ -170,12 +170,12 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
-    var LayerCount = 0
+    var LayerCount = 0L
     if (topologicalSort) {
       computePositionsThroughTopologicalSort(ClusteredPropagationComponents)
       executionQueue = new BinomialHeap[PropagationElement](p => p.position, ClusteredPropagationComponents.size)
     } else {
-      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
+      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1L
       executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, LayerCount)
     }
 
@@ -201,13 +201,13 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   /**This computes the position of the clustered PE, that is: the SCC and the PE not belonging to an SCC*/
   private def computePositionsThroughTopologicalSort(ClusteredPropagationComponents: List[PropagationElement]) {
-    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0 })
-    var position = 0 //la position du prochain noeud place.
+    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0L })
+    var position = 0L //la position du prochain noeud place.
     while (!front.isEmpty) {
       val n = front.head
       front = front.tail
       n.position = position
-      position += 1
+      position += 1L
       front = n.decrementSucceedingAndAccumulateFront(front)
     }
     if (position != ClusteredPropagationComponents.size) {
@@ -224,16 +224,16 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * that is: the SCC and the PE not belonging to an SCC
    * @return the max Position, knowing that the first is zero
    */
-  private def computePositionsThroughDistanceToInput(ClusteredPropagationComponents: List[PropagationElement]): Int = {
+  private def computePositionsThroughDistanceToInput(ClusteredPropagationComponents: List[PropagationElement]): Long = {
     val front: DoublyLinkedList[PropagationElement] = new DoublyLinkedList[PropagationElement]()
     for (pe <- ClusteredPropagationComponents) {
       pe.setCounterToPrecedingCount()
-      if (pe.position == 0) front.enqueue(pe)
+      if (pe.position == 0L) front.enqueue(pe)
     }
     front.enqueue(null) //null marker denotes when Position counter must be incremented
-    var position = 0 //la position du prochain noeud place.
-    var count = 0 //the number of PE
-    var countInLayer = 0
+    var position = 0L //la position du prochain noeud place.
+    var count = 0L //the number of PE
+    var countInLayer = 0L
 
     while (true) {
       //we know it is not empty here
@@ -247,20 +247,20 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
               throw new Exception("internal bug")
             }
           }
-          return position + 1
+          return position + 1L
         } else {
-          countInLayer = 0
-          position += 1
+          countInLayer = 0L
+          position += 1L
           front.enqueue(null) //null marker denotes when Position counter must be incremented
         }
       } else {
         n.position = position
-        count += 1
-        countInLayer += 0
+        count += 1L
+        countInLayer += 0L
         for (pe <- n.decrementSucceedingAndAccumulateFront(List.empty)) front.enqueue(pe)
       }
     }
-    0 //never reached
+    0L //never reached
   }
 
   def dropStaticGraph() {
@@ -349,13 +349,13 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * @return an array of boolean: UniqueID => should the element with UniqueID be propagated for this target?
    */
   private def BuildFastPropagationTrack(target: QList[PropagationElement]): Array[Boolean] = {
-    val Track: Array[Boolean] = Array.fill(getMaxID + 1)(false)
+    val Track: Array[Boolean] = Array.fill(getMaxID + 1L)(false)
 
     var ToExplore: QList[PropagationElement] = target
 
     var currentPos = target
     while (currentPos != null) {
-      if (currentPos.head.uniqueID != -1)
+      if (currentPos.head.uniqueID != -1L)
         Track(currentPos.head.uniqueID) = true
       currentPos = currentPos.tail
     }
@@ -364,7 +364,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       val n = ToExplore.head
       ToExplore = ToExplore.tail
       for (nn <- n.getStaticallyListenedElements)
-        if (nn.uniqueID != -1 && !Track(nn.uniqueID)) {
+        if (nn.uniqueID != -1L && !Track(nn.uniqueID)) {
           ToExplore = QList(nn, ToExplore)
           Track(nn.uniqueID) = true
         }
@@ -378,7 +378,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   def checkUniqueID(): Unit = {
     for (p <- getPropagationElements) {
-      require(p.uniqueID != -1)
+      require(p.uniqueID != -1L)
     }
   }
 
@@ -452,7 +452,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       scheduledElements = null
     }
 
-    var previousLayer = 0
+    var previousLayer = 0L
 
     val anythingDone = executionQueue.nonEmpty
 
@@ -555,7 +555,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     if (StaticGraph && DynamicGraph){
       for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1) {
+        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
           if (e.getDeterminingElement == f){
             //determining element, blue arrow
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
@@ -571,7 +571,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
             }
           }
         }
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1) {
+        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
           if (!e.getStaticallyListenedElements.exists(p => p==f)){
             //in dynamic graph and not in static one because of bulking
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = red]" + "\n"
@@ -580,13 +580,13 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       }
     }else if (StaticGraph) {
       for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1) {
+        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
           ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = black style=dotted]" + "\n"
         }
       }
     }else if (DynamicGraph) {
       for (e <- getPropagationElements) {
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1) {
+        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
           if (e.getDeterminingElement == f){
             //determining element, blue arrow
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
@@ -603,7 +603,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   /**
    * Builds a dictionary to store data related to the PE.
-   * the dictionary is O(1), based on an array.
+   * the dictionary is O(1L), based on an array.
    * It only works on PE that are registered to this structure.
    * The storage is not initialized, call the initialize to set it to some conventional value.
    * @tparam T the type stored in the data structure
@@ -632,19 +632,19 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 }
 
 /**
- * This is a O(1) dictionary for propagation elements.
+ * This is a O(1L) dictionary for propagation elements.
  * It is based on an array, and the keys it support is only the PE that have been reistered
  * to the propagation structure by the time this is instantiated.
  * WARNING: this is not efficient if you do not actually use many of the keys
  * because the instantiated array will be very large compared to your benefits.
  * This might kill cache and RAM for nothing
  *
- * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1) it is an array, and we allocate the full necessary size
+ * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1L) it is an array, and we allocate the full necessary size
  * @tparam T the type stored in this structure
  * @author renaud.delandtsheer@cetic.be
  */
-class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
-  private val storage: Array[T] = new Array[T](MaxNodeID + 1)
+class NodeDictionary[T](val MaxNodeID: Long)(implicit val X: Manifest[T]) {
+  private val storage: Array[T] = new Array[T](MaxNodeID + 1L)
 
   def update(elem: PropagationElement, value: T) {
     storage(elem.uniqueID) = value
@@ -656,13 +656,13 @@ class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
 }
 
 abstract class StronglyConnectedComponent(val propagationElements: Iterable[PropagationElement],
-                                          val core: PropagationStructure, val _UniqueID: Int) extends PropagationElement with SchedulingHandler {
+                                          val core: PropagationStructure, val _UniqueID: Long) extends PropagationElement with SchedulingHandler {
   schedulingHandler = core
   uniqueID = _UniqueID
 
   for (e <- propagationElements) e.schedulingHandler = this
 
-  def size: Int = propagationElements.size
+  def size: Long = propagationElements.size
 
   override def propagationStructure: PropagationStructure = core
 
@@ -692,7 +692,7 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
 
   override def setCounterToPrecedingCount(): Boolean = {
     position = propagationElements.count(p => p.setCounterToPrecedingCount())
-    position != 0
+    position != 0L
   }
 
   override private[core] def rescheduleIfNeeded() {}
@@ -708,7 +708,7 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
 }
 
 class StronglyConnectedComponentNoSort(Elements: Iterable[PropagationElement],
-                                       core: PropagationStructure, _UniqueID: Int) extends StronglyConnectedComponent(Elements, core, _UniqueID) {
+                                       core: PropagationStructure, _UniqueID: Long) extends StronglyConnectedComponent(Elements, core, _UniqueID) {
 
   override def performPropagation() {
     while (scheduledElements != null) {
@@ -724,7 +724,7 @@ class StronglyConnectedComponentNoSort(Elements: Iterable[PropagationElement],
 class StronglyConnectedComponentTopologicalSort(
   override val propagationElements: Iterable[PropagationElement],
   override val core: PropagationStructure,
-  _UniqueID: Int)
+  _UniqueID: Long)
   extends StronglyConnectedComponent(propagationElements, core, _UniqueID) with DAG {
 
   for (e <- propagationElements) {
@@ -827,7 +827,7 @@ class StronglyConnectedComponentTopologicalSort(
     }
     scheduledElements = null
 
-    var maxposition: Int = -1
+    var maxposition: Long = -1L
 
     while (!h.isEmpty) {
       val x = h.popFirst()
@@ -857,7 +857,7 @@ object PropagationElement {
  * This class is used in as a handle to register and unregister dynamically to variables
  * @author renaud.delandtsheer@cetic.be
  */
-class KeyForElementRemoval(val keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Int)], val keyForListeningElement: DPFDLLStorageElement[PropagationElement]) {
+class KeyForElementRemoval(val keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Long)], val keyForListeningElement: DPFDLLStorageElement[PropagationElement]) {
   def performRemove(): Unit = {
     keyForListeningElement.delete()
     keyForListenedElement.delete()
@@ -887,7 +887,7 @@ trait BasicPropagationElement {
    * @param listening the dynamically listening element
    * @param i: the payload that will be given for the notification, according to what the PE is supposed to do
    */
-  protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Int) {}
+  protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Long) {}
 
   /**
    * @param listening the listening element
@@ -896,7 +896,7 @@ trait BasicPropagationElement {
    * @return a key for dependency removal
    */
   protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement,
-                                                                 i: Int,
+                                                                 i: Long,
                                                                  sccOfListening: StronglyConnectedComponentTopologicalSort,
                                                                  dynamicallyListenedElementDLLOfListening:DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = DummyKeyForElementRemoval
 
@@ -964,7 +964,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   private[propagation] var staticallyListenedElements: List[PropagationElement] = List.empty
   private[propagation] var staticallyListeningElements: List[PropagationElement] = List.empty
 
-  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
+  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)]
 
   /**
    * through this method, the PropagationElement must declare which PropagationElement it is listening to
@@ -980,7 +980,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    */
   protected[core] final def getStaticallyListeningElements: Iterable[PropagationElement] = staticallyListeningElements
 
-  private[core] final def getDynamicallyListeningElements:DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
+  private[core] final def getDynamicallyListeningElements:DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)]
   = dynamicallyListeningElements
 
   protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = staticallyListenedElements
@@ -996,7 +996,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   /**this will not return a key because we do not have varying dependencies*/
-  protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Int): KeyForElementRemoval = {
+  protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Long): KeyForElementRemoval = {
     b.registerDynamicallyListeningElementNoKey(this, i)
     null
   }
@@ -1009,7 +1009,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * can only be called before model closing
    * @param listening the dynamically listening element
    */
-  override protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Int) {
+  override protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Long) {
     dynamicallyListeningElements.addElem(listening, i)
   }
 
@@ -1019,7 +1019,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * @param dynamicallyListenedElementDLLOfListening the PFDLL
    * @return a key for dependency removal
    */
-  override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Int,
+  override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Long,
                                                                           sccOfListening: StronglyConnectedComponentTopologicalSort,
                                                                           dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = {
     if (sccOfListening != null && sccOfListening == this.mySchedulingHandler) {
@@ -1039,9 +1039,9 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
 
   def setInSortingSCC() {}
 
-  def compare(that: DAGNode): Int = {
-    assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
-    assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+  def compare(that: DAGNode): Long = {
+    assert(this.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+    assert(that.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     this.uniqueID - that.uniqueID
   }
 
@@ -1057,8 +1057,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   final def decrementAndAccumulateFront(acc: List[PropagationElement]): List[PropagationElement] = {
-    position -= 1
-    if (position == 0) {
+    position -= 1L
+    if (position == 0L) {
       //faut pusher qqchose
       mySchedulingHandler match {
         case scc: StronglyConnectedComponent =>
@@ -1083,7 +1083,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
       case ps: PropagationStructure =>
         position = this.getStaticallyListenedElements.count(p => p.schedulingHandler != null)
     }
-    position != 0
+    position != 0L
   }
 
   /**to invoque to force inclusion of the propagation element in the current or next propagation wave. */
@@ -1116,8 +1116,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   /**
    * this is the propagation method that should be overridden by propagation elements.
    * notice that it is only called in a propagation wave if:
-   * 1: it has been registered for propagation since the last time it was propagated
-   * 2: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
+   * 1L: it has been registered for propagation since the last time it was propagated
+   * 2L: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
    *    it only propagates the ones that come in the predecessors of the targeted propagation element
    *  overriding this method is optional, so an empty body is provided by default
    */
@@ -1170,7 +1170,7 @@ trait VaryingDependenciesPE extends PropagationElement {
    * @param i an additional value that is stored in this element together with the reference to this,
    * can be use for notification purposes
    */
-  protected final def registerDeterminingElement(p: BasicPropagationElement, i: Int) {
+  protected final def registerDeterminingElement(p: BasicPropagationElement, i: Long) {
     p match {
       case pe: PropagationElement =>
         assert(this.getStaticallyListenedElements.exists(e => e == pe),
@@ -1186,7 +1186,7 @@ trait VaryingDependenciesPE extends PropagationElement {
 
   override protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = dynamicallyListenedElements
 
-  override protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Int): KeyForElementRemoval =
+  override protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Long): KeyForElementRemoval =
     b.registerDynamicallyListeningElement(
       this,
       i,

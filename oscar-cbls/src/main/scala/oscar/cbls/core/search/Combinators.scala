@@ -31,7 +31,7 @@ abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {
     for (n <- a) n.resetStatistics()
   }
 
-  override def verbose_=(i: Int): Unit = {
+  override def verbose_=(i: Long): Unit = {
     for (n <- a) n.verbose = i
     super.verbose_=(i)
   }

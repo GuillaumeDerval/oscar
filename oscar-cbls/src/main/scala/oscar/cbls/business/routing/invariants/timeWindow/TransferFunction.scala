@@ -10,10 +10,10 @@ package oscar.cbls.business.routing.invariants.timeWindow
   * @param la the latest arrival time at the node or segment's start
   * @param el the earliest leaving time from node or segment's end
   */
-abstract class TransferFunction(val ea: Int, val la: Int, val el: Int, val from: Int, val to: Int){
+abstract class TransferFunction(val ea: Long, val la: Long, val el: Long, val from: Long, val to: Long){
 
   // This method is used to compute the leaving time
-  def apply(t: Int): Int
+  def apply(t: Long): Long
 
   // If true it means that the TransferFunction isn't defined
   // and that apply() return always None
@@ -24,16 +24,16 @@ abstract class TransferFunction(val ea: Int, val la: Int, val el: Int, val from:
   }
 }
 
-case class DefinedTransferFunction(override val ea: Int, override val la: Int, override val el: Int,
-                                   override val from: Int, override val to: Int) extends TransferFunction(ea,la,el,from,to){
+case class DefinedTransferFunction(override val ea: Long, override val la: Long, override val el: Long,
+                                   override val from: Long, override val to: Long) extends TransferFunction(ea,la,el,from,to){
   require(la >= ea && el >= ea, "earliest arrival time : " + ea + ", latest arrival time : " + la + ", earliest leaving time : " + el)
-  override def apply(t: Int): Int = {
+  override def apply(t: Long): Long = {
     if(t <= ea)
       el
     else if(t <= la)
       t + el - ea
     else
-      -1
+      -1L
   }
 
   override def isEmpty: Boolean = false
@@ -43,8 +43,8 @@ case class DefinedTransferFunction(override val ea: Int, override val la: Int, o
   }
 }
 
-case object EmptyTransferFunction extends TransferFunction(1,-1,-1,-1,-1){
-  override def apply(t: Int): Int = -1
+case object EmptyTransferFunction extends TransferFunction(1L,-1L,-1L,-1L,-1L){
+  override def apply(t: Long): Long = -1L
 
   override def isEmpty: Boolean = true
 

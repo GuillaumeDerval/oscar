@@ -27,7 +27,7 @@ import oscar.cbls.core._
 object ForwardCumulativeConstraintOnVehicle {
   /**
    * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
-   * strictly above cMax and the undershoot strictly below 0 of the content of the vehicles
+   * strictly above cMax and the undershoot strictly below 0L of the content of the vehicles
    * @param routes
    * @param n The maximum number of nodes
    * @param v The number of vehicles
@@ -38,15 +38,15 @@ object ForwardCumulativeConstraintOnVehicle {
    *                           it consumes O(n) memory per level, so do not overdrive uselessly
    */
   def apply (routes:ChangingSeqValue,
-             n:Int,
-             v:Int,
-             op :(Int,Int,Int)=>Int,
-             cMax:Int,
-             contentAtVehicleStart:Array[Int],
-             maxCheckpointLevel:Int,
+             n:Long,
+             v:Long,
+             op :(Long,Long,Long)=>Long,
+             cMax:Long,
+             contentAtVehicleStart:Array[Long],
+             maxCheckpointLevel:Long,
              capacityName:String):ChangingIntValue = {
 
-    val violation = new CBLSIntVar(routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + capacityName)
+    val violation = new CBLSIntVar(routes.model, 0L, 0L to Long.MaxValue, "violation of capacity " + capacityName)
 
     new ForwardCumulativeConstraintOnVehicle(
       routes,
@@ -65,7 +65,7 @@ object ForwardCumulativeConstraintOnVehicle {
 
 /**
  * the violation maintained by this invariant is the sum over all routed nodes of the overshoot
- * strictly above cMax and the undershoot strictly below 0 of the content of the vehicles
+ * strictly above cMax and the undershoot strictly below 0L of the content of the vehicles
  * @param routes
  * @param n The maximum number of nodes
  * @param v The number of vehicles
@@ -77,38 +77,38 @@ object ForwardCumulativeConstraintOnVehicle {
  *                           it consumes O(n) memory per level, so do not overdrive uselessly
  */
 class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
-                                           n:Int,
-                                           v:Int,
-                                           op :(Int,Int,Int)=>Int,
-                                           cMax:Int,
-                                           contentAtVehicleStart:Array[Int],
+                                           n:Long,
+                                           v:Long,
+                                           op :(Long,Long,Long)=>Long,
+                                           cMax:Long,
+                                           contentAtVehicleStart:Array[Long],
                                            val violation:CBLSIntVar,
-                                           maxCheckpointLevel:Int,
+                                           maxCheckpointLevel:Long,
                                            capacityName:String = "capacity",
                                            fullDebug:Boolean = false)
   extends AbstractVehicleCapacity(n,v) with SeqNotificationTarget {
 
   require(contentAtVehicleStart.length==v)
-  require(cMax >=0,"cMax should be >=0")
+  require(cMax >=0L,"cMax should be >=0L")
   require(contentAtVehicleStart.forall(_ <= cMax),"cannot exceed cMax in initial values")
 
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
   violation.setDefiningInvariant(this)
 
-  private val contentAtNode = new MagicIntArrayStacked(maxCheckpointLevel, _ => 0, n)
-  private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Int,VehicleLocation)]()
+  private val contentAtNode = new MagicIntArrayStacked(maxCheckpointLevel, _ => 0L, n)
+  private val violationAndVehicleStartStack = new SeqCheckpointedValueStack[(Long,VehicleLocation)]()
 
-  def contentAtNodes:Array[Int] = Array.tabulate(n)(contentAtNode(_))
-  def freeSpaceAtNodes: (Int) => Int = {
+  def contentAtNodes:Array[Long] = Array.tabulate(n)(contentAtNode(_))
+  def freeSpaceAtNodes: (Long) => Long = {
     val contentAtNodesNow = contentAtNodes
-    (node:Int) => cMax - contentAtNodesNow(node)
+    (node:Long) => cMax - contentAtNodesNow(node)
   }
 
-  violation := 0
-  for(vehicle <- 0 until v){
+  violation := 0L
+  for(vehicle <- 0L until v){
     contentAtNode(vehicle) = contentAtVehicleStart(vehicle)
-    violation :+= (contentToViolation(contentAtNode(vehicle)) - contentToViolation(0))
+    violation :+= (contentToViolation(contentAtNode(vehicle)) - contentToViolation(0L))
   }
 
   //this also sets the violation, supposing it is at zero before,
@@ -116,7 +116,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   private var currentVehicleLocation:VehicleLocation =
     computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value,false)
 
-  override def setVehicleContentAtNode(prevNode:Int, node: Int):Boolean = {
+  override def setVehicleContentAtNode(prevNode:Long, node: Long):Boolean = {
     val oldContent = contentAtNode(node)
     val newContentAtNode = op(prevNode,node,contentAtNode(prevNode))
 
@@ -126,39 +126,39 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     true
   }
 
-  override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
+  override def setNodesUnrouted(unroutedNodes : Iterable[Long]){
     for(node <- unroutedNodes){
       violation :-= contentToViolation(contentAtNode(node))
-      contentAtNode(node) = 0
+      contentAtNode(node) = 0L
     }
   }
 
-  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){}
+  override def setVehicleContentAtEnd(vehicle : Long, lastNode : Long){}
 
   /**
    * @param vehicle
    * @return true if changed, false otherwise
    */
-  override def setVehicleContentAtStart(vehicle : Int) : Boolean = {
+  override def setVehicleContentAtStart(vehicle : Long) : Boolean = {
     //never changes, so no actual update.
     assert(contentAtNode(vehicle) == contentAtVehicleStart(vehicle))
     false
   }
 
   @inline
-  private def contentToViolation(content:Int):Int = {
-    if (content < 0) - content
+  private def contentToViolation(content:Long):Long = {
+    if (content < 0L) - content
     else {
       val overshoot = content - cMax
-      if (overshoot > 0) overshoot
-      else 0
+      if (overshoot > 0L) overshoot
+      else 0L
     }
   }
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate){
 
     val (toUpdateZonesAndVehicleStartAfter,potentiallyRemovedNodes) =
-      digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes,Some(RedBlackTreeMap.empty[List[(Int,Int)]],currentVehicleLocation),List.empty,v.value)
+      digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes,Some(RedBlackTreeMap.empty[List[(Long,Long)]],currentVehicleLocation),List.empty,v.value)
 
 
     setNodesUnrouted(potentiallyRemovedNodes)
@@ -176,10 +176,10 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   }
 
   def digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(changes:SeqUpdate,
-                                                                       toUpdateZonesAndVehiceStartOpt:Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],
-                                                                       potentiallyRemovedPoints:List[Int],
+                                                                       toUpdateZonesAndVehiceStartOpt:Option[(RedBlackTreeMap[List[(Long,Long)]],VehicleLocation)],
+                                                                       potentiallyRemovedPoints:List[Long],
                                                                        previousSequence:IntSequence)
-  :(Option[(RedBlackTreeMap[List[(Int,Int)]],VehicleLocation)],List[Int]) = {
+  :(Option[(RedBlackTreeMap[List[(Long,Long)]],VehicleLocation)],List[Long]) = {
 
     if(fullDebug) {
       toUpdateZonesAndVehiceStartOpt match {
@@ -190,7 +190,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
     }
 
     changes match {
-      case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, posOfInsert : Long, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfterInsert = vehicleLocationAfterPrev.push(s.oldPosToNewPos)
@@ -207,13 +207,13 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
             (None, potentiallyRemovedPointsAfterPrev)
         }
 
-      case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(pos : Long, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val updatedZones =
               updateZoneToUpdateAfterRemove(
                 zonesAfterPrev,
-                pos : Int,
+                pos : Long,
                 prev.newValue, vehicleLocationAfterPrev)
 
             (Some((updatedZones, vehicleLocationAfterPrev.push(r.oldPosToNewPos))), r.removedValue :: potentiallyRemovedPointsAfterPrev)
@@ -221,7 +221,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
             (None, r.removedValue :: potentiallyRemovedPointsAfterPrev)
         }
 
-      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfterMove = vehicleLocationAfterPrev.push(m.oldPosToNewPos)
@@ -244,7 +244,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints)
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Long) =>
         if(checkpointLevel < maxCheckpointLevel) {
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence) match {
             //checkpoints are managed about the vehicleLocation exclusively
@@ -255,7 +255,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
                 contentAtNode.popLevel(false)
               }
 
-              val fastVehicleLocationAfterPrev = if(checkpointLevel == 0) vehicleLocationAfterPrev.regularize else vehicleLocationAfterPrev
+              val fastVehicleLocationAfterPrev = if(checkpointLevel == 0L) vehicleLocationAfterPrev.regularize else vehicleLocationAfterPrev
 
               setNodesUnrouted(removedPointsAfterPrev)
               updateVehicleContentOnAllVehicle(prev.newValue,
@@ -267,7 +267,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, fastVehicleLocationAfterPrev))
               currentVehicleLocation = fastVehicleLocationAfterPrev
 
-              (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
+              (Some(RedBlackTreeMap.empty[List[(Long, Long)]], currentVehicleLocation), List.empty)
 
             case (None, potentiallyRemovedPointsAfterPrev) =>
 
@@ -277,18 +277,18 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
               }
               contentAtNode.pushLevel()
               setNodesUnrouted(v until n) //unroutes all nodes
-              violation := 0
+              violation := 0L
               //we have to set all unrouted nodes to unrouted, since we have lost continuity on routes nodes because of the popLevel(true) hereabove
               currentVehicleLocation = computeAndAffectContentAndVehicleStartPositionsFromScratch(routes.value, false)
               violationAndVehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, (violation.newValue, currentVehicleLocation))
 
-              (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
+              (Some(RedBlackTreeMap.empty[List[(Long, Long)]], currentVehicleLocation), List.empty)
           }
         }else{
           //we are above the maxCheckpoint level
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
         }
-      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
+      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Long) =>
         if(level <= maxCheckpointLevel){
 
           while (contentAtNode.level >= level) {
@@ -300,7 +300,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
           val (violation,vehicleLocation) = violationAndVehicleStartStack.rollBackAndOutputValue(checkpoint, level)
           currentVehicleLocation = vehicleLocation
           this.violation := violation
-          (Some(RedBlackTreeMap.empty[List[(Int, Int)]], currentVehicleLocation), List.empty)
+          (Some(RedBlackTreeMap.empty[List[(Long, Long)]], currentVehicleLocation), List.empty)
         }else{
           //We are above the max checkpoint level
           digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack, toUpdateZonesAndVehiceStartOpt, potentiallyRemovedPoints, previousSequence)
@@ -312,7 +312,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
   override def toString : String = {
     //this will trigger a propagation because of violation.value
     "ForwardCumulativeConstraintOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " cMax:" + cMax + " capacityName:" + capacityName + " violation:=" + violation.value +"){\n" +
-      (0 until v).toList.map((vehicle:Int) =>
+      (0L until v).toList.map((vehicle:Long) =>
       {
         val header = "\tvehicle" + vehicle + " contentAtVehicleStart:" + contentAtVehicleStart(vehicle) + "\n"
         var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
@@ -335,7 +335,7 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
 
   override def checkInternals(c: Checker): Unit = {
     val (nodeToContent,_,vehicleStartPos) = AbstractVehicleCapacity.
-      computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[Int](n,v,op,this.contentAtVehicleStart,routes.value, 0)
+      computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[Long](n,v,op,this.contentAtVehicleStart,routes.value, 0L)
 
     for(node <- routes.value){
 
@@ -347,14 +347,14 @@ class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
         Some("GenericCumulativeConstraint : Error on content at node(" + node + ") at pos : " +
           routes.newValue.positionsOfValue(node)+ " :=" + contentAtNode(node) + " should be :=" + nodeToContent(node) + " route:" + routes.value))
     }
-    val computedViolation = nodeToContent.foldLeft(0)({case (acc,nodeContent) => acc + contentToViolation(nodeContent)})
+    val computedViolation = nodeToContent.foldLeft(0L)({case (acc,nodeContent) => acc + contentToViolation(nodeContent)})
     c.check(computedViolation == violation.value, Some("GenericCumulativeConstraint : " + violation + " should be :="+computedViolation))
-    for(node <- 0 until n){
+    for(node <- 0L until n){
       if(routes.value.contains(node)){
         c.check(nodeToContent(node) == contentAtNode(node),Some("Error on content of routed node " + node))
       }else{
-        c.check(nodeToContent(node) == 0 ,Some("Error on computed content of unrouted node " + node))
-        c.check(contentAtNode(node) == 0 ,Some("Error on content of unrouted node " + node + " is " + contentAtNode(node) + " should be 0"))
+        c.check(nodeToContent(node) == 0L ,Some("Error on computed content of unrouted node " + node))
+        c.check(contentAtNode(node) == 0L ,Some("Error on content of unrouted node " + node + " is " + contentAtNode(node) + " should be 0L"))
       }
     }
     vehicleStartPos.checkOnSequence(routes.value)

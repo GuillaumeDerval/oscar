@@ -60,21 +60,21 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
   graphic = new ObjFunctionGraphic
   add(graphic, BorderLayout.CENTER)
 
-  var objCurveDatas:List[(Int,Long,String)] = Nil
+  var objCurveDatas:List[(Long,Long,String)] = Nil
 
   def run(): Unit ={
-    var temp:List[(Int,Long,String)] = Nil
+    var temp:List[(Long,Long,String)] = Nil
 
     while(true){
       try {
-        Thread.sleep(100)
+        Thread.sleep(100L)
         objCurveDatas.synchronized{
           temp = objCurveDatas.take(objCurveDatas.size)
           objCurveDatas = Nil
         }
         if (temp.nonEmpty) {
           for(i <- temp.indices){
-            val j = temp.size - 1 - i
+            val j = temp.size - 1L - i
             notifyNewObjectiveValue(temp(j)._1,temp(j)._2,temp(j)._3)
           }
           drawGlobalCurve()
@@ -94,7 +94,7 @@ class ObjFunctionGraphicContainer(title:String = "Evolution of the objective fun
     graphic.drawGlobalCurve()
   }
 
-  def notifyNewObjectiveValue(objValue:Int, objTime:Long, neighBorhood:String): Unit ={
+  def notifyNewObjectiveValue(objValue:Long, objTime:Long, neighBorhood:String): Unit ={
     graphic.notifyNewObjectiveValue(objValue,objTime)
   }
 

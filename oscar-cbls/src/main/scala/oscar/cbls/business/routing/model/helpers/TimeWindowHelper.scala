@@ -8,7 +8,7 @@ import oscar.cbls.business.routing.model.extensions.TimeWindows
 import scala.collection.immutable.HashSet
 
 /**
-  * Created by fg on 12/09/17.
+  * Created by fg on 12L/09L/1L7.
   */
 object TimeWindowHelper{
 
@@ -40,16 +40,16 @@ object TimeWindowHelper{
   def relevantPredecessorsOfNodes(vrp: VRP,
                                   timeWindows: TimeWindows,
                                   timeMatrix: TTFMatrix,
-                                  parallelizeNodes: Boolean = true): Map[Int,HashSet[Int]] = {
+                                  parallelizeNodes: Boolean = true): Map[Long,HashSet[Long]] = {
     val earliestArrivalTimes = timeWindows.earliestArrivalTimes
     val earliestLeavingTimes = timeWindows.earliestLeavingTimes
     val latestLeavingTimes = timeWindows.latestLeavingTimes
     val taskDurations = timeWindows.taskDurations
 
-    def areNodesParallelisable(predecessor: Int, node: Int): Boolean = {
+    def areNodesParallelisable(predecessor: Long, node: Long): Boolean = {
       parallelizeNodes &&
       latestLeavingTimes(predecessor) > earliestArrivalTimes(node) &&
-      timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) == 0
+      timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) == 0L
     }
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
@@ -93,7 +93,7 @@ object TimeWindowHelper{
     */
   def relevantSuccessorsOfNodes(vrp: VRP,
                                 timeExtension: TimeWindows,
-                                timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
+                                timeMatrix: TTFMatrix): Map[Long,HashSet[Long]] = {
     val earliestLeavingTimes= timeExtension.earliestLeavingTimes
     val latestLeavingTimes = timeExtension.latestLeavingTimes
     val taskDurations = timeExtension.taskDurations
@@ -123,10 +123,10 @@ object TimeWindowHelper{
     */
   def reduceTimeWindows(vrp: VRP,
                         travelTimeFunction: TTFMatrix,
-                        maxTravelDurations: Map[List[Int],Int],
-                        earliestArrivalTimes: Array[Int],
-                        latestLeavingTimes: Array[Int],
-                        taskDurations: Array[Int]): Unit ={
+                        maxTravelDurations: Map[List[Long],Long],
+                        earliestArrivalTimes: Array[Long],
+                        latestLeavingTimes: Array[Long],
+                        taskDurations: Array[Long]): Unit ={
     if(maxTravelDurations.nonEmpty){
       val keys = maxTravelDurations.keys.toList
       val maxTravelDurationStartingAt = maxTravelDurations.map(md => md._1.head -> (md._1, md._2))
@@ -134,10 +134,10 @@ object TimeWindowHelper{
       /**
         * We compute the starting node of each sequence of maxTravelDurations.
         *
-        * e.g.: Map((0,1) -> 20, (1,2) -> 40, (1,3) -> 30)     => the starting node is 0
+        * e.g.: Map((0L,1L) -> 20L, (1L,2L) -> 40L, (1L,3L) -> 30L)     => the starting node is 0L
         * @return A list of starting nodes
         */
-      def startingNodes(): List[Int] = {
+      def startingNodes(): List[Long] = {
         val origins = keys.map(_.head).distinct
         val destinations = keys.map(_.last).distinct
 
@@ -154,27 +154,27 @@ object TimeWindowHelper{
           val to = maxTravelDurationStartingAt(from)._1.last
           val value = maxTravelDurationStartingAt(from)._2
           val impactedNodes = maxTravelDurationStartingAt(from)._1.toArray
-          val minTravelTimeFromFromToTo: Int =
-            (for(i <- 1 until impactedNodes.length)
-              yield taskDurations(impactedNodes(i-1)) +
-                travelTimeFunction.getTravelDuration(impactedNodes(i-1),earliestArrivalTimes(impactedNodes(i-1)),impactedNodes(i))
-              ).sum - taskDurations(impactedNodes(0))
+          val minTravelTimeFromFromToTo: Long =
+            (for(i <- 1L until impactedNodes.length)
+              yield taskDurations(impactedNodes(i-1L)) +
+                travelTimeFunction.getTravelDuration(impactedNodes(i-1L),earliestArrivalTimes(impactedNodes(i-1L)),impactedNodes(i))
+              ).sum - taskDurations(impactedNodes(0L))
 
           latestLeavingTimes(to) = Math.min(latestLeavingTimes(to), latestLeavingTimes(from) + value + taskDurations(to))
           earliestArrivalTimes(to) = Math.max(earliestArrivalTimes(to), earliestArrivalTimes(from) + taskDurations(from) + minTravelTimeFromFromToTo)
 
           val chainForward = maxTravelDurationStartingAt(from)._1.toArray
           val chainBackward = maxTravelDurationStartingAt(from)._1.toArray.reverse
-          for(i <- 1 until chainForward.length) {
-            val fromNode = chainForward(i-1)
+          for(i <- 1L until chainForward.length) {
+            val fromNode = chainForward(i-1L)
             val toNode = chainForward(i)
             earliestArrivalTimes(toNode) =
               Math.max(earliestArrivalTimes(toNode), earliestArrivalTimes(fromNode) +
                 taskDurations(fromNode) +
                 travelTimeFunction.getTravelDuration(fromNode, earliestArrivalTimes(fromNode), toNode))
           }
-          for(i <- 1 until chainBackward.length-1) {
-            val toNode = chainBackward(i-1)
+          for(i <- 1L until chainBackward.length-1L) {
+            val toNode = chainBackward(i-1L)
             val fromNode = chainBackward(i)
             latestLeavingTimes(fromNode) =
               Math.min(latestLeavingTimes(fromNode), latestLeavingTimes(toNode) -

@@ -10,8 +10,8 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
  * It does not modifies the routes themselves. It just exchanges the vehicles
  * @author renaud.delandtsheer@cetic.be
  */
-case class RouteExchange(firstVehicles:()=>Iterable[Int],
-                         secondVehicles:()=>Int=>Iterable[Int],
+case class RouteExchange(firstVehicles:()=>Iterable[Long],
+                         secondVehicles:()=>Long=>Iterable[Long],
                          vrp:VRP,
                          neighborhoodName: String = "RouteExchange",
                          selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -26,18 +26,18 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
   val n = vrp.n
 
   //the indice to start with for the exploration
-  var startFirstVehicle: Int = 0
+  var startFirstVehicle: Long = 0L
 
-  var firstVehicle:Int = -1
-  var secondVehicle:Int = -1
-  var positionOfFirstVehicle:Int = -1
-  var positionOfVehicleNextToFirst:Int = -1
+  var firstVehicle:Long = -1L
+  var secondVehicle:Long = -1L
+  var positionOfFirstVehicle:Long = -1L
+  var positionOfVehicleNextToFirst:Long = -1L
   var firstVehicleIsEmpty:Boolean = false
-  var positionOfSecondVehicle:Int = -1
-  var positionOfVehicleNextToSecond:Int = -1
+  var positionOfSecondVehicle:Long = -1L
+  var positionOfVehicleNextToSecond:Long = -1L
   var secondVehicleIsEmpty:Boolean = false
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(firstVehicles(), startFirstVehicle)
@@ -45,7 +45,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
 
     val startValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(startValue)
       a
@@ -60,8 +60,8 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
       require(firstVehicle < v,"first vehicle is not <v:" + firstVehicle)
 
       positionOfFirstVehicle = startValue.positionOfAnyOccurrence(firstVehicle).get
-      positionOfVehicleNextToFirst = if(firstVehicle == v-1) startValue.size else startValue.positionOfAnyOccurrence(firstVehicle+1).get
-      firstVehicleIsEmpty = positionOfFirstVehicle+1 == positionOfVehicleNextToFirst
+      positionOfVehicleNextToFirst = if(firstVehicle == v-1L) startValue.size else startValue.positionOfAnyOccurrence(firstVehicle+1L).get
+      firstVehicleIsEmpty = positionOfFirstVehicle+1L == positionOfVehicleNextToFirst
 
       if(!skipFirstVehicleIfEmptyRoute || !firstVehicleIsEmpty){
 
@@ -74,8 +74,8 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
           if(!breakSymmetriesAmongVehicles || secondVehicle > firstVehicle){
 
             positionOfSecondVehicle = startValue.positionOfAnyOccurrence(secondVehicle).get
-            positionOfVehicleNextToSecond = if(secondVehicle == v-1) startValue.size else startValue.positionOfAnyOccurrence(secondVehicle+1).get
-            secondVehicleIsEmpty = positionOfSecondVehicle +1 == positionOfVehicleNextToSecond
+            positionOfVehicleNextToSecond = if(secondVehicle == v-1L) startValue.size else startValue.positionOfAnyOccurrence(secondVehicle+1L).get
+            secondVehicleIsEmpty = positionOfSecondVehicle +1L == positionOfVehicleNextToSecond
 
             if(!firstVehicleIsEmpty || !secondVehicleIsEmpty){
 
@@ -93,51 +93,51 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
     }
     seq.releaseTopCheckpoint()
     //For the hotRestart
-    startFirstVehicle = firstVehicle + 1
+    startFirstVehicle = firstVehicle + 1L
 
     //to ensure that we do not access these values without assigning them first, we set a trap value
-    firstVehicle = -1
-    secondVehicle = -1
-    positionOfFirstVehicle = -1
-    positionOfVehicleNextToFirst = -1
-    positionOfSecondVehicle = -1
-    positionOfVehicleNextToSecond = -1
+    firstVehicle = -1L
+    secondVehicle = -1L
+    positionOfFirstVehicle = -1L
+    positionOfVehicleNextToFirst = -1L
+    positionOfSecondVehicle = -1L
+    positionOfVehicleNextToSecond = -1L
   }
 
 
-  override def instantiateCurrentMove(newObj: Int) =
-    RouteExchangeMove(firstVehicle:Int,
-      positionOfFirstVehicle:Int,
-      positionOfVehicleNextToFirst:Int,
+  override def instantiateCurrentMove(newObj: Long) =
+    RouteExchangeMove(firstVehicle:Long,
+      positionOfFirstVehicle:Long,
+      positionOfVehicleNextToFirst:Long,
       firstVehicleIsEmpty:Boolean,
-      secondVehicle:Int,
-      positionOfSecondVehicle:Int,
-      positionOfVehicleNextToSecond:Int,
+      secondVehicle:Long,
+      positionOfSecondVehicle:Long,
+      positionOfVehicleNextToSecond:Long,
       secondVehicleIsEmpty:Boolean,
       newObj, this, neighborhoodName)
 
   override def reset(): Unit = {
-    startFirstVehicle = 0
+    startFirstVehicle = 0L
   }
 
-  def doMove(positionOfFirstVehicle:Int,
-             positionOfVehicleNextToFirst:Int,
+  def doMove(positionOfFirstVehicle:Long,
+             positionOfVehicleNextToFirst:Long,
              firstVehicleIsEmpty:Boolean,
-             positionOfSecondVehicle:Int,
-             positionOfVehicleNextToSecond:Int,
+             positionOfSecondVehicle:Long,
+             positionOfVehicleNextToSecond:Long,
              secondVehicleIsEmpty:Boolean) {
     if (firstVehicleIsEmpty) {
       if (secondVehicleIsEmpty) {
         System.err.println("doing Route exchange with two empty routes")
       } else {
-        seq.move(positionOfSecondVehicle + 1, positionOfVehicleNextToSecond - 1, positionOfFirstVehicle, false)
+        seq.move(positionOfSecondVehicle + 1L, positionOfVehicleNextToSecond - 1L, positionOfFirstVehicle, false)
       }
     } else {
       if (secondVehicleIsEmpty) {
-        seq.move(positionOfFirstVehicle + 1, positionOfVehicleNextToFirst - 1, positionOfSecondVehicle, false)
+        seq.move(positionOfFirstVehicle + 1L, positionOfVehicleNextToFirst - 1L, positionOfSecondVehicle, false)
       } else {
-        seq.swapSegments(positionOfFirstVehicle + 1, positionOfVehicleNextToFirst - 1, false,
-          positionOfSecondVehicle + 1, positionOfVehicleNextToSecond - 1, false)
+        seq.swapSegments(positionOfFirstVehicle + 1L, positionOfVehicleNextToFirst - 1L, false,
+          positionOfSecondVehicle + 1L, positionOfVehicleNextToSecond - 1L, false)
       }
     }
   }
@@ -146,21 +146,21 @@ case class RouteExchange(firstVehicles:()=>Iterable[Int],
 /**
  * @author renaud.delandtsheer@cetic.be
  */
-case class RouteExchangeMove(firstVehicle:Int,
-                             positionOfFirstVehicle:Int,
-                             positionOfVehicleNextToFirst:Int,
+case class RouteExchangeMove(firstVehicle:Long,
+                             positionOfFirstVehicle:Long,
+                             positionOfVehicleNextToFirst:Long,
                              firstVehicleIsEmpty:Boolean,
-                             secondVehicle:Int,
-                             positionOfSecondVehicle:Int,
-                             positionOfVehicleNextToSecond:Int,
+                             secondVehicle:Long,
+                             positionOfSecondVehicle:Long,
+                             positionOfVehicleNextToSecond:Long,
                              secondVehicleIsEmpty:Boolean,
-                             override val objAfter: Int,
+                             override val objAfter: Long,
                              override val neighborhood: RouteExchange,
                              override val neighborhoodName: String = "RouteExchangeMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, neighborhood.vrp){
 
   //TODO: Implement this
-  override def impactedPoints: Iterable[Int] = ???
+  override def impactedPoints: Iterable[Long] = ???
 
   override def commit() {
     neighborhood.doMove(positionOfFirstVehicle,

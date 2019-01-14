@@ -25,7 +25,7 @@ import oscar.cbls.core._
  * @param maxPivotPerValuePercent
  * @param maxHistorySize
  */
-case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, override val maxHistorySize:Int = 10)
+case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, override val maxHistorySize:Long = 10L)
   extends SeqInvariant(v.value.flip(true,true), v.max, maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget{
 
@@ -34,7 +34,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
     if (!digestChanges(changes)) {
       this := changes.newValue.flip(true,true)
     }
@@ -44,7 +44,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
 
         //build on the original value instead of maintaining two data structs? , changes.newValue.flip(fast=true)
@@ -52,38 +52,38 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
 
         true
 
-      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if(m.isNop) {
           ;
         }else if(m.isSimpleFlip){
-          this.flip(0,prev.newValue.size -1)
+          this.flip(0L,prev.newValue.size -1L)
         }else {
           //Complete move with a flip
 
-          //there is a special case if the after is -1
-          if (after == -1){
+          //there is a special case if the after is -1L
+          if (after == -1L){
             //the segment to move starts at zero, and ends later
             val numberOfMovesPointsMinusOne = toIncluded - fromIncluded
             val prevSize = prev.newValue.size
-            val flippedFromIncluded = prevSize - toIncluded - 1
-            val flippedToIncluded = prevSize - fromIncluded - 1
-            this.move(flippedFromIncluded, flippedToIncluded, prev.newValue.size-1, flip)
+            val flippedFromIncluded = prevSize - toIncluded - 1L
+            val flippedToIncluded = prevSize - fromIncluded - 1L
+            this.move(flippedFromIncluded, flippedToIncluded, prev.newValue.size-1L, flip)
 
           }else {
             val prevSize = prev.newValue.size
-            val tentativeFlippedAfter = prevSize - after - 2
-            val flippedFromIncluded = prevSize - toIncluded - 1
-            val flippedToIncluded = prevSize - fromIncluded - 1
-            val flippedAfter = if (tentativeFlippedAfter == flippedToIncluded) flippedFromIncluded - 1 else tentativeFlippedAfter
+            val tentativeFlippedAfter = prevSize - after - 2L
+            val flippedFromIncluded = prevSize - toIncluded - 1L
+            val flippedToIncluded = prevSize - fromIncluded - 1L
+            val flippedAfter = if (tentativeFlippedAfter == flippedToIncluded) flippedFromIncluded - 1L else tentativeFlippedAfter
             this.move (flippedFromIncluded, flippedToIncluded, flippedAfter, flip)
           }
         }
         true
 
-      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
-        this.remove(prev.newValue.size - position - 1,changes.newValue.flip(fast=true))
+        this.remove(prev.newValue.size - position - 1L,changes.newValue.flip(fast=true))
         true
 
       case u@SeqUpdateRollBackToCheckpoint(checkPoint,level) =>
@@ -107,7 +107,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, overr
         true
 
       case SeqUpdateAssign(value : IntSequence) =>
-        releaseTopCheckpointsToLevel(0,true)
+        releaseTopCheckpointsToLevel(0L,true)
         false
     }
   }

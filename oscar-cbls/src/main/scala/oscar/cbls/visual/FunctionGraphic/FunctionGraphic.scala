@@ -61,36 +61,36 @@ import scala.collection.mutable.ListBuffer
 
 abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWatch{
 
-  val maxWidth = () => getWidth -10
-  val minWidth = 70
+  val maxWidth = () => getWidth -10L
+  val minWidth = 70L
   val diffWidth = () => maxWidth() - minWidth
-  val maxHeight = () => getHeight - 30
-  val minHeight = 10
+  val maxHeight = () => getHeight - 30L
+  val minHeight = 10L
   val diffHeight = () => maxHeight() - minHeight
 
 
   val xValues:ListBuffer[Long] = new ListBuffer[Long]
-  val yValues:ListBuffer[Int] = new ListBuffer[Int]
+  val yValues:ListBuffer[Long] = new ListBuffer[Long]
 
-  var maxXValueDisplayed:Long = 0
-  var minXValueDisplayed:Long = 0
+  var maxXValueDisplayed:Long = 0L
+  var minXValueDisplayed:Long = 0L
   val diffXValueDisplayed = () => maxXValueDisplayed - minXValueDisplayed
-  var maxYValueDisplayed:Long = 0
-  var minYValueDisplayed:Long = 0
+  var maxYValueDisplayed:Long = 0L
+  var minYValueDisplayed:Long = 0L
   val diffYValueDisplayed = () => maxYValueDisplayed - minYValueDisplayed
 
-  var minAbs:Long = 0
-  var maxAbs:Long = 0
+  var minAbs:Long = 0L
+  var maxAbs:Long = 0L
   val diffAbs = () => maxAbs - minAbs
-  var minOrd:Long = 0
-  var maxOrd:Long = 0
+  var minOrd:Long = 0L
+  var maxOrd:Long = 0L
   val diffOrd = () => maxOrd - minOrd
 
-  val maxXValue = () => if(xValues.isEmpty)0 else xValues.max
-  val minXValue = () => if(xValues.isEmpty)0 else xValues.min
+  val maxXValue = () => if(xValues.isEmpty)0L else xValues.max
+  val minXValue = () => if(xValues.isEmpty)0L else xValues.min
   val diffXValue = () => maxXValue() - minXValue()
-  val maxYValue = () => if(yValues.isEmpty)0 else yValues.max
-  val minYValue = () => if(yValues.isEmpty)0 else yValues.min
+  val maxYValue = () => if(yValues.isEmpty)0L else yValues.max
+  val minYValue = () => if(yValues.isEmpty)0L else yValues.min
   val diffYValue = () => maxYValue() - minYValue()
 
   val widthAdapter = (value:Long) => {
@@ -109,7 +109,7 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
   removeMouseListener(getMouseListeners.head)
   removeMouseMotionListener(getMouseMotionListeners.head)
 
-  def notifyNewObjectiveValue(objValue:Int, objTime:Long)
+  def notifyNewObjectiveValue(objValue:Long, objTime:Long)
 
   def clear(): Unit ={
     super.clear()
@@ -123,7 +123,7 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
     //repaint()
   }
 
-  def setTimeBorders(position:Int){}
+  def setTimeBorders(position:Long){}
 
   def setMaxNumberOfObject(percentage:scala.Double){}
 }
@@ -139,14 +139,14 @@ abstract class FunctionGraphic() extends VisualDrawing(false,false) with StopWat
 class ObjFunctionGraphic() extends FunctionGraphic(){
 
   //A list buffer that contains all the bests objective values encountered during the search
-  val bestValues:ListBuffer[Int] = new ListBuffer[Int]
+  val bestValues:ListBuffer[Long] = new ListBuffer[Long]
 
   //The current best objective value of the search
   val best = () => {
     if(bestValues.nonEmpty)
       bestValues.min
     else
-      Int.MaxValue
+      Long.MaxValue
   }
 
 
@@ -184,7 +184,7 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * Save the objective value, the best value encountered so far, the time value of the current state
     * and the color of the neighborhood encountered (also in the xColorMap if it is not already registered)
     */
-  def notifyNewObjectiveValue(objValue:Int, time:Long): Unit ={
+  def notifyNewObjectiveValue(objValue:Long, time:Long): Unit ={
     xValues.append(time)
     yValues.append(objValue)
     bestValues.append(Math.min(best(),objValue))
@@ -218,7 +218,7 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * Draw the global curve, including all the values
     */
   def drawCurve(): Unit = {
-    var currentTimeUnit:scala.Double = widthAdapter(0)
+    var currentTimeUnit:scala.Double = widthAdapter(0L)
     var currentTimeUnitValue:scala.Double = 0.0
     var currentTimeUnitValuesNumber:scala.Double = 0.0
     var currentTimeUnitBestValue:scala.Double = 0.0
@@ -226,7 +226,7 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     var previousTimeUnitBestValue:scala.Double = 0.0
     var previousTimeUnit:scala.Double = 0.0
     for(i <- yValues.indices){
-      if(widthAdapter(xValues(i)) != currentTimeUnit && currentTimeUnitValuesNumber != 0) {
+      if(widthAdapter(xValues(i)) != currentTimeUnit && currentTimeUnitValuesNumber != 0L) {
         currentTimeUnitValue = maxHeight() - (currentTimeUnitValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)
         currentTimeUnitBestValue = maxHeight() - (currentTimeUnitBestValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)
         if(previousTimeUnitValue == 0.0) {
@@ -236,12 +236,12 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
         }
 
         if(displayBest){
-          val bestLine = new VisualLine(this,new Double(previousTimeUnit+70, previousTimeUnitBestValue, currentTimeUnit+70, currentTimeUnitBestValue))
+          val bestLine = new VisualLine(this,new Double(previousTimeUnit+70L, previousTimeUnitBestValue, currentTimeUnit+70L, currentTimeUnitBestValue))
           bestLine.outerCol_$eq(Color.green)
         }
-        val line = new VisualLine(this, new Double(previousTimeUnit+70, previousTimeUnitValue, currentTimeUnit+70, currentTimeUnitValue))
+        val line = new VisualLine(this, new Double(previousTimeUnit+70L, previousTimeUnitValue, currentTimeUnit+70L, currentTimeUnitValue))
         //line.outerCol_$eq(xColorValues(i))
-        line.borderWidth = 3
+        line.borderWidth = 3L
 
         previousTimeUnit = currentTimeUnit
         previousTimeUnitValue = currentTimeUnitValue
@@ -251,20 +251,20 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
         currentTimeUnitBestValue = 0.0
       }
       while(currentTimeUnit < widthAdapter(xValues(i)))
-        currentTimeUnit += 1
+        currentTimeUnit += 1L
       currentTimeUnitValue += heightAdapter(yValues(i))
-      currentTimeUnitValuesNumber += 1
+      currentTimeUnitValuesNumber += 1L
       currentTimeUnitBestValue += heightAdapter(bestValues(i))
     }
 
     //We draw the last position
     if(displayBest){
-      val bestLine = new VisualLine(this,new Double(previousTimeUnit+70, previousTimeUnitBestValue, currentTimeUnit+70, maxHeight() - (currentTimeUnitBestValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)))
+      val bestLine = new VisualLine(this,new Double(previousTimeUnit+70L, previousTimeUnitBestValue, currentTimeUnit+70L, maxHeight() - (currentTimeUnitBestValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)))
       bestLine.outerCol_$eq(Color.green)
     }
-    val line = new VisualLine(this, new Double(previousTimeUnit+70, previousTimeUnitValue, currentTimeUnit+70, maxHeight() - (currentTimeUnitValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)))
+    val line = new VisualLine(this, new Double(previousTimeUnit+70L, previousTimeUnitValue, currentTimeUnit+70L, maxHeight() - (currentTimeUnitValue/currentTimeUnitValuesNumber) + heightAdapter(minYValueDisplayed)))
     //line.outerCol_$eq(xColorValues.last)
-    line.borderWidth = 3
+    line.borderWidth = 3L
   }
 
   /**
@@ -275,19 +275,19 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * @return The bottom and top border of the Y axis
     */
   def getOrdFloorValues(minObjValue:Long, maxObjValue:Long): (Long,Long) ={
-    if(diffYValueDisplayed() == 0){
-      (minObjValue - 5, minObjValue + 5)
+    if(diffYValueDisplayed() == 0L){
+      (minObjValue - 5L, minObjValue + 5L)
     }else {
-      var diffFloor:Long = 1
+      var diffFloor:Long = 1L
       while (diffFloor <= diffYValueDisplayed()){
-        diffFloor *= 10
+        diffFloor *= 10L
       }
-      var minFloor = 1
-      //to prevent the case when the min and the max value are too different (like max = 15000 and min 100)
-      while (minObjValue / minFloor > 0) {
-        minFloor *= 10
+      var minFloor = 1L
+      //to prevent the case when the min and the max value are too different (like max = 15000L and min 100L)
+      while (minObjValue / minFloor > 0L) {
+        minFloor *= 10L
       }
-      val df = Math.max(diffFloor / 10, 10)
+      val df = Math.max(diffFloor / 10L, 10L)
       (Math.max((minObjValue / df) * df, (minObjValue / minFloor) * minFloor), ((maxObjValue / df) * df) + df)
     }
   }
@@ -300,14 +300,14 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * @return The left and right border of the X axis
     */
   def getAbsFloorValues(minTimeValue:scala.Long, maxTimeValue:scala.Long): (scala.Long, scala.Long) ={
-    var diffFloor = 1
+    var diffFloor = 1L
     while(diffFloor <= diffXValueDisplayed())
-      diffFloor *= 10
-    var minFloor = 1
+      diffFloor *= 10L
+    var minFloor = 1L
     while(minTimeValue/minFloor > 0.0){
-      minFloor *= 10
+      minFloor *= 10L
     }
-    val df = Math.max(diffFloor / 10, 1)
+    val df = Math.max(diffFloor / 10L, 1L)
     (Math.max((minTimeValue / df) * df, (minTimeValue / minFloor) * minFloor), ((maxTimeValue / df) * df) + df)
   }
 
@@ -315,10 +315,10 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * Draw the axis. We draw blank rectangle to erase the parts of the curve that overstep the axes.
     */
   def drawAxis(): Unit ={
-    val rectLeft = new VisualRectangle(this, new Rectangle2D.Double(0,0,minWidth,getHeight))
+    val rectLeft = new VisualRectangle(this, new Rectangle2D.Double(0L,0L,minWidth,getHeight))
     rectLeft.innerCol_=(Color.white)
     rectLeft.outerCol_=(Color.white)
-    val rectBottom = new VisualRectangle(this, new Rectangle2D.Double(0,maxHeight(),getWidth,getHeight))
+    val rectBottom = new VisualRectangle(this, new Rectangle2D.Double(0L,maxHeight(),getWidth,getHeight))
     rectBottom.innerCol_=(Color.white)
     rectBottom.outerCol_=(Color.white)
     val ordLine = new VisualLine(this,new Double(minWidth,minHeight,minWidth,maxHeight()))
@@ -327,36 +327,36 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     absLine.outerCol_$eq(Color.black)
 
     //We determine the step of the scale
-    val objStep = diffOrd()/10
-    for(i <- 1 to 10){
+    val objStep = diffOrd()/10L
+    for(i <- 1L to 10L){
       val scaleHeight = maxHeight() - heightAdapter((i*objStep) + minOrd)
-      new VisualText(this,5,scaleHeight,(minOrd+(objStep*i)).toString,false,new Rectangle2D.Double(0, 0, 1, 1))
-      new VisualLine(this,new Double(minWidth-10,scaleHeight,minWidth,scaleHeight))
-      val smallObjStep = objStep/10
-      for(j <- 1 to 9){
-        val scaleHeight = maxHeight() - heightAdapter(((i-1)*objStep) + j*smallObjStep + minOrd)
-        new VisualLine(this,new Double(minWidth-5,scaleHeight,minWidth,scaleHeight))
+      new VisualText(this,5L,scaleHeight,(minOrd+(objStep*i)).toString,false,new Rectangle2D.Double(0L, 0L, 1L, 1L))
+      new VisualLine(this,new Double(minWidth-10L,scaleHeight,minWidth,scaleHeight))
+      val smallObjStep = objStep/10L
+      for(j <- 1L to 9L){
+        val scaleHeight = maxHeight() - heightAdapter(((i-1L)*objStep) + j*smallObjStep + minOrd)
+        new VisualLine(this,new Double(minWidth-5L,scaleHeight,minWidth,scaleHeight))
       }
     }
-    val timeStep = diffAbs()/10
-    for(i <- 1 to 10){
+    val timeStep = diffAbs()/10L
+    for(i <- 1L to 10L){
       val scaleWidth = widthAdapter((i*timeStep) + minAbs)
-      new VisualText(this,scaleWidth,maxHeight()+20,((timeStep*i) + minAbs).toString,true,new Rectangle2D.Double(0, 0, 1, 1))
-      new VisualLine(this,new Double(scaleWidth,maxHeight(),scaleWidth,maxHeight()+10))
-      val smallTimeStep = timeStep/10
-      for(j <- 1 to 9){
-        val scaleWidth = widthAdapter(((i-1)*timeStep) + (j*smallTimeStep) + minAbs)
-        new VisualLine(this,new Double(scaleWidth,maxHeight(),scaleWidth,maxHeight()+5))
+      new VisualText(this,scaleWidth,maxHeight()+20L,((timeStep*i) + minAbs).toString,true,new Rectangle2D.Double(0L, 0L, 1L, 1L))
+      new VisualLine(this,new Double(scaleWidth,maxHeight(),scaleWidth,maxHeight()+10L))
+      val smallTimeStep = timeStep/10L
+      for(j <- 1L to 9L){
+        val scaleWidth = widthAdapter(((i-1L)*timeStep) + (j*smallTimeStep) + minAbs)
+        new VisualLine(this,new Double(scaleWidth,maxHeight(),scaleWidth,maxHeight()+5L))
       }
     }
-    val rectTop = new VisualRectangle(this, new Rectangle2D.Double(minWidth,0,getWidth,8))
+    val rectTop = new VisualRectangle(this, new Rectangle2D.Double(minWidth,0L,getWidth,8L))
     rectTop.innerCol_=(Color.white)
     rectTop.outerCol_=(Color.white)
-    val rectRight = new VisualRectangle(this, new Rectangle2D.Double(maxWidth(),0,getWidth,getHeight))
+    val rectRight = new VisualRectangle(this, new Rectangle2D.Double(maxWidth(),0L,getWidth,getHeight))
     rectRight.innerCol_=(Color.white)
     rectRight.outerCol_=(Color.white)
-    val rectBottomLeft = new VisualRectangle(this, new Rectangle2D.Double(0,maxHeight(),minWidth,getHeight))
-    val bestText = new VisualText(this,minWidth/2,maxHeight()+20,"Best",true,new Rectangle2D.Double(0,0,1,1))
+    val rectBottomLeft = new VisualRectangle(this, new Rectangle2D.Double(0L,maxHeight(),minWidth,getHeight))
+    val bestText = new VisualText(this,minWidth/2L,maxHeight()+20L,"Best",true,new Rectangle2D.Double(0L,0L,1L,1L))
     bestText.fontColor= if (displayBest) Color.green else Color.red
   }
 
@@ -365,27 +365,27 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     * And whit this information it draws small rectangles in the background representing the proportion of each neighborhood.
     */
   def drawStatistics(): Unit ={
-    val timeStep = diffAbs()/10
-    val colorSums:Array[Map[Color,Int]] = Array.tabulate(10)(n => Map[Color,Int]())
-    var i = 0
+    val timeStep = diffAbs()/10L
+    val colorSums:Array[Map[Color,Long]] = Array.tabulate(10L)(n => Map[Color,Long]())
+    var i = 0L
 
-    while(i < xColorValues.size && Math.floor((xValues(i) - minAbs)/timeStep).toInt < 10){
+    while(i < xColorValues.size && Math.floor((xValues(i) - minAbs)/timeStep).toInt < 10L){
       val columnNumber = Math.floor((xValues(i) - minAbs)/timeStep).toInt
-      if(columnNumber >= 0){
+      if(columnNumber >= 0L){
         colorSums(columnNumber).get(xColorValues(i)) match{
-          case Some(s:Int) => colorSums(columnNumber) += xColorValues(i) -> (1 + s)
-          case None => colorSums(columnNumber) += xColorValues(i) -> 1
+          case Some(s:Long) => colorSums(columnNumber) += xColorValues(i) -> (1L + s)
+          case None => colorSums(columnNumber) += xColorValues(i) -> 1L
         }
       }
-      i += 1
+      i += 1L
     }
-    val totalColors = colorSums.map(_.foldLeft(0)((c,d) => c + d._2))
+    val totalColors = colorSums.map(_.foldLeft(0L)((c,d) => c + d._2))
     val maxColor  = totalColors.max
-    for(i <- 1 to 10){
+    for(i <- 1L to 10L){
       val leftBorder = Math.max(widthAdapter((i*timeStep) + minAbs),minWidth)
-      val rightBorder = widthAdapter(((i+1)*timeStep) + minAbs)-leftBorder
-      var previousHeight:Float = 0
-      for(color <- colorSums(i-1)){
+      val rightBorder = widthAdapter(((i+1L)*timeStep) + minAbs)-leftBorder
+      var previousHeight:Float = 0L
+      for(color <- colorSums(i-1L)){
         val colorHeight:Float = color._2/maxColor.toFloat
         previousHeight += colorHeight
         val coloredHistogram = new VisualRectangle(this,new Rectangle2D.Double(
