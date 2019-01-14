@@ -51,15 +51,15 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
             maxContent:Long = Long.MaxValue,
             contentName:String = "content"):(Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar],Array[CBLSIntVar]) ={
 
-    val content1AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, default1ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
-    val content2AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, default2ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
-    val content3AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, default3ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default3ForUnroutedNodes), contentName + "3L at node "+node))
-    val content4AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, default4ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default4ForUnroutedNodes), contentName + "4L at node "+node))
+    val content1AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default1ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
+    val content2AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default2ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
+    val content3AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default3ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default3ForUnroutedNodes), contentName + "3L at node "+node))
+    val content4AtNode = Array.tabulate[CBLSIntVar](n)((node: Int) => CBLSIntVar(routes.model, default4ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default4ForUnroutedNodes), contentName + "4L at node "+node))
 
-    val content1AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, default1ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at end of route " + vehicle))
-    val content2AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, default2ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at end of route " + vehicle))
-    val content3AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, default3ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default3ForUnroutedNodes), contentName + "3L at end of route " + vehicle))
-    val content4AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, default4ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default4ForUnroutedNodes), contentName + "4L at end of route " + vehicle))
+    val content1AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default1ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at end of route " + vehicle))
+    val content2AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default2ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at end of route " + vehicle))
+    val content3AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default3ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default3ForUnroutedNodes), contentName + "3L at end of route " + vehicle))
+    val content4AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default4ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default4ForUnroutedNodes), contentName + "4L at end of route " + vehicle))
 
     val lastPointOfVehicle = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, 0L until n, "last point of vehicle" + vehicle))
 
