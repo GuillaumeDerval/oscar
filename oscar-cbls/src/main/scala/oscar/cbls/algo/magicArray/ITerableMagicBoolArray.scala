@@ -25,25 +25,25 @@ object IterableMagicBoolArray{
    * @param n the length
    * @return a Magical Array Of Boolean or null if length is less than zero
    */
-  def apply(n:Long,initVal:Boolean = false):IterableMagicBoolArray ={
-    require(n >= 0L, "cannot create magic array of negative size")
+  def apply(n:Int,initVal:Boolean = false):IterableMagicBoolArray ={
+    require(n >= 0, "cannot create magic array of negative size")
     new IterableMagicBoolArray(n,initVal)
   }
 }
 
 
-class IterableMagicBoolArray(override val length:Long,initVal:Boolean = false)
+class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
   extends MagicBoolArray(length,initVal){
 
-  private var positionsAtTrueOverApproximated:QList[Long] = null
+  private var positionsAtTrueOverApproximated:QList[Int] = null
   private val isPositionInOverApproximationQList:MagicBoolArray = MagicBoolArray(length,false)
   private var overApproximationIsComplete:Boolean = initVal
 
   private var anyIndividualSetToFalse:Boolean = false
 
-  private var nbTrue:Long = if(initVal) length else 0L
+  private var nbTrue:Int = if(initVal) length else 0
 
-  val nbIndicesAtTrue:Long = nbTrue
+  val nbIndicesAtTrue:Int = nbTrue
 
   /**
    * Sets the value of each element to "value"
@@ -60,10 +60,10 @@ class IterableMagicBoolArray(override val length:Long,initVal:Boolean = false)
       isPositionInOverApproximationQList.all_=(false)
       overApproximationIsComplete = false
     }
-    nbTrue= if(value) length else 0L
+    nbTrue= if(value) length else 0
   }
 
-  override def update(id : Long, value : Boolean):Boolean = {
+  override def update(id : Int, value : Boolean):Boolean = {
     val oldValue = super.update(id, value)
     if(value){
       if(!oldValue){
@@ -72,18 +72,18 @@ class IterableMagicBoolArray(override val length:Long,initVal:Boolean = false)
             positionsAtTrueOverApproximated = QList(id, positionsAtTrueOverApproximated)
           }
         }
-        nbTrue += 1L
+        nbTrue += 1
       }
     }else{
       if(oldValue){
         anyIndividualSetToFalse = true
-        nbTrue -= 1L
+        nbTrue -= 1
       }
     }
     oldValue
   }
 
-  override def indicesAtTrue : Iterator[Long] = {
+  override def indicesAtTrue : Iterator[Int] = {
     if(overApproximationIsComplete){
       if(anyIndividualSetToFalse){
         super.indicesAtTrue

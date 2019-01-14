@@ -16,46 +16,46 @@ package oscar.cbls.algo.magicArray
   ******************************************************************************/
 
 
-class MagicIntArrayStacked(maxLevel:Long, initVal:(Long => Long), size:Long) extends Iterable[Long]{
+class MagicIntArrayStacked(maxLevel:Int, initVal:(Int => Long), size:Int) extends Iterable[Long]{
 
-  private[this] val levelToArray:Array[Array[Long]] = Array.tabulate(maxLevel+1L)(level => if(level == 0L) Array.tabulate(size)(initVal) else Array.fill(size)(0L))
+  private[this] val levelToArray:Array[Array[Long]] = Array.tabulate(maxLevel+1)(level => if(level == 0) Array.tabulate(size)(initVal) else Array.fill(size)(0L))
   private[this] val levelToIsValueChangedAtNextLevel:Array[IterableMagicBoolArray] = Array.tabulate(maxLevel)(level => new IterableMagicBoolArray(size,false))
-  private[this] var currentLevel:Long = 0L
+  private[this] var currentLevel:Int = 0
 
-  def level:Long = currentLevel - 1L
+  def level:Int = currentLevel - 1
 
-  def update(indice:Long,value:Long){
+  def update(indice:Int,value:Long){
     levelToArray(currentLevel)(indice) = value
-    if(currentLevel!=0L)levelToIsValueChangedAtNextLevel(currentLevel-1L)(indice) = true
+    if(currentLevel!=0)levelToIsValueChangedAtNextLevel(currentLevel-1)(indice) = true
   }
 
-  def apply(indice:Long):Long = {
+  def apply(indice:Int):Long = {
     var attemptLevel = currentLevel
-    while(attemptLevel>0L){
-      val levelBelow = attemptLevel - 1L
+    while(attemptLevel>0){
+      val levelBelow = attemptLevel - 1
       if(levelToIsValueChangedAtNextLevel(levelBelow)(indice)){
         return levelToArray(attemptLevel)(indice)
       }else{
         attemptLevel = levelBelow
       }
     }
-    levelToArray(0L)(indice)
+    levelToArray(0)(indice)
   }
 
   def pushLevel(){
     require(currentLevel < maxLevel,"MagicIntArrayStacked was declaring with max " + maxLevel + " levels; trying to push more")
     levelToIsValueChangedAtNextLevel(currentLevel).all = false
-    currentLevel += 1L
+    currentLevel += 1
   }
 
   def popLevel(dropChanges:Boolean){
-    require(currentLevel > 0L,"trying to pop level zero")
+    require(currentLevel > 0,"trying to pop level zero")
     if(dropChanges){
-      currentLevel -= 1L
+      currentLevel -= 1
     }else{
       //save changes to lower level!
-      val newLevel = currentLevel - 1L
-      for(changedID <- levelToIsValueChangedAtNextLevel(currentLevel-1L).indicesAtTrue){
+      val newLevel = currentLevel - 1
+      for(changedID <- levelToIsValueChangedAtNextLevel(currentLevel-1).indicesAtTrue){
         levelToArray(newLevel)(changedID) = levelToArray(currentLevel)(changedID)
         levelToIsValueChangedAtNextLevel(newLevel)(changedID) = false
       }

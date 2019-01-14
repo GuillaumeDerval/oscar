@@ -240,4 +240,6 @@ package object cbls extends ModelingAPI{
 
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
   implicit def longToInt(l:Long):Int = Math.toIntExact(l)
+  implicit def intToLong(i:Int):Long = i
+
 }

@@ -26,7 +26,7 @@ object MagicBoolArray {
    * @param n the length
    * @return a Magical Array Of Boolean or null if length is less than zero
    */
-  def apply(n:Long,initVal:Boolean = false):MagicBoolArray ={
+  def apply(n:Int,initVal:Boolean = false):MagicBoolArray ={
     require(n >= 0L, "cannot create magic array of negative size")
     new MagicBoolArray(n,initVal)
   }
@@ -38,7 +38,7 @@ object MagicBoolArray {
  * @author Jannou Brohée on 3L/10L/1L6.
  * @param length Maximum length of magical array
  */
-class MagicBoolArray(val length:Long,initVal:Boolean = false){
+class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
   private[this] val threshold:Long = Long.MaxValue-10L
 
@@ -46,7 +46,7 @@ class MagicBoolArray(val length:Long,initVal:Boolean = false){
 
   private[this] val internalArray:Array[Long] = Array.fill[Long](length)(if(initVal) 1L else 0L)
 
-  val indices = 0L until length
+  val indices = 0 until length
 
   /**
    * Set the new value of element at specific index
@@ -55,7 +55,7 @@ class MagicBoolArray(val length:Long,initVal:Boolean = false){
    * @return the old value
    * @note in O(1L) // trivial
    */
-  def update(id:Long, value:Boolean):Boolean = {
+  def update(id:Int, value:Boolean):Boolean = {
     assert(id<length && 0L<=id)
     val oldInternalArray = internalArray(id)
     if(value) internalArray(id)=global
@@ -69,7 +69,7 @@ class MagicBoolArray(val length:Long,initVal:Boolean = false){
    * @return true or false
    * @note complexity is O(1L)
    */
-  def apply(id:Long): Boolean ={
+  def apply(id:Int): Boolean ={
     require(0L<=id && id<length, "got id:" + id + "length:" + length)
     internalArray(id)>=global
   }
@@ -101,8 +101,8 @@ class MagicBoolArray(val length:Long,initVal:Boolean = false){
   @inline
   private [this] def resetArray(){
     var i = internalArray.length
-    while(i > 0L){
-      i -= 1L
+    while(i > 0){
+      i -= 1
       internalArray(i) = 0L
     }
   }
@@ -112,9 +112,9 @@ class MagicBoolArray(val length:Long,initVal:Boolean = false){
    * this is a O(this.length) method
    * @return the new iterator
    */
-  def indicesAtTrue:Iterator[Long] ={
-    var toReturn:QList[Long]=null
-    for(n <-0L until length){
+  def indicesAtTrue:Iterator[Int] ={
+    var toReturn:QList[Int]=null
+    for(n <-0 until length){
       if(internalArray(n)>=global){
         toReturn = QList(n,toReturn)
       }

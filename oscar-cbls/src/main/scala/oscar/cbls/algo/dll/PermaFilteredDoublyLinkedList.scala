@@ -97,9 +97,9 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   private var permaFilter:AbstractPermaFilter[T] = null
 
   /**returns the size of the PermaFilteredDLL*/
-  override def size = msize
+  override def size: Int = msize
 
-  private var msize:Long = 0L
+  private var msize:Int = 0
 
   /**adds an a item in the PermaFilteredDLL, and if accepted by the filter, adds it in the slave PermaFilteredDLL.
     * returns a reference that should be used to remove the item from all those structures at once.
@@ -108,7 +108,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     val d = new PFDLLStorageElement[T](elem)
     d.setNext(phantom.next)
     phantom.setNext(d)
-    msize +=1L
+    msize +=1
 
     //TODO: could be faster if we generate a dedicated PFDLL when PF is activated
     if(permaFilter != null) permaFilter.notifyInsert(d)
@@ -128,7 +128,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   def deleteElem(elemkey:PFDLLStorageElement[T]):T = {
     elemkey.prev.setNext(elemkey.next)
     elemkey.prev = null //this is checked by the delayed perma filter, so DO NOT REMOVE THIS SEEMIGNLY USELESS INSTRUCTION
-    msize -=1L
+    msize -=1
 
     //TODO: could be faster if we generate a dedicated PFDLL when PF is activated
     if (permaFilter != null) permaFilter.notifyDelete(elemkey)

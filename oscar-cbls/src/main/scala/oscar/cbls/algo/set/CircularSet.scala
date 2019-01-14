@@ -115,7 +115,7 @@ class CircularIntSet(val maxsize:Long) extends scala.collection.mutable.SortedSe
     inserted = false
   }
 
-  override def size:Long = sizevar
+  override def size: Int = sizevar
 
   def contains(elem: Long): Boolean = this.containsvar(elem)
 

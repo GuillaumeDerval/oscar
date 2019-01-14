@@ -94,7 +94,7 @@ trait RedBlackTreeMap[@specialized(Long) V]{
   // remove: Delete a key.
   def remove (k : Long) : RedBlackTreeMap[V]
 
-  def size:Long
+  def size:Int
   def isEmpty:Boolean
 
   def values:List[V]
@@ -175,7 +175,7 @@ case class L[@specialized(Long) V]() extends RedBlackTreeMap[V]  {
 
   override protected[rb] def getSmallestBiggerAcc(k:Long, bestKSoFar:Long, bestVSoFar:V) = new IntVCouple(bestKSoFar,bestVSoFar)
 
-  override def size: Long = 0L
+  override def size: Int = 0
   override def isEmpty = true
 
   protected [rb] def valuesAcc(valuesAfter:List[V]):List[V] = valuesAfter
@@ -245,8 +245,8 @@ class T[@specialized(Long) V](private[this]val c : Boolean,
   assert(v.nonEmpty)
 
   //TODO: this creates a technical overhead. should be removed, actually.
-  lazy val mSize = l.size + r.size + 1L
-  override def size = mSize
+  lazy val mSize = l.size + r.size + 1
+  override def size: Int = mSize
   override def isEmpty = false
 
   def get(k : Long) : Option[V] = {
@@ -443,10 +443,10 @@ class T[@specialized(Long) V](private[this]val c : Boolean,
 object RedBlackTreeMap {
 
   // empty: Converts an orderable type into an empty RBMap.
-  def empty[@specialized(Long) V] : RedBlackTreeMap[V] = L[V]()
+  def empty[@specialized(Long,Int) V] : RedBlackTreeMap[V] = L[V]()
 
   // apply: Assumes an implicit conversion.
-  def apply[@specialized(Long) V](args : Iterable[(Long,V)]) : RedBlackTreeMap[V] = {
+  def apply[@specialized(Long,Int) V](args : Iterable[(Int,V)]) : RedBlackTreeMap[V] = {
     var currentMap : RedBlackTreeMap[V] = L()
     for ((k,v) <- args) {
       currentMap = currentMap.insert(k,v)
@@ -464,32 +464,32 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSorted[@specialized(Long) V](args:Iterable [(Long,V)]): RedBlackTreeMap[V] = {
+  def makeFromSorted[@specialized(Long,Int) V](args:Iterable [(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     val a = args.toArray
-    if(args.size <=3L) this.apply(args)
-    else myMakeFromSorted(a,0L,a.length-1L,false)
+    if(args.size <=3) this.apply(args)
+    else myMakeFromSorted(a,0,a.length-1,false)
   }
 
   def makeFromSortedContinuousArray[@specialized V](args:Array[V]):RedBlackTreeMap[V] = {
-    if(args.length == 0L) RedBlackTreeMap.empty [V]
-    else myMakeFromContinuousSorted(args, 0L, args.length - 1L, false)
+    if(args.length == 0) RedBlackTreeMap.empty [V]
+    else myMakeFromContinuousSorted(args, 0, args.length - 1, false)
   }
 
-  private def myMakeFromContinuousSorted[@specialized(Long) V](args:Array[V],fromIncluded:Long,toIncluded:Long,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+  private def myMakeFromContinuousSorted[@specialized(Long,Int) V](args:Array[V],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(fromIncluded == toIncluded){
       val value = args(fromIncluded)
       T(targetIsRed, L(),  fromIncluded, Some(value), L())
-    }else if (fromIncluded + 1L == toIncluded) {
+    }else if (fromIncluded + 1 == toIncluded) {
       val valueL = args(fromIncluded)
       val valueH = args(toIncluded)
       T(targetIsRed, T(!targetIsRed, L(),  fromIncluded, Some(valueL), L()),  toIncluded, Some(valueH), L())
     }else{
       //there is a middle point
-      val middlePoint = (fromIncluded + toIncluded)/2L
-      val left = myMakeFromContinuousSorted(args,fromIncluded,middlePoint-1L,!targetIsRed)
-      val right = myMakeFromContinuousSorted(args,middlePoint+1L,toIncluded,!targetIsRed)
+      val middlePoint = (fromIncluded + toIncluded)/2
+      val left = myMakeFromContinuousSorted(args,fromIncluded,middlePoint-1,!targetIsRed)
+      val right = myMakeFromContinuousSorted(args,middlePoint+1,toIncluded,!targetIsRed)
       val value = args(middlePoint)
       T(targetIsRed, left,  middlePoint, Some(value), right)
     }
@@ -505,27 +505,27 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSortedArray[@specialized(Long) V](args:Array[(Long,V)]): RedBlackTreeMap[V] = {
+  def makeFromSortedArray[@specialized(Long,Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
-    if(args.length <=1L) this.apply(args)
-    else myMakeFromSorted(args,0L,args.length-1L,false)
+    if(args.length <=1) this.apply(args)
+    else myMakeFromSorted(args,0,args.length-1,false)
   }
 
 
-  private def myMakeFromSorted[@specialized(Long) V](args:Array[(Long,V)],fromIncluded:Long,toIncluded:Long,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+  private def myMakeFromSorted[@specialized(Long,Int) V](args:Array[(Int,V)],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(fromIncluded == toIncluded){
       val(key,value) = args(fromIncluded)
       T(targetIsRed, L(),  key, Some(value), L())
-    }else if (fromIncluded + 1L == toIncluded) {
+    }else if (fromIncluded + 1 == toIncluded) {
       val(keyL,valueL) = args(fromIncluded)
       val(keyH,valueH) = args(toIncluded)
       T(targetIsRed, T(!targetIsRed, L(),  keyL, Some(valueL), L()),  keyH, Some(valueH), L())
     }else{
       //there is a middle point
-      val middlePoint = (fromIncluded + toIncluded)/2L
-      val left = myMakeFromSorted(args,fromIncluded,middlePoint-1L,!targetIsRed)
-      val right = myMakeFromSorted(args,middlePoint+1L,toIncluded,!targetIsRed)
+      val middlePoint = (fromIncluded + toIncluded)/2
+      val left = myMakeFromSorted(args,fromIncluded,middlePoint-1,!targetIsRed)
+      val right = myMakeFromSorted(args,middlePoint+1,toIncluded,!targetIsRed)
       val(key,value) = args(middlePoint)
       T(targetIsRed, left,  key, Some(value), right)
     }
@@ -533,7 +533,7 @@ object RedBlackTreeMap {
 }
 
 //le booléen: true le noeud a déjà été montré (dans un parcour gauche à droite)
-class RedBlackTreeMapExplorer[@specialized(Long) V](position:QList[(T[V],Boolean)]){
+class RedBlackTreeMapExplorer[@specialized(Long,Int) V](position:QList[(T[V],Boolean)]){
   def key:Long = position.head._1.pk
   def value:V = position.head._1.pv.get
 

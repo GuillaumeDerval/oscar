@@ -34,11 +34,11 @@ class DoublyLinkedList[T] extends Iterable[T]{
   /**returns the size of the PermaFilteredDLL
     * this is a O(n) method because it is very rarely used.
     * and in this context, we want to keep the memory footprint as small as possible*/
-  override def size ={
-    var toReturn = 0L
+  override def size: Int ={
+    var toReturn = 0
     var current = phantom.next
     while(current != phantom){
-      toReturn += 1L
+      toReturn += 1
       current = current.next
     }
     toReturn
