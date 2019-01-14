@@ -133,7 +133,8 @@ package object cbls extends ModelingAPI{
   type CBLSIntConst = oscar.cbls.core.computation.CBLSIntConst
   final val CBLSIntConst = oscar.cbls.core.computation.CBLSIntConst
 
-  implicit def intToCBLSIntConst(i:Long):IntValue = CBLSIntConst(i)
+  implicit def longToCBLSIntConst(i:Long):IntValue = CBLSIntConst(i)
+  implicit def intToCBLSIntConst(i:Int):IntValue = CBLSIntConst(i)
 
   //set types
   type CBLSSetVar = oscar.cbls.core.computation.CBLSSetVar
@@ -164,7 +165,8 @@ package object cbls extends ModelingAPI{
   final val ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
 
   //implicits
-  implicit def intToIntVarOps(i:Long):IntValOps = IntValOps(CBLSIntConst(i))
+  implicit def longToIntVarOps(i:Long):IntValOps = IntValOps(CBLSIntConst(i))
+  implicit def intToIntVarOps(i:Int):IntValOps = IntValOps(CBLSIntConst(i))
 
   //some implicit for the CBLS variables, to add infix operators
 

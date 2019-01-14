@@ -23,30 +23,30 @@ import scala.util.Random
 object RoutingMatrixGenerator {
   val random = new Random(0L)
 
-  def apply(N: Long, side: Long = 1000L): (Array[Array[Long]],Array[(Long,Long)]) = {
+  def apply(n: Int, side: Long = 1000L): (Array[Array[Long]],Array[(Long,Long)]) = {
 
     //we generate te cost distance matrix
     def randomXY: Long = (random.nextFloat() * side).toInt
-    val pointPosition: Array[(Long, Long)] = Array.tabulate(N)( _ => (randomXY, randomXY))
+    val pointPosition: Array[(Long, Long)] = Array.tabulate(n)(_ => (randomXY, randomXY))
 
     def distance(from: (Long, Long), to: (Long, Long)) =
       math.sqrt(math.pow(from._1 - to._1, 2L) + math.pow(from._2 - to._2, 2L)).toInt
 
     //for each delivery point, the distance to each warehouse
-    (Array.tabulate(N)(
-      n1 => Array.tabulate(N)(
+    (Array.tabulate(n)(
+      n1 => Array.tabulate(n)(
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
 
-  def generateRestrictions(n:Long,v:Long,nbRestrictions:Long):Iterable[(Long,Long)] = {
-    var toReturn = List.empty[(Long,Long)]
+  def generateRestrictions(n:Int,v:Int,nbRestrictions:Int):Iterable[(Int,Int)] = {
+    var toReturn = List.empty[(Int,Int)]
 
     var toGenerate = nbRestrictions
-    while(toGenerate !=0L){
+    while(toGenerate !=0){
       val vehicle = (random.nextFloat()*v).toInt
       val node = ((random.nextFloat()*(n-v))+v).toInt
       toReturn = (node,vehicle) :: toReturn
-      toGenerate -= 1L
+      toGenerate -= 1
     }
     toReturn
   }
@@ -66,8 +66,8 @@ object RoutingMatrixGenerator {
     toReturn
   }
 
-  def addLonelyNodesToPrecedences(n: Long, precedences: List[List[Long]]): List[List[Long]]={
-    val lonelyNodes = Range(0L,n).toList.diff(precedences.flatten)
+  def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Long]]): List[List[Long]]={
+    val lonelyNodes = Range(0,n).toList.diff(precedences.flatten)
     var precedencesWithLonelyNodes = precedences
     for(lonelyNode <- lonelyNodes)
       lonelyNode :: precedencesWithLonelyNodes

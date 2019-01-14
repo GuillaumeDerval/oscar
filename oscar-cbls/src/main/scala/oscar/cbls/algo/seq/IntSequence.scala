@@ -75,9 +75,9 @@ object Token{
 
 abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
-  def size : Long
+  def size : Int
 
-  def isEmpty : Boolean = size == 0L
+  def isEmpty : Boolean = size == 0
 
   def nonEmpty:Boolean = !isEmpty
 
@@ -264,7 +264,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     )
   }
 
-  override val size : Long = internalPositionToValue.size
+  override val size : Int = internalPositionToValue.size
   
   override def isEmpty : Boolean = internalPositionToValue.isEmpty
 
@@ -555,6 +555,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       }else this
     }
   }
+  @inline
+  private def longToInt(l:Long):Int = Math.toIntExact(l)
 
   def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
     var explorerOpt = this.explorerAtPosition(0L)
@@ -564,8 +566,8 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     while (explorerOpt match {
       case None => false
       case Some(explorer) =>
-        newInternalPositionToValues(explorer.position) = (explorer.position,explorer.value)
-        oldInternalPosToNewInternalPos(explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos) = explorer.position
+        newInternalPositionToValues(longToInt(explorer.position)) = (explorer.position,explorer.value)
+        oldInternalPosToNewInternalPos(longToInt(explorer.asInstanceOf[ConcreteIntSequenceExplorer].internalPos)) = explorer.position
         explorerOpt = explorer.next
         true
     }) {}
@@ -574,9 +576,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       valueToInternalPositions.updateAll(0L,
         oldInternalPositions => {
           val newPositions = oldInternalPositions.keys.map(oldInt => {
-            val newInternalPosition = oldInternalPosToNewInternalPos(oldInt)
+            val newInternalPosition = oldInternalPosToNewInternalPos(longToInt(oldInt))
             (newInternalPosition,newInternalPosition)})
-          RedBlackTreeMap(newPositions)}),
+          RedBlackTreeMap[Long](newPositions)}),
       PiecewiseLinearBijectionNaive.identity,
       newInternalPositionToValues.length, targetToken)
   }
@@ -585,7 +587,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   override def unorderedContentNoDuplicate : List[Long] = valueToInternalPositions.keys
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long,Long)] = valueToInternalPositions.content.map({case ((value,positions)) => ((value,positions.size))})
+  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long,Long)] = valueToInternalPositions.content.map({case ((value,positions)) => ((value,positions.size.toLong))})
 }
 
 class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Iterator[Long] {
@@ -831,7 +833,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   val localBijection = MovedIntSequence.bijectionForMove(startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
-  override val size : Long = seq.size
+  override val size : Int = seq.size
 
   override def nbOccurrence(value : Long) : Long = seq.nbOccurrence(value)
 
@@ -963,7 +965,7 @@ class InsertedIntSequence(seq:IntSequence,
                           val insertedValue:Long,
                           val pos:Long)
   extends StackedUpdateIntSequence {
-  override val size : Long = seq.size + 1L
+  override val size : Int = seq.size + 1
 
   override def nbOccurrence(value : Long) : Long = if(value == this.insertedValue) seq.nbOccurrence(value) + 1L else seq.nbOccurrence(value)
 
@@ -1114,7 +1116,7 @@ class RemovedIntSequence(val seq:IntSequence,
       else Some((value, occurencesBefore - 1L))
     }else Some((value, seq.nbOccurrence(value))))
 
-  override val size : Long = seq.size - 1L
+  override val size : Int = seq.size - 1
 
   override def explorerAtPosition(position : Long) : Option[IntSequenceExplorer] = {
     seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1L) match {

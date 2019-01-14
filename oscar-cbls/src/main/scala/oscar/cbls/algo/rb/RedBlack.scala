@@ -244,9 +244,7 @@ class T[@specialized(Long) V](private[this]val c : Boolean,
 
   assert(v.nonEmpty)
 
-  //TODO: this creates a technical overhead. should be removed, actually.
-  lazy val mSize = l.size + r.size + 1
-  override def size: Int = mSize
+  override val size:Int = l.size + r.size + 1
   override def isEmpty = false
 
   def get(k : Long) : Option[V] = {
@@ -446,7 +444,7 @@ object RedBlackTreeMap {
   def empty[@specialized(Long,Int) V] : RedBlackTreeMap[V] = L[V]()
 
   // apply: Assumes an implicit conversion.
-  def apply[@specialized(Long,Int) V](args : Iterable[(Int,V)]) : RedBlackTreeMap[V] = {
+  def apply[@specialized(Long,Int) V](args : Iterable[(Long,V)]) : RedBlackTreeMap[V] = {
     var currentMap : RedBlackTreeMap[V] = L()
     for ((k,v) <- args) {
       currentMap = currentMap.insert(k,v)
@@ -464,7 +462,7 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSorted[@specialized(Long,Int) V](args:Iterable [(Int,V)]): RedBlackTreeMap[V] = {
+  def makeFromSorted[@specialized(Long,Int) V](args:Iterable [(Long,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     val a = args.toArray
     if(args.size <=3) this.apply(args)
@@ -505,14 +503,14 @@ object RedBlackTreeMap {
    * @tparam V
    * @return
    */
-  def makeFromSortedArray[@specialized(Long,Int) V](args:Array[(Int,V)]): RedBlackTreeMap[V] = {
+  def makeFromSortedArray[@specialized(Long,Int) V](args:Array[(Long,V)]): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(args.length <=1) this.apply(args)
     else myMakeFromSorted(args,0,args.length-1,false)
   }
 
 
-  private def myMakeFromSorted[@specialized(Long,Int) V](args:Array[(Int,V)],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
+  private def myMakeFromSorted[@specialized(Long,Int) V](args:Array[(Long,V)],fromIncluded:Int,toIncluded:Int,targetIsRed:Boolean): RedBlackTreeMap[V] = {
     //root is to be black, beside alternate red and black
     if(fromIncluded == toIncluded){
       val(key,value) = args(fromIncluded)

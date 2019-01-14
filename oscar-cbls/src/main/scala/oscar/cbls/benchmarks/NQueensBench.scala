@@ -101,7 +101,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
     val m = Store()
     val init = Random.shuffle(queensRange.toList).iterator
-    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0L until N,"queen" + q)).toArray
+    val queens:Array[CBLSIntVar] = queensRange.map(q => CBLSIntVar(m, init.next(), 0 until N,"queen" + q)).toArray
 
     val c = ConstraintSystem(m)
 
@@ -109,15 +109,15 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
     c.post(AllDiff(queensRange.map(q => queens(q) + q)))
     c.post(AllDiff(queensRange.map(q => q - queens(q))))
 
-    val tabu = queensRange.map(q => CBLSIntVar(m, 0L, 0L to Long.MaxValue, "Tabu_queen" + q)).toArray
-    val it = CBLSIntVar(m,1L, 0L to Long.MaxValue,"it")
+    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Long.MaxValue, "Tabu_queen" + q)).toArray
+    val it = CBLSIntVar(m,1, 0 to Long.MaxValue,"it")
     val nonTabuQueens = SelectLESetQueue(tabu, it).setName("non tabu queens")
     val nonTabuMaxViolQueens = ArgMax(c.violations(queens), nonTabuQueens)
 
     m.close()
-    print(padToLength("" + getWatch, 15L))
+    print(padToLength("" + getWatch, 15))
 
-    while(c.violation.value > 0L){
+    while(c.violation.value > 0){
       require(it.value < N, "NQueens seems to diverge: " + it + " N "+ N)
       val oldviolation:Long = c.violation.value
 
@@ -137,7 +137,7 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
 
     }
 
-    println(padToLength("" + getWatch, 15L) + it.value)
+    println(padToLength("" + getWatch, 15) + it.value)
     //println(m.stats)
   }
 }

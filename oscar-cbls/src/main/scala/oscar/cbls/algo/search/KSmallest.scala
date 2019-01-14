@@ -34,8 +34,8 @@ object KSmallest {
    * @param key
    * @return
    */
-  def doSort(a:Array[Long],k:Long, key:Long => Long):List[Long] = {
-    val heap = new BinomialHeap[Long](indice => -key(a(indice)),2L*k)
+  def doSort(a:Array[Long],k:Int, key:Long => Long):List[Long] = {
+    val heap = new BinomialHeap[Int](indice => -key(a(indice)),2*k)
     for(i <- a.indices){
       heap.insert(i)
       if(i >= k)heap.popFirst()
@@ -67,32 +67,37 @@ object KSmallest {
   }
 }
 
+/**
+  *
+  * @param a array of values
+  * @param key value from a to key
+  */
 class KSmallest(a:Array[Long],key:Long => Long = a => a){
   //zipWithIndex puts index in second position of the couple
-  val sorted:List[Long] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
+  val sortedPositions:List[Int] = a.toList.zipWithIndex.sortBy(couple => key(couple._1)).map(_._2)
 
-  def apply(k:Long):List[Long] = sorted.take(k)
+  def apply(k:Int):List[Int] = sortedPositions.take(k)
 
-  def apply(k:Long,filter:Long=>Boolean) = {
-    def kSmallestAcc(sorted: List[Long], k: Long): List[Long] = {
-      require(k >= 0L)
-      if(k == 0L) return Nil
+  def apply(k:Int,filter:Int=>Boolean) = {
+    def kSmallestAcc(sorted: List[Int], k: Int): List[Int] = {
+      require(k >= 0)
+      if(k == 0) return Nil
       sorted match {
         case Nil => Nil
         case h :: t =>
-          if (filter(h)) h :: kSmallestAcc(t, k - 1L)
+          if (filter(h)) h :: kSmallestAcc(t, k - 1)
           else kSmallestAcc(t, k)
       }
     }
-    kSmallestAcc(sorted, k)
+    kSmallestAcc(sortedPositions, k)
   }
 }
 
 object testQuickSort extends App with StopWatch{
 
-  val n = 10000000L
-  val k = 500L
-  val randomValues = Array.tabulate(n)(_ => (math.random * Long.MaxValue).toInt)
+  val n = 10000000
+  val k = 500
+  val randomValues = Array.tabulate(n)(_ => (math.random * Long.MaxValue).toLong)
 
   startWatch()
   val s = KSmallest.doSort(randomValues,k,x => x)
@@ -101,7 +106,7 @@ object testQuickSort extends App with StopWatch{
   startWatch()
   val qs = new LazyQuicksort(randomValues)
   val it = qs.iterator
-  for(i <- 1L to k){
+  for(i <- 1 to k){
     val j = it.next()
   }
   val watch2 = getWatch
@@ -117,10 +122,10 @@ object testQuickSort extends App with StopWatch{
  */
 class LazyQuicksort(val array:Array[Long], key:Long => Long = a => a) extends Iterable[Long] {
 
-  class QList(val left:Long, val right:Long, val tail:QList)
-  private[this] var toDo: QList = new QList(0L, array.length - 1L,null)
+  class QList(val left:Int, val right:Int, val tail:QList)
+  private[this] var toDo: QList = new QList(0, array.length - 1,null)
 
-  private[this] var lastSortedPosition = -1L
+  private[this] var lastSortedPosition = -1
   def sortUntil(k: Long) {
     if(k <= lastSortedPosition) return
     while (true) {
@@ -131,27 +136,27 @@ class LazyQuicksort(val array:Array[Long], key:Long => Long = a => a) extends It
         toDo = toDo.tail
         sort1(l, r)
       }else {
-        lastSortedPosition = l - 1L
-        return;
+        lastSortedPosition = l - 1
+        return
       }
     }
   }
 
   @inline
-  private[this] def sort1(l: Long, r: Long) {
-    val pivot: Long = key(array((l + r) / 2L))
+  private[this] def sort1(l: Int, r: Int) {
+    val pivot: Long = key(array((l + r) / 2))
     var i = l
     var j = r
     while (i <= j) {
-      while (key(array(i)) < pivot) i += 1L
-      while (key(array(j)) > pivot) j -= 1L
+      while (key(array(i)) < pivot) i += 1
+      while (key(array(j)) > pivot) j -= 1
       //we know that array(i) >= pivot && array(j) <= pivot
       if (i <= j) {
         val t = array(i)
         array(i) = array(j)
         array(j) = t
-        i += 1L
-        j -= 1L
+        i += 1
+        j -= 1
       }
     }
     if (i < r) toDo = new QList(i, r,toDo)
@@ -162,7 +167,7 @@ class LazyQuicksort(val array:Array[Long], key:Long => Long = a => a) extends It
   override def iterator: Iterator[Long] = new LazyQuickSortIterator(this)
 
   class LazyQuickSortIterator(l:LazyQuicksort) extends Iterator[Long]{
-    var nextPos:Long = 0L
+    var nextPos:Int = 0
     override val length = l.array.length
 
     override def hasNext: Boolean = {
@@ -172,7 +177,7 @@ class LazyQuicksort(val array:Array[Long], key:Long => Long = a => a) extends It
     override def next(): Long = {
       l.sortUntil(nextPos)
       val toReturn = l.array(nextPos)
-      nextPos += 1L
+      nextPos += 1
       toReturn
     }
   }
