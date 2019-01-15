@@ -19,6 +19,8 @@ package oscar.cbls.core.search
 import scala.language.implicitConversions
 
 /**
+ * Abstract class for Combinators
+ *
  * @author renaud.delandtsheer@cetic.be
  */
 abstract class NeighborhoodCombinator(a: Neighborhood*) extends Neighborhood {

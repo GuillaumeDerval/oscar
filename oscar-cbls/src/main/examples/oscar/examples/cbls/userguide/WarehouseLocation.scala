@@ -47,7 +47,7 @@ object WarehouseLocation extends CBLSModel with  App{
   // whose variable has a value different from zero
   val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
-  //for each delivery localtion, the distance to the nearest open warehouse
+  //for each delivery location, the distance to the nearest open warehouse
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 

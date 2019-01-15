@@ -8,7 +8,7 @@ import oscar.cbls.lib.invariant.seq._
 /**
  * Created by rdl on 27-07-16.
  */
-object testConcat extends App {
+object TestConcat extends App {
 
   val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
   val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")

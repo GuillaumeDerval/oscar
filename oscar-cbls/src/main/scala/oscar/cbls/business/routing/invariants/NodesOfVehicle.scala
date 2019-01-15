@@ -48,7 +48,7 @@ object NodesOfVehicle{
 }
 
 /**
- * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the ndes reached vy vehicle p according to the sequence routes.
+ * this invariant ensures that nodesOfVehicleOrUnrouted(p) is maintained to the nodes reached vy vehicle p according to the sequence routes.
  * the size of the array is supposed to equal to v
  * @param routes a sequence value representing routes
  * @param nodesOfVehicleOrUnrouted an array of v CBLSSetVar

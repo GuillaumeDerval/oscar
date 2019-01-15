@@ -116,7 +116,7 @@ class TTFConst(travelDuration: Int) extends PrimitiveTravelTimeFunction {
   * Notice that the representation is modulo, if asked for a time after the overallDuration,
   * it is assumed to start again at position zero in time
   *
-  * @param NbSlots the number of slots in the histogram
+  * @param nbSlots the number of slots in the histogram
   * @param overallDuration the duration of the whole TTF
   * @author renaud.delandtsheer@cetic.be
   * THIS IS EXPERIMENTAL

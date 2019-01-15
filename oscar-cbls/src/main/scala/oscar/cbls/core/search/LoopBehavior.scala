@@ -17,7 +17,7 @@
 
 package oscar.cbls.core.search
 
-import scala.language.{reflectiveCalls}
+import scala.language.reflectiveCalls
 
 object LoopBehavior{
   def first(maxNeighbors:() => Int = () => Int.MaxValue) = First(maxNeighbors)
@@ -62,7 +62,7 @@ case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavi
       iterable.foundMove = true
     }
 
-    (iterable,notifyFound _)
+    (iterable,() => notifyFound())
   }
 }
 
@@ -81,6 +81,6 @@ case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavio
     }
 
     def notifyFound(){}
-    (iterable,notifyFound _)
+    (iterable,() => notifyFound())
   }
 }

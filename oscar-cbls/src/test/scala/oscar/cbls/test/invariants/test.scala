@@ -31,7 +31,7 @@ import oscar.cbls.lib.search.LinearSelectors
 import scala.collection.immutable.SortedSet
 
 
-object test extends LinearSelectors {
+object Test extends LinearSelectors {
 
   def main(args: Array[String]) {
 

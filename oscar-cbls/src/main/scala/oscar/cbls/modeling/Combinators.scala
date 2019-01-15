@@ -112,7 +112,7 @@ trait BasicCombinators{
    * calls the neighborhood until an improvement over obj is achieved
    * the improvement is "since the last reset"
    *
-   * @param a
+   * @param a the used neighborhood
    * @param minMoves the min number of queries that will be forwarded to a (priority over the improvement)
    * @param maxMove the max number of queries that will be forwarded to a (priority over the improvement)
    * @param over the obj that is looked for improvement
@@ -124,6 +124,8 @@ trait BasicCombinators{
   /**
    * this combinator bounds the number of time the search is actually performed
    *
+   * @param a the neighborhood
+   * @param maxMove the maximum number of moves
    * @author renaud.delandtsheer@cetic.be
    */
   def maxSearches(a: Neighborhood,  maxMove: Int) = new MaxSearches(a, maxMove)
@@ -149,7 +151,6 @@ trait BasicCombinators{
     */
   def dyn(f:() => Neighborhood) = new Dyn(f)
 }
-
 
 trait CompositionCombinators{
 

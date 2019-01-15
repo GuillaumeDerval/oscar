@@ -6,7 +6,7 @@ import javax.swing.JFrame
 import oscar.cbls._
 import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
+import oscar.cbls.visual.functionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
 
 trait UtilityCombinators{
   /**

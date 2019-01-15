@@ -38,9 +38,9 @@ object RouteSuccessorAndPredecessors{
 }
 
 /**
- * This array will maintain successorValues and successorValues to be the successor and predecessors of nodes in the route
- * it comes handy to spcify constraints or objectives. But it really slows down your model
- * @param routes a sequece representing the route, according to the routing convention
+ * This array will maintain successorValues and predecessorValues to be the successor and predecessors of nodes in the route
+ * it comes handy to specify constraints or objectives. But it really slows down your model
+ * @param routes a sequence representing the route, according to the routing convention
  * @param v the number of vehicles
  * @param successorValues an array of CBLSIntVar that are maintained to map node to the next reached node, according to the sequence
  * @param predecessorValues an array of CBLSIntVar that are maintained to map node to the prev reached node, according to the sequence
@@ -170,7 +170,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
               predecessorValues(newValueForSuccValue) := explorer.value
               explorer = next
               true
-            }else false
+            } else false
         }){}
     }
   }
@@ -186,7 +186,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
       case Some(next) =>
         if(next.value < v){
           successorValues(explorer.value) = next.value - 1
-        }else{
+        } else {
           successorValues(explorer.value) = next.value
         }
         explorer = next
@@ -205,7 +205,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
       if(fromScratch(node)== defaultWhenNotInSequence){
         c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
           Some("error on predecessor for node " + node + " it is not routed, but got " + predecessorValues(node).newValue))
-      }else {
+      } else {
         c.check(predecessorValues(fromScratch(node)).newValue == node,
           Some("error on predecessor for node " + node + " successor from scratch:" + fromScratch(node) + " predecessor of this is: " + predecessorValues(fromScratch(node)).newValue + "seq:" + routes.value))
       }

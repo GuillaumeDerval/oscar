@@ -1,5 +1,3 @@
-package oscar.cbls.business.routing.neighborhood
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -14,19 +12,15 @@ package oscar.cbls.business.routing.neighborhood
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
+package oscar.cbls.business
 
-import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.computation.Variable
-import oscar.cbls.core.search.{Move, Neighborhood}
-
-abstract class VRPSMove(override val objAfter: Int,
-                        val neighborhood:Neighborhood,
-                        override val neighborhoodName:String = null,
-                        vrp:VRP)
-  extends Move(objAfter, neighborhoodName) {
-
-  override def touchedVariables: List[Variable] = List(vrp.routes)
-
-  def impactedPoints:Iterable[Int]
+/**
+  * This package implements a new scheduling engine, based on the priority list
+  * approach developed by Cédric Pralet at ONERA-Toulouse.
+  *
+  * At the middle term, this package will merge with the reworked scheduling package
+  * to form a complete scheduling package supporting several engines.
+  */
+package object seqScheduling {
 
 }

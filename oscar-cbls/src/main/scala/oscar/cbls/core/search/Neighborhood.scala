@@ -152,7 +152,7 @@ abstract class Neighborhood(name:String = null) {
     additionalStringGenerator = additionalString
   }
 
-  protected def printMoveSythesis:Boolean = verbose == 1
+  protected def printMoveSynthesis:Boolean = verbose == 1
   protected def printTakenMoves: Boolean = verbose >= 2
   protected def printExploredNeighborhoods: Boolean = verbose >= 3
   protected def printExploredNeighbors: Boolean = verbose >= 4
@@ -181,7 +181,7 @@ abstract class Neighborhood(name:String = null) {
     def trimToLength(s: String, l: Int) = if (s.length >= l) s.substring(0, l) else s
 
     if (verbose != 0){
-      println("start doAllMove at " + java.time.LocalDateTime.now)
+      println("start doAllMoves at " + java.time.LocalDateTime.now)
       println("initial objective function:" + obj)
     }
     var moveSynthesis = SortedMap.empty[String,Int]
@@ -197,10 +197,10 @@ abstract class Neighborhood(name:String = null) {
     while (!shouldStop(moveCount)) {
       getMove(enrichedObj, obj.value, acceptanceCriterion) match {
         case NoMoveFound =>
-          if (printTakenMoves || printMoveSythesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
+          if (printTakenMoves || printMoveSynthesis) println("no more move found after " + toReturn + " it, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms ")
           return toReturn;
         case m: MoveFound =>
-          if(printMoveSythesis){
+          if(printMoveSynthesis){
             //TODO: we should force print before a jump that degrades obj, and force print just after such moves so that they are on a single line
             val neighborhoodName = m.m.neighborhoodName
             moveSynthesis = moveSynthesis + ((neighborhoodName,moveSynthesis.getOrElse(neighborhoodName,0)+1))
@@ -270,7 +270,7 @@ abstract class Neighborhood(name:String = null) {
       toReturn += 1
       moveCount += 1
     }
-    if (printTakenMoves || printMoveSythesis) {
+    if (printTakenMoves || printMoveSynthesis) {
       println("stop criteria of doAllMove met after " + moveCount + " moves, " + ((System.nanoTime() - startSearchNanotime)/1000000).toInt + " ms")
     }
     toReturn
