@@ -113,12 +113,12 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * of the propagation elements
    * The method is expected to return consistent result once the setupPropagationStructure method is called
    */
-  private var MaxID: Long = -1L
+  private var MaxID: Int = -1
 
   def getMaxID = MaxID
 
-  def GetNextID(): Long = {
-    MaxID += 1L
+  def GetNextID(): Int = {
+    MaxID += 1
     MaxID
   }
 
@@ -170,12 +170,12 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
-    var LayerCount = 0L
+    var LayerCount:Int = 0
     if (topologicalSort) {
       computePositionsThroughTopologicalSort(ClusteredPropagationComponents)
       executionQueue = new BinomialHeap[PropagationElement](p => p.position, ClusteredPropagationComponents.size)
     } else {
-      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1L
+      LayerCount = computePositionsThroughDistanceToInput(ClusteredPropagationComponents) + 1
       executionQueue = new AggregatedBinomialHeapQList[PropagationElement](p => p.position, LayerCount)
     }
 
@@ -201,13 +201,13 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   /**This computes the position of the clustered PE, that is: the SCC and the PE not belonging to an SCC*/
   private def computePositionsThroughTopologicalSort(ClusteredPropagationComponents: List[PropagationElement]) {
-    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0L })
-    var position = 0L //la position du prochain noeud place.
+    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0})
+    var position = 0 //la position du prochain noeud place.
     while (!front.isEmpty) {
       val n = front.head
       front = front.tail
       n.position = position
-      position += 1L
+      position += 1
       front = n.decrementSucceedingAndAccumulateFront(front)
     }
     if (position != ClusteredPropagationComponents.size) {
@@ -224,16 +224,16 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * that is: the SCC and the PE not belonging to an SCC
    * @return the max Position, knowing that the first is zero
    */
-  private def computePositionsThroughDistanceToInput(ClusteredPropagationComponents: List[PropagationElement]): Long = {
+  private def computePositionsThroughDistanceToInput(ClusteredPropagationComponents: List[PropagationElement]): Int = {
     val front: DoublyLinkedList[PropagationElement] = new DoublyLinkedList[PropagationElement]()
     for (pe <- ClusteredPropagationComponents) {
       pe.setCounterToPrecedingCount()
-      if (pe.position == 0L) front.enqueue(pe)
+      if (pe.position == 0) front.enqueue(pe)
     }
     front.enqueue(null) //null marker denotes when Position counter must be incremented
-    var position = 0L //la position du prochain noeud place.
-    var count = 0L //the number of PE
-    var countInLayer = 0L
+    var position = 0 //la position du prochain noeud place.
+    var count = 0 //the number of PE
+    var countInLayer = 0
 
     while (true) {
       //we know it is not empty here
@@ -247,20 +247,20 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
               throw new Exception("internal bug")
             }
           }
-          return position + 1L
+          return position + 1
         } else {
-          countInLayer = 0L
-          position += 1L
+          countInLayer = 0
+          position += 1
           front.enqueue(null) //null marker denotes when Position counter must be incremented
         }
       } else {
         n.position = position
-        count += 1L
-        countInLayer += 0L
+        count += 1
+        countInLayer += 0
         for (pe <- n.decrementSucceedingAndAccumulateFront(List.empty)) front.enqueue(pe)
       }
     }
-    0L //never reached
+    0 //never reached
   }
 
   def dropStaticGraph() {
@@ -349,7 +349,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
    * @return an array of boolean: UniqueID => should the element with UniqueID be propagated for this target?
    */
   private def BuildFastPropagationTrack(target: QList[PropagationElement]): Array[Boolean] = {
-    val Track: Array[Boolean] = Array.fill(getMaxID + 1L)(false)
+    val Track: Array[Boolean] = Array.fill(getMaxID + 1)(false)
 
     var ToExplore: QList[PropagationElement] = target
 
@@ -643,8 +643,8 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
  * @tparam T the type stored in this structure
  * @author renaud.delandtsheer@cetic.be
  */
-class NodeDictionary[T](val MaxNodeID: Long)(implicit val X: Manifest[T]) {
-  private val storage: Array[T] = new Array[T](MaxNodeID + 1L)
+class NodeDictionary[T](val MaxNodeID: Int)(implicit val X: Manifest[T]) {
+  private val storage: Array[T] = new Array[T](MaxNodeID + 1)
 
   def update(elem: PropagationElement, value: T) {
     storage(elem.uniqueID) = value
@@ -656,13 +656,13 @@ class NodeDictionary[T](val MaxNodeID: Long)(implicit val X: Manifest[T]) {
 }
 
 abstract class StronglyConnectedComponent(val propagationElements: Iterable[PropagationElement],
-                                          val core: PropagationStructure, val _UniqueID: Long) extends PropagationElement with SchedulingHandler {
+                                          val core: PropagationStructure, val _UniqueID: Int) extends PropagationElement with SchedulingHandler {
   schedulingHandler = core
   uniqueID = _UniqueID
 
   for (e <- propagationElements) e.schedulingHandler = this
 
-  def size: Long = propagationElements.size
+  def size: Int = propagationElements.size
 
   override def propagationStructure: PropagationStructure = core
 
@@ -692,7 +692,7 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
 
   override def setCounterToPrecedingCount(): Boolean = {
     position = propagationElements.count(p => p.setCounterToPrecedingCount())
-    position != 0L
+    position != 0
   }
 
   override private[core] def rescheduleIfNeeded() {}
@@ -708,7 +708,7 @@ abstract class StronglyConnectedComponent(val propagationElements: Iterable[Prop
 }
 
 class StronglyConnectedComponentNoSort(Elements: Iterable[PropagationElement],
-                                       core: PropagationStructure, _UniqueID: Long) extends StronglyConnectedComponent(Elements, core, _UniqueID) {
+                                       core: PropagationStructure, _UniqueID: Int) extends StronglyConnectedComponent(Elements, core, _UniqueID) {
 
   override def performPropagation() {
     while (scheduledElements != null) {
@@ -724,7 +724,7 @@ class StronglyConnectedComponentNoSort(Elements: Iterable[PropagationElement],
 class StronglyConnectedComponentTopologicalSort(
   override val propagationElements: Iterable[PropagationElement],
   override val core: PropagationStructure,
-  _UniqueID: Long)
+  _UniqueID: Int)
   extends StronglyConnectedComponent(propagationElements, core, _UniqueID) with DAG {
 
   for (e <- propagationElements) {
@@ -1039,9 +1039,9 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
 
   def setInSortingSCC() {}
 
-  def compare(that: DAGNode): Long = {
-    assert(this.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
-    assert(that.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+  def compare(that: DAGNode): Int = {
+    assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+    assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     this.uniqueID - that.uniqueID
   }
 
@@ -1057,8 +1057,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   final def decrementAndAccumulateFront(acc: List[PropagationElement]): List[PropagationElement] = {
-    position -= 1L
-    if (position == 0L) {
+    position -= 1
+    if (position == 0) {
       //faut pusher qqchose
       mySchedulingHandler match {
         case scc: StronglyConnectedComponent =>

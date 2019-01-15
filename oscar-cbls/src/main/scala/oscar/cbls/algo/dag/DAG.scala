@@ -32,7 +32,7 @@ import scala.collection.immutable.SortedSet
 trait DAGNode extends Ordered[DAGNode]{
 
   /**the position in the topological sort*/
-  var position: Long = 0L
+  var position: Int = 0
 
   /**supposed to be false between each pass of the algorithm*/
   var visited: Boolean = false
@@ -43,7 +43,7 @@ trait DAGNode extends Ordered[DAGNode]{
     * if the Propagation Element is not mentioned in the propagation structure, such as for constants
     * yet is mentioned in the dependencies of registered propagation elements
     */
-  var uniqueID:Long = -1L
+  var uniqueID:Int = -1
 
   protected[dag] def getDAGPrecedingNodes: Iterable[DAGNode]
 
@@ -146,7 +146,7 @@ trait DAG {
 
       //reassignment
 
-      val FreePositionsToDistribute: QList[Long] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
+      val FreePositionsToDistribute: QList[Int] = mergeNodeLists(SortedForwardRegion, SortedBackwardsRegion)
 
       val FreePositionsForForwardRegion = realloc(SortedBackwardsRegion, FreePositionsToDistribute)
       realloc(SortedForwardRegion, FreePositionsForForwardRegion )
@@ -207,18 +207,18 @@ trait DAG {
     nodes.foreach(n => {
       val pos = - n.getDAGPrecedingNodes.size
       n.position = pos
-      if(pos == 0L) front = QList(n,front)
+      if(pos == 0) front = QList(n,front)
     })
 
-    var position = 0L //la position du prochain noeud place.
+    var position = 0 //la position du prochain noeud place.
     while (front != null) {
       val n = front.head
       front = front.tail
       n.position = position
-      position += 1L
+      position += 1
       n.getDAGSucceedingNodes.foreach(p => {
-        p.position +=1L
-        if (p.position == 0L) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
+        p.position +=1
+        if (p.position == 0) front = QList(p,front) //une stack, en fait, mais c'est insensitif, puis c'est plus rapide.
       })
     }
     if (position != nodes.size) {
@@ -320,7 +320,7 @@ trait DAG {
 
 
   //merge deux listes de noeuds triee par position, donne la position triee de ces noeuds
-  private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Long] = {
+  private def mergeNodeLists(a: QList[DAGNode], b: QList[DAGNode]): QList[Int] = {
     if (a == null && b == null){
       null
     }else if (a == null) {
@@ -334,7 +334,7 @@ trait DAG {
     }
   }
 
-  private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Long]):QList[Long] = {
+  private def realloc(OrderedNodeForReinsertion: QList[DAGNode], FreePositionsToDistribute: QList[Int]):QList[Int] = {
     if (OrderedNodeForReinsertion != null) {
       OrderedNodeForReinsertion.head.visited = false
       OrderedNodeForReinsertion.head.position = FreePositionsToDistribute.head

@@ -108,7 +108,7 @@ case class Store(override val verbose:Boolean = false,
     * @param v the variable
     * @return a unique identifier that will be used to distinguish variables. basically, variables use this value to set up an arbitrary ordering for use in dictionnaries.
     */
-  def registerVariable(v:AbstractVariable):Long = {
+  def registerVariable(v:AbstractVariable):Int = {
     require(!closed,"model is closed, cannot add variables")
     //ici on utilise des listes parce-que on ne peut pas utiliser des dictionnaires
     // vu que les variables n'ont pas encore recu leur unique ID.
@@ -121,7 +121,7 @@ case class Store(override val verbose:Boolean = false,
     * @param i the invariant
     * @return a unique identifier that will be used to distinguish invariants. basically, invariants use this value to set up an arbitrary ordering for use in dictionnaries.
     */
-  def registerInvariant(i:Invariant):Long = {
+  def registerInvariant(i:Invariant):Int = {
     require(!closed,"model is closed, cannot add invariant")
     propagationElements = QList(i,propagationElements)
     GetNextID()
@@ -280,7 +280,7 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return a handle that is required to remove the listened var from the dynamically listened ones
     */
-  override def registerDynamicDependency(v:Value,i:Long = -1L):KeyForElementRemoval = {
+  override def registerDynamicDependency(v:Value,i:Long = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
   }
 
@@ -290,8 +290,8 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
    * @param v the variable that are registered
    * @param offset and offset applied to the position in the array when registering the dynamic dependency
    */
-  override def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Long = 0L):Array[KeyForElementRemoval] = {
-    Array.tabulate(v.size)((i:Long) => {
+  override def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Int = 0):Array[KeyForElementRemoval] = {
+    Array.tabulate(v.size)((i:Int) => {
       registerStaticDependency(v(i))
       registerDynamicDependency(v(i),i + offset)
     })
@@ -327,11 +327,11 @@ trait Invariant extends PropagationElement{
     */
   final def finishInitialization(model:Store = null){
     val m:Store = preFinishInitialization(model)
-    assert(uniqueID == -1L)
+    assert(uniqueID == -1)
     if (m != null){
       uniqueID = m.registerInvariant(this)
     }else{
-      uniqueID = -1L
+      uniqueID = -1
     }
   }
 
@@ -372,8 +372,8 @@ trait Invariant extends PropagationElement{
    * @param offset and offset applied to the position in the array when registering the dynamic dependency
    * @return null
    */
-  def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Long = 0L):Array[KeyForElementRemoval] =  {
-    for (i <- 0L until v.size) {
+  def registerStaticAndDynamicDependencyArrayIndex[T <: Value](v:Array[T],offset:Int = 0):Array[KeyForElementRemoval] =  {
+    for (i <- 0 until v.size) {
       registerStaticDependency(v(i))
       registerDynamicDependency(v(i), i + offset)
     }
@@ -404,7 +404,7 @@ trait Invariant extends PropagationElement{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return null
     */
-  def registerDynamicDependency(v:Value,i:Long = -1L):KeyForElementRemoval = {
+  def registerDynamicDependency(v:Value,i:Long = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
     null
   }
@@ -564,8 +564,8 @@ trait AbstractVariable
 
   final def model_=(s:Store): Unit ={
     schedulingHandler = s
-    assert(uniqueID == -1L)
-    uniqueID = if (s == null) -1L else s.registerVariable(this)
+    assert(uniqueID == -1)
+    uniqueID = if (s == null) -1 else s.registerVariable(this)
   }
   def model = propagationStructure.asInstanceOf[Store]
 
