@@ -472,12 +472,12 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Int.MaxValue
+    bestNewObj = initialObj //because we do not want "no move" to be considered as an actual move.
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
 
-    exploreNeighborhood()
+    exploreNeighborhood(oldObj)
 
     exploring = false
 
@@ -499,9 +499,11 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
    * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
    * as explained in the documentation of this class
    */
-  def exploreNeighborhood()
+  def exploreNeighborhood(initialObj: Int): Unit
 
   def instantiateCurrentMove(newObj: Int): M
+
+  def moveHasBeenFound:Boolean = toReturnMove != null
 
   def evaluateCurrentMoveObjTrueIfSomethingFound(newObj: Int): Boolean = {
     //on teste l'acceptance criterion sur tout

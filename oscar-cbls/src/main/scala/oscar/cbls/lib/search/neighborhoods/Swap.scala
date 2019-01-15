@@ -67,17 +67,23 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              symmetryClassOfVariables2:Option[Int => Int] = None,
                              hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[SwapMove](name){
-  //the indice to start with for the exploration
-  var indiceOfFirstVariable:Int = 0
-  override def exploreNeighborhood() {
+
+  //also used as the indice to start with for the exploration
+  var firstVarIndice:Int = 0
+  var firstVar:CBLSIntVar = null
+
+  var secondVarIndice:Int = 0
+  var secondVar:CBLSIntVar = null
+
+  override def exploreNeighborhood(initialObj: Int){
 
     val firstIterationSchemeZone =
       if (searchZone1 == null) {
         if (hotRestart) {
-          if (indiceOfFirstVariable >= vars.length) indiceOfFirstVariable = 0
-          vars.indices startBy indiceOfFirstVariable
+          if (firstVarIndice >= vars.length) firstVarIndice = 0
+          vars.indices startBy firstVarIndice
         } else vars.indices
-      } else if (hotRestart) HotRestart(searchZone1(), indiceOfFirstVariable) else searchZone1()
+      } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
       case None => firstIterationSchemeZone
@@ -88,12 +94,11 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationScheme)
     while (iIterator.hasNext) {
-      indiceOfFirstVariable = iIterator.next()
-
-      val firstVar = vars(indiceOfFirstVariable)
+      firstVarIndice = iIterator.next()
+      firstVar = vars(firstVarIndice)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(indiceOfFirstVariable,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone
@@ -102,20 +107,17 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 
       val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationScheme)
       while (jIterator.hasNext) {
-        val j = jIterator.next()
-        val secondVar = vars(j)
+
+        secondVarIndice = jIterator.next()
+        secondVar = vars(secondVarIndice)
         val oldValOfSecondVar = secondVar.newValue
-        if ((!symmetryCanBeBrokenOnIndices || indiceOfFirstVariable < j) //we break symmetry on variables
-          && indiceOfFirstVariable != j
+
+        if ((!symmetryCanBeBrokenOnIndices || firstVarIndice < secondVarIndice) //we break symmetry on variables
+          && firstVarIndice != secondVarIndice
           && (!symmetryCanBeBrokenOnValue || oldValOfFirstVar < oldValOfSecondVar) //we break symmetry on values
           && oldValOfFirstVar != oldValOfSecondVar
-          && secondVar.domain.contains(oldValOfFirstVar)
+          && secondVar.domain.contains(oldValOfFirstVar)//TODO: we should tolerate a slide if not in the domain...
           && firstVar.domain.contains(oldValOfSecondVar)) {
-
-          this.firstVar = firstVar
-          this.secondVar = secondVar
-          this.firstVarIndice = indiceOfFirstVariable
-          this.secondVarIndice = j
 
           if(evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
             notifyFound1()
@@ -124,19 +126,14 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
-    indiceOfFirstVariable = indiceOfFirstVariable +1
+    firstVarIndice = firstVarIndice +1
   }
-
-  var firstVar:CBLSIntVar = null
-  var secondVar:CBLSIntVar = null
-  var firstVarIndice:Int = 0
-  var secondVarIndice:Int = 0
 
   override def instantiateCurrentMove(newObj: Int) = SwapMove(firstVar, secondVar, firstVarIndice,secondVarIndice,newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    indiceOfFirstVariable = 0
+    firstVarIndice = 0
   }
 }
 

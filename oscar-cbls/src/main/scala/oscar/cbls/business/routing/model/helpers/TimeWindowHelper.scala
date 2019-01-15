@@ -3,7 +3,7 @@ package oscar.cbls.business.routing.model.helpers
 import oscar.cbls.algo.search.Pairs
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.TTFMatrix
-import oscar.cbls.business.routing.model.extensions.TimeWindow
+import oscar.cbls.business.routing.model.extensions.TimeWindows
 
 import scala.collection.immutable.HashSet
 
@@ -19,18 +19,18 @@ object TimeWindowHelper{
     * (call it only once ;) )
     *
     * A node x is a relevant predecessor of another node y if
-    *   earlyline(x) +
+    *   earliestArrivalTimes(x) +
     *   taskDurations(x) +
-    *   timeMatrix.getTravelDuration(x, earlylines(x) + taskDurations(x), y) +
-    *   taskDurations(y) <= deadline(y)
+    *   timeMatrix.getTravelDuration(x, earliestArrivalTimes(x) + taskDurations(x), y) +
+    *   taskDurations(y) <= latestLeavingTimes(y)
     * Meaning if we can start the task at node x, finish it, travel to y,
-    * and finish the task at y before the deadline of y, then x is a relevant neighbor of y.
+    * and finish the task at y before the latestLeavingTime of y, then x is a relevant neighbor of y.
     *
     * All these informations are used to define the problem, therefore they are static.
     * So we can use them to precompute the relevant predecessors.
     *
     * @param vrp The vehicle routing problem
-    * @param timeExtension The timeExtension model
+    * @param timeWindows The timeExtension model
     * @param timeMatrix The time matrix
     * @param parallelizeNodes whether or not the nodes are allowed to be made in parallel.
     *                      If it's the case and the nodes are parallelisable (same place and with overlapping time windows),
@@ -38,30 +38,31 @@ object TimeWindowHelper{
     * @return true if the node is relevant
     */
   def relevantPredecessorsOfNodes(vrp: VRP,
-                                  timeExtension: TimeWindow,
+                                  timeWindows: TimeWindows,
                                   timeMatrix: TTFMatrix,
                                   parallelizeNodes: Boolean = true): Map[Int,HashSet[Int]] = {
-    val earlylines = timeExtension.earlylines
-    val deadlines = timeExtension.deadlines
-    val taskDurations = timeExtension.taskDurations
+    val earliestArrivalTimes = timeWindows.earliestArrivalTimes
+    val earliestLeavingTimes = timeWindows.earliestLeavingTimes
+    val latestLeavingTimes = timeWindows.latestLeavingTimes
+    val taskDurations = timeWindows.taskDurations
 
     def areNodesParallelisable(predecessor: Int, node: Int): Boolean = {
       parallelizeNodes &&
-      deadlines(predecessor) > earlylines(node) &&
-      timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) == 0
+      latestLeavingTimes(predecessor) > earliestArrivalTimes(node) &&
+      timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) == 0
     }
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
       case predecessor if areNodesParallelisable(predecessor,node) &&
-          (Math.max(earlylines(predecessor) + taskDurations(predecessor),
-            earlylines(node) + taskDurations(node)) <= deadlines(node)) &&
-          predecessor != node => predecessor
+        (Math.max(earliestLeavingTimes(predecessor), earliestLeavingTimes(node)) <= latestLeavingTimes(node)) &&
+        predecessor != node =>
+        predecessor
       case predecessor if !areNodesParallelisable(predecessor,node) &&
-        (earlylines(predecessor) +
-          taskDurations(predecessor) +
-          timeMatrix.getTravelDuration(predecessor, earlylines(predecessor) + taskDurations(predecessor), node) +
-          taskDurations(node)) <= deadlines(node) &&
-        predecessor != node => predecessor
+        (earliestLeavingTimes(predecessor) +
+          timeMatrix.getTravelDuration(predecessor, earliestLeavingTimes(predecessor), node) + taskDurations(node)) <=
+          latestLeavingTimes(node) &&
+        predecessor != node =>
+        predecessor
     }: _*)).toMap
   }
 
@@ -70,17 +71,17 @@ object TimeWindowHelper{
     * This method is meant to precompute the relevant successors of all node.
     *
     * A node z is an relevant successor of another node y if
-    *   earlyline(y) +
+    *   earliestArrivalTimes(y) +
     *   taskDurations(y) +
-    *   timeMatrix.getTravelDuration(y, earlylines(y) + taskDurations(y), z) +
-    *   taskDurations(z) <= deadline(z)
+    *   timeMatrix.getTravelDuration(y, earliestArrivalTimes(y) + taskDurations(y), z) +
+    *   taskDurations(z) <= latestLeavingTimes(z)
     *
     * e.g : You have a list of relevant predecessor for a node y but inserting this node y
     * could delayed the arrival time to the current next node of the relevant predecessor.
     *
     *
     * Meaning if we can start the task at node y, finish it, travel to z,
-    * and finish the task at z before the deadline of z, then x is an open relevant neighbor of y.
+    * and finish the task at z before the latestLeavingTimes of z, then x is an open relevant neighbor of y.
     *
     * All these informations are used to define the problem, therefore they are static.
     * The only information that's not static is the current next of the relevant predecessor we want to insert after.
@@ -91,18 +92,16 @@ object TimeWindowHelper{
     * @return An array of precomputed
     */
   def relevantSuccessorsOfNodes(vrp: VRP,
-                        timeExtension: TimeWindow,
-                        timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
-    val earlylines = timeExtension.earlylines
-    val deadlines = timeExtension.deadlines
+                                timeExtension: TimeWindows,
+                                timeMatrix: TTFMatrix): Map[Int,HashSet[Int]] = {
+    val earliestLeavingTimes= timeExtension.earliestLeavingTimes
+    val latestLeavingTimes = timeExtension.latestLeavingTimes
     val taskDurations = timeExtension.taskDurations
 
     Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
       case successor if
-        deadlines(successor)
-        >= (earlylines(node) +
-          taskDurations(node) +
-          timeMatrix.getTravelDuration(node, earlylines(node) + taskDurations(node), successor) +
+        latestLeavingTimes(successor) >=
+          (earliestLeavingTimes(node) + timeMatrix.getTravelDuration(node, earliestLeavingTimes(node), successor) +
           taskDurations(successor)) &&
         successor != node
         => successor
@@ -111,22 +110,22 @@ object TimeWindowHelper{
 
 
   /**
-    * This method is used to restraint the time window of the nodes (earlylines and deadlines)
+    * This method is used to restraint the time window of the nodes (earliestArrivalTimes and latestLeavingTimes)
     * This restriction is based on the maxTravelDurations values.
     *
     * NOTE : Use it before the instantiation of the time constraint
     *
     * @param vrp The vehicle routing problem
     * @param maxTravelDurations A map (from,to) -> value representing the max travel duration from from to to
-    * @param earlylines The earlyline of all nodes (meaning, we can't start the task at node x before (earlyline(x))
-    * @param deadlines The deadline of all nodes (meaning, the task at node x must be finished before (earlyline(x))
+    * @param earliestArrivalTimes The earliestArrivalTime of all nodes (meaning, we can't start the task at node x before (earliestArrivalTimes(x))
+    * @param latestLeavingTimes The latestLeavingTime of all nodes (meaning, the task at node x must be finished before (earliestArrivalTimes(x))
     * @param taskDurations The task duration of all nodes
     */
   def reduceTimeWindows(vrp: VRP,
                         travelTimeFunction: TTFMatrix,
                         maxTravelDurations: Map[List[Int],Int],
-                        earlylines: Array[Int],
-                        deadlines: Array[Int],
+                        earliestArrivalTimes: Array[Int],
+                        latestLeavingTimes: Array[Int],
                         taskDurations: Array[Int]): Unit ={
     if(maxTravelDurations.nonEmpty){
       val keys = maxTravelDurations.keys.toList
@@ -158,29 +157,29 @@ object TimeWindowHelper{
           val minTravelTimeFromFromToTo: Int =
             (for(i <- 1 until impactedNodes.length)
               yield taskDurations(impactedNodes(i-1)) +
-                travelTimeFunction.getTravelDuration(impactedNodes(i-1),earlylines(impactedNodes(i-1)),impactedNodes(i))
+                travelTimeFunction.getTravelDuration(impactedNodes(i-1),earliestArrivalTimes(impactedNodes(i-1)),impactedNodes(i))
               ).sum - taskDurations(impactedNodes(0))
 
-          deadlines(to) = Math.min(deadlines(to), deadlines(from) + value + taskDurations(to))
-          earlylines(to) = Math.max(earlylines(to), earlylines(from) + taskDurations(from) + minTravelTimeFromFromToTo)
+          latestLeavingTimes(to) = Math.min(latestLeavingTimes(to), latestLeavingTimes(from) + value + taskDurations(to))
+          earliestArrivalTimes(to) = Math.max(earliestArrivalTimes(to), earliestArrivalTimes(from) + taskDurations(from) + minTravelTimeFromFromToTo)
 
           val chainForward = maxTravelDurationStartingAt(from)._1.toArray
           val chainBackward = maxTravelDurationStartingAt(from)._1.toArray.reverse
           for(i <- 1 until chainForward.length) {
             val fromNode = chainForward(i-1)
             val toNode = chainForward(i)
-            earlylines(toNode) =
-              Math.max(earlylines(toNode), earlylines(fromNode) +
+            earliestArrivalTimes(toNode) =
+              Math.max(earliestArrivalTimes(toNode), earliestArrivalTimes(fromNode) +
                 taskDurations(fromNode) +
-                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode))
+                travelTimeFunction.getTravelDuration(fromNode, earliestArrivalTimes(fromNode), toNode))
           }
           for(i <- 1 until chainBackward.length-1) {
             val toNode = chainBackward(i-1)
             val fromNode = chainBackward(i)
-            deadlines(fromNode) =
-              Math.min(deadlines(fromNode), deadlines(toNode) -
+            latestLeavingTimes(fromNode) =
+              Math.min(latestLeavingTimes(fromNode), latestLeavingTimes(toNode) -
                 taskDurations(toNode) -
-                travelTimeFunction.getTravelDuration(fromNode, earlylines(fromNode), toNode))
+                travelTimeFunction.getTravelDuration(fromNode, earliestArrivalTimes(fromNode), toNode))
           }
 
           //TODO find a better way to compute travel time backward

@@ -60,7 +60,7 @@ case class SegmentExchange(val vrp: VRP,
 
   val n = vrp.n
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
@@ -243,7 +243,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
   val seq = vrp.routes
 
 
-  override def exploreNeighborhood(): Unit = {
+  override def exploreNeighborhood(initialObj: Int): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     val segmentsToExchangeGroupedByVehiclesNow = segmentsToExchangeGroupedByVehicle()

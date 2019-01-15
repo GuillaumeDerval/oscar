@@ -83,7 +83,8 @@ object ForwardCumulativeInteger5DimensionOnVehicle {
       lastPointOfVehicle,
       default1ForUnroutedNodes,default2ForUnroutedNodes,default3ForUnroutedNodes,default4ForUnroutedNodes,default5ForUnroutedNodes)
 
-    (content1AtNode,content2AtNode,content3AtNode,content4AtNode,content5AtNode,content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,content5AtEnd,lastPointOfVehicle)
+    (content1AtNode,content2AtNode,content3AtNode,content4AtNode,content5AtNode,
+      content1AtEnd,content2AtEnd,content3AtEnd,content4AtEnd,content5AtEnd,lastPointOfVehicle)
   }
 }
 

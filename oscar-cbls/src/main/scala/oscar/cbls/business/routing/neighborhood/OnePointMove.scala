@@ -55,7 +55,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   //the indice to start with for the exploration
   var startIndice: Int = 0
 
-  override def exploreNeighborhood() {
+  override def exploreNeighborhood(initialObj: Int){
 
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(nodesToMove(), startIndice)

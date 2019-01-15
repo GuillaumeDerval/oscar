@@ -20,7 +20,7 @@ class SwapActivity(schP: SchedulingProblem,
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
     * as explained in the documentation of this class
     */
-  override def exploreNeighborhood(): Unit = {
+  override def exploreNeighborhood(initialObj: Int): Unit = {
     // Iteration zone on activities indices
     // Checking the Hot Restart
     val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)

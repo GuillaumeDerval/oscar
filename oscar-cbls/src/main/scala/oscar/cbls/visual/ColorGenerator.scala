@@ -19,6 +19,8 @@ package oscar.cbls.visual
 
 import java.awt.Color
 
+import scala.util.Random
+
 /**
   * The utility of this object is to generate a pseudo-random array of color.
   * For the same amount of color needed, the returned array will always contain the same colors
@@ -26,22 +28,8 @@ import java.awt.Color
   * @author fabian.germeau@student.vinci.be
   */
 object ColorGenerator {
-  def generateRandomColors(number:Int): Array[Color] ={
-    val maxColorNumber = getMaxColorNumber(number)
-    val colorValues = new Array[Color](Math.pow(maxColorNumber,3).toInt)
-    var i = 0
-    for(c1 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
-      val r = c1*(255/maxColorNumber)
-      for(c2 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
-        val g = c2*(255/maxColorNumber)
-        for(c3 <- if(Math.random()<0.5)0 until maxColorNumber else maxColorNumber-1 until -1 by -1){
-          val b = c3*(255/maxColorNumber)
-          colorValues(i) = new Color(r,g,b)
-          i += 1
-        }
-      }
-    }
-    colorValues
+  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={
+    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256)))
   }
 
   /**

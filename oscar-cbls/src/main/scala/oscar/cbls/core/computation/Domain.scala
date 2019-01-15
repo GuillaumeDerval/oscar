@@ -74,7 +74,10 @@ sealed abstract class Domain extends Iterable[Int]{
 case class DomainRange(override val min: Int, override val max: Int) extends Domain {
   if (min > max) throw new EmptyDomainException
   def contains(v:Int): Boolean = min <= v && max >= v
-  override def size = if(max==Int.MaxValue && min==Int.MinValue) Int.MaxValue else math.max(max-min+1,0)
+  override def size =
+    if(min + Int.MaxValue <= max) Int.MaxValue
+    else if(max==Int.MaxValue && min==Int.MinValue) Int.MaxValue
+    else math.max(max-min+1,0)
   override def values: Iterable[Int] = min to max
   override def randomValue(): Int = (min to max)(Random.nextInt(max-min+1))
   override def intersect(d: Domain): Domain = {
@@ -99,7 +102,8 @@ case class DomainRange(override val min: Int, override val max: Int) extends Dom
         else this
       case d:DomainSet =>  d.union(this)
     }
-    if (newDomain.isEmpty) throw new EmptyDomainException
+    if (newDomain.isEmpty)
+      throw new EmptyDomainException
     newDomain
   }
 

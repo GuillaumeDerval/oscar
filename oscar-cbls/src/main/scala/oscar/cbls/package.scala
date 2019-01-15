@@ -1,13 +1,29 @@
 package oscar
 
+/*******************************************************************************
+  * OscaR is free software: you can redistribute it and/or modify
+  * it under the terms of the GNU Lesser General Public License as published by
+  * the Free Software Foundation, either version 2.1 of the License, or
+  * (at your option) any later version.
+  *
+  * OscaR is distributed in the hope that it will be useful,
+  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  * GNU Lesser General Public License  for more details.
+  *
+  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+  ******************************************************************************/
+
+
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
-import oscar.cbls.core.search.{NeighborhoodCombinator, Neighborhood}
+import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.modeling.{NeighborhoodOps, ModelingAPI}
+import oscar.cbls.modeling.{ModelingAPI, NeighborhoodOps}
 
 import scala.language.implicitConversions
 
@@ -148,10 +164,13 @@ package object cbls extends ModelingAPI{
   final val ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
 
   //implicits
-  implicit def intToIntVarOps(i:Int):IntVarOps = IntVarOps(CBLSIntConst(i))
+  implicit def intToIntVarOps(i:Int):IntValOps = IntValOps(CBLSIntConst(i))
 
   //some implicit for the CBLS variables, to add infix operators
-  implicit class IntVarOps(x: IntValue) {
+
+  implicit def intVarOps(x:CBLSIntVar):IntValOps = new IntValOps(x)
+
+  implicit class IntValOps(x: IntValue) {
     def +(v: IntValue): IntInvariant = Sum2(x, v)
 
     def -(v: IntValue): IntInvariant = Minus(x, v)

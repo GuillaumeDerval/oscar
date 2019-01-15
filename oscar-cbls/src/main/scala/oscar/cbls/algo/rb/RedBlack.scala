@@ -244,6 +244,7 @@ class T[@specialized(Int) V](private[this]val c : Boolean,
 
   assert(v.nonEmpty)
 
+  //TODO: this creates a technical overhead. should be removed, actually.
   lazy val mSize = l.size + r.size + 1
   override def size = mSize
   override def isEmpty = false

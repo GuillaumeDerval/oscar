@@ -2,8 +2,6 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.PDPConstraints
-import oscar.cbls.lib.invariant.seq.Precedence
 
 /**
   * Created by fg on 12/05/17.
@@ -26,9 +24,20 @@ object SimpleVRPWithVehicleContent extends App{
   // Distance
   val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
+  //Chains
+  val precedenceRoute = myVRP.routes.createClone()
+  val precedenceInvariant = precedence(precedenceRoute,precedences)
+  val vehicleOfNodesNow = vehicleOfNodes(precedenceRoute,v)
+  val precedencesConstraints = new ConstraintSystem(m)
+  for(start <- precedenceInvariant.nodesStartingAPrecedence)
+    precedencesConstraints.add(vehicleOfNodesNow(start) === vehicleOfNodesNow(precedenceInvariant.nodesEndingAPrecedenceStartedAt(start).head))
+  precedencesConstraints.add(0 === precedenceInvariant)
+  val chainsExtension = chains(myVRP,listOfChains)
+
   // Vehicle content
+  val contentRoute = precedenceRoute.createClone()
   val violationOfContentAtNode = new CBLSIntVar(myVRP.routes.model, 0, 0 to Int.MaxValue, "violation of capacity " + "Content at node")
-  val vehicleContentInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
+  val capacityInvariant = forwardCumulativeConstraintOnVehicle(myVRP.routes,n,v,
     (from,to,fromContent) => fromContent + contentsFlow(to),
     maxVehicleCapacity,
     vehiclesCapacity.map(maxVehicleCapacity-_),
@@ -36,23 +45,16 @@ object SimpleVRPWithVehicleContent extends App{
     4,
     "Content at node")
 
-  //Chains
-  val precedenceInvariant = new Precedence(myVRP.routes,precedences)
-  val chainsExtension = chains(myVRP,listOfChains)
-
-  //Constraints & objective
-  val (fastConstrains,slowConstraints) = PDPConstraints(myVRP,
-    capacityInvariant = Some(vehicleContentInvariant),
-    precedences = Some(precedenceInvariant))
-  val obj = new CascadingObjective(fastConstrains,
-    new CascadingObjective(slowConstraints,
+  //Objective function
+  val obj = new CascadingObjective(precedencesConstraints,
+    new CascadingObjective(capacityInvariant.violation,
       totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)))))
 
   m.close()
 
   def postFilter(node:Int): (Int) => Boolean = {
     val enoughSpaceAfterNeighborNow: (Int,Int,Array[Int]) => Boolean =
-      CapacityHelper.enoughSpaceAfterNeighbor(n,vehicleContentInvariant)
+      CapacityHelper.enoughSpaceAfterNeighbor(n,capacityInvariant)
     (neighbor: Int) => {
       myVRP.isRouted(neighbor) &&
         enoughSpaceAfterNeighborNow(node,neighbor,contentsFlow)
