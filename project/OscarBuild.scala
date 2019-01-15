@@ -79,6 +79,7 @@ object OscarBuild extends Build {
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
     val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
+    val jtscore = "org.locationtech.jts" % "jts-core" % "1.16.0"
 
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
@@ -158,7 +159,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2,
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)
