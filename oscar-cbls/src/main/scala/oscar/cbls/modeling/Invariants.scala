@@ -352,15 +352,6 @@ trait SeqInvariants {
 
   /**
    * @param seq a sequence of integers
-   * @param mapArray an array that is taken as a function (it cannot be modified after this call)
-   * @return a sequence where the value at any position p is equal to mapArray(seq(p))
-   */
-  def map(seq : ChangingSeqValue, mapArray : Array[Long]) : MapConstantFun = {
-    new MapConstantFun(seq, mapArray, InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
-  }
-
-  /**
-   * @param seq a sequence of integers
    * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to transform(seq(p))
    */

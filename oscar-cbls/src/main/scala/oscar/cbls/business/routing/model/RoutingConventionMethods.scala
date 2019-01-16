@@ -20,9 +20,9 @@ import oscar.cbls.algo.seq.{IntSequence, Token}
 
 object RoutingConventionMethods {
 
-  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Long):((IntSequence,Long) => Long) = {
+  def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):((IntSequence,Long) => Long) = {
 
-    val batch = batchVehicleReachingPosition(checkpoint,v:Long)
+    val batch = batchVehicleReachingPosition(checkpoint,v:Int)
     def getVehicleReachingPosition(seq:IntSequence,position:Long):Long = {
       if(seq quickEquals checkpoint) batch(position)
       else searchVehicleReachingPosition(position, seq, v)
@@ -31,7 +31,7 @@ object RoutingConventionMethods {
     getVehicleReachingPosition
   }
 
-  def batchVehicleReachingPosition(seq:IntSequence,v:Long):(Long=>Long) = {
+  def batchVehicleReachingPosition(seq:IntSequence,v:Int):(Long=>Long) = {
     val vehiclePositionArray:Array[(Long,Long)] =
       Array.tabulate(v)(vehicle => (seq.positionOfAnyOccurrence(vehicle).get, vehicle))
 
@@ -47,7 +47,7 @@ object RoutingConventionMethods {
   }
 
   @deprecated("use the VehicleLocation method instead","we use stacked checkpoints")
-  def searchVehicleReachingPosition(position:Long, seq:IntSequence, v:Long):Long = {
+  def searchVehicleReachingPosition(position:Long, seq:IntSequence, v:Int):Long = {
     var upperVehicle = v-1L
     var upperVehiclePosition = seq.positionOfAnyOccurrence(upperVehicle).get
 
@@ -76,17 +76,17 @@ object RoutingConventionMethods {
     lowerVehicle
   }
 
-  def routingSuccVal2Val(value:Long, seq:IntSequence, v:Long):Long =
+  def routingSuccVal2Val(value:Long, seq:IntSequence, v:Int):Long =
     routingSuccPos2Val(seq.positionOfAnyOccurrence(value).get, seq, v)
 
-  def routingSuccPos2Val(position:Long, seq:IntSequence, v:Long):Long = {
+  def routingSuccPos2Val(position:Long, seq:IntSequence, v:Int):Long = {
     seq.valueAtPosition(position + 1L) match{
       case None => v-1L
       case Some(succToIfNoLoop) => if (succToIfNoLoop < v) succToIfNoLoop-1L else succToIfNoLoop
     }
   }
 
-  def routingPredVal2Val(value:Long, seq:IntSequence, v:Long):Long = {
+  def routingPredVal2Val(value:Long, seq:IntSequence, v:Int):Long = {
     if(value < v) {
       //looking for the end node of vehicle value
       if(value == v-1L) {
@@ -103,12 +103,12 @@ object RoutingConventionMethods {
   }
 
 
-  def routingPredPos2Val(position:Long, seq:IntSequence, v:Long):Long = {
+  def routingPredPos2Val(position:Long, seq:IntSequence, v:Int):Long = {
     routingPredVal2Val(seq.valueAtPosition(position).get, seq, v)
   }
 
-  def isVehicleMoving(vehicle:Long, seq:IntSequence, v:Long):Boolean = {
-    routingSuccVal2Val(vehicle, seq:IntSequence, v:Long) != vehicle
+  def isVehicleMoving(vehicle:Long, seq:IntSequence, v:Int):Boolean = {
+    routingSuccVal2Val(vehicle, seq:IntSequence, v:Int) != vehicle
   }
 }
 

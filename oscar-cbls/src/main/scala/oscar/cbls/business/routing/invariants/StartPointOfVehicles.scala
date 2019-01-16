@@ -10,7 +10,7 @@ import oscar.cbls.core._
  * EXPERIMENTAL
  */
 class StartPointOfVehicles(routes:ChangingSeqValue,
-                           v:Long)
+                           v:Int)
   extends Invariant() with SeqNotificationTarget {
 
   private val vehicleStartStack = new SeqCheckpointedValueStack[VehicleLocation]()

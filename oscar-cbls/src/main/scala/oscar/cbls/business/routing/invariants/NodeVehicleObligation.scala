@@ -20,7 +20,7 @@ object NodeVehicleObligation{
    * @return an array telling the violation per vehicle
    * @note this is a preliminary naive version of the constraint. a faster one is to be developed!
    */
-  def apply(routes:ChangingSeqValue,v:Long, n:Long, nodeVehicleObligation:Map[Long,Set[Long]]):Array[CBLSIntVar] = {
+  def apply(routes:ChangingSeqValue,v:Int,n:Int, nodeVehicleObligation:Map[Long,Set[Long]]):Array[CBLSIntVar] = {
     val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model,name="violation of NodeVehicleObligation for vehicle" + vehicle))
 
     val vehicles = 0L until v

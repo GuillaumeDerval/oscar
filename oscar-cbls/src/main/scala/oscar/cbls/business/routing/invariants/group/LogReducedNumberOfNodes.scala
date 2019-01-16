@@ -32,7 +32,7 @@ case class NodesOnSubsequence(nbNodes:Long,
   }
 }
 
-class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Long, nbNodesPerRoute:Array[CBLSIntVar])
+class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
   extends LogReducedGlobalConstraint[NodesOnSubsequence,Long](routes,v){
 
   /**
@@ -121,7 +121,7 @@ class LogReducedNumberOfNodes(routes:ChangingSeqValue, v:Long, nbNodesPerRoute:A
 }
 
 
-class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Long, nbNodesPerRoute:Array[CBLSIntVar])
+class LogReducedNumberOfNodesWithExtremes(routes:ChangingSeqValue, v:Int, nbNodesPerRoute:Array[CBLSIntVar])
   extends LogReducedGlobalConstraintWithExtremes[NodesOnSubsequence,Long](routes,v){
   /**
     * this method delivers the value of the node

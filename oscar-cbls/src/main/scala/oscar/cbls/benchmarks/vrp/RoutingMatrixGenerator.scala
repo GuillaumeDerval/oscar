@@ -66,7 +66,7 @@ object RoutingMatrixGenerator {
     toReturn
   }
 
-  def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Long]]): List[List[Long]]={
+  def addLonelyNodesToPrecedences(n: Int, precedences: List[List[Int]]): List[List[Int]]={
     val lonelyNodes = Range(0,n).toList.diff(precedences.flatten)
     var precedencesWithLonelyNodes = precedences
     for(lonelyNode <- lonelyNodes)
@@ -74,17 +74,17 @@ object RoutingMatrixGenerator {
     precedencesWithLonelyNodes
   }
 
-  def generateFeasibleTimeWindows(n:Long, v:Long,
+  def generateFeasibleTimeWindows(n:Int, v:Int,
                                   timeMatrix: TTFMatrix,
-                                  precedences: List[List[Long]] = List.empty,
+                                  precedences: List[List[Int]] = List.empty,
                                   maxIdlingTimeInSec: Long = 1800L,
                                   maxExtraTravelTimeInSec: Long = 900L,
                                   maxTaskDurationInSec: Long = 300L): (Array[Long],Array[Long],Array[Long],Array[Long]) ={
 
     def randomVehicleSelection = random.nextInt(v)
-    def randomIdleTime = random.nextInt(maxIdlingTimeInSec)
-    def randomExtraTravelTime = random.nextInt(maxExtraTravelTimeInSec)
-    def randomTaskDuration = random.nextInt(maxTaskDurationInSec)
+    def randomIdleTime = random.nextLong(maxIdlingTimeInSec)
+    def randomExtraTravelTime = random.nextLong(maxExtraTravelTimeInSec)
+    def randomTaskDuration = random.nextLong(maxTaskDurationInSec)
 
     val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0L)

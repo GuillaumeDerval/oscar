@@ -24,7 +24,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 
 
 
-class MoveExplorerAlgo(v:Long,
+class MoveExplorerAlgo(v:Int,
                        vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
                        unroutedNodesToInsert:Iterable[Long],
                        nodeToRelevantVehicles:Map[Long,Iterable[Long]],

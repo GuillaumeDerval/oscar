@@ -30,7 +30,7 @@ object VehicleOfNodes{
     * @param v the number of vehicles
     * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
     */
-  def apply(routes:ChangingSeqValue,v:Long):Array[CBLSIntVar] = {
+  def apply(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] = {
     val model = routes.model
     val domain = routes.domain
 
@@ -47,7 +47,7 @@ object VehicleOfNodes{
 }
 
 class VehicleOfNodes(routes:ChangingSeqValue,
-                     v:Long,
+                     v:Int,
                      vehicleOrUnroutedOfNode:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget{
 

@@ -22,7 +22,7 @@ import oscar.cbls.algo.seq.IntSequence
  * @author renaud.delandtsheer@cetic.be
  */
 object VehicleLocation{
-  def apply(v:Long,nodeToPosition:Long=>Long): ConcreteVehicleLocation = new ConcreteVehicleLocation(Array.tabulate(v)(nodeToPosition))
+  def apply(v:Int,nodeToPosition:Long=>Long): ConcreteVehicleLocation = new ConcreteVehicleLocation(Array.tabulate(v)(nodeToPosition))
   def apply(startPositionOfVehicleThatIWillNeverModify:Array[Long]) = new ConcreteVehicleLocation(startPositionOfVehicleThatIWillNeverModify)
 }
 

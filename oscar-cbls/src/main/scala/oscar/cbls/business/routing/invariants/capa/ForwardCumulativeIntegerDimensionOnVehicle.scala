@@ -38,8 +38,8 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
    * @return (contentAtNode,contentAtEnd,lastPointOfVehicle) content at node, of vehice nodes (0..v-1L) is the content on vehicle start. content on vehicle end is in contentAtEnd.
    */
   def apply(routes:ChangingSeqValue,
-            n:Long,
-            v:Long,
+            n:Int,
+            v:Int,
             op:(Long,Long,Long)=>Long,
             contentAtStart:Array[IntValue],
             defaultForUnroutedNodes:Long,
@@ -72,8 +72,8 @@ object ForwardCumulativeIntegerDimensionOnVehicle {
  * @param fullDebug to activate some internal debug stuff (do not use)
  */
 class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
-                                                 n:Long,
-                                                 v:Long,
+                                                 n:Int,
+                                                 v:Int,
                                                  op:(Long,Long,Long)=>Long,
                                                  contentAtStart:Array[IntValue],
                                                  val contentAtNode:Array[CBLSIntVar],

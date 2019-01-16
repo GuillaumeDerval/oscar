@@ -96,7 +96,7 @@ trait RoutingInvariants {
    * @param defaultWhenNotInSequence the value to put in the two arrays for nodes that  are not in the sequence
    */
   def routeSuccessorAndPredecessors(routes:ChangingSeqValue,
-                                    v:Long,
+                                    v:Int,
                                     defaultWhenNotInSequence:Long)(
     successorValues:Array[CBLSIntVar] =
     Array.tabulate(routes.maxValue + 1L)(node =>
@@ -119,8 +119,8 @@ trait RoutingInvariants {
    * @param v the number of vehicles
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def nodesOfVehicle(routes:ChangingSeqValue,v:Long):Array[CBLSSetVar] =
-    NodesOfVehicle(routes:ChangingSeqValue,v:Long):Array[CBLSSetVar]
+  def nodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] =
+    NodesOfVehicle(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar]
 
 
 
@@ -131,8 +131,8 @@ trait RoutingInvariants {
    * @param v the number of vehicles
    * @return an array that mas each node in 0..route.maxValue to the vehicle reaching it
    */
-  def vehicleOfNodes(routes:ChangingSeqValue,v:Long):Array[CBLSIntVar] =
-    VehicleOfNodes(routes:ChangingSeqValue,v:Long):Array[CBLSIntVar]
+  def vehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar] =
+    VehicleOfNodes(routes:ChangingSeqValue,v:Int):Array[CBLSIntVar]
 
 
 }

@@ -38,7 +38,8 @@ import oscar.cbls.lib.invariant.set.TakeAny
   * @author gustav.bjordal@it.uu.se
   */
 
-case class Table(variables: Array[IntValue], table:Array[Array[Long]]) extends Invariant with Constraint with IntNotificationTarget{
+case class Table(variables: Array[IntValue], table:Array[Array[Long]])
+  extends Invariant with Constraint with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(variables)
   registerConstrainedVariables(variables)

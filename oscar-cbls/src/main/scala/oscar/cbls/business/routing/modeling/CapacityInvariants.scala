@@ -35,8 +35,8 @@ trait CapacityInvariants {
    *                           it consumes O(n) memory per level, so do not overdrive uselessly
    */
   def forwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
-                                           n:Long,
-                                           v:Long,
+                                           n:Int,
+                                           v:Int,
                                            op :(Long,Long,Long)=>Long,
                                            cMax:Long,
                                            contentAtVehicleStart:Array[Long],
@@ -69,8 +69,8 @@ trait CapacityInvariants {
    * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
    */
   def forwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
-                                                 n:Long,
-                                                 v:Long,
+                                                 n:Int,
+                                                 v:Int,
                                                  op:(Long,Long,Long)=>Long,
                                                  contentAtStart:Array[IntValue],
                                                  contentAtNode:Array[CBLSIntVar],
@@ -106,8 +106,8 @@ trait CapacityInvariants {
     * @param contentName the name of this content, for debug purpose. it is atributed to all variales created by this invariant
     */
   def forwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
-                                                        n:Long,
-                                                        v:Long,
+                                                        n:Int,
+                                                        v:Int,
                                                         op:(Long,Long,Long,Long)=>(Long,Long),
                                                         content1AtStart:Array[IntValue],
                                                         content2AtStart:Array[IntValue],

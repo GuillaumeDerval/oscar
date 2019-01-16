@@ -15,8 +15,8 @@ import scala.collection.immutable.SortedSet
  * @param v The number of vehicles
  */
 abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqValue,
-                                                           n:Long,
-                                                           v:Long,fullDebug:Boolean = false)
+                                                           n:Int,
+                                                           v:Int,fullDebug:Boolean = false)
   extends AbstractVehicleCapacity(n,v)
   with SeqNotificationTarget{
 

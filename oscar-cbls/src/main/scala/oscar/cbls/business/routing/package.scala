@@ -42,7 +42,7 @@ package object routing
   with TwoOptAPI {
 
   type VRP = oscar.cbls.business.routing.model.VRP
-  def vrp(m: Store, n: Long, v: Long, maxPivotPerValuePercent: Long = 4L): VRP =
+  def vrp(m: Store,n:Int, v: Int, maxPivotPerValuePercent: Long = 4L): VRP =
     new VRP(m, n, v, maxPivotPerValuePercent)
 
   type TTFMatrix = oscar.cbls.business.routing.model.TTFMatrix

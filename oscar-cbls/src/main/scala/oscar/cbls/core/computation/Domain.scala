@@ -19,7 +19,7 @@
   ******************************************************************************/
 package oscar.cbls.core.computation
 
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{NumericRange, SortedSet}
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -107,7 +107,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
     newDomain
   }
 
-  def toRange:Range = min to max
+  def toRange:NumericRange[Long] = min to max
 
   override def toString(): String = "DomainRange(min:" + min + ", max:" +  max + ")"
 }

@@ -33,30 +33,30 @@ abstract class TravelTimeFunction {
   * @param defaultTTF if we do not specify a TTF for a node, this is the value considered
   * @author renaud.delandtsheer@cetic.be
   */
-class TTFMatrix(nodeCount: Long, defaultTTF: PrimitiveTravelTimeFunction) extends TravelTimeFunction {
+class TTFMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction) extends TravelTimeFunction {
 
   private val matrix: Array[Array[PrimitiveTravelTimeFunction]] = Array.fill(nodeCount, nodeCount)(defaultTTF)
 
-  def setTTF(from: Long, to: Long, ttf: PrimitiveTravelTimeFunction) {
+  def setTTF(from: Int, to: Int, ttf: PrimitiveTravelTimeFunction) {
     matrix(from)(to) = ttf
   }
 
-  def getTTF(from: Long, to: Long): PrimitiveTravelTimeFunction =
+  def getTTF(from: Int, to: Int): PrimitiveTravelTimeFunction =
     matrix(from)(to)
 
-  override def getTravelDuration(from: Long, leaveTime: Long, to: Long): Long =
+  override def getTravelDuration(from: Int, leaveTime: Long, to: Int): Long =
     matrix(from)(to).getTravelDuration(leaveTime)
 
-  override def getBackwardTravelDuration(from: Long, arrivalTime: Long, to: Long): Long =
+  override def getBackwardTravelDuration(from: Int, arrivalTime: Long, to: Int): Long =
     matrix(from)(to).getBackwardTravelDuration(arrivalTime)
 
-  override def getMinTravelDuration(from: Long, to: Long): Long =
+  override def getMinTravelDuration(from: Int, to: Int): Long =
     matrix(from)(to).getMinTravelDuration
 
-  override def getMaxTravelDuration(from: Long, to: Long): Long =
+  override def getMaxTravelDuration(from: Int, to: Int): Long =
     matrix(from)(to).getMaxTravelDuration
 
-  override def getMinMaxTravelDuration(from: Long, to: Long): (Long, Long) =
+  override def getMinMaxTravelDuration(from: Int, to: Int): (Long, Long) =
     matrix(from)(to).getMinMaxTravelDuration
 }
 
@@ -121,10 +121,10 @@ class TTFConst(travelDuration: Long) extends PrimitiveTravelTimeFunction {
   * @author renaud.delandtsheer@cetic.be
   * THIS IS EXPERIMENTAL
   */
-class TTFHistogram(val nbSlots: Long, val overallDuration: Long) extends PrimitiveTravelTimeFunction {
+class TTFHistogram(val nbSlots: Int, val overallDuration: Long) extends PrimitiveTravelTimeFunction {
   private val slotDuration: Long = overallDuration / nbSlots
 
-  private val slots: Array[Long] = Array.fill(nbSlots)(0L)
+  private val slots: Array[Long] = Array.fill(nbSlots)(0)
   private var nimMaxAccurate = false
   private var min: Long = 0L
   private var max: Long = 0L

@@ -33,8 +33,8 @@ object TimeWindowConstraint {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Long,
-            v: Long,
+            n: Int,
+            v: Int,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             travelTimeMatrix: Array[Array[Long]],
@@ -61,8 +61,8 @@ object TimeWindowConstraint {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Long,
-            v: Long,
+            n: Int,
+            v: Int,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             taskDurations: Array[Long],
@@ -92,8 +92,8 @@ object TimeWindowConstraint {
   * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
   */
 class TimeWindowConstraint (routes: ChangingSeqValue,
-                            n: Long,
-                            v: Long,
+                            n: Int,
+                            v: Int,
                             earliestArrivalTime: Array[Long],
                             latestArrivalTime: Array[Long],
                             earliestLeavingTime: Array[Long],

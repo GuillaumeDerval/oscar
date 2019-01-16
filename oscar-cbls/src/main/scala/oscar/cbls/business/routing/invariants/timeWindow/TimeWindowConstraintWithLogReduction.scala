@@ -21,8 +21,8 @@ object TimeWindowConstraintWithLogReduction {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Long,
-            v: Long,
+            n: Int,
+            v: Int,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             travelTimeMatrix: Array[Array[Long]],
@@ -49,8 +49,8 @@ object TimeWindowConstraintWithLogReduction {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Long,
-            v: Long,
+            n: Int,
+            v: Int,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             taskDurations: Array[Long],
@@ -67,8 +67,8 @@ object TimeWindowConstraintWithLogReduction {
 }
 
 class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
-                                           n: Long,
-                                           v: Long,
+                                           n: Int,
+                                           v: Int,
                                            earliestArrivalTime: Array[Long],
                                            latestArrivalTime: Array[Long],
                                            earliestLeavingTime: Array[Long],

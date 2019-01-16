@@ -38,8 +38,8 @@ object ForwardCumulativeConstraintOnVehicle {
    *                           it consumes O(n) memory per level, so do not overdrive uselessly
    */
   def apply (routes:ChangingSeqValue,
-             n:Long,
-             v:Long,
+             n:Int,
+             v:Int,
              op :(Long,Long,Long)=>Long,
              cMax:Long,
              contentAtVehicleStart:Array[Long],
@@ -77,8 +77,8 @@ object ForwardCumulativeConstraintOnVehicle {
  *                           it consumes O(n) memory per level, so do not overdrive uselessly
  */
 class ForwardCumulativeConstraintOnVehicle(routes:ChangingSeqValue,
-                                           n:Long,
-                                           v:Long,
+                                           n:Int,
+                                           v:Int,
                                            op :(Long,Long,Long)=>Long,
                                            cMax:Long,
                                            contentAtVehicleStart:Array[Long],

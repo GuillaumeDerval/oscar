@@ -198,7 +198,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   * @param name a name toat will be used in pretty printing.
   * @author renaud.delandtsheer@cetic.be
   */
-class VLSN(v:Long,
+class VLSN(v:Int,
            initVehicleToRoutedNodesToMove:() => SortedMap[Long,SortedSet[Long]],
            initUnroutedNodesToInsert:() => SortedSet[Long],
            nodeToRelevantVehicles:() => Map[Long,Iterable[Long]],
@@ -490,7 +490,7 @@ class VLSN(v:Long,
     cachedExplorations match {
       case None =>
         new MoveExplorerAlgo(
-          v: Long,
+          v: Int,
           vehicleToRoutedNodesToMove,
           unroutedNodesToInsert,
           nodeToRelevantVehicles(),
@@ -506,7 +506,7 @@ class VLSN(v:Long,
           globalObjective).buildGraph()
       case Some(cache) =>
         new IncrementalMoveExplorerAlgo(
-          v: Long,
+          v: Int,
           vehicleToRoutedNodesToMove,
           unroutedNodesToInsert,
           nodeToRelevantVehicles(),

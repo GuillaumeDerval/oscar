@@ -35,7 +35,7 @@ object ConstantRoutingDistance {
    * @return
    */
   def apply(routes : ChangingSeqValue,
-            n:Long,
+            n:Int,
             v : Long,
             perVehicle:Boolean,
             distanceMatrix : Array[Array[Long]],
@@ -81,7 +81,7 @@ object ConstantRoutingDistance {
     true
   }
 
-  def isDistanceSymmetric(distanceMatrix : Array[Array[Long]], n:Long):Boolean = {
+  def isDistanceSymmetric(distanceMatrix : Array[Array[Long]],n:Int):Boolean = {
     var i = 0L
     while(i < n){
       var j = 0L
@@ -114,8 +114,8 @@ object ConstantRoutingDistance {
  * they cannot be included within a moved segment
  */
 class ConstantRoutingDistance(routes:ChangingSeqValue,
-                              n:Long,
-                              v:Long,
+                              n:Int,
+                              v:Int,
                               distanceMatrix:Array[Array[Long]],
                               distance:Array[CBLSIntVar],
                               distanceIsSymmetric:Boolean,
@@ -389,7 +389,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
 
   /**
    * engages the saving of output values at this checkpoint.
-   * you also must call  recordTouchedVehicle(v:Long) for this saving to be effective.
+   * you also must call  recordTouchedVehicle(v:Int) for this saving to be effective.
    * @param s
    */
   protected def saveCurrentCheckpoint(s:IntSequence){
@@ -420,7 +420,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
     }
   }
 
-  private def recordTouchedVehicle(v:Long){
+  private def recordTouchedVehicle(v:Int){
     if(perVehicle){
       if(checkpoint!= null && !isVehicleChangedSinceCheckpoint(v)){
         savedValues(v) = distance(v).newValue
@@ -548,8 +548,8 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
  * they cannot be included within a moved segment
  */
 class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
-                                        n:Long,
-                                        v:Long,
+                                        n:Int,
+                                        v:Int,
                                         distanceMatrix:Array[Array[Long]],
                                         distance:Array[CBLSIntVar],
                                         distanceIsSymmetric:Boolean,
@@ -557,7 +557,7 @@ class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
                                         precomputeBW:Boolean)
   extends ConstantRoutingDistance(routes:ChangingSeqValue,
     n,
-    v:Long,
+    v:Int,
     distanceMatrix:Array[Array[Long]],
     distance:Array[CBLSIntVar],
     distanceIsSymmetric:Boolean) {

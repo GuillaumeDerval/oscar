@@ -30,7 +30,7 @@ object NodesOfVehicle{
    * @param v the number of vehicles
    * @return an array nodesOfVehicle maintained to the nodes reached y each vehicle
    */
-  def apply(routes:ChangingSeqValue,v:Long):Array[CBLSSetVar] = {
+  def apply(routes:ChangingSeqValue,v:Int):Array[CBLSSetVar] = {
     val model = routes.model
     val emptySet = SortedSet.empty[Long]
     val domain = routes.domain

@@ -53,7 +53,7 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
 
   {
     //initial sort of the variables, this is in brackets to free Sorting asap
-    val Sorting: Array[Long] = values.indices.toArray.sortBy(indice => values(indice).value)
+    val Sorting: Array[Int] = values.indices.toArray.sortBy(indice => values(indice).value)
     //sorting is position in sorting -> position in initial array
     for (i <- values.indices) {
       ReversePerm(i) := Sorting(i)

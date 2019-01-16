@@ -25,8 +25,8 @@ import oscar.cbls.business.routing.model.{ConcreteVehicleLocation, VehicleLocati
  * @param n The maximum number of nodes
  * @param v The number of vehicles
  */
-abstract class AbstractVehicleCapacity(n:Long,
-                                       v:Long) extends Invariant{
+abstract class AbstractVehicleCapacity(n:Int,
+                                       v:Int) extends Invariant{
 
   /**
    * we only require that zoneStart is <= list.head._2 if exists
@@ -632,8 +632,8 @@ object AbstractVehicleCapacity{
    * @return (nodeToContent,vehicleToContentAtEnd,vehicleLocation)
    */
   def computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[T]
-  (n:Long,
-   v:Long,
+  (n:Int,
+   v:Int,
    op:(Long,Long,T) => T,  //fomNode,toNode,contentAtFomNode,contentAtToNode
    getContentAtVehicleStart:Long=>T,
    s:IntSequence,

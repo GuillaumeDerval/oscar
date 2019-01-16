@@ -60,7 +60,7 @@ class VLSNNodeBuilder(var nbLabels:Long) {
   }
 }
 
-class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Long,v:Long){
+class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Long,v:Int){
   val nbNodes = nodes.length
   val edges:Array[Array[Edge]] = Array.tabulate(nbNodes)(_ => Array.fill(nbNodes)(null))
   var fromToWithEdge:List[(Long,Long)] = List.empty
@@ -95,7 +95,7 @@ class VLSNEdgeBuilder(nodes:Array[Node],nbLabels:Long,v:Long){
   * @param edges
   * @param nbLabels labels range from 0L to nbLabels-1L
   */
-class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Long, v:Long){
+class VLSNGraph(val nodes:Array[Node],val edges:Array[Edge],val nbLabels:Long, v:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
 

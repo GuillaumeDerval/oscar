@@ -24,7 +24,7 @@ import scala.collection.immutable.SortedSet
 
 object RouteSuccessorAndPredecessors{
   def apply(routes:ChangingSeqValue,
-            v:Long,
+            v:Int,
             defaultWhenNotInSequence:Long):(Array[CBLSIntVar],Array[CBLSIntVar]) = {
     val n = routes.maxValue + 1L
     val model = routes.model
@@ -47,7 +47,7 @@ object RouteSuccessorAndPredecessors{
  * @param defaultWhenNotInSequence the value to put in the two arrays for nodes that  are not in the sequence
  */
 class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
-                     v:Long,
+                     v:Int,
                      successorValues:Array[CBLSIntVar],
                      predecessorValues:Array[CBLSIntVar],
                      defaultWhenNotInSequence:Long)

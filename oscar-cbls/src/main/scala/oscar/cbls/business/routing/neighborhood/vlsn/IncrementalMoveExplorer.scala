@@ -37,7 +37,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 object CachedExplorations{
   def apply(oldGraph:VLSNGraph,
             performedMoves:List[Edge],
-            v:Long):Option[CachedExplorations] = {
+            v:Int):Option[CachedExplorations] = {
 
     var dirtyNodes: SortedSet[Long] = SortedSet.empty
     val isDirtyVehicle = Array.fill[Boolean](v)(false)
@@ -74,14 +74,14 @@ object CachedExplorations{
     else Some(new CachedExplorations(oldGraph: VLSNGraph,
       dirtyNodes:SortedSet[Long],
       isDirtyVehicle: Array[Boolean],
-      v: Long))
+      v: Int))
   }
 }
 
 class CachedExplorations(oldGraph:VLSNGraph,
                          dirtyNodes:SortedSet[Long], //only for unrouted nodes that were inserted of newly removed
                          isDirtyVehicle:Array[Boolean],
-                         v:Long) {
+                         v:Int) {
 
   def isDirtyNode(node: Long): Boolean = dirtyNodes.contains(node)
 
@@ -191,7 +191,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
   }
 }
 
-class IncrementalMoveExplorerAlgo(v:Long,
+class IncrementalMoveExplorerAlgo(v:Int,
                                   vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
                                   unroutedNodesToInsert:Iterable[Long],
                                   nodeToRelevantVehicles:Map[Long,Iterable[Long]],
@@ -209,7 +209,7 @@ class IncrementalMoveExplorerAlgo(v:Long,
 
                                   cached:CachedExplorations
                                  )
-  extends MoveExplorerAlgo(v:Long,
+  extends MoveExplorerAlgo(v:Int,
     vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
     unroutedNodesToInsert:Iterable[Long],
     nodeToRelevantVehicles:Map[Long,Iterable[Long]],

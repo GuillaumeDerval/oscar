@@ -36,8 +36,8 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
    * @return  (content1AtNode,content2AtNode,content1AtEnd,content2AtEnd,lastPointOfVehicle) content at end is the content when back at the vehicle start
    */
   def apply(routes:ChangingSeqValue,
-            n:Long,
-            v:Long,
+            n:Int,
+            v:Int,
             op:(Long,Long,Long,Long,Long,Long)=>(Long,Long,Long,Long),
             content1AtStart:Array[IntValue],
             content2AtStart:Array[IntValue],
@@ -74,8 +74,8 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
 }
 
 class ForwardCumulativeInteger4DimensionOnVehicle(routes:ChangingSeqValue,
-                                                  n:Long,
-                                                  v:Long,
+                                                  n:Int,
+                                                  v:Int,
                                                   op:(Long,Long,Long,Long,Long,Long)=>(Long,Long,Long,Long),
                                                   content1AtStart:Array[IntValue],
                                                   content2AtStart:Array[IntValue],

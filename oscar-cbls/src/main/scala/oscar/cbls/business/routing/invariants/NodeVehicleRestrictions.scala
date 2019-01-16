@@ -38,7 +38,7 @@ object NodeVehicleRestrictions{
    * @param nodeVehicleRestrictions the restrictions that we are monitoring
    * @return an array telling the violation per vehicle
    */
-  def apply(routes:ChangingSeqValue, v:Long, nodeVehicleRestrictions:Iterable[(Long,Long)]):Array[CBLSIntVar] = {
+  def apply(routes:ChangingSeqValue, v:Int, nodeVehicleRestrictions:Iterable[(Long,Long)]):Array[CBLSIntVar] = {
     val violationPerVehicle =  Array.tabulate(v)(vehicle => CBLSIntVar(routes.model, name="violation of nodeVehicleRestriction for vehicle" + vehicle))
 
     new NodeVehicleRestrictions(routes, v, nodeVehicleRestrictions, violationPerVehicle)
@@ -46,11 +46,11 @@ object NodeVehicleRestrictions{
     violationPerVehicle
   }
 
-  def violatedNodes(routes:ChangingSeqValue,v:Long,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
+  def violatedNodes(routes:ChangingSeqValue,v:Int,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
     violatedNodes(VehicleOfNodes(routes,v).asInstanceOf[Array[IntValue]],v,nodeVehicleRestrictions)
   }
 
-  def violatedNodes(vehicleOfNode:Array[IntValue],v:Long,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
+  def violatedNodes(vehicleOfNode:Array[IntValue],v:Int,nodeVehicleRestrictions:Iterable[(Int,Int)]):SetValue = {
 
     val n = vehicleOfNode.length
 
@@ -67,7 +67,7 @@ object NodeVehicleRestrictions{
 
     Filter(Array.tabulate(n)(node => {
       val forbiddenVehicleForNode = forbiddenVehicleForNodes(node)
-      if(forbiddenVehicleForNode == null) CBLSIntConst(0L)
+      if(forbiddenVehicleForNode == null) CBLSIntConst(0)
       else BelongsTo(vehicleOfNode(node),forbiddenVehicleForNode)}
     ))
   }
@@ -85,7 +85,7 @@ object NodeVehicleRestrictions{
  *                            and maintain to the degree of violation of each vehicle
  */
 class NodeVehicleRestrictions(routes:ChangingSeqValue,
-                              v:Long,
+                              v:Int,
                               nodeVehicleRestrictions:Iterable[(Long,Long)],
                               violationPerVehicle:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget {

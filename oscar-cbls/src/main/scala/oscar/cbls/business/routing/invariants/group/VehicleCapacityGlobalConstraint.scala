@@ -14,7 +14,7 @@ import oscar.cbls.core.propagation.Checker
 
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
-            v: Long,
+            v: Int,
             deltaAtNode: Array[Long],
             maxCapacity: Long,
             violation: Array[CBLSIntVar],
@@ -23,7 +23,7 @@ object VehicleCapacityGlobalConstraint {
 }
 
 class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
-                                      v: Long,
+                                      v: Int,
                                       deltaAtNode: Array[Long],
                                       maxCapacity: Long,
                                       violation: Array[CBLSIntVar],

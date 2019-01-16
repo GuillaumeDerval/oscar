@@ -28,8 +28,8 @@ import scala.util.Random
   * @author fabian.germeau@student.vinci.be
   */
 object ColorGenerator {
-  def generateRandomColors(number:Long,alpha:Long = 255L): Array[Color] ={
-    Array.fill(number)(new Color(Random.nextInt(256L),Random.nextInt(256L),Random.nextInt(256L)))
+  def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={
+    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256)))
   }
 
   /**
@@ -38,9 +38,9 @@ object ColorGenerator {
     * @param exp the current base value
     * @return 
     */
-  def getMaxColorNumber(number:Long,exp:Long = 1L):Long = {
-    if(Math.pow(exp,3L) < number)
-      getMaxColorNumber(number,exp+1L)
+  def getMaxColorNumber(number:Int,exp:Int = 1):Int = {
+    if(Math.pow(exp,3) < number)
+      getMaxColorNumber(number,exp+1)
     else
       exp
   }
@@ -50,17 +50,17 @@ object ColorGenerator {
     * @param hash the hashcode
     * @return
     */
-  def generateColorFromHash(hash:Long): Color = {
+  def generateColorFromHash(hash:Int): Color = {
     val absHash = Math.abs(hash)
-    val r = absHash%255L
-    val g = 255L - (absHash/255L)%255L
-    val b = ((absHash/255L)/255L)%255L
+    val r = absHash%255
+    val g = 255 - (absHash/255)%255
+    val b = ((absHash/255L)/255)%255
     new Color(r,g,b)
   }
 
 
   def getAverageColor(colors:List[Color]): Color = {
-    var (r,g,b) = (0L,0L,0L)
+    var (r,g,b) = (0,0,0)
     for(c <- colors){
       r += c.getRed
       g += c.getGreen
