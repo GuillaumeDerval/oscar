@@ -87,7 +87,7 @@ case class Cumulative(indices: Array[Long],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       remove(OldVal, duration(index).value, amount(index).value, index)
@@ -165,7 +165,7 @@ case class CumulativeNoSet(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       remove(OldVal, duration(index).value, amount(index).value, index)

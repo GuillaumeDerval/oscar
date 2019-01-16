@@ -106,7 +106,7 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
   var miax = if (firsts.isEmpty) default else vars(h.getFirst).value
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     //mettre a jour le heap
     h.notifyChange(index)
 

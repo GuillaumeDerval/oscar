@@ -92,7 +92,7 @@ class ForwardCumulativeIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   for(i <- lastPointOfVehicle) i.setDefiningInvariant(this)
 
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Long, OldVal: Long, NewVal: Long){
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     toUpdateZonesAndVehicleStartAfter match {
       case None => ;
       case Some((toUpdateZones,vehicleLocation)) =>

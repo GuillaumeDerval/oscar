@@ -130,7 +130,7 @@ case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint
   violation.setDefiningInvariant(this)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     violation := (if (left.value == right.value) 1L else 0L)
   }
 
@@ -198,7 +198,7 @@ case class BoolEQInv(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     val other = if(a==v) b else a
     if((NewVal>0L && other.value >0L) || (NewVal==0L && other.value ==0L)){
       this := 0L

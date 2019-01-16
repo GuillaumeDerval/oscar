@@ -46,7 +46,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
   violation.setDefiningInvariant(this)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     violation := (if (set.value.contains(v.value)) 0L else 1L)
   }
 
@@ -115,7 +115,7 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Long])
 
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
       try{
         violation := dists(NewVal-v.min)
       }catch{
@@ -178,7 +178,7 @@ case class BelongsToConstCaching(v: IntValue, set: Set[Long])
 
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if(dists.contains(NewVal)) {
       violation := dists(NewVal)
     }else {

@@ -140,7 +140,7 @@ with SetNotificationTarget{
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     //mettre a jour le heap
     h.notifyChange(index)
     this := vars(h.getFirst).value

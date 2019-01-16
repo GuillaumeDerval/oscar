@@ -94,7 +94,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]]) extends I
   }
 
  @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
    assert(OldVal != NewVal)
    for(r <- table.indices) {
      val row = table(r)

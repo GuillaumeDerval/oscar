@@ -197,7 +197,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
   this := computeFromScratch(originalSeq.value, index.value)
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Long, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     require(v == index)
     if(NewVal >= originalSeq.value.size  && OldVal >= originalSeq.value.size) return
     if(Math.abs(OldVal-NewVal) > shiftLimitBeforeRecompute){

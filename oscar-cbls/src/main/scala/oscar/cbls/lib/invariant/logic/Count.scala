@@ -38,7 +38,7 @@ case class SparseCount(values: Array[IntValue], counts: Map[Long,CBLSIntVar])
   for(c <- counts.values) c.setDefiningInvariant(this)
     
    @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
     counts.get(OldVal).foreach(c => c :-= 1L)
     counts.get(NewVal).foreach(c => c :+= 1L)
@@ -69,7 +69,7 @@ case class DenseCount(values: Array[IntValue], counts: Array[CBLSIntVar], offset
   for (c <- counts) { c.setDefiningInvariant(this) }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
     counts(OldVal + offset) :-= 1L
     counts(NewVal + offset) :+= 1L
@@ -112,7 +112,7 @@ case class ConstCount(values: Array[IntValue], c: Long)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if(NewVal == c){
       this :+= 1L
     }else if(OldVal == c){

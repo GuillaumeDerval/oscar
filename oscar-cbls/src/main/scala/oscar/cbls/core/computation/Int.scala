@@ -62,7 +62,7 @@ object IntValue {
 }
 
 trait IntNotificationTarget{
-  def notifyIntChanged(v: ChangingIntValue, id: Long, OldVal: Long, NewVal: Long)
+  def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit
 }
 
 /**An IntVar is a variable managed by the [[oscar.cbls.core.computation.Store]] whose type is integer.
@@ -141,7 +141,7 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
         val e = currentElement.elem
         val inv:IntNotificationTarget = e._1.asInstanceOf[IntNotificationTarget]
         assert({this.model.notifiedInvariant=inv.asInstanceOf[Invariant]; true})
-        inv.notifyIntChanged(this,e._2,old,mNewValue)
+        inv.notifyIntChanged(this, e._2, old, mNewValue)
         assert({this.model.notifiedInvariant=null; true})
         //we go to the next to be robust against invariant that change their dependencies when notified
         //this might cause crash because dynamicallyListenedInvariants is a mutable data structure
@@ -345,7 +345,7 @@ class IdentityInt(toValue:CBLSIntVar, fromValue:IntValue) extends Invariant with
 
   toValue := fromValue.value
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     toValue := NewVal
   }
 

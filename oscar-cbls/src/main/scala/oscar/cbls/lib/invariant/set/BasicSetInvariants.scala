@@ -341,7 +341,7 @@ case class MakeSet(on: SortedSet[IntValue])
   this := SortedSet.empty[Long] ++ counts.keySet
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(on.contains(v), "MakeSet notified for non interesting var :" + on.toList.exists(_ == v) + " " + on.toList)
 
     assert(OldVal != NewVal)
@@ -398,7 +398,7 @@ case class Interval(lb: IntValue, ub: IntValue)
     for (i <- lb.value to ub.value) this.insertValue(i)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if (v == lb) {
       if (OldVal < NewVal) {
         //intervale reduit
@@ -505,7 +505,7 @@ case class Singleton(v: IntValue)
     assert(this.value.head == v.value)
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(v == this.v)
     //ici, on propage tout de suite, c'est les variables qui font le stop and go.
     this.deleteValue(OldVal)
@@ -580,7 +580,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
   registerStaticAndDynamicDependenciesNoID(v, set)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this := (if (set.value.contains(NewVal)) 1L else 0L)
   }
 

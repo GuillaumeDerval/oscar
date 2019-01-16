@@ -122,7 +122,7 @@ class MapThroughArray(seq:ChangingSeqValue,
     digestUdpate(changes : SeqUpdate)
   }
 
-  override def notifyIntChanged(v : ChangingIntValue, id : Long, OldVal : Long, NewVal : Long) : Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     val impactedValue = id
     for(impactedPosition <- seq.value.positionsOfValue(impactedValue)){
       remove(impactedPosition)

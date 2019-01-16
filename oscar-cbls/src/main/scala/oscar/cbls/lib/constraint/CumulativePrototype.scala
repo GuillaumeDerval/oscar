@@ -88,7 +88,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if(index == -1L){
       updateVarViolation(0L,horizon)
     }else if (start(index) == v && amount(index).value >0L) {

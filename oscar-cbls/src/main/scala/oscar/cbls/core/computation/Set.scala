@@ -21,6 +21,7 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls
 import oscar.cbls.algo.dll._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.rb.RedBlackTreeMap
@@ -146,19 +147,20 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
 
   private def createValueWiseMechanicsIfNeeded(){
     if(valueToValueWiseKeys == null){
-      valueToValueWiseKeys = Array.tabulate(this.domain.max - this.domain.min + 1L)(_ => new DoublyLinkedList[ValueWiseKey]())
+      val nbValues = this.domain.max - this.domain.min + 1L
+      valueToValueWiseKeys = Array.tabulate(cbls.longToInt(nbValues))(_ => new DoublyLinkedList[ValueWiseKey]())
     }
   }
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
-  private[this] val offsetForValueWiseKey = domain.min
+  private[this] val offsetForValueWiseKey = cbls.longToInt(domain.min)
 
   @inline
-  def addToValueWiseKeys(key:ValueWiseKey,value:Long):DLLStorageElement[ValueWiseKey] = {
+  def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {
     valueToValueWiseKeys(value - offsetForValueWiseKey).addElem(key)
   }
 
   @inline
-  private def valueWiseKeysAtValue(value:Long):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(value - offsetForValueWiseKey)
+  private def valueWiseKeysAtValue(value:Long):DoublyLinkedList[ValueWiseKey] = valueToValueWiseKeys(cbls.longToInt(value - offsetForValueWiseKey))
 
   override def performPropagation(){performSetPropagation()}
 
@@ -326,8 +328,8 @@ trait SetNotificationTarget extends PropagationElement{
 
 class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
-  val sizeOfSet = setValue.max - setValue.min +1L
-  val offset = setValue.min
+  val sizeOfSet = cbls.longToInt(setValue.max - setValue.min +1L)
+  val offset = cbls.longToInt(setValue.min)
   var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
 
   def performRemove(){
@@ -347,14 +349,17 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
 
   def addToKey(value:Long) {
     //TODO: change to assert
-    require(valueToKeyArray(value) == null)
-    valueToKeyArray(value) = setValue.addToValueWiseKeys(this,value)
+
+    val intValue = cbls.longToInt(value)
+    require(valueToKeyArray(intValue) == null)
+    valueToKeyArray(intValue) = setValue.addToValueWiseKeys(this,intValue)
   }
 
   def removeFromKey(value:Long){
-    val k = valueToKeyArray(value)
+    val intValue = cbls.longToInt(value)
+    val k = valueToKeyArray(intValue)
     k.delete()
-    valueToKeyArray(value) = null
+    valueToKeyArray(intValue) = null
   }
 }
 

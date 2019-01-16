@@ -45,7 +45,7 @@ case class And(vars: Iterable[IntValue])
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this :+= NewVal - OldVal
   }
 
@@ -99,7 +99,7 @@ case class Or(vars: Array[IntValue])
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if(vars.exists(_.value == 0L)) {
       this := 0L
     }else{
@@ -131,7 +131,7 @@ case class Bool2Int(v: IntValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this := (if(NewVal == 0L) 1L else 0L)
   }
 }
@@ -155,7 +155,7 @@ case class BoolLEInv(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this :=
       (if(v == a){
         if(NewVal > 0L && b.value == 0L){
@@ -191,7 +191,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this :=
       (if(v == a){
         if(NewVal == 0L && b.value>0L)
@@ -227,7 +227,7 @@ case class XOR(a: IntValue, b:IntValue)
   registerStaticAndDynamicDependency(b)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
       if(this.value > 0L){
         this := 0L
@@ -259,7 +259,7 @@ case class XORArray(vars: Array[IntValue])
   registerStaticAndDynamicDependencyArrayIndex(vars)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if((NewVal > 0L && OldVal == 0L) || (NewVal == 0L && OldVal > 0L)){
       if(this.value > 0L){
         this := 0L
@@ -295,7 +295,7 @@ case class Not(a: IntValue)
   registerStaticAndDynamicDependency(a)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this := (if(NewVal > 0L) 0L else 1L)
   }
 }

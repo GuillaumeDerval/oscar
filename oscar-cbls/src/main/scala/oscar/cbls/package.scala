@@ -25,6 +25,7 @@ import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.modeling.{ModelingAPI, NeighborhoodOps}
 
+import scala.collection.immutable.NumericRange
 import scala.language.implicitConversions
 
 /**
@@ -243,5 +244,7 @@ package object cbls extends ModelingAPI{
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
   implicit def longToInt(l:Long):Int = Math.toIntExact(l)
   implicit def intToLong(i:Int):Long = i
+
+  implicit def longRangeToDomain(r:NumericRange.Inclusive[Long]):Domain = DomainRange(r.min,r.max)
 
 }

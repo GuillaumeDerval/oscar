@@ -467,11 +467,6 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRange(variables:Iterable[IntValue]):Range = {
-    val (min,max) = getMinMaxBounds(variables)
-    min to max
-  }
-
   def getMinMaxBoundsInt(variables:Iterable[Long]):(Long,Long) = {
     var MyMax = Long.MinValue
     var MyMin = Long.MaxValue
@@ -482,24 +477,14 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRangeInt(variables:Iterable[Long]):Range = {
-    val (min,max) = getMinMaxBoundsInt(variables)
-    min to max
-  }
-
   def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Long,Long) = {
-    var MyMax = Long.MinValue
-    var MyMin = Long.MaxValue
+    var myMax = Long.MinValue
+    var myMin = Long.MaxValue
     for (v <- variables) {
-      if (MyMax < v.max) MyMax = v.max
-      if (MyMin > v.min) MyMin = v.min
+      if (myMax < v.max) myMax = v.max
+      if (myMin > v.min) myMin = v.min
     }
-    (MyMin, MyMax)
-  }
-
-  def getMinMaxRangeSet(variables:Iterable[SetValue]):Range = {
-    val (min,max) = getMinMaxBoundsSet(variables)
-    min to max
+    (myMin, myMax)
   }
 
   def arrayToString[T](a:Array[T]):String =

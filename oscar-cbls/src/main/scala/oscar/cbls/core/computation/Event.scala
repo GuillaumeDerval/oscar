@@ -172,7 +172,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
   if (ModifiedVars != null)
     for(variable <- ModifiedVars){variable.setDefiningInvariant(this)}
 
-  override def notifyIntChanged(v: ChangingIntValue, i: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
     scheduleForPropagation()
   }
 

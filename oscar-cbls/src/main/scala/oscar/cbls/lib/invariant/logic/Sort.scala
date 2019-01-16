@@ -65,7 +65,7 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   def GetForwardPerm(): Array[CBLSIntVar] = ForwardPerm
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (NewVal > OldVal) BubbleUp(v, index)
     else BubbleDown(v, index)
   }

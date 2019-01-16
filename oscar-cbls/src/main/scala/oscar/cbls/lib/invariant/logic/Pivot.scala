@@ -79,7 +79,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, i: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
     if (v == boundary) {
       //c'est le boundary
       if (NewVal > OldVal) {
@@ -151,7 +151,7 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (v == boundary) {
       //c'est le boundary
       assert(NewVal > OldVal, "SelectLESetQueue does not allow boundary to decrease")

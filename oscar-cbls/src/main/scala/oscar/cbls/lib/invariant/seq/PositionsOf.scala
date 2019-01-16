@@ -59,7 +59,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
     scheduleForPropagation()
   }
 
-  override def notifyIntChanged(v : ChangingIntValue, id : Long, OldVal : Long, NewVal : Long){
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     scheduleForPropagation()
   }
 

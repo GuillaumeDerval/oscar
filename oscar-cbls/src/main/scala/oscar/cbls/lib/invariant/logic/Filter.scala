@@ -43,7 +43,7 @@ case class Filter(values:Array[IntValue], cond:(Long=>Boolean)=_>0L)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v:ChangingIntValue,index:Long, OldVal:Long,NewVal:Long){
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     val OldCond = cond(OldVal)
     val NewCond = cond(NewVal)
     if(OldCond  && !NewCond) this.deleteValue(index)

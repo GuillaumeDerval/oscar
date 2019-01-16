@@ -47,11 +47,11 @@ object Domain{
   def apply(v:Iterable[Long]):Domain =
     v match{
       case r:Range => r
-      case s:SortedSet[Long] => s.firstKey to s.lastKey
+      case s:SortedSet[Long] => (s.firstKey, s.lastKey)
     }
 }
 
-sealed abstract class Domain extends Iterable[Long]{
+sealed abstract class Domain{
   def min: Long
   def max: Long
   def size: Long
@@ -64,9 +64,9 @@ sealed abstract class Domain extends Iterable[Long]{
 
   def union(d:Domain):Domain
 
-  override def iterator: Iterator[Long] = values.iterator
+  def iterator: Iterator[Long] = values.iterator
 
-  override def isEmpty: Boolean = size == 0L
+  def isEmpty: Boolean = size == 0L
 }
 
 
@@ -74,7 +74,7 @@ sealed abstract class Domain extends Iterable[Long]{
 case class DomainRange(override val min: Long, override val max: Long) extends Domain {
   if (min > max) throw new EmptyDomainException
   def contains(v:Long): Boolean = min <= v && max >= v
-  override def size: Int =
+  override def size: Long =
     if(min + Long.MaxValue <= max) Long.MaxValue
     else if(max==Long.MaxValue && min==Long.MinValue) Long.MaxValue
     else math.max(max-min+1L,0L)
@@ -115,7 +115,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
 case class DomainSet(val s:Set[Long]) extends Domain {
   override def min: Long = s.min
   override def max: Long = s.max
-  override def size: Int = s.size
+  override def size: Long = s.size
   if (min > max) throw new EmptyDomainException
 
   def contains(v:Long): Boolean = s.contains(v)
@@ -154,7 +154,7 @@ case class DomainSet(val s:Set[Long]) extends Domain {
 case object FullRange extends Domain{
   override def min: Long = Long.MinValue
   override def max: Long = Long.MaxValue
-  override def size: Int = Long.MaxValue
+  override def size: Long = Long.MaxValue
   override def randomValue(): Long = Random.nextInt()
   override def contains(v: Long): Boolean = true
   override def values: Iterable[Long] =  min to max
@@ -169,7 +169,7 @@ object PositiveOrNullRange extends DomainRange(0L, Long.MaxValue)
 case class SingleValueDomain(value:Long) extends Domain{
   override def min: Long = value
   override def max: Long = value
-  override def size: Int = 1L
+  override def size: Long = 1
   override def contains(v: Long): Boolean = v == value
 
   override def randomValue(): Long = value

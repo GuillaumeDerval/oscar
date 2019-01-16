@@ -88,7 +88,7 @@ case class AllDiff(variables: Iterable[IntValue])
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     valueMinusOffsetToNbOccurrence(OldVal + offset) :-= 1L
     valueMinusOffsetToNbOccurrence(NewVal + offset) :+= 1L
 

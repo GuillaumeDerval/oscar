@@ -68,7 +68,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   private val oldstarts = start.map(v => v.value)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, oldstart: Long, newstart: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldstart: Long, newstart: Long) {
     //TODO: This is not completely incremental (but still linear instead of quadratic)!
     val dur = duration(index)
     val oldend = oldstart + dur
@@ -164,7 +164,7 @@ case class Disjunctive(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, oldValue: Long, newValue: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long) {
     if(index <0L){
       //a duration has changed
       notifyDurChanged(index + nbTask,oldValue, newValue)
@@ -335,7 +335,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, oldValue: Long, newValue: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, oldValue: Long, newValue: Long) {
     if(index <0L){
       //a duration has changed
       notifyDurChanged(index + nbTask,oldValue, newValue)

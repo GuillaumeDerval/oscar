@@ -37,7 +37,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
   override def violation(v: Value): IntValue = Violation
   
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       profile.remove(OldVal, duration(index).value, amount(index).value)

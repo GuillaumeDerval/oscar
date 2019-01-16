@@ -50,7 +50,7 @@ case class SparseCluster(values:Array[IntValue], Clusters:SortedMap[Long,CBLSSet
   }
 
   @inline
-  override def notifyIntChanged(v:ChangingIntValue, index:Long, OldVal:Long,NewVal:Long){
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     val x:CBLSSetVar = Clusters.getOrElse(OldVal,null)
     if(x != null) x.deleteValue(index)
     val y:CBLSSetVar = Clusters.getOrElse(NewVal,null)
@@ -102,7 +102,7 @@ case class SparseCluster(values:Array[IntValue], Clusters:SortedMap[Long,CBLSSet
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v:ChangingIntValue,index:Long,OldVal:Long,NewVal:Long){
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
     clusters(OldVal).deleteValue(index)
     clusters(NewVal).insertValue(index)
@@ -154,7 +154,7 @@ case class TranslatedDenseCluster(values:Array[CBLSIntVar],  indicesArray:Array[
 
   //This method is called by each IntVar that is registered to the dynamic dependency graph.
   //We update the output variables incrementally based on this update.
-  override def notifyIntChanged(v:ChangingIntValue,index:Long,OldVal:Long,NewVal:Long){
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     assert(values(index) == v)
     clusters(OldVal).deleteValue(indicesArray(index))
     clusters(NewVal).insertValue(indicesArray(index))

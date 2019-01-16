@@ -42,7 +42,7 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if (v == ifVar) {
       if (NewVal > pivot && OldVal <= pivot) {
         //modifier le graphe de dependances
@@ -79,7 +79,7 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
  * @author renaud.delandtsheer@cetic.be
  * */
 case class ConstantIntElement(index: IntValue, inputArray: Array[Long])
-  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxRangeInt(inputArray))
+  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxBoundsInt(inputArray))
 
 /**
  * inputarray[index]
@@ -103,11 +103,11 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
   finishInitialization()
 
   override def performBulkComputation(bulkedVar: Array[IntValue]): Domain = {
-    InvariantHelper.getMinMaxRange(bulkedVar)
+    InvariantHelper.getMinMaxBounds(bulkedVar)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if (v == index) {
       //modifier le graphe de dependances
       KeyToCurrentVar.performRemove()
@@ -150,7 +150,7 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Long])
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
    // println(OldVal + " "+ NewVal)
     if(NewVal >= inputarray.length){
       println("something is wrong")
@@ -207,10 +207,10 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   }
 
   override def performBulkComputation(bulkedVar: Array[T]): Domain =
-    InvariantHelper.getMinMaxRange(bulkedVar)
+    InvariantHelper.getMinMaxBounds(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     internalDelete(OldVal)
     internalInsert(NewVal)
   }
@@ -304,7 +304,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(v == index)
     //modifier le graphe de dependances
     KeyToCurrentVar.performRemove()

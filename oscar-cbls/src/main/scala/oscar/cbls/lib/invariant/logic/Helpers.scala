@@ -46,7 +46,7 @@ class Int2Int(a:IntValue, fun:Long => Long, domain:Domain,cached:Boolean = false
   var cachedOut:Long = this.newValue
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(v == a)
     if(cached){
       if(NewVal == cachedIn) {
@@ -86,7 +86,7 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Doma
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this := fun(a.value,b.value)
   }
 
@@ -112,7 +112,7 @@ class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     scheduleForPropagation()
   }
 

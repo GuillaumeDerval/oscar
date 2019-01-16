@@ -56,7 +56,7 @@ class Sum(vars: Iterable[IntValue])
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this :+= NewVal - OldVal
   }
 
@@ -87,7 +87,7 @@ class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Long])
   finishInitialization()
  
 
-  override def notifyIntChanged(v: ChangingIntValue, idx: Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, idx: Int, OldVal: Long, NewVal: Long) {
     this :+= (NewVal - OldVal) * coeffs(idx)
   }
 
@@ -126,7 +126,7 @@ class Nvalue(x: Iterable[IntValue]) extends
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     ValueCount(OldVal + offset) -= 1L
     ValueCount(NewVal + offset) += 1L
 
@@ -174,7 +174,7 @@ class ExtendableSum(model: Store, domain: Domain)
     }
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     this :+= NewVal - OldVal
   }
 
@@ -215,7 +215,7 @@ with IntNotificationTarget{
     -myMax to myMax})
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Long, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(OldVal != NewVal)
     if (OldVal == 0L && NewVal != 0L) {
       NullVarCount -= 1L
