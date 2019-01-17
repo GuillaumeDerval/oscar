@@ -57,8 +57,8 @@ object TestGeometryPacking extends App{
 
   //declaring the decision variables; the XY of the center of the shapes
   val coordArray = Array.tabulate(nbShapes){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"circle_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"circle_" + i + ".y"))
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
   }
 
   //creating a set of constant shapes with center at 0,0
@@ -120,7 +120,7 @@ object TestGeometryPacking extends App{
 
   updateDisplay()
 
-  SingleFrameWindow.show(drawing,"searching for a packing without overlap",1300,1300)
+  SingleFrameWindow.show(drawing,"searching for a packing without overlap",1125,1400)
 
   //end of graphical stuff
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -143,7 +143,7 @@ object TestGeometryPacking extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def smallSlideY(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._2),"moveYSlave",
+  def smallSlideY(shapeID:Int) = NumericAssignNeighborhood(Array(coordArray(shapeID)._2),"moveYSlave",
     domainExplorer = new Slide(step=1,maxIt=20)
     //these are alternative methods for the numerical optimization
     // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)

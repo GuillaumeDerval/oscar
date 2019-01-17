@@ -30,13 +30,18 @@ import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store}
 
+/**
+  * This demo tries to monimize the distance between centers of shapes plus the overlap distance
+  * while keeping them all within a rectangle.
+  * it proceeds through local search (although a more symbolic insertion-based technique would be more efficient
+  */
 object TestGeometryPackingMinDistance extends App{
 
   val store = Store()
 
-  val nbCircle = 10
+  val nbShapes = 10
 
-  val radiusArray = Array.tabulate(nbCircle:Int){
+  val radiusArray = Array.tabulate(nbShapes:Int){
     i => 30*(i+1)
   }
 
@@ -51,78 +56,90 @@ object TestGeometryPackingMinDistance extends App{
     new Coordinate(0,0))).convexHull()
 
   //declaring the optimization model
-  val coordArray = Array.tabulate(nbCircle){ i =>
-    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"circle_" + i + ".x"),
-      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"circle_" + i + ".y"))
+  val coordArray = Array.tabulate(nbShapes){ i =>
+    (new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxX - radiusArray(i),"shape_" + i + ".x"),
+      new CBLSIntVar(store,radiusArray(i),radiusArray(i) to maxY - radiusArray(i),"shape_" + i + ".y"))
   }
 
-  val constantFiguresAt00 = Array.tabulate(nbCircle){i =>
+  val constantShapesAt00 = Array.tabulate(nbShapes){ i =>
         new CBLSGeometryConst(store,
           if(i%2 ==0) geometry.createRectangle(radiusArray(i)*2,radiusArray(i)*2)
           else geometry.createCircle(radiusArray(i),nbEdges = 30),
           "shape_" + i)
     }
 
-  val placedCirles = Array.tabulate(nbCircle){i =>
-    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),constantFiguresAt00(i))
+  //creating the shapes at the location taken fr omteh decision variables,
+  // this is obtained by applying a translation on the constant shapes
+  val placedShapes = Array.tabulate(nbShapes){ i =>
+    new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),constantShapesAt00(i))
   }
 
-  val intersectionAreasHalfMatrix:Array[Array[IntValue]] =
-    Array.tabulate(nbCircle)(cirleID1 =>
-      Array.tabulate(cirleID1)(cirleID2 =>
-        //TODO: this way of doing is very slow.
-        Area(store,Intersection(store,placedCirles(cirleID1),placedCirles(cirleID2),true))))
+  //this is about evaluating the overlap between shapes
 
-  val intersectionAreaFullMatrix:Array[Array[IntValue]] =
-    Array.tabulate(nbCircle)(cirleID1 =>
-      Array.tabulate(nbCircle)(cirleID2 =>
-        if(cirleID1 == cirleID2) 0
-        else intersectionAreasHalfMatrix(cirleID1 max cirleID2)(cirleID1 min cirleID2)))
+  //we first create an overlap half matrix (thus it is not a global constraint)
+  //also the overlap area is a slow-to-evaluate criterion for quantifying overlap
+  val overlapAreasHalfMatrix:Array[Array[IntValue]] =
+  Array.tabulate(nbShapes)(cirleID1 =>
+    Array.tabulate(cirleID1)(cirleID2 =>
+      Area(store,Intersection(store,placedShapes(cirleID1),placedShapes(cirleID2),true))))
 
-  val totalIntersectionArea:IntValue = new Sum(intersectionAreasHalfMatrix.flatMap(_.toList)).setName("totalOverlapArea")
+  val totalOverlapArea:IntValue = new Sum(overlapAreasHalfMatrix.flatMap(_.toList)).setName("totalOverlapArea")
 
-  val intersectionPerShape:Array[IntValue] = Array.tabulate(nbCircle)(circleID =>
-    Sum(intersectionAreaFullMatrix(circleID)).setName("overlapArea(shape_" + circleID + ")")
+  val overlapPerShape:Array[IntValue] = Array.tabulate(nbShapes)(shape1 =>
+    Sum(Array.tabulate[IntValue](nbShapes)(shape2 =>
+      if(shape1 == shape2) 0
+      else overlapAreasHalfMatrix(shape1 max shape2)(shape1 min shape2))).setName("overlapArea(shape_" + shape1 + ")")
   )
 
+  //bout the distances between centers of shapes
+
+  //these are the distances we consider, from shape to shape
   val relevantDistances = List((0,1),(1,2),(1,3),(2,4),(3,5),(4,5),(5,6))
 
   val distancesArray = relevantDistances.map({case (fromId,toId) => {
     val (x1, y1) = coordArray(fromId)
     val (x2, y2) = coordArray(toId)
-    Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2)))
+    Sqrt(Sum2(Square(x1 - x2),Square(y1 - y2))) //pytagore
   }})
 
   //val convexHullOfCircle1And3 = new ConvexHull(store, new Union(store, placedCirles(1),placedCirles(3)))
 
-  val obj:Objective = Sum2(totalIntersectionArea,new Sum(distancesArray))
+  val obj:Objective = Sum2(totalOverlapArea,new Sum(distancesArray))
   store.close()
 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val randomColors = ColorGenerator.generateRandomTransparentColors(nbCircle,175).toList
+  val randomColors = ColorGenerator.generateRandomTransparentColors(nbShapes,175).toList
 
-  val drawing = new GeometryDrawing(relevantDistances)
+  val drawing = new GeometryDrawing(relevantDistances) //this parameters specifies which centers are linked
 
   def updateDisplay() {
     val colorsIt = randomColors.toIterator
     drawing.drawShapes(shapes =
       (outerFrame,Some(Color.red),None,"")::
-        //(convexHullOfCircle1And3.value,Some(Color.blue),None,"convexHullOfCircle1And3")::
-        Array.tabulate(nbCircle)(circleID => (placedCirles(circleID).value,None, Some(colorsIt.next), intersectionPerShape(circleID).toString)).toList,
+        Array.tabulate(nbShapes)(circleID => (
+          placedShapes(circleID).value,
+          None,
+          Some(colorsIt.next),
+          overlapPerShape(circleID).toString)).toList,
       centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
 
   updateDisplay()
 
-  SingleFrameWindow.show(drawing,"Packing and minimizing some shape to shape distance",1300,1300)
+  SingleFrameWindow.show(drawing,"Packing and minimizing some shape to shape distance",1125,1400)
 
-  ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //end of graphical stuff
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //Start of search
 
   val flattenedCoordArray:Array[CBLSIntVar] = coordArray.flatMap(xy => List(xy._1,xy._2))
 
+  //declare a collection of neighborhoods
+
   def moveOneCoordNumeric = NumericAssignNeighborhood(flattenedCoordArray,"moveByOneCoord",
-    domainExplorer = new NewtonRaphsonMinimize(20, 10) //new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+    domainExplorer = new NewtonRaphsonMinimize(20, 10)
+    //new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -131,8 +148,9 @@ object TestGeometryPackingMinDistance extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def smallSlideY(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._2),"moveYSlave",
-    domainExplorer = new Slide(step=1,maxIt=20) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+  def smallSlideY(shapeID:Int) = NumericAssignNeighborhood(Array(coordArray(shapeID)._2),"moveYSlave",
+    domainExplorer = new Slide(step=1,maxIt=20)
+    // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
@@ -141,51 +159,65 @@ object TestGeometryPackingMinDistance extends App{
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def smallSlideX(circleID:Int) = NumericAssignNeighborhood(Array(coordArray(circleID)._1),"moveXSlave",
-    domainExplorer = new Slide(step=1,maxIt=20) // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
+  def smallSlideX(shapeID:Int) = NumericAssignNeighborhood(Array(coordArray(shapeID)._1),"moveXSlave",
+    domainExplorer = new Slide(step=1,maxIt=20)
+    // new NarrowingExhaustive(dividingRatio = 10, maxIt = 10)
     //new Exhaustive(step = 50,skipInitial = true,maxIt = 1000/50)
   )
 
-  def swapX = SwapsNeighborhood(coordArray.map(_._1),symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name = "swapXCoordinates")
+  def swapX = SwapsNeighborhood(
+    coordArray.map(_._1),
+    symmetryCanBeBrokenOnIndices = false,
+    adjustIfNotInProperDomain = true,
+    name = "swapXCoordinates")
 
-  def swapYSlave(circle1:Int, circle2:Int) = SwapsNeighborhood(Array(coordArray(circle1)._2,coordArray(circle2)._2), symmetryCanBeBrokenOnIndices = false, adjustIfNotInProperDomain = true, name ="swapYCoordinates")
+  def swapYSlave(shape1:Int, shape2:Int) =
+    SwapsNeighborhood(
+      Array(coordArray(shape1)._2,coordArray(shape2)._2),
+      symmetryCanBeBrokenOnIndices = false,
+      adjustIfNotInProperDomain = true,
+      name ="swapYCoordinates")
+
+  //now we declare more complex neighborhoods that are composites of the above
 
   def swapAndSlide = (swapX dynAndThen(swapMove => {
-    swapYSlave(swapMove.idI,swapMove.idJ) andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100)})) name "SwapAndSlide"
+    (swapYSlave(swapMove.idI,swapMove.idJ)
+       andThen Atomic(BestSlopeFirst(List(smallSlideX(swapMove.idI),smallSlideY(swapMove.idI))),_>100))})
+    ) name "SwapAndSlide"
 
-  def moveOneCircleXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveXAndThenY"
-  def moveOneCircleYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveYAndThenX"
+  def moveOneShapeXAndThenY = moveXNumeric dynAndThen (assignMode => smallSlideY(assignMode.id)) name "moveXAndThenY"
+  def moveOneShapeYAndThenX = moveYNumeric dynAndThen (assignMode => smallSlideX(assignMode.id)) name "moveYAndThenX"
 
   def moveOneCoordClassic = AssignNeighborhood(flattenedCoordArray,"moveByOneCoord")  //this one is awfully slow!!!
 
 
-  def moveToHole = ConstantMovesNeighborhood[MoveCircleTo](
+  def moveToHole = ConstantMovesNeighborhood[MoveShapeTo](
     () => {
-      val allCircles = placedCirles.map(_.value)
+      val allShapes = placedShapes.map(_.value)
 
-      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allCircles,outerFrame)
+      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allShapes,outerFrame)
 
-      allCircles.indices.flatMap(circleID => {
+      allShapes.indices.flatMap(circleID => {
 
         val oldX = coordArray(circleID)._1.value
         val oldY = coordArray(circleID)._2.value
 
         holes.map(hole => {
-          (newObj:Int) => new MoveCircleTo(circleID,hole._1,hole._2,oldX,oldY,newObj)
+          (newObj:Int) => new MoveShapeTo(circleID,hole._1,hole._2,oldX,oldY,newObj)
         })
       })
     },
     neighborhoodName = "toHole"
   )
 
-  class MoveCircleTo(val circleID:Int,targetX:Int,targetY:Int,oldX:Int,oldY:Int,newObj:Int)
+  class MoveShapeTo(val shapeID:Int, targetX:Int, targetY:Int, oldX:Int, oldY:Int, newObj:Int)
     extends EvaluableCodedMove(() => {
-      coordArray(circleID)._1 := (targetX max radiusArray(circleID)) min (maxX - radiusArray(circleID))
-      coordArray(circleID)._2 := (targetY max radiusArray(circleID)) min (maxY - radiusArray(circleID))
+      coordArray(shapeID)._1 := (targetX max radiusArray(shapeID)) min (maxX - radiusArray(shapeID))
+      coordArray(shapeID)._2 := (targetY max radiusArray(shapeID)) min (maxY - radiusArray(shapeID))
 
       () => {
-        coordArray(circleID)._1 := oldX
-        coordArray(circleID)._2 := oldY
+        coordArray(shapeID)._1 := oldX
+        coordArray(shapeID)._2 := oldY
       }
     },
       neighborhoodName = "toHole",
@@ -193,8 +225,8 @@ object TestGeometryPackingMinDistance extends App{
 
 
   def moveToHoleAndGradient =
-    moveToHole dynAndThen(moveCircleTo => new Atomic(
-      gradientOnOneShape(moveCircleTo.circleID),
+    moveToHole dynAndThen(moveShapeToMove => new Atomic(
+      gradientOnOneShape(moveShapeToMove.shapeID),
       _>10,
       stopAsSoonAsAcceptableMoves=true)) name "toHole&Gradient"
 
@@ -205,7 +237,10 @@ object TestGeometryPackingMinDistance extends App{
     selectVars = List(0,1),
     variableIndiceToDeltaForGradientDefinition = _ => 20,
     hotRestart = false,
-    linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)) //new Slide(step=20,maxIt=100)) // new NewtonRaphsonMinimize(5,40))
+    linearSearch = new NarrowingStepSlide(dividingRatio = 10, minStep = 1)
+    //new Slide(step=20,maxIt=100)
+    // new NewtonRaphsonMinimize(5,40)
+  )
 
   def swapAndGradient = swapX dynAndThen(swapMove => (
     swapYSlave(swapMove.idI,swapMove.idJ)
@@ -216,7 +251,7 @@ object TestGeometryPackingMinDistance extends App{
 
   val displayDelay:Long = 1000.toLong * 1000 * 1000 //1 seconds
   var lastDisplay = System.nanoTime()
-  val search = (Profile(BestSlopeFirst( //TODO: this is not the best approach for single shot neighborhoods such as gradient
+  val search = (Profile(BestSlopeFirst(
     List(
       Profile(gradientOnOneShape(0)),  //TODO: try gradient on multiple shapes at the same time.
       Profile(gradientOnOneShape(1)),
@@ -231,18 +266,25 @@ object TestGeometryPackingMinDistance extends App{
       Profile(moveToHole),
       Profile(moveToHoleAndGradient),
       Profile(moveOneCoordNumeric),
-      Profile(moveOneCircleXAndThenY),
+      Profile(moveOneShapeXAndThenY),
       Profile(swapAndSlide),
       Profile(swapAndGradient),
-      Profile(moveOneCircleYAndThenX)
+      Profile(moveOneShapeYAndThenX)
     ),
-    refresh=nbCircle*10))
-    onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),maxRestartWithoutImprovement = 2, obj)
-    onExhaustRestartAfter (RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),maxRestartWithoutImprovement = 2, obj)
-    afterMove {if(System.nanoTime() > lastDisplay + displayDelay) {
-    updateDisplay()
-    lastDisplay = System.nanoTime()
-  }
+    refresh=nbShapes*10))
+    onExhaustRestartAfter(
+      RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),
+      maxRestartWithoutImprovement = 2,
+      obj)
+    onExhaustRestartAfter (
+      RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),
+      maxRestartWithoutImprovement = 2,
+      obj)
+    afterMove {
+    if(System.nanoTime() > lastDisplay + displayDelay) {
+      updateDisplay()
+      lastDisplay = System.nanoTime()
+    }
   } showObjectiveFunction obj)
 
   // Thread.sleep(20000)
@@ -256,6 +298,7 @@ object TestGeometryPackingMinDistance extends App{
 
   println(search.profilingStatistics)
   println
-  println(intersectionPerShape.mkString("\n"))
-  println(totalIntersectionArea)
+  println(overlapPerShape.mkString("\n"))
+  println(totalOverlapArea)
+
 }
