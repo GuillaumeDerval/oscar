@@ -1,9 +1,10 @@
 package oscar.cp.core.variables
 
 import oscar.algo.Inconsistency
-
 import oscar.algo.reversible.{ReversibleInt, ReversibleSet}
 import oscar.cp.core.CPStore
+
+import scala.collection.mutable
 
 class CPIncrSeqVar(
                   final val store: CPStore,
@@ -37,6 +38,8 @@ class CPIncrSeqVar(
     .flatMap(seq => seq.map(a => (a, seq.toSet - a)))
     .toMap
 
+  private val mandatoryPathMap = new mutable.HashMap[(Option[Int], Set[Int]), (Int, Boolean)]()
+
   //Initial propagation:
   mandatoryCheck()
   removeUnfeasible()
@@ -47,16 +50,23 @@ class CPIncrSeqVar(
     */
   def isBound: Boolean = visitedEnd.value >= removedStart.value
 
-  //Feasability checks:
+  //Feasibility checks:
 
   /**
     * Checks that a feasible path exists between mandatory activities
     */
   def mandatoryCheck(): Unit = {
     if(!pathExists(lastVisited, currentTime, allMandatory.toSet)) throw Inconsistency
+    mandatoryPathMap.clear()
   }
 
   private def pathExists(l: Option[Int], t: Int, acts: Set[Int]): Boolean ={
+    //Looking in memoized data
+    if(mandatoryPathMap.contains((l, acts))){
+      val (tmap, res) = mandatoryPathMap((l, acts))
+      if(tmap <= t) return res
+    }
+
     //if set empty: A path exists
     if(acts.isEmpty) return true
 
@@ -64,16 +74,19 @@ class CPIncrSeqVar(
     for(a <- acts.filter(a => !prevDependencies.contains(a) || !acts.contains(prevDependencies(a)))){
       val arrival = math.max(t + transitions(l.getOrElse(a))(a), starts(a).min)
       val departure = arrival + durations(a).min
-      if(arrival > starts(a).max || departure > ends(a).max || departure > maxTime) return false
+      if(arrival > starts(a).max || departure > ends(a).max || departure > maxTime){
+        mandatoryPathMap((l, acts)) = (t, false)
+        return false
+      }
     }
 
     //Branching on activities
     for(a <- acts.filter(a => !prevDependencies.contains(a) || !acts.contains(prevDependencies(a)))){
-      //TODO: memoisation
       val departure = math.max(t + transitions(l.getOrElse(a))(a), starts(a).min) + durations(a).min
       if(pathExists(Some(a), departure, acts - a)) return true
     }
 
+    mandatoryPathMap((l, acts)) = (t, false)
     false
   }
 
