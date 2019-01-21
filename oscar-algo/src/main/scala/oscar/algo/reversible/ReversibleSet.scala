@@ -22,6 +22,8 @@ class ReversibleSet(context: ReversibleContext) extends Iterable[Int] {
   
   private val set = scala.collection.mutable.Set[Int]()
 
+  def contains(v: Int) = set.contains(v)
+
   def add(v: Int) = {
     if (set.add(v)) {
       context.trail {
