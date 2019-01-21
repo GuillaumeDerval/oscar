@@ -1,7 +1,7 @@
 package oscar.cbls.modeling
 
 import oscar.cbls._
-import oscar.cbls.core.search.{Move, Neighborhood, NoMoveNeighborhood, SupportForAndThenChaining}
+import oscar.cbls.core.search.{Best => _, _}
 import oscar.cbls.lib.search.combinators._
 import oscar.cbls.util.StopWatch
 
@@ -654,6 +654,16 @@ class NeighborhoodOps(n:Neighborhood){
    * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
   def acceptAll() = new WithAcceptanceCriterion(n, (_: Int, _: Int) => true)
+
+  /**
+    * Forces the use of a given objective function.
+    * this overrides the one that you might pass in the higher level
+    *
+    * @param a the combined neighborhood
+    * @param overridingObjective the objective to use instead of the given one
+    */
+  def withObjective(overridingObjective: Objective, reEvaluateObjective:Boolean = false)  =
+    new OverrideObjective(n, overridingObjective, reEvaluateObjective)
 
   /**
    * proposes a round-robin with that.

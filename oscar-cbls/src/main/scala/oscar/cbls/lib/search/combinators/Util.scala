@@ -131,18 +131,26 @@ class WithAcceptanceCriterion(a: Neighborhood, overridingAcceptanceCriterion: (I
  * @param a the combined neighborhood
  * @param overridingObjective the objective to use instead of the given one
  */
-class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends NeighborhoodCombinator(a) {
+class OverrideObjective(a: Neighborhood, overridingObjective: Objective, reEvaluateObjective:Boolean = false) extends NeighborhoodCombinator(a) {
   /**
    * the method that returns a move from the neighborhood.
    * The returned move should typically be accepted by the acceptance criterion over the objective function.
    * Some neighborhoods are actually jumps, so that they might violate this basic rule however.
    *
-   * @param obj the objective function. notice that it is actually a function. if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
+   * @param obj the objective function. notice that it is actually a function.
+    *            if you have an [[oscar.cbls.core.objective.Objective]] there is an implicit conversion available
    * @param acceptanceCriterion
    * @return
    */
   override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
-    getMove(overridingObjective, overridingObjective.value,acceptanceCriterion)
+    a.getMove(overridingObjective, overridingObjective.value,acceptanceCriterion) match {
+      case NoMoveFound => NoMoveFound
+      case MoveFound(m) =>
+        val objAfter = if (reEvaluateObjective) m.evaluate(overridingObjective) else Int.MaxValue
+        MoveFound(new Move(objAfter, neighborhoodName = m.neighborhoodName) {
+          override def commit(): Unit = m.commit()
+        })
+    }
 }
 
 
