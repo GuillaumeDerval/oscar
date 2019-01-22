@@ -39,7 +39,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
                                  degree:() => Long = ()=>1L,
                                  name:String = "RandomizeNeighborhood",
                                  searchZone:() => SortedSet[Long] = null,
-                                 valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain)
+                                 valuesToConsider:(CBLSIntVar,Long) => Iterable[Long] = (variable,_) => variable.domain.values)
   extends Neighborhood(name) with LinearSelectors{
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
@@ -53,7 +53,7 @@ case class RandomizeNeighborhood(vars:Array[CBLSIntVar],
       //We move everything
       for(i <- searchZone()){
 
-        toReturn = AssignMove(vars(i),selectFrom(vars(i).domain),i,Long.MaxValue) :: toReturn
+        toReturn = AssignMove(vars(i),selectFrom(vars(i).domain.values),i,Long.MaxValue) :: toReturn
       }
     }else{
       var touchedVars:Set[Long] = SortedSet.empty

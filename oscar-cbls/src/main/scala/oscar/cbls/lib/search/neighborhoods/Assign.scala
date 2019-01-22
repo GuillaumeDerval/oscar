@@ -16,8 +16,9 @@
 package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
-import oscar.cbls.core.computation.{Variable, CBLSIntVar}
+import oscar.cbls.core.computation.{Variable }
 import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls._
 
 
 /**
@@ -51,10 +52,10 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Long] = null,
+                              searchZone:() => Iterable[Int] = null,
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
-                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain,
+                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
@@ -153,10 +154,10 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "NumericAssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Long] = null,
+                              searchZone:() => Iterable[Int] = null,
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
-                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain,
+                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
                               domainExplorer:LinearOptimizer,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){

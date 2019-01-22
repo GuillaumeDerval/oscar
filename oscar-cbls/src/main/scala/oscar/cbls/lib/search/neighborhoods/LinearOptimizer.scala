@@ -4,6 +4,7 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
 import oscar.cbls.core.objective.Objective
 import oscar.cbls.lib.invariant.numeric.Sum2
+import oscar.cbls._
 import oscar.cbls.lib.search.neighborhoods.TestRN.maxIt
 import oscar.cbls.modeling.CBLSModel
 
@@ -375,7 +376,7 @@ object TestRN extends App{
   eval(new NarrowingExhaustive(100L, maxIt: Long))
 
 }
-
+/*
 object Paraboloide extends App{
 
   val m = new Store()
@@ -408,4 +409,4 @@ object Paraboloide extends App{
   search.doAllMoves(obj = obj)
 
   printModel()
-}
+}*/

@@ -57,7 +57,7 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  **/
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
-                             searchZone1:()=>Iterable[Long] = null,
+                             searchZone1:()=>Iterable[Int] = null,
                              searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,

@@ -96,7 +96,7 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]
         */
       val violationOfV = violation(v)
       val expectedViolation =
-        if (checkBounds.isDefinedAt(v.value)) 0.max(checkBounds(v.value) - bounds(v.value).value)
+        if (checkBounds.isDefinedAt(v.value)) 0L.max(checkBounds(v.value) - bounds(v.value).value)
         else 0L
       c.check(violationOfV.value == expectedViolation, Some("" + violationOfV + " == expectedViolation (" + expectedViolation + ")"))
     }

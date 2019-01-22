@@ -49,7 +49,7 @@ case class Cumulative(indices: Array[Long],
   with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizonPlus1 = profile.length
+  val horizonPlus1 : Long = profile.length
   assert(active.length == horizonPlus1)
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
@@ -132,7 +132,7 @@ case class CumulativeNoSet(start: Array[IntValue],
   with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizonPlus1 = profile.length
+  val horizonPlus1 : Long = profile.length
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
   val horizon = profile.length-1L

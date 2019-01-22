@@ -273,9 +273,9 @@ case class Minus(left: IntValue, right: IntValue)
  */
 case class MinusOffsetPos(left:IntValue, right:IntValue, offset: Long)
   extends IntInt2Int(left,right, (if(DomainHelper2.isSafeSub(left,right))
-                                      (l,r) => 0.max(l - r + offset)
-                                   else ((l: Long, r: Long) => 0.max(DomainHelper2.safeSub(l,r)+offset))),
-                                 0L to 0.max(DomainHelper2.safeAdd(DomainHelper2.safeSub(left.max, right.min),offset)))
+                                      (l,r) => 0L.max(l - r + offset)
+                                   else ((l: Long, r: Long) => 0L.max(DomainHelper2.safeSub(l,r)+offset))),
+                                 0L to 0L.max(DomainHelper2.safeAdd(DomainHelper2.safeSub(left.max, right.min),offset)))
 
 
 /**

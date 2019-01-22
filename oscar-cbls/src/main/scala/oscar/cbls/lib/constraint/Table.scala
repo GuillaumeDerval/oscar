@@ -19,13 +19,14 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.computation._
+import oscar.cbls.core.{ChangingIntValue, IntNotificationTarget, Invariant}
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{IntElement, IntElementNoVar}
 import oscar.cbls.lib.invariant.minmax.ArgMin
 import oscar.cbls.lib.invariant.numeric.{Dist, Step}
 import oscar.cbls.lib.invariant.set.TakeAny
+import oscar.cbls._
 
 
 /**

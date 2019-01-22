@@ -18,6 +18,7 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.CBLSIntVar
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
+import oscar.cbls._
 
 
 /**
@@ -40,7 +41,7 @@ import oscar.cbls.core.search.{Move, EasyNeighborhood}
  **/
 case class ShiftNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "ShiftNeighborhood",
-                             searchZone1:()=>Iterable[Long] = null,
+                             searchZone1:()=>Iterable[Int] = null,
                              maxShiftSize:Long = Long.MaxValue,
                              maxOffsetLength:Long = Long.MaxValue,
                              best:Boolean = false,

@@ -23,7 +23,7 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
-                                searchZone1:()=>Iterable[Long] = null,
+                                searchZone1:()=>Iterable[Int] = null,
                                 searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                                 searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,

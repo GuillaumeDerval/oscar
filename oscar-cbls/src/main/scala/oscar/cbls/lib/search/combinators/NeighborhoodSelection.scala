@@ -58,7 +58,7 @@ abstract class BestNeighborhoodFirst(l:List[Neighborhood],
   protected var tabuNeighborhoods = new BinomialHeap[Long](tabu(_),tabu.length)
 
   protected val neighborhoodHeap = new BinomialHeapWithMove[Long]((neighborhoodID:Long) => bestKey(neighborhoodArray(neighborhoodID)), neighborhoodArray.length)
-  neighborhoodArray.indices.foreach(neighborhoodHeap.insert)
+  neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhooID:Long = neighborhoodHeap.getFirst
   private def updateNeighborhodPerformances(neighborhooID:Long){
@@ -162,7 +162,7 @@ abstract class BestNeighborhoodFirstWithRestrictions(l:List[RestrictedNeighborho
   protected val neighborhoodHeap = new BinomialHeapWithMove[Long]((neighborhoodID:Long) =>
     bestKey(neighborhoodArray(neighborhoodID)._1), neighborhoodArray.length)
 
-  neighborhoodArray.indices.foreach(neighborhoodHeap.insert)
+  neighborhoodArray.indices.foreach((i : Int) => neighborhoodHeap.insert(i))
 
   private def getBestNeighborhoodID:Long = neighborhoodHeap.getFirst
   private def updateNeighborhodPerformances(neighborhooID:Long){

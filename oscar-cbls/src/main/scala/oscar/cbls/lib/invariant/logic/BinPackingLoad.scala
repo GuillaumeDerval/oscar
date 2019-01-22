@@ -1,7 +1,9 @@
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.core.computation._
+import oscar.cbls.core.{ChangingIntValue, IntNotificationTarget, Invariant }
 import oscar.cbls.core.propagation.Checker
+import oscar.cbls._
+import oscar.cbls.core.computation.InvariantHelper
 
 /**
   * Created by gustavbjordal on 27L/05L/1L6.

@@ -57,7 +57,7 @@ case class AllDiff(variables: Iterable[IntValue])
   private val N = N0 + offset
   private val range = 0L to N
 
-  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1L)((i: Long) => {
+  private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1L)((i: Int) => {
     val tmp = new CBLSIntVar(model,0L, 0L to n, "alldiff_count_of_value_" + (i - offset))
     tmp.setDefiningInvariant(this)
     tmp
@@ -131,7 +131,7 @@ case class AllDiff(variables: Iterable[IntValue])
     }
 
     var MyViol: Long = 0L
-    for (v <- range) MyViol += (0.max(myValueCount(v) - 1L))
+    for (v <- range) MyViol += (0L.max(myValueCount(v) - 1L))
     c.check(MyViol == violationVariable.value, Some("MyViol (" + MyViol
         + ") == violationVariable.value (" + violationVariable.value + ")"))
   }

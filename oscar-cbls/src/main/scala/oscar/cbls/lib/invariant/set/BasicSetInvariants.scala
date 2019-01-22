@@ -423,11 +423,11 @@ case class Interval(lb: IntValue, ub: IntValue)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value.size == 0.max(ub.value - lb.value + 1L),
+    c.check(this.value.size == 0L.max(ub.value - lb.value + 1L),
       Some("this.value.size (" + this.value.size
-        + ") == 0.max(ub.value (" + ub.value
+        + ") == 0L.max(ub.value (" + ub.value
         + ") - lb.value (" + lb.value + ") + 1L) ("
-        + 0.max(ub.value - lb.value + 1L) + ")"))
+        + 0L.max(ub.value - lb.value + 1L) + ")"))
     if (ub.value >= lb.value) {
       for (i <- lb.value to ub.value)
         c.check(this.value.contains(i),

@@ -21,6 +21,7 @@
 package oscar.cbls.lib.search
 
 import scala.util.Random
+import oscar.cbls._
 
 /**Provides a set of selectors to ease the development of search engines
   * @param isRandomized can be set to false if one wants a reproductible behavior of the search engine
@@ -241,7 +242,7 @@ trait LinearSelectors{
     val intarray:Array[Long] = new Array(N)
     for(i <- 0L until N) intarray(i)=i
     for(i <- 0L until N){
-      val other = selectFromRange(0L until N)
+      val other = selectFromRange(0 until N)
       val old = intarray(i)
       intarray(i) = intarray(other)
       intarray(other) = old

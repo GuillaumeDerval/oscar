@@ -5,6 +5,7 @@ import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.minmax.MaxArray
 import oscar.cbls.lib.invariant.numeric.MinusOffsetPos
+import oscar.cbls._
 
 case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], amount:Array[IntValue], limit:IntValue) extends Invariant with Constraint with IntNotificationTarget{
   

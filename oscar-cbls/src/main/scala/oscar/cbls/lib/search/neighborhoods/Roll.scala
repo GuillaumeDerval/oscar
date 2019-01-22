@@ -19,6 +19,7 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{InvariantHelper, CBLSIntVar}
 import oscar.cbls.core.search.{Move, EasyNeighborhood}
+import oscar.cbls._
 
 /**
  * This neighborhood will consider roll moves that roll the value of contiguous CBLSIntVar in the given array
@@ -42,7 +43,7 @@ import oscar.cbls.core.search.{Move, EasyNeighborhood}
 //TODO: also implement minimal roll size (we prefer to use swap instead of roll)
 case class RollNeighborhood(vars:Array[CBLSIntVar],
                             name:String = "RollNeighborhood",
-                            searchZone:()=>Set[Long] = null,
+                            searchZone:()=>Set[Int] = null,
                             bridgeOverFrozenVariables:Boolean = false,
                             maxShiftSize:Long=>Long = _ => Long.MaxValue, //the max size of the roll, given the ID of the first variable
                             //minRollSize:Long, //TODO
@@ -66,7 +67,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
       HotRestart(currentSearchZone, startIndice)
     else currentSearchZone
 
-    for (firstIndice: Long <- firstIndices) {
+    for (firstIndice: Int <- firstIndices) {
 
       val currentMaxShiftSize = maxShiftSize(firstIndice)
 

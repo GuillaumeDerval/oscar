@@ -158,7 +158,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
   def computeFlipCentersLargestFirst(isAllowed:Array[Boolean]):Iterable[(Long,Long,Long)] = {
     val flipCenters = computeFlipCenters(isAllowed)
     val allCentersInarray = flipCenters.toArray
-    val referenceArray = Array.tabulate(allCentersInarray.length)(i => i)
+    val referenceArray = Array.tabulate(allCentersInarray.length)(i => intToLong(i))
     new LazyMap(KSmallest.lazySort(referenceArray,id => -allCentersInarray(id)._3),id => allCentersInarray(id))
   }
 
@@ -166,7 +166,7 @@ case class WideningFlipNeighborhood(vars:Array[CBLSIntVar],
     val flipCenters = computeFlipCenters(isAllowed)
     val allCentersInArray = flipCenters.toArray
     val flipCenterCount = allCentersInArray.length
-    val referenceArray = Array.tabulate(allCentersInArray.length)(i => i)
+    val referenceArray = Array.tabulate(allCentersInArray.length)(i => intToLong(i))
     new LazyMap(KSmallest.lazySort(referenceArray,id => -(allCentersInArray(id)._1 * flipCenterCount + allCentersInArray(id)._2)),id => allCentersInArray(id))
   }
 

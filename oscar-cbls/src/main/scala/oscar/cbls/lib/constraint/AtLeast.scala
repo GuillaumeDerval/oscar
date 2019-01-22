@@ -110,7 +110,7 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntVal
 
     var MyViol: Long = 0L
     for (v <- bounds.keys) {
-      MyViol += 0.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0L))
+      MyViol += 0L.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0L))
     }
     c.check(Violation.value == MyViol,
       Some("Violation.value (" + Violation.value + ") == MyViol (" + MyViol + ")"))

@@ -18,6 +18,7 @@ package oscar.cbls.lib.search.neighborhoods
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, Move}
+import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
 
@@ -39,7 +40,7 @@ case class GradientComponent(variable:CBLSIntVar,
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
                            maxNbVars:Long = Integer.MAX_VALUE,
-                           selectVars:Iterable[Long],
+                           selectVars:Iterable[Int],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
