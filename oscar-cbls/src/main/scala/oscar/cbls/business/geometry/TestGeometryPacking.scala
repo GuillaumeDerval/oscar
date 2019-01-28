@@ -69,7 +69,7 @@ object TestGeometryPacking extends App{
       "shape_" + i)
   }
 
-  //creating the shapes at the location taken fr omteh decision variables,
+  //creating the shapes at the location taken from the decision variables,
   // this is obtained by applying a translation on the constant shapes
   val placedShapes = Array.tabulate(nbShapes){ i =>
     new Apply(store,new Translation(store:Store,coordArray(i)._1,coordArray(i)._2),constantShapesAt00(i))
