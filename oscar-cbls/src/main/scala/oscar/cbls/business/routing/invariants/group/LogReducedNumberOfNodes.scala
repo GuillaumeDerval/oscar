@@ -20,6 +20,7 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.{CBLSIntVar, Variable}
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
+import oscar.cbls._
 
 case class NodesOnSubsequence(nbNodes:Long,
                               level:Long,

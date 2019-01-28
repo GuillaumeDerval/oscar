@@ -14,7 +14,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
+/*
 /**
  * *****************************************************************************
  * Contributors:
@@ -75,3 +75,4 @@ object NonMoveableActivity {
   def apply(startDate: Long, duration: IntValue, planning: Planning, name: String = "") =
     new NonMoveableActivity(startDate, duration, planning, name)
 }
+*/

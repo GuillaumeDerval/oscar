@@ -1,10 +1,10 @@
 package oscar.cbls.business.scheduling.solver
-
+/*
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.core.computation.{Solution, Store}
 import oscar.cbls.lib.search.LinearSelectors
-
+*/
 /**
  * *****************************************************************************
  * OscaR is free software: you can redistribute it and/or modify
@@ -29,7 +29,7 @@ import oscar.cbls.lib.search.LinearSelectors
  *         by Renaud De Landtsheer
  * ****************************************************************************
  */
-
+/*
 
 /**
  * @param p
@@ -263,3 +263,4 @@ class IFlatIRelax(p: Planning,
   }
 
 }
+*/

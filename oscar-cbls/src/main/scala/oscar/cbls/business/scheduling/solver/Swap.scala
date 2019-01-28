@@ -1,5 +1,5 @@
 package oscar.cbls.business.scheduling.solver
-
+/*
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -148,4 +148,5 @@ case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEva
   }
 }
 
+*/
 */

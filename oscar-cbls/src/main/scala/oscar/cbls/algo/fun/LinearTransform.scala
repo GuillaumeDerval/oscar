@@ -17,19 +17,19 @@ package oscar.cbls.algo.fun
  */
 
 object LinearTransform{
-  val identity = new LinearTransform(0L,false)
-  def apply(offset:Long,minus:Boolean) = new LinearTransform(offset,minus)
+  val identity = new LinearTransform(0,false)
+  def apply(offset:Int,minus:Boolean) = new LinearTransform(offset,minus)
 }
 
 /**
  * linear transformer of position.
  * value => offset op value where op is + or minus, according to "boolean flip": true => - fase => +
  */
-class LinearTransform(val offset:Long,val minus:Boolean){
-  def apply(value:Long) = if(minus) offset - value else offset + value
-  def unApply(value:Long) = if(minus) offset - value else value - offset
+class LinearTransform(val offset:Int,val minus:Boolean){
+  def apply(value:Int) = if(minus) offset - value else offset + value
+  def unApply(value:Int) = if(minus) offset - value else value - offset
 
-  def shiftOnX(deltaOnFunction:Long):LinearTransform = {
+  def shiftOnX(deltaOnFunction:Int):LinearTransform = {
     LinearTransform(if(minus){offset + deltaOnFunction}else{offset - deltaOnFunction},minus)
   }
 
@@ -46,10 +46,10 @@ class LinearTransform(val offset:Long,val minus:Boolean){
     this.offset == that.offset && this.minus == that.minus
   }
 
-  def isIdentity:Boolean = offset == 0L && !minus
+  def isIdentity:Boolean = offset == 0 && !minus
 
   override def toString: String =
-    if(offset == 0L) {
+    if(offset == 0) {
       if (minus) "(x=>-x)" else "(x=>x)"
     }
     else "(x=>" + offset + (if (minus) "-" else "+") + "x)"

@@ -55,7 +55,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
 
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     scheduleForPropagation()
   }
 
@@ -86,7 +86,7 @@ class PositionsOfConst(v: SeqValue, a:Long)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     scheduleForPropagation()
   }
 

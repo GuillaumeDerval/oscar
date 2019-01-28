@@ -14,7 +14,7 @@ package oscar.examples.cbls.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.{Best, First}
@@ -117,3 +117,5 @@ class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
 
   print(myVRP)
 }
+
+*/

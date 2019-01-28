@@ -22,7 +22,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
 
   this := computeValueFromScratch(routes.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes:SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if(!digestUpdates(changes)) {
       this := computeValueFromScratch(changes.newValue)
     }
@@ -31,7 +31,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
   private def digestUpdates(changes:SeqUpdate):Boolean = {
 
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
 
@@ -43,7 +43,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
         }
 
         true
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if(!digestUpdates(prev)) false
@@ -82,7 +82,7 @@ case class MovingVehicles(routes:ChangingSeqValue, v:Int)
           true
         }
 
-      case x@SeqUpdateRemove(position: Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
         if(!digestUpdates(prev)) return false
 
         require(position != 0L, "cannot remove at pos zero in routing")

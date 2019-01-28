@@ -65,7 +65,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     * @param n the point queried.
    * @return true if the point is a depot, else false.
    */
-  def isADepot(n:Int): Boolean = { n < v }
+  def isADepot(n:Long): Boolean = { n < v }
 
   def kFirst(k: Long, values:(Long) => Iterable[Long], filter: Long => Long => Boolean = _ => _ => true)(node: Long): Iterable[Long] = {
     if (k >= n - 1L) return values(node).filter(filter(node))
@@ -79,7 +79,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     * @param n the point queried.
    * @return true if the point is still routed, else false.
    */
-  def isRouted(n:Int): Boolean = {routes.value.contains(n)}
+  def isRouted(n:Long): Boolean = {routes.value.contains(n)}
 
   /**
     * Returns if a given point is still routed.
@@ -87,7 +87,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     * @param n the point queried.
     * @return true if the point is not routed, else false.
     */
-  def isUnrouted(n:Int): Boolean = {!routes.value.contains(n)}
+  def isUnrouted(n:Long): Boolean = {!routes.value.contains(n)}
 
   /**
    * This function is intended to be used for testing only.
@@ -159,7 +159,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
       if(prevNodeOfNodes
     }
   }*/
-
+/*
   /**
     * Compute the previous node of all nodes in the routes.
     * If the node isn't routed or is a depot, his previous is n.
@@ -207,7 +207,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
       else{
         val node = it.next()
         if(node < v)
-          buildRoutePositionOfAllNode(it,0L,nodeToPosition ++ List(0L))
+          buildRoutePositionOfAllNode(it,0L,nodeToPosition ++ List(0))
         else
           buildRoutePositionOfAllNode(it,currentPosition+1L,nodeToPosition ++ List(currentPosition))
 
@@ -227,7 +227,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     }
     globalRoutePosition
   }
-
+*/
   /**
     * Redefine the toString method.
     * @return the VRP problem as a String.

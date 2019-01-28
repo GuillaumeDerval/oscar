@@ -4,7 +4,7 @@ import oscar.cbls.algo.search.Pairs
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.TTFMatrix
 import oscar.cbls.business.routing.model.extensions.TimeWindows
-
+import oscar.cbls._
 import scala.collection.immutable.HashSet
 
 /**
@@ -52,11 +52,11 @@ object TimeWindowHelper{
       timeMatrix.getTravelDuration(predecessor, earliestArrivalTimes(predecessor) + taskDurations(predecessor), node) == 0L
     }
 
-    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
+    Array.tabulate(vrp.n)(node => intToLong(node) -> HashSet(vrp.nodes.collect {
       case predecessor if areNodesParallelisable(predecessor,node) &&
         (Math.max(earliestLeavingTimes(predecessor), earliestLeavingTimes(node)) <= latestLeavingTimes(node)) &&
         predecessor != node =>
-        predecessor
+        intToLong(predecessor)
       case predecessor if !areNodesParallelisable(predecessor,node) &&
         (earliestLeavingTimes(predecessor) +
           timeMatrix.getTravelDuration(predecessor, earliestLeavingTimes(predecessor), node) + taskDurations(node)) <=
@@ -98,13 +98,13 @@ object TimeWindowHelper{
     val latestLeavingTimes = timeExtension.latestLeavingTimes
     val taskDurations = timeExtension.taskDurations
 
-    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
+    Array.tabulate(vrp.n)(node => intToLong(node) -> HashSet(vrp.nodes.collect {
       case successor if
         latestLeavingTimes(successor) >=
           (earliestLeavingTimes(node) + timeMatrix.getTravelDuration(node, earliestLeavingTimes(node), successor) +
           taskDurations(successor)) &&
         successor != node
-        => successor
+        => intToLong(successor)
     }: _*)).toMap
   }
 
@@ -142,7 +142,7 @@ object TimeWindowHelper{
         val destinations = keys.map(_.last).distinct
 
         val startingNodes = vrp.nodes.collect {
-          case node if origins.contains(node) && !destinations.contains(node) => node
+          case node if origins.contains(node) && !destinations.contains(node) => intToLong(node)
         }
         require(startingNodes.nonEmpty, "No starting nodes in your maxDetours couples. You may have introduce some cycle.")
         startingNodes.toList

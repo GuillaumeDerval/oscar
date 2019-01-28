@@ -19,6 +19,7 @@ package oscar.cbls.visual.FunctionGraphic
 
 import java.awt.{BorderLayout, Dimension}
 import javax.swing._
+import oscar.cbls._
 
 /**
   * This abstract class represent the JInternalFrame that will contain

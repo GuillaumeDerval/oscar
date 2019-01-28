@@ -1,13 +1,5 @@
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls.Store
-import oscar.cbls.core.computation.{CBLSIntVar, IntValue}
-import oscar.cbls.core.objective.Objective
-import oscar.cbls.lib.invariant.numeric.Sum2
-import oscar.cbls._
-import oscar.cbls.lib.search.neighborhoods.TestRN.maxIt
-import oscar.cbls.modeling.CBLSModel
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -309,7 +301,7 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Long, maxIt: Long) extends Line
       }
 
       val slope:Double = (fPdx - fMdx).toDouble / (2L*dXForDetivativeEvalution)
-      val newX = (x - (f / slope)).toInt
+      val newX = (x - (f / slope)).toLong
       if(x == newX) return (x,f)
       x = newX
       fdx = f
@@ -341,19 +333,19 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
       val f = myObj(x)
       val fpdx = myObj(x + dXForDetivativeEvalution)
 
-      ((fpdx - f).toDouble / dXForDetivativeEvalution) toInt
+      ((fpdx - f).toDouble / dXForDetivativeEvalution) toLong
     }
 
     new NewtonRaphsonRoot(dXForDetivativeEvalution: Long, maxIt: Long).search(startPos: Long, evaluate2(startPos), minValue: Long, maxValue: Long, evaluate2)
     (positionOfBestSoFar,bestObjSoFar)
   }
 }
-
+/*
 object TestRN extends App{
 
   def f1:Long => Long = x => {x*x - 150L*x + 5090L}
   def f2:Long => Long = x => {-150L*x + 5090L}
-  def f3:Long => Long = x => {(math.cos(x)*500L).toInt - 150L*x + 5090L}
+  def f3:Long => Long = x => {(math.cos(x)*500L).toLong - 150L*x + 5090L}
 
   val f = f3
   val maxIt = 100L
@@ -376,7 +368,7 @@ object TestRN extends App{
   eval(new NarrowingExhaustive(100L, maxIt: Long))
 
 }
-/*
+
 object Paraboloide extends App{
 
   val m = new Store()

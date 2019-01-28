@@ -25,7 +25,7 @@ import java.awt.geom.Rectangle2D
 import oscar.cbls.util.StopWatch
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape, VisualText}
-
+import oscar.cbls._
 import scala.collection.mutable.ListBuffer
 
 /** This abstract class represent the base structure for
@@ -366,7 +366,7 @@ class ObjFunctionGraphic() extends FunctionGraphic(){
     */
   def drawStatistics(): Unit ={
     val timeStep = diffAbs()/10L
-    val colorSums:Array[Map[Color,Long]] = Array.tabulate(10L)(n => Map[Color,Long]())
+    val colorSums:Array[Map[Color,Long]] = Array.tabulate(10)(n => Map[Color,Long]())
     var i = 0L
 
     while(i < xColorValues.size && Math.floor((xValues(i) - minAbs)/timeStep).toInt < 10L){

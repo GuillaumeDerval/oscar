@@ -4,6 +4,7 @@ import oscar.cbls.business.routing.model.VRP
 
 import scala.collection.immutable.{HashSet, List}
 import scala.collection.mutable
+import oscar.cbls._
 
 /**
   * Created by fg on 12L/09L/1L7.

@@ -15,12 +15,12 @@ package oscar.cbls.business.routing.neighborhood
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import oscar.cbls.algo.clique.Clique
+import oscar.cbls._
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
-import oscar.cbls.core.search.{EasyNeighborhood, EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-import scala.collection.immutable.{HashSet, SortedSet}
+import scala.collection.immutable.SortedSet
 
 /**
  * exchanges segments of different vehicles (not on the same vehicle!)

@@ -17,7 +17,7 @@ package oscar.cbls.benchmarks.vrp
 
 
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
-
+import oscar.cbls._
 import scala.util.Random
 
 object RoutingMatrixGenerator {
@@ -82,9 +82,9 @@ object RoutingMatrixGenerator {
                                   maxTaskDurationInSec: Long = 300L): (Array[Long],Array[Long],Array[Long],Array[Long]) ={
 
     def randomVehicleSelection = random.nextInt(v)
-    def randomIdleTime = random.nextLong(maxIdlingTimeInSec)
-    def randomExtraTravelTime = random.nextLong(maxExtraTravelTimeInSec)
-    def randomTaskDuration = random.nextLong(maxTaskDurationInSec)
+    def randomIdleTime = random.nextLong() % maxIdlingTimeInSec
+    def randomExtraTravelTime = random.nextInt() % maxExtraTravelTimeInSec
+    def randomTaskDuration = random.nextLong() % maxTaskDurationInSec
 
     val precedencesWithLonelyNodes = addLonelyNodesToPrecedences(n, precedences)
     val endOfLastActionOfVehicles = Array.fill(v)(0L)

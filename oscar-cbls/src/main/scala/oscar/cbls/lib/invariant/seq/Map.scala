@@ -27,7 +27,7 @@ object Map {
    * @return a sequence where the value at any position p is equal to mapArray(seq(p))
    */
   def apply(seq:ChangingSeqValue,mapArray:Array[Long]):MapConstantFun = {
-    new MapConstantFun(seq,mapArray,InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
+    new MapConstantFun(seq,(i => mapArray(i)),InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
   }
 
   /**
@@ -59,7 +59,7 @@ with SeqNotificationTarget{
   registerStaticAndDynamicDependency(seq)
   finishInitialization()
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     digestUdpate(changes : SeqUpdate)
   }
 
@@ -118,7 +118,7 @@ class MapThroughArray(seq:ChangingSeqValue,
   registerStaticAndDynamicDependencyArrayIndex(transform)
   finishInitialization()
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     digestUdpate(changes : SeqUpdate)
   }
 

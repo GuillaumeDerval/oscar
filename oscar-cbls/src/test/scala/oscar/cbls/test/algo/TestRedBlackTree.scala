@@ -1,5 +1,5 @@
 package oscar.cbls.test.algo
-
+/*
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -124,3 +124,4 @@ object TestRedBlackTree extends App{
   performRandomInsertAndRemoves()
   testExplorer()
 }
+*/

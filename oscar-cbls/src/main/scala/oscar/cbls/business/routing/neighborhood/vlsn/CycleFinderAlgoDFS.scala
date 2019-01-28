@@ -18,6 +18,7 @@
 
 package oscar.cbls.business.routing.neighborhood.vlsn
 
+import oscar.cbls._
 
 class CycleFinderAlgoDFS(graph:VLSNGraph,pruneOnReachability:Boolean) extends CycleFinderAlgo{
   private val nodes:Array[Node] = graph.nodes

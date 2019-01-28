@@ -18,7 +18,7 @@ package oscar.cbls.business.scheduling.model
 import oscar.cbls.core.computation.{CBLSSetVar, IntValue}
 
 import scala.collection.immutable.SortedSet
-
+/*
 /**
  * this is an abstract class representing a resource.
  * the purpose is to abstract away conflict identification and other stuff that are specific to each type of resource
@@ -69,3 +69,4 @@ abstract class Resource(planning: Planning, n: String) {
 
   def toAsciiArt(headerLength: Long): String
 }
+*/

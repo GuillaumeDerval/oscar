@@ -4,6 +4,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
+import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
 
@@ -27,7 +28,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
 
   protected var potentiallyRemovedNodes:SortedSet[Long] = SortedSet.empty
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val tmp = digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(
       changes,
       toUpdateZonesAndVehicleStartAfter,
@@ -82,7 +83,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
                                                                        previousSequence:IntSequence)
   :(Option[(RedBlackTreeMap[List[(Long,Long)]],VehicleLocation)],SortedSet[Long]) = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, posOfInsert : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, posOfInsert : Int, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfterInsert = vehicleLocationAfterPrev.push(s.oldPosToNewPos)
@@ -98,7 +99,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             (None, potentiallyRemovedPointsAfterPrev)
         }
 
-      case r@SeqUpdateRemove(pos : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val updatedZonesAfterRemove =
@@ -113,7 +114,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             (None, potentiallyRemovedPointsAfterPrev + r.removedValue)
         }
 
-      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), potentiallyRemovedPointsAfterPrev) =>
             val vehicleLocationAfterMove = vehicleLocationAfterPrev.push(m.oldPosToNewPos)
@@ -136,7 +137,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
       case SeqUpdateLastNotified(value : IntSequence) =>
         (toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints)
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Long) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode:Boolean, checkpointLevel:Int) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(prev, toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>
@@ -151,7 +152,7 @@ abstract class AbstractForwardCumulativeDimensionOnVehicle(routes:ChangingSeqVal
             (None, potentiallyRemovedPointsAfterPrev)
         }
 
-      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Long) =>
+      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level:Int) =>
         digestUpdatesAndUpdateVehicleStartPositionsAndSearchZoneToUpdate(u.howToRollBack,toUpdateZonesAndVehicleStartOpt, potentiallyRemovedPoints, previousSequence) match {
           //checkpoints are managed about the vehicleLocation exclusively
           case (Some((zonesAfterPrev, vehicleLocationAfterPrev)), removedPointsAfterPrev) =>

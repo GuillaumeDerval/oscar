@@ -57,7 +57,7 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
  **/
 case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "SwapsNeighborhood",
-                             searchZone1:()=>Iterable[Int] = null,
+                             searchZone1:()=>Iterable[Long] = null,
                              searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                              symmetryCanBeBrokenOnIndices:Boolean = true,
                              symmetryCanBeBrokenOnValue:Boolean = false,
@@ -77,12 +77,12 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
 
   override def exploreNeighborhood(initialObj: Long){
 
-    val firstIterationSchemeZone =
+    val firstIterationSchemeZone : Iterable[Long] =
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0L
-          vars.indices startBy firstVarIndice
-        } else vars.indices
+          0L until vars.length startBy firstVarIndice
+        } else 0L until vars.length
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val firstIterationScheme = symmetryClassOfVariables1 match {
@@ -98,7 +98,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
       firstVar = vars(firstVarIndice)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val secondIterationSchemeZone : Iterable[Long] = if (searchZone2ForThisSearch == null)0L until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
 
       val secondIterationScheme = symmetryClassOfVariables2 match {
         case None => secondIterationSchemeZone

@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.examples.cbls.queens
-
+/*
 import oscar.cbls._
 import oscar.cbls.lib.constraint.AllDiff
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
@@ -126,3 +126,4 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
     //println(m.stats)
   }
 }
+*/

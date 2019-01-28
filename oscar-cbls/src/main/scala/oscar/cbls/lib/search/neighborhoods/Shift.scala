@@ -41,7 +41,7 @@ import oscar.cbls._
  **/
 case class ShiftNeighborhood(vars:Array[CBLSIntVar],
                              name:String = "ShiftNeighborhood",
-                             searchZone1:()=>Iterable[Int] = null,
+                             searchZone1:()=>Iterable[Long] = null,
                              maxShiftSize:Long = Long.MaxValue,
                              maxOffsetLength:Long = Long.MaxValue,
                              best:Boolean = false,
@@ -60,7 +60,7 @@ case class ShiftNeighborhood(vars:Array[CBLSIntVar],
 
   override def exploreNeighborhood(){
     val searchZoneObject = if(searchZone1 == null)null else searchZone1()
-    val currentSearchZone = if(searchZone1 == null)vars.indices else searchZoneObject
+    val currentSearchZone = if(searchZone1 == null) 0L until vars.length else searchZoneObject
 
     val firstIndices =
       if(hotRestart && !best)HotRestart(currentSearchZone, startIndice)

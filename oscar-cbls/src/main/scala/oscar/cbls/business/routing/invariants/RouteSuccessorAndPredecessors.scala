@@ -61,7 +61,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
 
   computeAllFromScratch(routes.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
 
     val startValuesOfImpactedZone = computeStartValuesOfImpactedZone(changes:SeqUpdate)
     startValuesOfImpactedZone match{
@@ -85,7 +85,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
    */
   def computeStartValuesOfImpactedZone(changes:SeqUpdate):Option[SortedSet[Long]] = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         computeStartValuesOfImpactedZone(prev) match{
           case None => None
           case Some(startsOfImpactedZone) =>
@@ -94,7 +94,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
               + RoutingConventionMethods.routingSuccVal2Val(value,s.newValue,v))
         }
 
-      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         computeStartValuesOfImpactedZone(prev) match{
           case None => None
           case Some(startsOfImpactedZone) => Some(
@@ -104,7 +104,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
               m.afterValue+ RoutingConventionMethods.routingPredPos2Val(after,prev.newValue,v) + RoutingConventionMethods.routingSuccPos2Val(after,prev.newValue,v))
         }
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         val removedValue = r.removedValue
         computeStartValuesOfImpactedZone(prev) match{
           case None => None

@@ -147,7 +147,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
 
   affect(savedValues)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit ={
     if(!digestUpdates(changes)) {
       for(v <- 0L until this.v) recordTouchedVehicle(v)
       affect(computeValueFromScratch(changes.newValue))
@@ -170,7 +170,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
           digestUpdates(prev)
         }
 
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Long) =>
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         if(checkpointLevel == 0L) {
           require(checkpoint quickEquals this.checkpoint)
           restoreCheckpoint()
@@ -179,7 +179,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
           digestUpdates(r.howToRollBack)
         }
 
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if(!digestUpdates(prev)) return false
 
         val newSeq = changes.newValue
@@ -204,7 +204,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
         }
         true
 
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if(!digestUpdates(prev)) false
@@ -353,7 +353,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
           true
         }
 
-      case x@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         //on which vehicle did we remove?
         //on which vehicle did we insert?
         val removedValue = x.removedValue

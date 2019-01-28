@@ -24,7 +24,7 @@
  */
 
 package oscar.cbls.business.scheduling.model
-
+/*
 import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
@@ -92,3 +92,4 @@ object SuperActivity {
   def apply(start: Activity, end: Activity, name: String) = new SuperActivity(start, end, name)
   def apply(start: Activity, end: Activity) = new SuperActivity(start, end, "SuperActivity(" + start + "," + end + ")")
 }
+*/

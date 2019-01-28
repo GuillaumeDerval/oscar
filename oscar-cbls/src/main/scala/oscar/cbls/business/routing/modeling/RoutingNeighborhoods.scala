@@ -50,7 +50,7 @@ trait InsertPointAPI{
    *                      if you set to None this will not be used at all
    * @author renaud.delandtsheer@cetic.be
    */
-  def insertPointRoutedFirst(insertionPoints:()=>Iterable[Long],
+  def insertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
                              relevantSuccessorsToInsert: () => Long => Iterable[Long],
                              vrp: VRP,
                              neighborhoodName: String = "InsertPointRoutedFirst",
@@ -90,14 +90,14 @@ trait InsertPointAPI{
    * @author Florent Ghilain (UMONS)
    * @author yoann.guyot@cetic.be
    */
-  def insertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Long],
+  def insertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
                                relevantPredecessor: () => Long => Iterable[Long],
                                vrp: VRP,
                                neighborhoodName: String = "InsertPointUnroutedFirst",
                                hotRestart: Boolean = true,
                                selectNodeBehavior:LoopBehavior = First(),
                                selectInsertionPointBehavior:LoopBehavior = First(),
-                               nodeSymmetryClass:Option[Long => Long] = None,
+                               nodeSymmetryClass:Option[Int => Int] = None,
                                hotRestartOnNextSymmetryClass:Boolean = false,
                                positionIndependentMoves:Boolean = false) =
     InsertPointUnroutedFirst(unroutedNodesToInsert,
@@ -125,7 +125,7 @@ trait OnePointMoveAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def onePointMove(nodesToMove: () => Iterable[Long],
+  def onePointMove(nodesToMove: () => Iterable[Int],
                    relevantNewPredecessors: () => Long => Iterable[Long],
                    vrp:VRP,
                    neighborhoodName: String = "OnePointMove",
@@ -165,7 +165,7 @@ trait RemovePointAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def removePoint(relevantPointsToRemove:()=>Iterable[Long],
+  def removePoint(relevantPointsToRemove:()=>Iterable[Int],
                   vrp: VRP,
                   neighborhoodName:String = "RemovePoint",
                   selectNodeBehavior:LoopBehavior = First(),
@@ -190,7 +190,7 @@ trait RouteExchangeAPI{
    * It does not modifies the routes themselves. It just exchanges the vehicles
    * @author renaud.delandtsheer@cetic.be
    */
-  def routeExchange(firstVehicles:()=>Iterable[Long],
+  def routeExchange(firstVehicles:()=>Iterable[Int],
                     secondVehicles:()=>Long=>Iterable[Long],
                     vrp:VRP,
                     neighborhoodName: String = "RouteExchange",
@@ -230,7 +230,7 @@ trait SegmentExchangeAPI{
    */
   def segmentExchange(vrp: VRP,
                       relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
-                      vehicles:() => Iterable[Long],
+                      vehicles:() => Iterable[Int],
                       neighborhoodName:String = "SegmentExchange",
                       hotRestart:Boolean = true,
                       selectFirstVehicleBehavior:LoopBehavior = First(),
@@ -303,8 +303,8 @@ trait ThreeOptAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    */
-  def threeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be routed
-               relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
+  def threeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
+               relevantNeighbors:()=>Long=>Iterable[Int], //must be routed
                vrp: VRP,
                neighborhoodName:String = "ThreeOpt",
                selectInsertionPointBehavior:LoopBehavior = First(),
@@ -343,7 +343,7 @@ trait TwoOptAPI{
    * @author yoann.guyot@cetic.be
    * @author Florent Ghilain (UMONS)
    * */
-  def twoOpt(segmentStartValues:()=>Iterable[Long],
+  def twoOpt(segmentStartValues:()=>Iterable[Int],
              relevantNewSuccessors:()=>Long=>Iterable[Long],
              vrp: VRP,
              neighborhoodName:String = "TwoOpt",

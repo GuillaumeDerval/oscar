@@ -15,7 +15,7 @@ package oscar.examples.cbls.routing
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-
+/*
 import oscar.cbls.business.routing.model.{TTFConst, TTFMatrix}
 
 import scala.util.Random
@@ -348,3 +348,5 @@ object RoutingMatrixGenerator {
     Array.fill(v)(Math.max(random.nextInt(maxVehicleSize)+1,minVehicleSize))
   }
 }
+
+*/

@@ -1,5 +1,5 @@
 package oscar.cbls.business.scheduling.algo
-
+/*
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder.nonSolidCriticalPath
 import oscar.cbls.business.scheduling.model.{Activity, Deadlines, Planning, TotalResourcesOvershootEvaluation, VariableResources}
 import oscar.cbls.core.computation.{Solution, Store, Variable}
@@ -194,3 +194,4 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
     (gain, snapshot)
   }
 }
+*/

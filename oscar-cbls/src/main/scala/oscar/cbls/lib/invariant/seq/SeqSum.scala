@@ -41,7 +41,7 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
 
   val checkpointStack = new SeqCheckpointedValueStack[Long]()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := computeSumFromScratch(changes.newValue)
     }

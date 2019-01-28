@@ -34,7 +34,7 @@ case class Content(v:SeqValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if(!digestUpdates(changes)) {
       updateFromScratch(changes.newValue)
     }

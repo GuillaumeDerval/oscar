@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
@@ -204,3 +204,4 @@ object VRPTestingGlobalConstraint extends App {
   println(search.profilingStatistics)
 
 }
+*/

@@ -19,10 +19,11 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
-import oscar.cbls.core.computation._
+import oscar.cbls.core._
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.BelongsTo
+import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
 
@@ -46,7 +47,7 @@ object NodeVehicleRestrictions{
     violationPerVehicle
   }
 
-  def violatedNodes(routes:ChangingSeqValue,v:Int,nodeVehicleRestrictions:Iterable[(Long,Long)]):SetValue = {
+  def violatedNodes(routes:ChangingSeqValue,v:Int,nodeVehicleRestrictions:Iterable[(Int,Int)]):SetValue = {
     violatedNodes(VehicleOfNodes(routes,v).asInstanceOf[Array[IntValue]],v,nodeVehicleRestrictions)
   }
 
@@ -263,7 +264,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
     }
   }
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestUpdates(changes)) {
       setAllVehicleChangedSinceCheckpoint()
       for (vehicle <- vehicles) {
@@ -274,7 +275,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
 
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     changes match {
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel:Long) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel:Int) =>
 
         if(checkpointLevel == 0L){
           if (!digestUpdates(prev)) {
@@ -291,7 +292,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
           digestUpdates(prev)
         }
 
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, checkpointLevel:Long) =>
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, checkpointLevel:Int) =>
         if(checkpointLevel == 0L) {
           require(checkpoint quickEquals this.checkpoint)
           while (changedVehicleSinceCheckpoint != null) {
@@ -304,7 +305,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
         }else{
           digestUpdates(r.howToRollBack)
         }
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
 
         if (!digestUpdates(prev)) return false
@@ -317,7 +318,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
         setVehicleChangedSinceCheckpoint(vehicleOfInsert)
 
         true
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if (!digestUpdates(prev)) false
@@ -382,7 +383,7 @@ class NodeVehicleRestrictions(routes:ChangingSeqValue,
           true
         }
 
-      case x@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         //on which vehicle did we remove?
         if (!digestUpdates(prev)) return false
         val removedNode = x.removedValue

@@ -19,6 +19,8 @@
   ******************************************************************************/
 package oscar.cbls.core.computation
 
+import oscar.cbls._
+
 import scala.collection.immutable.{NumericRange, SortedSet}
 import scala.language.implicitConversions
 import scala.util.Random

@@ -33,7 +33,7 @@ case class Length(v: SeqValue,maxSequenceLength:Long = Long.MaxValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     this := changes.newValue.size
   }
 

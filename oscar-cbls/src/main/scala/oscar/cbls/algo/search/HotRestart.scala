@@ -16,7 +16,8 @@ package oscar.cbls.algo.search
   ******************************************************************************/
 
 import scala.collection.Iterator
-import scala.collection.immutable.SortedSet
+import scala.collection.immutable.{NumericRange, SortedSet}
+import oscar.cbls._
 
 /**
  * this proposes a set of methods to enable hot restart on iteration over an iterable.
@@ -32,27 +33,27 @@ object HotRestart {
     * @param pivot
     * @return
     */
-  def apply(it:Iterable[Int], pivot:Int):Iterable[Int] = {
+  def apply(it:Iterable[Long], pivot:Long):Iterable[Long] = {
     it match{
-      case r:Range => if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
-      case s:SortedSet[Int] => new ShiftedSet(s,pivot)
+      case r:NumericRange[Long] => if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
+      case s:SortedSet[Long] => new ShiftedSet(s,pivot)
       case _ => new ShiftedIterable(it, pivot)
     }
   }
 
-  def hotRestartPreserveSequence(it:Iterable[Int],pivot:Int) = new ShiftedIterable(it,pivot,true)
+  def hotRestartPreserveSequence(it:Iterable[Long],pivot:Long) = new ShiftedIterable(it,pivot,true)
 
-  def apply(r:Range, pivot:Int):Iterable[Int] =  if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
+  def apply(r:NumericRange[Long], pivot:Long):Iterable[Long] =  if (r contains pivot) new InstrumentedRange(r) startBy pivot else r
 
-  def apply(s:SortedSet[Int], pivot:Int):Iterable[Int] =  new ShiftedSet(s,pivot)
+  def apply(s:SortedSet[Long], pivot:Long):Iterable[Long] =  new ShiftedSet(s,pivot)
 }
 
-class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) extends Iterable[Int] {
-  override def iterator: Iterator[Int] = {
+class ShiftedIterable(it:Iterable[Long], pivot:Long, sequence:Boolean = false) extends Iterable[Long] {
+  override def iterator: Iterator[Long] = {
     if(sequence) {
       //splitting into two parts:
       val aboveIterator = it.iterator
-      def fetchHead: List[Int] = {
+      def fetchHead: List[Long] = {
         if (aboveIterator.hasNext) {
           val nextValue = aboveIterator.next()
           if (nextValue == pivot) List(nextValue)
@@ -85,8 +86,8 @@ class ShiftedIterable(it:Iterable[Int], pivot:Int, sequence:Boolean = false) ext
   }
 }
 
-class InstrumentedRange(r:Range){
-  def startBy (pivot:Int) = if (r contains pivot) new ShiftedRange(r.head, r.last,pivot, r.step) else r
+class InstrumentedRange(r:NumericRange[Long]){
+  def startBy (pivot:Long) = if (r contains pivot) new ShiftedRange(r.head, r.last,pivot, r.step) else r
 }
 
 
@@ -97,27 +98,27 @@ class InstrumentedRange(r:Range){
  * @param startBy
  * @param step
  */
-class ShiftedRange(val start:Int, val end:Int, val startBy:Int, val step:Long = 1) extends Iterable[Int]{
+class ShiftedRange(val start:Long, val end:Long, val startBy:Long, val step:Long = 1L) extends Iterable[Long]{
   if((start > startBy) || (startBy > end)) throw new Exception("ShiftedRange must contain startBy value ")
   if(step != 1) throw new Exception("only step of 1L is supported in ShiftedRange")
 
-  def getNextValue(a:Int) = {
+  def getNextValue(a:Long) = {
     if(a == end) start
     else a+1
   }
 
-  override def iterator: Iterator[Int] = new ShiftedRangeIterator(this)
+  override def iterator: Iterator[Long] = new ShiftedRangeIterator(this)
 
-  override def toArray[B >: Int](implicit evidence$1L: scala.reflect.ClassTag[B]): Array[B] = toList.toArray
+  override def toArray[B >: Long](implicit evidence$1L: scala.reflect.ClassTag[B]): Array[B] = toList.toArray
 
   override def toString(): String = "ShiftedRange(" + toList + ")"
 
 
-  class ShiftedRangeIterator(val s:ShiftedRange) extends Iterator[Int]{
+  class ShiftedRangeIterator(val s:ShiftedRange) extends Iterator[Long]{
     var currentValue = s.startBy
     var hasNext = true
 
-    def next(): Int = {
+    def next(): Long = {
       val tmp = currentValue
       currentValue = s.getNextValue(currentValue)
       if(currentValue == s.startBy) hasNext = false
@@ -126,15 +127,15 @@ class ShiftedRange(val start:Int, val end:Int, val startBy:Int, val step:Long = 
   }
 }
 
-class ShiftedSet(s:SortedSet[Int], pivot:Int) extends Iterable[Int] {
-  override def iterator: Iterator[Int] = {
+class ShiftedSet(s:SortedSet[Long], pivot:Long) extends Iterable[Long] {
+  override def iterator: Iterator[Long] = {
     new ShiftedIterator(s, pivot)
   }
 
-  class ShiftedIterator(s:SortedSet[Int], pivot:Int) extends Iterator[Int]{
-    var it:Iterator[Int] = s.iteratorFrom(pivot)
+  class ShiftedIterator(s:SortedSet[Long], pivot:Long) extends Iterator[Long]{
+    var it:Iterator[Long] = s.iteratorFrom(pivot)
     var first=true
-    var currentValue:Int = 0
+    var currentValue:Long = 0
     var currentValueReady = false
 
     /** returns true if a next value is available
@@ -165,7 +166,7 @@ class ShiftedSet(s:SortedSet[Int], pivot:Int) extends Iterable[Int] {
 
     override def hasNext: Boolean = internalMoveToNext()
 
-    override def next(): Int = {
+    override def next(): Long = {
       if(!internalMoveToNext()) throw new Error("no more elements to iterate")
       currentValueReady = false
       currentValue

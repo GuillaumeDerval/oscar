@@ -27,6 +27,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.{VRP, VehicleLocation}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls._
 
 /**
  * Removes two edges of routes, and rebuilds routes from the segments.
@@ -62,7 +63,7 @@ case class TwoOpt(segmentStartValues:()=>Iterable[Long],
 
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0L
+  var startIndice: Long = 0
 
   /**
    * Removes two edges of a route and flips the obtained segment before

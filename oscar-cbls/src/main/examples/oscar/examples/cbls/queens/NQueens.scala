@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.examples.cbls.queens
-
+/*
 import oscar.cbls._
 import oscar.cbls.modeling._
 import oscar.cbls.util.StopWatch
@@ -64,3 +64,4 @@ object NQueens extends CBLSModel with App with StopWatch{
 
   println(s.stats)
 }
+*/

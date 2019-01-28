@@ -16,7 +16,7 @@
  */
 
 package oscar.examples.cbls.wlp
-
+/*
 import oscar.cbls._
 
 import scala.language.postfixOps
@@ -61,3 +61,4 @@ object WarehouseLocation extends App{
   println(openWarehouses)
 
 }
+*/

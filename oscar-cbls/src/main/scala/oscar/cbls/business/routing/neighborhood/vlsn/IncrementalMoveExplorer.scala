@@ -18,6 +18,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
+import oscar.cbls._
 import oscar.cbls.core.search.{Neighborhood, _}
 
 abstract sealed class CachedExploration

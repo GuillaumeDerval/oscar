@@ -28,6 +28,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
+import oscar.cbls._
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
@@ -53,7 +54,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Long],
   val n = vrp.n
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0L
+  var startIndice: Long = 0
 
   override def exploreNeighborhood(initialObj: Long){
 

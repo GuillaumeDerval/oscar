@@ -239,7 +239,7 @@ package object cbls extends ModelingAPI{
   }
 
   // implicit conversion of Range towards a RangeHotRestart, to use the StartBy keyword
-  implicit def instrumentRange(r: Range): InstrumentedRange = new InstrumentedRange(r)
+  implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
 
   //this one has been added followingthe 32 to 64 bits port of oscar.cbls
   implicit def longToInt(l:Long):Int = Math.toIntExact(l)

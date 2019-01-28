@@ -19,7 +19,7 @@
   * @author fabian.germeau@student.vinci.be
   */
 package oscar.examples.cbls.routing
-
+/*
 import java.awt._
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
@@ -280,4 +280,5 @@ object DemoRoutingView extends StopWatch{
   }
 
 }
+*/
 */

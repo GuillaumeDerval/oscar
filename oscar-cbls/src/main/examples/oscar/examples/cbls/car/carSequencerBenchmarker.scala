@@ -1,5 +1,5 @@
 package oscar.examples.cbls.car
-
+/*
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -180,3 +180,4 @@ object carSequencerBenchmarker  extends CBLSModel with App {
   println(Benchmark.benchToStringSimple(obj, 5, List(search1,search2,search3, search4,search5,search6),verbose = 3))
 
 }
+*/

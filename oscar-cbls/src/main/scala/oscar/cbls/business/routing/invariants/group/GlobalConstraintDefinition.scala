@@ -5,6 +5,7 @@ import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
+import oscar.cbls._
 
 /**
   * @author Quentin Meurisse
@@ -33,7 +34,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
   private var stackDone = false // is the current bijection a stacked bijection or not
   private var prevRoutes = routes.newValue /* the route before teh last change. We use it
   in fromScratchToNode if the bijection is a stacked bijection*/
-  protected var vehicleSearcher: VehicleLocation = VehicleLocation((0L until v).toArray)
+  protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
   var currentCheckpointLevel : Long = -1L
   var currentCheckpointRoute : IntSequence = routes.newValue
@@ -215,7 +216,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
   }
 
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val updates = digestUpdates(changes)
     updates match{
       case None => for (vehicle <- vehicles){
@@ -294,7 +295,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
         val toReturn = new UpdatedValues()
         Some(toReturn)
 
-      case s@SeqUpdateInsert(value: Long, pos: Long, prev: SeqUpdate) =>
+      case s@SeqUpdateInsert(value: Long, pos: Int, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match {
           case None => None
@@ -311,7 +312,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
             Some(new UpdatedValues())
         }
 
-      case s@SeqUpdateRemove(pos: Long, prev: SeqUpdate) =>
+      case s@SeqUpdateRemove(pos: Int, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match {
           case None => None
@@ -330,7 +331,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
             Some(new UpdatedValues())
         }
 
-      case s@SeqUpdateMove(fromPosIncluded: Long, toPosIncluded: Long, afterPos: Long, flip: Boolean, prev: SeqUpdate) =>
+      case s@SeqUpdateMove(fromPosIncluded: Int, toPosIncluded: Int, afterPos: Int, flip: Boolean, prev: SeqUpdate) =>
         val prevUpdates = digestUpdates(prev)
         prevUpdates match{
           case None => None

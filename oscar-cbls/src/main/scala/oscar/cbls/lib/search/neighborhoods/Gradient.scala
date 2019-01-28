@@ -40,7 +40,7 @@ case class GradientComponent(variable:CBLSIntVar,
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
                            maxNbVars:Long = Integer.MAX_VALUE,
-                           selectVars:Iterable[Int],
+                           selectVars:Iterable[Long],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
@@ -98,8 +98,8 @@ case class GradientDescent(vars:Array[CBLSIntVar],
           (slope < 0L || ((oldVal - deltaForVar) > currentVar.min))
           && (slope > 0L || ((oldVal + deltaForVar) < currentVar.max))){
 
-          val bound1 = ((currentVar.max - oldVal) / slope).toInt
-          val bound2 = ((currentVar.min - oldVal) / slope).toInt
+          val bound1 = ((currentVar.max - oldVal) / slope).toLong
+          val bound2 = ((currentVar.min - oldVal) / slope).toLong
 
           val (minStep,maxStep) = if (bound1 < bound2) (bound1,bound2) else (bound2,bound1)
 
@@ -132,7 +132,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
       require(minStep < maxStep)
       def evaluateStep(step:Long):Long = {
         this.currentStep = step
-        val newObj = obj.assignVal(gradientDefinition.map(component => (component.variable, component.initiValue + (component.slope * step).toInt)))
+        val newObj = obj.assignVal(gradientDefinition.map(component => (component.variable, component.initiValue + (component.slope * step).toLong)))
         evaluateCurrentMoveObjTrueIfSomethingFound(newObj)
         newObj
       }
@@ -166,12 +166,12 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
 
   override def commit() {
     for(component <- gradientDefinition) {
-      component.variable := component.initiValue + (component.slope * step).toInt
+      component.variable := component.initiValue + (component.slope * step).toLong
     }
   }
 
   override def toString: String = {
-    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable + ":=" + (component.initiValue + (component.slope * step).toInt)).mkString(";")  + objToString + ")"
+    neighborhoodNameToString + "GradientMove(" + gradientDefinition.map(component => component.variable.toString + ":=" + (component.initiValue + (component.slope * step).toLong)).mkString(";")  + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)

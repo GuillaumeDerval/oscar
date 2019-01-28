@@ -92,7 +92,7 @@ class Profile(n: Long,maxh: Long,model:Store){
     while(cur != -1L){
       s += profile_start(cur)+"\t"
       l += profile_length(cur)+"\t"
-      h += profile_height(cur)+"\t"
+      h = h + profile_height(cur)+"\t"
       cur = profile_next(cur)
     }
     println(s)

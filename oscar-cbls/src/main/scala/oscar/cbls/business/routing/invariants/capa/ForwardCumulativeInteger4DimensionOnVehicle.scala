@@ -18,6 +18,7 @@ package oscar.cbls.business.routing.invariants.capa
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 object ForwardCumulativeInteger4DimensionOnVehicle {
   /**
@@ -61,7 +62,7 @@ object ForwardCumulativeInteger4DimensionOnVehicle {
     val content3AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default3ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default3ForUnroutedNodes), contentName + "3L at end of route " + vehicle))
     val content4AtEnd = Array.tabulate[CBLSIntVar](v)((vehicle: Int) => CBLSIntVar(routes.model, default4ForUnroutedNodes, Domain.coupleToDomain(minContent,maxContent).union(default4ForUnroutedNodes), contentName + "4L at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, 0L until n, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "last point of vehicle" + vehicle))
 
     new ForwardCumulativeInteger4DimensionOnVehicle(routes,n,v,op,
       content1AtStart,content2AtStart,content3AtStart,content4AtStart,

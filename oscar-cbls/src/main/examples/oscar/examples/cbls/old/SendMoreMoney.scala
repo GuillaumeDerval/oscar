@@ -20,7 +20,7 @@
 
 
 package oscar.examples.cbls.old
-
+/*
 import oscar.cbls._
 import oscar.cbls.lib.constraint.{EQ, NE}
 import oscar.cbls.lib.invariant.logic._
@@ -129,3 +129,4 @@ object SendMoreMoney extends LinearSelectorClass with StopWatch {
   }
 
 }
+*/

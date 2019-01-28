@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls._
 
 
 /**
@@ -26,7 +27,7 @@ case class RouteExchange(firstVehicles:()=>Iterable[Long],
   val n = vrp.n
 
   //the indice to start with for the exploration
-  var startFirstVehicle: Long = 0L
+  var startFirstVehicle: Long = 0
 
   var firstVehicle:Long = -1L
   var secondVehicle:Long = -1L

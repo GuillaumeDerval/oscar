@@ -34,7 +34,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, ove
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := changes.newValue.flip(true,true)
     }

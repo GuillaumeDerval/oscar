@@ -4,20 +4,20 @@ import java.awt.geom.Rectangle2D
 import java.awt.{Dimension, BorderLayout, Color}
 import java.awt.geom.Line2D.Double
 import javax.swing.JFrame
-
+import oscar.cbls._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualRectangle, VisualCircle, VisualLine, VisualShape}
 
 import scala.collection.immutable.SortedSet
 
-class WareHouseLocationWindow(deliveryCoordinates:Array[(Long,Long)],
-                              wareHouseCoordinates:Array[(Long,Long)],
+class WareHouseLocationWindow(deliveryCoordinates:Array[(Int,Int)],
+                              wareHouseCoordinates:Array[(Int,Int)],
                               distanceCostD2W:Array[Array[Long]],
                               warehouseCosts:Array[Long]){
 
   val visual = new WareHouseLocationMap(deliveryCoordinates,wareHouseCoordinates,distanceCostD2W,warehouseCosts)
 
-  def redraw(openWarehouses:SortedSet[Long],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
+  def redraw(openWarehouses:SortedSet[Int],boldChanges:Boolean=true,hideClosedWarehouses:Boolean = false){
     visual.redraw(openWarehouses,boldChanges,hideClosedWarehouses)
   }
   val frame = new JFrame()

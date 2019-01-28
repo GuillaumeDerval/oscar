@@ -14,7 +14,7 @@ package oscar.cbls.test.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
@@ -874,3 +874,4 @@ class InvariantTests extends FunSuite with Checkers {
   }
 }
 
+*/

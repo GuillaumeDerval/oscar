@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
@@ -199,3 +199,4 @@ object SimpleVRPWithTimeWindow extends App{
 
   println(search.profilingStatistics)
 }
+*/

@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
+import oscar.cbls._
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle
@@ -39,19 +40,19 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
     vehicleReachingNode(node) contains vehicle
   }
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     currentVehicleLocation = digestUpdates(changes)
   }
 
   def digestUpdates(changes : SeqUpdate) : VehicleLocation = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, posOfInsert : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, posOfInsert : Int, prev : SeqUpdate) =>
         digestUpdates(prev).push(s.oldPosToNewPos)
 
-      case r@SeqUpdateRemove(pos : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
         digestUpdates(prev).push(r.oldPosToNewPos)
 
-      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestUpdates(prev).push(m.oldPosToNewPos)
 
       case SeqUpdateAssign(value) =>
@@ -60,12 +61,12 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
       case SeqUpdateLastNotified(value) =>
         currentVehicleLocation
 
-      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel : Long) =>
+      case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel : Int) =>
         val previousVehicleStart = if (checkpointLevel == 0L) digestUpdates(prev).regularize else digestUpdates(prev)
         vehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, previousVehicleStart)
         previousVehicleStart
 
-      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level : Long) =>
+      case u@SeqUpdateRollBackToCheckpoint(checkpoint : IntSequence, level : Int) =>
         vehicleStartStack.rollBackAndOutputValue(checkpoint, level)
     }
   }

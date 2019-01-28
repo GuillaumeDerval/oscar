@@ -23,7 +23,7 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
-                                searchZone1:()=>Iterable[Int] = null,
+                                searchZone1:()=>Iterable[Long] = null,
                                 searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                                 searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
@@ -47,8 +47,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
       if (searchZone1 == null) {
         if (hotRestart) {
           if (firstVarIndice >= vars.length) firstVarIndice = 0L
-          vars.indices startBy firstVarIndice
-        } else vars.indices
+          0L until vars.length startBy firstVarIndice
+        } else 0L until vars.length
       } else if (hotRestart) HotRestart(searchZone1(), firstVarIndice) else searchZone1()
 
     val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
@@ -61,7 +61,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
       firstVar = vars(firstVarIndice)
       val oldValOfFirstVar = firstVar.newValue
 
-      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) vars.indices else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
+      val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) 0L until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
       val searchZoneForDeltaL2 = searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
 
       val (jIterator,notifyFound2) = selectSecondVariableBehavior.toIterator(secondIterationSchemeZone)

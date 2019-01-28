@@ -21,7 +21,7 @@ import oscar.cbls.Objective
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
 import oscar.cbls.core.search._
-
+import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**

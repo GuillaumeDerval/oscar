@@ -1,5 +1,5 @@
 package oscar.examples.cbls.graphPatrition
-
+/*
 import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.{DenseCount, Int2Int}
 import oscar.cbls.modeling._
@@ -133,3 +133,4 @@ object GraphPartition extends CBLSModel with App {
 
 }
 
+*/

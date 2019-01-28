@@ -1,6 +1,7 @@
 package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls._
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -22,15 +23,15 @@ import oscar.cbls.algo.seq.IntSequence
  * @author renaud.delandtsheer@cetic.be
  */
 object VehicleLocation{
-  def apply(v:Int,nodeToPosition:Long=>Long): ConcreteVehicleLocation = new ConcreteVehicleLocation(Array.tabulate(v)(nodeToPosition))
-  def apply(startPositionOfVehicleThatIWillNeverModify:Array[Long]) = new ConcreteVehicleLocation(startPositionOfVehicleThatIWillNeverModify)
+  def apply(v:Int,nodeToPosition:Int=>Int): ConcreteVehicleLocation = new ConcreteVehicleLocation(Array.tabulate(v)(nodeToPosition))
+  def apply(startPositionOfVehicleThatIWillNeverModify:Array[Int]) = new ConcreteVehicleLocation(startPositionOfVehicleThatIWillNeverModify)
 }
 
 /**
  * @author Jannou Brohée
  * @author renaud.delandtsheer@cetic.be
  */
-abstract class VehicleLocation(val v : Long, val level:Long){
+abstract class VehicleLocation(val v : Int, val level:Int){
 
   def checkOnSequence(s:IntSequence){
     for(vehicle <- 0L until v){
@@ -46,16 +47,16 @@ abstract class VehicleLocation(val v : Long, val level:Long){
    * @param maxStackLevel is the maximal level of stack before a regularization automatically takes place. by default it is set to 2L*v
    * @return a vehicle location reflecting the start position of vehicle after the move is performed
    */
-  def push(oldPosToNewPos:(Long)=> Option[Long], maxStackLevel:Long = 2L*v): VehicleLocation = {
+  def push(oldPosToNewPos:(Int)=> Option[Int], maxStackLevel:Int = 2L*v): VehicleLocation = {
     val tmp = new StackedVehicleLocation(oldPosToNewPos,this)
     if(tmp.level > maxStackLevel) tmp.regularize
     else tmp
   }
 
-  def startPosOfVehicle(vehicle:Long):Long
+  def startPosOfVehicle(vehicle:Int):Int
 
-  def vehicleReachingPosition(position:Long): Long ={
-    var upperVehicle:Long = v -1L
+  def vehicleReachingPosition(position:Int): Int ={
+    var upperVehicle:Int = v -1L
     var upperVehiclePosition = startPosOfVehicle(upperVehicle)
     if(position>=upperVehiclePosition) return upperVehicle
     var lowerVehicle = 0L
@@ -82,11 +83,11 @@ abstract class VehicleLocation(val v : Long, val level:Long){
  * @author Jannou Brohée
  * @author renaud.delandtsheer@cetic.be
  */
-class ConcreteVehicleLocation(private val startPositionOfVehicle:Array[Long]) extends VehicleLocation(startPositionOfVehicle.length, 0L){
+class ConcreteVehicleLocation(private val startPositionOfVehicle:Array[Int]) extends VehicleLocation(startPositionOfVehicle.length, 0L){
 
   override def regularize: ConcreteVehicleLocation = this
 
-  def startPosOfVehicle(vehicle: Long): Long = startPositionOfVehicle(vehicle)
+  def startPosOfVehicle(vehicle: Int): Int = startPositionOfVehicle(vehicle)
 
   override def toString: String = "ConcreteVehicleLocation(" + startPositionOfVehicle.mkString(",") + ")"
 }
@@ -95,9 +96,9 @@ class ConcreteVehicleLocation(private val startPositionOfVehicle:Array[Long]) ex
  * @author Jannou Brohée
  * @author renaud.delandtsheer@cetic.be
  */
-class StackedVehicleLocation(val oldPosToNewPos:Long=> Option[Long], val prev: VehicleLocation) extends VehicleLocation(prev.v, prev.level + 1L){
+class StackedVehicleLocation(val oldPosToNewPos:Int=> Option[Int], val prev: VehicleLocation) extends VehicleLocation(prev.v, prev.level + 1L){
 
-  def startPosOfVehicle(vehicle: Long): Long = oldPosToNewPos(prev.startPosOfVehicle(vehicle)).get
+  def startPosOfVehicle(vehicle: Int): Int = oldPosToNewPos(prev.startPosOfVehicle(vehicle)).get
 
-  override def toString: String = "StackedVehicleLocation([" + (0L until v).map(startPosOfVehicle).mkString(",") + "] depth:" + level + " prev:" + prev + ")"
+  override def toString: String = "StackedVehicleLocation([" + (0 until v).map(startPosOfVehicle).mkString(",") + "] depth:" + level + " prev:" + prev + ")"
 }

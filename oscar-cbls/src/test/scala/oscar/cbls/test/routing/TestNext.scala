@@ -14,7 +14,7 @@ package oscar.cbls.test.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
@@ -99,3 +99,4 @@ object TestNext extends App{
   model.propagate()
   println(search.profilingStatistics)
 }
+*/

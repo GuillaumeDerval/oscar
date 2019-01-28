@@ -18,6 +18,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
+import oscar.cbls._
 
 
 

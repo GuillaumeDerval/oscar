@@ -16,7 +16,7 @@
  */
 
 package oscar.examples.cbls.wlp
-
+/*
 import oscar.cbls._
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.logic.Filter
@@ -143,3 +143,4 @@ object WareHouseLocationVisu extends App with StopWatch{
   println(openWarehouses)
 }
 
+*/

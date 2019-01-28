@@ -34,7 +34,7 @@ object VehicleOfNodes{
     val model = routes.model
     val domain = routes.domain
 
-    val vehicleOrUnroutedOfNode = Array.tabulate(routes.maxValue+1L)((node:Long) =>
+    val vehicleOrUnroutedOfNode = Array.tabulate(routes.maxValue+1L)((node:Int) =>
       CBLSIntVar(model,
         v,
         domain,
@@ -65,7 +65,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
 
   computeAndAffectValueFromScratch(routes.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes:SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if(!digestUpdates(changes)) {
       dropCheckpoint()
       computeAndAffectValueFromScratch(changes.newValue)
@@ -76,7 +76,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
     val newValue = changes.newValue
 
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
         val insertedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(pos,newValue,v)
@@ -84,7 +84,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
         recordMovedPoint(value, v)
 
         true
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if(!digestUpdates(prev)) false
@@ -106,7 +106,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
           true
         }
 
-      case x@SeqUpdateRemove(position: Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
         //on which vehicle did we remove?
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
@@ -194,7 +194,7 @@ class VehicleOfNodes(routes:ChangingSeqValue,
   }
 
   private def computeValueFromScratch(s:IntSequence):Array[Long] = {
-    val tmpVehicleOrUnroutedOfNode = Array.fill(n)(v)
+    val tmpVehicleOrUnroutedOfNode = Array.fill(n)(intToLong(v))
 
     val it = s.iterator
     var currentVehicle:Long = it.next()

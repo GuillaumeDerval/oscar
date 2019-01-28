@@ -52,7 +52,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Int] = null,
+                              searchZone:() => Iterable[Long] = null,
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
                               domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
@@ -67,8 +67,8 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
 
   override def exploreNeighborhood(initialObj: Long){
 
-    val iterationZone =
-      if (searchZone == null) vars.indices
+    val iterationZone : Iterable[Long] =
+      if (searchZone == null) 0L until vars.length
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -77,7 +77,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
       case None => iterationSchemeOnZone
-      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index:Long) => (s(index),vars(index).value))
+      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index :Long) => (s(index),vars(index).value))
     }
 
     //iterating over the variables to consider
@@ -154,7 +154,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "NumericAssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Int] = null,
+                              searchZone:() => Iterable[Long] = null,
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
                               domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
@@ -171,7 +171,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
   override def exploreNeighborhood(initialObj: Long){
 
     val iterationZone =
-      if (searchZone == null) vars.indices
+      if (searchZone == null) 0L until vars.length
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -180,7 +180,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
       case None => iterationSchemeOnZone
-      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index:Long) => (s(index),vars(index).value))
+      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index : Long) => (s(index),vars(index).value))
     }
 
     //iterating over the variables to consider

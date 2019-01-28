@@ -14,7 +14,7 @@ package oscar.cbls.test.invariants.bench
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.prop.Checkers
 import oscar.cbls._
@@ -848,3 +848,4 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
     Checkers.check(property)
   }
 }
+*/

@@ -152,7 +152,7 @@ case class SortSequence(v: SeqValue, sortValue:Long => Long, orderName:String="o
 
   private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     digestChanges(changes)
     //check(new ErrorChecker(),v.newValue,this.newValue)
   }

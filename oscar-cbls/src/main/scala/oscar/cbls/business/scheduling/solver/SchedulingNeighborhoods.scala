@@ -14,7 +14,7 @@ package oscar.cbls.business.scheduling.solver
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder
 import oscar.cbls.business.scheduling.model.{Activity, NonMoveableActivity, Planning, PrecedenceCleaner, Resource}
@@ -300,3 +300,4 @@ object SchedulingStrategies {
       searchLoop2 protectBest objective whenEmpty p.worseOvershotResource restoreBestOnExhaust()
       */
 }
+*/

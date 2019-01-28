@@ -27,7 +27,7 @@ import javax.swing.JPanel
 import org.jdesktop.swingx.{JXMapKit, JXMapViewer}
 import org.jdesktop.swingx.mapviewer.GeoPosition
 import org.jdesktop.swingx.painter.Painter
-
+import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.business.routing.model.VRP
 import oscar.visual.VisualDrawing
@@ -70,7 +70,7 @@ class BasicRoutingMap(vrp: VRP,
     clear()
     drawPoints()
 
-    val routes = Array.tabulate(vrp.v)(vrp.getRouteOfVehicle)
+    val routes = Array.tabulate(vrp.v)(v => vrp.getRouteOfVehicle(v))
 
     var previousPoint = -1L
     var color:Color = null
@@ -144,7 +144,7 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
 
   def drawPoints(): Unit = {
     val painter = new Painter[JXMapViewer]{
-      override def paint(g : Graphics2D, t : JXMapViewer, i: Long, i1: Long): Unit = {
+      override def paint(g : Graphics2D, t : JXMapViewer, i: Int, i1: Int): Unit = {
         val rect:Rectangle = getMainMap.getViewportBounds
         g.translate(-rect.x, -rect.y)
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
@@ -161,7 +161,7 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
     val routes = Array.tabulate[List[Long]](vrp.v)(vrp.getRouteOfVehicle(_))
 
     val painter = new Painter[JXMapViewer]{
-      override def paint(g: Graphics2D, t: JXMapViewer, i: Long, i1: Long): Unit = {
+      override def paint(g: Graphics2D, t: JXMapViewer, i: Int, i1: Int): Unit = {
         pixelPositionsOfNodes = geoCoordsToPixels()
 
         val rect:Rectangle = getMainMap.getViewportBounds
@@ -222,7 +222,7 @@ class GeoRoutingMap(vrp: VRP, geoCoords:List[(scala.Double, scala.Double)], vehi
 
 
 
-  override def setZoom(zoom: Long): Unit = {
+  override def setZoom(zoom: Int): Unit = {
     geoCoordsToPixels()
     super.setZoom(zoom)
   }

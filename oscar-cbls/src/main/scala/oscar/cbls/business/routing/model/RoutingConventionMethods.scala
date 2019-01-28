@@ -17,7 +17,7 @@ package oscar.cbls.business.routing.model
 
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.{IntSequence, Token}
-
+import oscar.cbls._
 object RoutingConventionMethods {
 
   def cachedVehicleReachingPosition(checkpoint:IntSequence,v:Int):((IntSequence,Long) => Long) = {

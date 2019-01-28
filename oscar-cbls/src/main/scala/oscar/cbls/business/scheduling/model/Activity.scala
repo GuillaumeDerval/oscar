@@ -14,7 +14,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
+/*
 /**
  * *****************************************************************************
  * Contributors:
@@ -197,3 +197,4 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
         nStrings(this.earliestStartDate.value, " ") + "#" + nStrings(this.duration.value - 2L, "=") + "#\n")
   }
 }
+*/

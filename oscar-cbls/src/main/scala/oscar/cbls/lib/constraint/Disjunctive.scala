@@ -142,7 +142,7 @@ case class Disjunctive(start: Array[IntValue],
       acc + ((start(i),newVar)) + ((duration(i),newVar))
     })
 
-  private var nonZeroTasks:SortedSet[Long] = SortedSet.empty[Long] ++ taskIndices.filter(i => duration(i).value != 0L)
+  private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0L)
 
   for(taskID <- nonZeroTasks){
     val curStart = start(taskID).value
@@ -307,7 +307,7 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
       acc + ((start(i),newVar)) + ((duration(i),newVar))
     })
 
-  private var nonZeroTasks:SortedSet[Long] = SortedSet.empty[Long] ++ taskIndices.filter(i => duration(i).value != 0L)
+  private var nonZeroTasks:SortedSet[Int] = SortedSet.empty[Int] ++ taskIndices.filter(i => duration(i).value != 0L)
 
   //margin is always put to the end of the tasks
   for(taskID <- nonZeroTasks){

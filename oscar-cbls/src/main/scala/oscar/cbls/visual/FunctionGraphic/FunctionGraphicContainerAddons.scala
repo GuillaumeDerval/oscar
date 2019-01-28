@@ -20,7 +20,7 @@ package oscar.cbls.visual.FunctionGraphic
 import java.awt.BorderLayout
 import javax.swing.event.{ChangeEvent, ChangeListener}
 import javax.swing.{JSlider, SwingConstants}
-
+import oscar.cbls._
 import oscar.cbls.algo.search.LazyQuicksort
 
 

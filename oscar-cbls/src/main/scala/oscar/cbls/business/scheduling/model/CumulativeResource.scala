@@ -15,7 +15,7 @@
  * ****************************************************************************
  */
 package oscar.cbls.business.scheduling.model
-
+/*
 /**
  * *****************************************************************************
  * Contributors:
@@ -362,3 +362,4 @@ case class VariableResource(planning: Planning with VariableResources,
     restrictions.sum
   }
 }
+*/

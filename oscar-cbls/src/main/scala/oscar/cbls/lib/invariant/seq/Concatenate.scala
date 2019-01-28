@@ -61,7 +61,7 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
 
   var outputToRecompute:Boolean = false
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val isFirst = (d == 0L)
     if(!outputToRecompute && !digestChanges(isFirst, changes)) {
       outputToRecompute = true
@@ -131,7 +131,7 @@ class ConcatenateFirstConstant(a:List[Long],b:ChangingSeqValue,maxPivotPerValueP
 
   var offsetForSecond = a.size
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := IntSequence(a ++ changes.newValue)
     }
@@ -194,7 +194,7 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Long],maxPivotPerValue
 
   var checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) : Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := IntSequence(changes.newValue ++ b)
     }

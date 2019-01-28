@@ -32,6 +32,7 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search._
+import oscar.cbls._
 
 
 /**
@@ -59,7 +60,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
   extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0L
+  var startIndice: Long = 0
 
   val v = vrp.v
   val seq = vrp.routes
@@ -94,7 +95,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be route
           val relevantNeighbors = relevantNeighborsNow(insertionPoint)
           val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Long) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor > v)
 
-          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy(nodeToVehicle).toList)
+          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Long) => nodeToVehicle(i)).toList)
 
           for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
             val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.positionOfAnyOccurrence(node).head)).toList)

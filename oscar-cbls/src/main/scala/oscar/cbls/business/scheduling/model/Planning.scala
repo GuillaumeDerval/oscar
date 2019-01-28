@@ -15,7 +15,7 @@
  * ****************************************************************************
  */
 package oscar.cbls.business.scheduling.model
-
+/*
 /**
  * *****************************************************************************
  * Contributors:
@@ -405,3 +405,4 @@ trait TotalResourcesOvershootEvaluation extends Planning {
     totalOvershoot <== Sum(overshootArray)
   }
 }
+*/

@@ -67,7 +67,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 
   this := computeFromScratch(v.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := computeFromScratch(v.value)
     }
@@ -232,7 +232,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
   }
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := computeFromScratch(v.value,index.value)
     }

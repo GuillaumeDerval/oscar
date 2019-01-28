@@ -18,6 +18,7 @@ package oscar.cbls.business.routing.invariants.capa
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 object ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirst {
   /**
@@ -48,18 +49,18 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFir
             contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
 
-    val content1FirstNode = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at first node after start of of vehicle " + vehicle))
-    val content2AtFirstNode = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at first node after start of vehicle " + vehicle))
-    val firstPointOfVehicle = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, 0L until n, "next(" + vehicle + ")"))
+    val content1FirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at first node after start of of vehicle " + vehicle))
+    val content2AtFirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at first node after start of vehicle " + vehicle))
+    val firstPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "next(" + vehicle + ")"))
 
 
-    val content1AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
-    val content2AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
+    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
+    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
 
-    val content1AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
-    val content2AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
+    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
+    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, 0L until n, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirst(routes,n,v,op,
       content1AtStart,content2AtStart,
@@ -155,13 +156,13 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
             maxContent:Long = Long.MaxValue,
             contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
-    val content1AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
-    val content2AtNode = Array.tabulate(n)((node: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
+    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
+    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
 
-    val content1AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
-    val content2AtEnd = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
+    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
+    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Long) => CBLSIntVar(routes.model, 0L, 0L until n, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,
       content1AtStart,content2AtStart,

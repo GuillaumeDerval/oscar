@@ -35,7 +35,7 @@ object NodesOfVehicle{
     val emptySet = SortedSet.empty[Long]
     val domain = routes.domain
 
-    val nodesOfVehicle = Array.tabulate(v+1L)((vehicle:Long) =>
+    val nodesOfVehicle = Array.tabulate(v+1L)((vehicle:Int) =>
       CBLSSetVar(model,
         emptySet,
         domain,
@@ -74,7 +74,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
 
   affect(computeValueFromScratch(routes.value))
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Long, changes:SeqUpdate){
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if(!digestUpdates(changes)) {
       dropCheckpoint()
       affect(computeValueFromScratch(changes.newValue))
@@ -85,7 +85,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
     val newValue = changes.newValue
 
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false
         val insertedVehicle = RoutingConventionMethods.searchVehicleReachingPosition(pos,newValue,v)
@@ -94,7 +94,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
         recordMovedPoint(value, v, insertedVehicle)
 
         true
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
         if(!digestUpdates(prev)) false
@@ -116,7 +116,7 @@ class NodesOfVehicle(routes:ChangingSeqValue,
           true
         }
 
-      case x@SeqUpdateRemove(position: Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
         //on which vehicle did we remove?
         //on which vehicle did we insert?
         if(!digestUpdates(prev)) return false

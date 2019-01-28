@@ -47,7 +47,7 @@ class RoutingMapContainer(vrp:VRP,
     }
   }
 
-  setPreferredSize(new Dimension(960L,960L))
+  setPreferredSize(new Dimension(960,960))
   add(routingMap, BorderLayout.CENTER)
   pack()
   revalidate()

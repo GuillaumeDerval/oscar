@@ -19,6 +19,7 @@ import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core._
 import oscar.cbls.business.routing.model.{ConcreteVehicleLocation, VehicleLocation}
+import oscar.cbls._
 
 /**
  * Maintains the content of vehicles at each node and the starting position of each vehicle
@@ -590,9 +591,9 @@ abstract class AbstractVehicleCapacity(n:Int,
    * @return (VehicleLocation)
    */
   def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):(ConcreteVehicleLocation) = {
-    val vehicleLocation = Array.fill(v)(0L)
+    val vehicleLocation = Array.fill(v)(0)
 
-    if(unrouteAllNodes) setNodesUnrouted(v until n)
+    if(unrouteAllNodes) setNodesUnrouted((intToLong(v) until n))
 
     var previousPosition = s.explorerAtPosition(0L).get
     var currentVehicle = 0L
@@ -640,7 +641,7 @@ object AbstractVehicleCapacity{
    defaultVehicleContentForUnroutedNodes:T)
   (implicit X: Manifest[T]):(Array[T],Array[T],ConcreteVehicleLocation) = {
 
-    val vehicleLocation = Array.fill(v)(0L)
+    val vehicleLocation = Array.fill(v)(0)
     val vehicleContent = Array.fill[T](n)(defaultVehicleContentForUnroutedNodes)
     val vehicleContentAtEndOfRoute = Array.fill[T](v)(defaultVehicleContentForUnroutedNodes)
 

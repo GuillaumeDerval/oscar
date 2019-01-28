@@ -4,6 +4,7 @@ import oscar.cbls.Variable
 import oscar.cbls.algo.rb.RedBlackTreeMap
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.computation.ChangingSeqValue
+import oscar.cbls._
 
 class NewVehicleCapacityGlobalConstraint(routes : ChangingSeqValue,
                                          nbVehicle : Long,

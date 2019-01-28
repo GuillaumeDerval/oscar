@@ -18,7 +18,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.core.search.{DoNothingMove, Move}
-
+import oscar.cbls._
 import scala.collection.immutable.SortedSet
 
 object VLSNMoveType extends Enumeration{

@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.model.helpers
 
 import oscar.cbls.business.routing.invariants.capa.ForwardCumulativeConstraintOnVehicle
 import oscar.cbls.business.routing.model.VRP
-
+import oscar.cbls._
 import scala.collection.immutable.HashSet
 
 /**
@@ -35,10 +35,10 @@ object CapacityHelper{
     * @return
     */
   def relevantPredecessorsOfNodes(vrp: VRP, maxCapacity : Long, vehiclesSize: Array[Long], contentsFlow: Array[Long]): Map[Long,HashSet[Long]] ={
-    Array.tabulate(vrp.n)(node => node -> HashSet(vrp.nodes.collect {
+    Array.tabulate(vrp.n)(node => intToLong(node) -> HashSet(vrp.nodes.collect {
       case predecessor if
       ((if(predecessor < vrp.v) maxCapacity - vehiclesSize(predecessor) else contentsFlow(predecessor)) + contentsFlow(node)) <= maxCapacity &&
-        predecessor != node => predecessor
+        predecessor != node => intToLong(predecessor)
     }: _*)).toMap
   }
 

@@ -19,7 +19,7 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.algo.magicArray.MagicBoolArray
-
+import oscar.cbls._
 import scala.collection.mutable
 
 

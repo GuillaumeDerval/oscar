@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.invariants.timeWindow
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core.computation._
+import oscar.cbls._
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify

@@ -15,6 +15,9 @@ package oscar.cbls.business.routing.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+
+import oscar.cbls._
+
 abstract class TravelTimeFunction {
   def getTravelDuration(from: Long, leaveTime: Long, to: Long): Long
   def getBackwardTravelDuration(from: Long, arrivalTime: Long, to: Long): Long
@@ -23,7 +26,7 @@ abstract class TravelTimeFunction {
     (getMinTravelDuration(from, to), getMaxTravelDuration(from, to))
 
   def getMinTravelDuration(from: Long, to: Long): Long
-  def getMaxTravelDuration(from: Long, to: Long): Long
+  def getMaxTravelDuration(from: Long, to:Long): Long
 }
 
 /**
@@ -33,30 +36,30 @@ abstract class TravelTimeFunction {
   * @param defaultTTF if we do not specify a TTF for a node, this is the value considered
   * @author renaud.delandtsheer@cetic.be
   */
-class TTFMatrix(nodeCount: Int, defaultTTF: PrimitiveTravelTimeFunction) extends TravelTimeFunction {
+class TTFMatrix(nodeCount: Long, defaultTTF: PrimitiveTravelTimeFunction) extends TravelTimeFunction {
 
   private val matrix: Array[Array[PrimitiveTravelTimeFunction]] = Array.fill(nodeCount, nodeCount)(defaultTTF)
 
-  def setTTF(from: Int, to: Int, ttf: PrimitiveTravelTimeFunction) {
+  def setTTF(from: Long, to: Long, ttf: PrimitiveTravelTimeFunction) {
     matrix(from)(to) = ttf
   }
 
-  def getTTF(from: Int, to: Int): PrimitiveTravelTimeFunction =
+  def getTTF(from: Long, to: Long): PrimitiveTravelTimeFunction =
     matrix(from)(to)
 
-  override def getTravelDuration(from: Int, leaveTime: Long, to: Int): Long =
+  override def getTravelDuration(from: Long, leaveTime: Long, to: Long): Long =
     matrix(from)(to).getTravelDuration(leaveTime)
 
-  override def getBackwardTravelDuration(from: Int, arrivalTime: Long, to: Int): Long =
+  override def getBackwardTravelDuration(from: Long, arrivalTime: Long, to: Long): Long =
     matrix(from)(to).getBackwardTravelDuration(arrivalTime)
 
-  override def getMinTravelDuration(from: Int, to: Int): Long =
+  override def getMinTravelDuration(from: Long, to: Long): Long =
     matrix(from)(to).getMinTravelDuration
 
-  override def getMaxTravelDuration(from: Int, to: Int): Long =
+  override def getMaxTravelDuration(from: Long, to: Long): Long =
     matrix(from)(to).getMaxTravelDuration
 
-  override def getMinMaxTravelDuration(from: Int, to: Int): (Long, Long) =
+  override def getMinMaxTravelDuration(from: Long, to: Long): (Long, Long) =
     matrix(from)(to).getMinMaxTravelDuration
 }
 
@@ -121,7 +124,7 @@ class TTFConst(travelDuration: Long) extends PrimitiveTravelTimeFunction {
   * @author renaud.delandtsheer@cetic.be
   * THIS IS EXPERIMENTAL
   */
-class TTFHistogram(val nbSlots: Int, val overallDuration: Long) extends PrimitiveTravelTimeFunction {
+class TTFHistogram(val nbSlots: Long, val overallDuration: Long) extends PrimitiveTravelTimeFunction {
   private val slotDuration: Long = overallDuration / nbSlots
 
   private val slots: Array[Long] = Array.fill(nbSlots)(0)
@@ -248,7 +251,7 @@ class TTFSegments(val NbPoints: Long, val overallDuration: Long) extends Primiti
 
   def getPoint(pointNr: Long): (Long, Long) = {
     var rectifiedPoint: Long = pointNr % NbPoints
-    var shifting: Long = math.floor(pointNr / NbPoints).toInt * overallDuration
+    var shifting: Long = math.floor(pointNr / NbPoints).toLong * overallDuration
     while (rectifiedPoint < 0L) {
       rectifiedPoint += NbPoints
       shifting -= overallDuration
@@ -300,7 +303,7 @@ class TTFSegments(val NbPoints: Long, val overallDuration: Long) extends Primiti
 
     linearInterpol(leaveTime,
       getPointX(pointBefore), getPointY(pointBefore),
-      getPointX(pointAfter), getPointY(pointAfter)).toInt
+      getPointX(pointAfter), getPointY(pointAfter)).toLong
   }
 
   @inline
@@ -349,7 +352,7 @@ class TTFSegments(val NbPoints: Long, val overallDuration: Long) extends Primiti
 
     linearInterpolBackward(arrivalTime,
       getPointX(pointBefore), getPointY(pointBefore),
-      getPointX(pointBefore + 1L), getPointY(pointBefore + 1L)).toInt
+      getPointX(pointBefore + 1L), getPointY(pointBefore + 1L)).toLong
   }
 
   @inline

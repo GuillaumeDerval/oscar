@@ -1,4 +1,6 @@
 package oscar.cbls.business.scheduling.model
+
+/*
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -181,4 +183,5 @@ class BinPackingResource(planning:Planning, n:String, bins:Long => List[Long], M
     use(t).value.map((activityID:Long) => planning.activityArray(activityID))
   }
 }
+*/
 */

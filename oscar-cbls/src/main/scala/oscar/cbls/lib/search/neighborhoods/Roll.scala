@@ -43,7 +43,7 @@ import oscar.cbls._
 //TODO: also implement minimal roll size (we prefer to use swap instead of roll)
 case class RollNeighborhood(vars:Array[CBLSIntVar],
                             name:String = "RollNeighborhood",
-                            searchZone:()=>Set[Int] = null,
+                            searchZone:()=>Set[Long] = null,
                             bridgeOverFrozenVariables:Boolean = false,
                             maxShiftSize:Long=>Long = _ => Long.MaxValue, //the max size of the roll, given the ID of the first variable
                             //minRollSize:Long, //TODO
@@ -56,7 +56,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
   override def exploreNeighborhood(){
 
     val searchZoneObject = if(searchZone == null) null else searchZone()
-    val currentSearchZone = if(searchZone == null) vars.indices else searchZoneObject
+    val currentSearchZone = if(searchZone == null) 0L until vars.length else searchZoneObject
 
     @inline
     def searchZoneContains(i:Long):Boolean = {
@@ -67,7 +67,7 @@ case class RollNeighborhood(vars:Array[CBLSIntVar],
       HotRestart(currentSearchZone, startIndice)
     else currentSearchZone
 
-    for (firstIndice: Int <- firstIndices) {
+    for (firstIndice: Long <- firstIndices) {
 
       val currentMaxShiftSize = maxShiftSize(firstIndice)
 

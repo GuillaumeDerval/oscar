@@ -19,7 +19,7 @@ package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
 import oscar.cbls.core.search.{Neighborhood, _}
-
+import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 

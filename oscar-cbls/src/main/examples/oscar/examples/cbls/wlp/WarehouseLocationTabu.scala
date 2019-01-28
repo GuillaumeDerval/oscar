@@ -14,7 +14,7 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
+/*
 import oscar.cbls._
 import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
@@ -90,3 +90,4 @@ object WarehouseLocationTabu extends App{
 
   println(openWarehouses)
 }
+*/

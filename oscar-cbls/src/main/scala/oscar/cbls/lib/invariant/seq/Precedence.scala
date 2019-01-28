@@ -169,7 +169,7 @@ class Precedence(seq:ChangingSeqValue,
     this := totalViolation
   }
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Long, changes : SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestUpdates(changes)) {
       //this also updates checkpoint links
       computeAndAffectViolationsFromScratch(changes.newValue)
