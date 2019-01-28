@@ -58,7 +58,7 @@ trait StandardNeighborhoods {
                          name:String = "AssignNeighborhood",
                          selectIndiceBehavior:LoopBehavior = First(),
                          selectValueBehavior:LoopBehavior = First(),
-                         searchZone:() => Iterable[Int] = null,
+                         searchZone:() => Iterable[Long] = null,
                          symmetryClassOfVariables:Option[Long => Long] = None,
                          symmetryClassOfValues:Option[Long => Long => Long] = None,
                          domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
@@ -135,14 +135,14 @@ trait StandardNeighborhoods {
    **/
   def swapsNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "SwapsNeighborhood",
-                        searchZone1:()=>Iterable[Int] = null,
-                        searchZone2:() => (Long,Long)=>Iterable[Int] = null,
+                        searchZone1:()=>Iterable[Long] = null,
+                        searchZone2:() => (Long,Long)=>Iterable[Long] = null,
                         symmetryCanBeBrokenOnIndices:Boolean = true,
                         symmetryCanBeBrokenOnValue:Boolean = false,
                         selectFirstVariableBehavior:LoopBehavior = First(),
                         selectSecondVariableBehavior:LoopBehavior = First(),
-                        symmetryClassOfVariables1:Option[Int => Int] = None,
-                        symmetryClassOfVariables2:Option[Int => Int] = None,
+                        symmetryClassOfVariables1:Option[Long => Long] = None,
+                        symmetryClassOfVariables2:Option[Long => Long] = None,
                         hotRestart:Boolean = true)
   = SwapsNeighborhood(vars,name,searchZone1,searchZone2,
     symmetryCanBeBrokenOnIndices,symmetryCanBeBrokenOnValue,
@@ -184,7 +184,7 @@ trait StandardNeighborhoods {
    */
   def shiftNeighborhood(vars:Array[CBLSIntVar],
                         name:String = "ShiftNeighborhood",
-                        searchZone1:()=>Iterable[Int] = null,
+                        searchZone1:()=>Iterable[Long] = null,
                         maxShiftSize:Long = Long.MaxValue,
                         maxOffsetLength:Long = Long.MaxValue,
                         best:Boolean = false,
@@ -214,7 +214,7 @@ trait StandardNeighborhoods {
    **/
   def rollNeighborhood(vars:Array[CBLSIntVar],
                        name:String = "RollNeighborhood",
-                       searchZone:()=>Set[Int] = null,
+                       searchZone:()=>Set[Long] = null,
                        bridgeOverFrozenVariables:Boolean = false,
                        maxShiftSize:Long=>Long = _ => Long.MaxValue, //the max size of the roll, given the ID of the first variable
                        checkForDifferentValues:Boolean = false,

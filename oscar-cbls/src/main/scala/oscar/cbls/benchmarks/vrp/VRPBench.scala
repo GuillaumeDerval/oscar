@@ -206,13 +206,13 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Long, verbose:Long, sy
   model.close()
 
 
-  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes.map(intToLong)
+  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
   val closestRelevantNeighborsByDistance = Array.tabulate(n)(i => DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(i))
 
   def routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
   def unRoutedPostFilter = (node:Long) => (neighbor:Long) => !myVRP.isRouted(neighbor)
 
-  val routeUnroutdPoint =  profile(insertPointUnroutedFirst(() => myVRP.unrouted.value.toList.map(longToInt),()=> myVRP.kFirst(10L,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  profile(insertPointUnroutedFirst(() => myVRP.unrouted.value,()=> myVRP.kFirst(10L,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
   val routeUnroutdPoint2 =  profile(insertPointRoutedFirst(() => myVRP.routed.value.toList.filter(_>=v).map(longToInt),()=> myVRP.kFirst(10L,(i => closestRelevantNeighborsByDistance(i)),unRoutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2L))

@@ -190,7 +190,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Long],
 
 /**
   * OnePoint insert neighborhood htat primarily iterates over insertion point,s and then over poitns that can be iserted.
-  * @param insertionPoints the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
+  * @param insertionPositions the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
   * @param relevantSuccessorsToInsert the points to insert, given an insertion point
   * @param vrp the routing problem
   * @param neighborhoodName the name of the neighborhood
@@ -203,7 +203,7 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Long],
   *                      if you set to None this will not be used at all
   * @author renaud.delandtsheer@cetic.be
   */
-case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Long],
+case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Long],
                                   relevantSuccessorsToInsert: () => Long => Iterable[Long],
                                   vrp: VRP,
                                   neighborhoodName: String = "InsertPointRoutedFirst",
@@ -215,7 +215,7 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Long],
   extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves) {
 
   //the indice to start with for the exploration
-  var startIndice: Long = 0L
+  var startIndice: Long = 0
 
   override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
@@ -230,13 +230,13 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Long],
 
     val (iterationSchemeOnInsertionPointIterator,notifyFound1) =
       selectInsertionPointBehavior.toIterator(
-        if (hotRestart) HotRestart(insertionPoints(), startIndice)
-        else insertionPoints()
+        if (hotRestart) HotRestart(insertionPositions(), startIndice)  //TODO: this map is not good!
+        else insertionPositions() //TODO: this map is not good!
       )
 
     while (iterationSchemeOnInsertionPointIterator.hasNext) {
 
-      pointWhereToInsertAfter = iterationSchemeOnInsertionPointIterator.next()
+      pointWhereToInsertAfter = longToInt(iterationSchemeOnInsertionPointIterator.next())
 
       seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
         case None => //not routed?
