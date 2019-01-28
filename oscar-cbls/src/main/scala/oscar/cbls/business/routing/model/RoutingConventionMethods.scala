@@ -123,17 +123,17 @@ class CachedPositionOf(maxValue:Long){
   def updateToCheckpoint(checkpoint:IntSequence){
     tokenOfCurrentCheckpoint = checkpoint.token
   }
-  def positionOfAnyOccurrence(seq:IntSequence,value:Long):Option[Long] = {
+  def positionOfAnyOccurrence(seq:IntSequence,value:Long):Option[Int] = {
     val seqID = seq.token
     if(tokenOfCurrentCheckpoint == seqID){
       if(checkpointIDOfSavedValue(value) == seqID){
         val pos = cachedAnyPosition(value)
-        if (pos == -1L) None else Some(pos)
+        if (pos == -1) None else Some(pos)
       }else{
         val pos = seq.positionOfAnyOccurrence(value)
         checkpointIDOfSavedValue(value) = tokenOfCurrentCheckpoint
         pos match{
-          case None => cachedAnyPosition(value) = -1L
+          case None => cachedAnyPosition(value) = -1
           case Some(x) => cachedAnyPosition(value) = x
         }
         pos
@@ -147,7 +147,7 @@ class CachedPositionOf(maxValue:Long){
     if(seq.token == tokenOfCurrentCheckpoint){
       checkpointIDOfSavedValue(value) = tokenOfCurrentCheckpoint
       position match{
-        case None => cachedAnyPosition(value) = -1L
+        case None => cachedAnyPosition(value) = -1
         case Some(x) => cachedAnyPosition(value) = x
       }
     }

@@ -88,9 +88,10 @@ case class SegmentExchange(val vrp: VRP,
 
       val routeOfVehicle1: List[Long] = vrp.getRouteOfVehicle(firstVehicle)
 
-      val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Long,Long,Map[Long,Iterable[(Long,Long,Long)]])] = routeOfVehicle1.map(node =>
+      val routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles:List[(Long,Int,Map[Long,Iterable[(Long,Long,Int)]])] =
+        routeOfVehicle1.map((node:Long) =>
         (node, seqValue.positionOfAnyOccurrence(node).head, relevantNeighborsNow(node)
-          .map(node => (node,if(node >=v && nodeToRoute(node)!=n) nodeToRoute(node) else -1L))
+          .map(node => (node,if(node >=v && nodeToRoute(longToInt(node))!=n) nodeToRoute(longToInt(node)) else -1L))
           .filter({case (nodeNr,routeNr) => nodeNr >= v && allVehiclesToIterateOn.contains(routeNr)})
           .map(nodeAndRoute => (nodeAndRoute._1,nodeAndRoute._2,seqValue.positionOfAnyOccurrence(nodeAndRoute._1).head))
           .groupBy(nodeAndRoute => nodeAndRoute._2))
@@ -98,23 +99,23 @@ case class SegmentExchange(val vrp: VRP,
 
       val (routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehiclesIterableAndTail,notifyFound2) =
         selectFirstNodeOfFirstSegmentBehavior.toIterable(Pairs.makeAllHeadAndTails(routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehicles))
-      for(((firstNode, positionOfFirstNode, firstNodeVehicleToNodeRoutePosition),candidateForAfterEndOfFirstSegment)
+      for(((firstNode:Long, positionOfFirstNode:Int, firstNodeVehicleToNodeRoutePosition),candidateForAfterEndOfFirstSegment)
           <- routeWithRelevantNeighborsTheirVehicleAndPositionGroupedByVehiclesIterableAndTail){
 
         val (candidateForAfterEndOfFirstSegmentIterable,notifyFound3) = selectSecondNodeOfFirstSegmentBehavior.toIterable(candidateForAfterEndOfFirstSegment)
 
-        for ((secondNode, positionOfSecondNode, secondNodeVehicleToNodeRoutePosition) <- candidateForAfterEndOfFirstSegmentIterable){
+        for ((secondNode:Long, positionOfSecondNode:Int, secondNodeVehicleToNodeRoutePosition) <- candidateForAfterEndOfFirstSegmentIterable){
 
           //we define the first segment
 
           val isReversedFromFirstSecondNodesFirstSegment =
             if (positionOfFirstNode < positionOfSecondNode) {
-              firstSegmentStartPosition = positionOfFirstNode + 1L
-              firstSegmentEndPosition = positionOfSecondNode - 1L
+              firstSegmentStartPosition = positionOfFirstNode + 1
+              firstSegmentEndPosition = positionOfSecondNode - 1
               false
             } else {
-              firstSegmentStartPosition = positionOfSecondNode + 1L
-              firstSegmentEndPosition = positionOfFirstNode - 1L
+              firstSegmentStartPosition = positionOfSecondNode + 1
+              firstSegmentEndPosition = positionOfFirstNode - 1
               true
             }
 
