@@ -35,7 +35,7 @@ import scala.util.Random
  */
 case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                indicesToConsider:()=>Iterable[Long] = null,
-                               numberOfShuffledPositions:() => Long = () => Int.MaxValue,
+                               numberOfShuffledPositions:() => Int = () => Int.MaxValue,
                                name:String = "ShuffleNeighborhood",
                                checkNoMoveFound:Boolean = true)
   extends Neighborhood(name) with LinearSelectors{
@@ -43,17 +43,17 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean = null): SearchResult = {
     if(printExploredNeighborhoods) println("applying " + name)
 
-    val (realIndicesToConsider:List[Long],numberOfIndicesToConsider:Long) =
+    val (realIndicesToConsider:List[Int],numberOfIndicesToConsider:Int) =
       if(indicesToConsider == null) (vars.indices.toList,vars.length)
-      else { val tmp = indicesToConsider(); (tmp.toList,intToLong(tmp.size)) }
+      else { val tmp = indicesToConsider(); (tmp.toList.map(longToInt(_)),tmp.size) }
 
     if(checkNoMoveFound) {
       val (minValue, maxValue) = InvariantHelper.getMinMaxBoundsInt(realIndicesToConsider.map(vars(_).value))
       if (minValue == maxValue) return NoMoveFound
     }
 
-    val numberOfShuffledPositionsThisTime = numberOfShuffledPositions()
-    val subsetOfIndicesToConsider:List[Long] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
+    val numberOfShuffledPositionsThisTime:Int = numberOfShuffledPositions()
+    val subsetOfIndicesToConsider:List[Int] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
       realIndicesToConsider
     }else{
       //shuffle only a subset; select it randomly

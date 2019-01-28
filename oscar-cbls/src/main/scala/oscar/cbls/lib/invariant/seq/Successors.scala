@@ -78,7 +78,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
 
   def computeImpactedValues(changes:SeqUpdate):Option[SortedSet[Long]] = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         //removing next val from pred
 
         computeImpactedValues(prev) match{
@@ -88,7 +88,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
             Some(impactedValue ++ oldSeq.predecessorPos2Val(pos) + value)
           }
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         computeImpactedValues(prev) match{
           case None => None
           case Some(impactedValues) =>
@@ -107,7 +107,7 @@ class Successors(sequence:ChangingSeqValue, successorValues:Array[CBLSSetVar])
             }
         }
 
-      case r@SeqUpdateRemove(position: Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position: Int, prev : SeqUpdate) =>
         computeImpactedValues(prev) match {
           case None => None
           case Some(impactedValues) =>

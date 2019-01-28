@@ -62,20 +62,20 @@ case class SeqSum(v: SeqValue, f:(Long => Long) = (a:Long) => a)
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this :+= f(value)
         true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
          digestChanges(prev) //nothing to do :-)
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this :-= f(r.removedValue)
         true
 
-      case u@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Long) =>
+      case u@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         this := checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel)
         true
 

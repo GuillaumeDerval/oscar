@@ -159,7 +159,7 @@ case class SortSequence(v: SeqValue, sortValue:Long => Long, orderName:String="o
 
   private def digestChanges(changes : SeqUpdate){
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
         //find where the value should be located by dichotomy
         //println("inserting " + value + " into this.newValue:" + this.newValue)
@@ -167,10 +167,10 @@ case class SortSequence(v: SeqValue, sortValue:Long => Long, orderName:String="o
         //println("found position:" + positionOfInsert)
         this.insertAtPosition(value,positionOfInsert)
 
-      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestChanges(prev)
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         digestChanges(prev)
 
         val valueAtRemove = r.removedValue

@@ -47,20 +47,20 @@ case class Content(v:SeqValue)
   //true if could be incremental, false otherwise
   def digestUpdates(changes : SeqUpdate):Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         this :+= value
         true
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         digestUpdates(prev)
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         val value = r.removedValue
         if (changes.newValue.nbOccurrence(value) == 0L){
           this :-= value
         }
         true
-      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Long) =>
+      case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         digestUpdates(r.howToRollBack)
 
       case SeqUpdateLastNotified(value) =>

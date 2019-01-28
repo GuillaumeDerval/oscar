@@ -44,7 +44,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, ove
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
 
         //build on the original value instead of maintaining two data structs? , changes.newValue.flip(fast=true)
@@ -52,7 +52,7 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, ove
 
         true
 
-      case m@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case m@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if(m.isNop) {
           ;
@@ -81,9 +81,9 @@ case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, ove
         }
         true
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
-        this.remove(prev.newValue.size - position - 1L,changes.newValue.flip(fast=true))
+        this.remove(prev.newValue.size - position - 1,changes.newValue.flip(fast=true))
         true
 
       case u@SeqUpdateRollBackToCheckpoint(checkPoint,level) =>

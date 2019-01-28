@@ -183,7 +183,7 @@ class Precedence(seq:ChangingSeqValue,
     //println("precedence.digestUpdate(" + changes.getClass.getSimpleName + ")")
     changes match {
       case null => throw new Error()
-      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive : Boolean, checkpointLevel:Long) =>
+      case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive : Boolean, checkpointLevel:Int) =>
         //println("define checkpoint")
         if(checkpointLevel == 0L){
           if(!digestUpdates(prev)){
@@ -204,7 +204,7 @@ class Precedence(seq:ChangingSeqValue,
           digestUpdates(x.howToRollBack)
         }
 
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
 
         if (!digestUpdates(prev)) return false
 
@@ -249,7 +249,7 @@ class Precedence(seq:ChangingSeqValue,
         }
         true
 
-      case x@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case x@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestUpdates(prev)) return false
         val removedValue = x.removedValue
         cachedPositionFinderAtCheckpoint.savePos(prev.newValue,removedValue,Some(position))
@@ -272,7 +272,7 @@ class Precedence(seq:ChangingSeqValue,
 
         true
 
-      case x@SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case x@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         //println("move")
         //on which vehicle did we move?
         //also from --> to cannot include a vehicle start.
@@ -325,7 +325,7 @@ class Precedence(seq:ChangingSeqValue,
 
           //println("full move moveDownwards:" + moveDownwards + " moveUpwards:" + moveUpwards)
 
-          var valuesInMovedSegment : QList[(Long,Long)] = prev.newValue.positionsBetweenFromToAndTheirValues(fromIncluded, toIncluded)
+          var valuesInMovedSegment : QList[(Int,Long)] = prev.newValue.positionsBetweenFromToAndTheirValues(fromIncluded, toIncluded)
           if(prev.newValue quickEquals checkpoint) {
             var toDo = valuesInMovedSegment
             while(toDo != null){

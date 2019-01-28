@@ -77,7 +77,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
         if( this.newValue.size == length){
@@ -92,7 +92,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
         }
         return true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if((toIncluded < index && after < index) ||
            (fromIncluded >= index+length && after >= index+length-1L)) return true
@@ -103,7 +103,7 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
         }
         false
 
-      case r@SeqUpdateRemove(pos : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
 
@@ -151,8 +151,8 @@ case class SubSequence(v: SeqValue,index:Long, length: Long,
 }
 
 //TODO: document, test and put into modeling API
-case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Long, override val maxPivotPerValuePercent:Long = 10L,
-                          override val maxHistorySize:Long = 10L)(shiftLimitBeforeRecompute:Long = length/2L)
+case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Long, override val maxPivotPerValuePercent:Int = 10,
+                          override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Long = length/2)
   extends SeqInvariant(IntSequence.empty(), originalSeq.max, maxPivotPerValuePercent, maxHistorySize)
     with SeqNotificationTarget with IntNotificationTarget{
 
@@ -168,10 +168,10 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         print("[")
       }
       print(seq(i))
-      if(i == index.value+length-1L){
+      if(i == index.value+length-1){
         print("]")
       }
-      if(i != seq.length-1L){
+      if(i != seq.length-1){
         print(",")
       }
     }
@@ -184,7 +184,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
     var explorer = s.explorerAtPosition(idx)
     var subSeq = IntSequence.empty()
 
-    for(i <- 0L until length){
+    for(i <- 0 until length){
       explorer match {
         case None => return subSeq.regularize()
         case Some(e) =>
@@ -241,7 +241,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   def digestChanges(changes : SeqUpdate) : Boolean = {
     val currentIndex = index.value
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= currentIndex+length) return true
         if( this.newValue.size == length){
@@ -256,22 +256,22 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         }
         return true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if((toIncluded < currentIndex && after < currentIndex) ||
-          (fromIncluded >= currentIndex+length && after >= currentIndex+length-1L)) return true
+          (fromIncluded >= currentIndex+length && after >= currentIndex+length-1)) return true
 
-        if(fromIncluded >= currentIndex && toIncluded <= currentIndex+length-1L && after > currentIndex-1L && after <= currentIndex+length - 1L) {
+        if(fromIncluded >= currentIndex && toIncluded <= currentIndex+length-1 && after > currentIndex-1 && after <= currentIndex+length - 1) {
           this.move(fromIncluded - currentIndex, toIncluded - currentIndex, after - currentIndex, flip)
           return true
         }
         false
 
-      case r@SeqUpdateRemove(pos : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= currentIndex+length) return true
 
-        changes.newValue.valueAtPosition(currentIndex+length-1L) match{
+        changes.newValue.valueAtPosition(currentIndex+length-1) match{
           case None => ()
           case Some(v) => this.insertAtPosition(v,length)
         }
@@ -279,7 +279,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         if(pos >= currentIndex){
           this.remove(pos-currentIndex)
         }else{
-          this.remove(0L)
+          this.remove(0)
         }
 
         true

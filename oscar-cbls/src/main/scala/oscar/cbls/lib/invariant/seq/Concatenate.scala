@@ -93,7 +93,7 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
         }
         true
 
-      case SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestChanges(isFirst, prev)) return false
         this.remove(if (isFirst) position else position + a.value.size)
         true
@@ -139,17 +139,17 @@ class ConcatenateFirstConstant(a:List[Long],b:ChangingSeqValue,maxPivotPerValueP
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.insertAtPosition(value, pos + offsetForSecond)
         true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.move(fromIncluded + offsetForSecond, toIncluded + offsetForSecond, after + offsetForSecond, flip)
         true
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.remove(position + offsetForSecond)
         true
@@ -202,17 +202,17 @@ class ConcatenateSecondConstant(a:ChangingSeqValue,b:List[Long],maxPivotPerValue
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.insertAtPosition(value, pos)
         true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.move(fromIncluded, toIncluded, after, flip)
         true
 
-      case r@SeqUpdateRemove(position : Long, prev : SeqUpdate) =>
+      case r@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         this.remove(position)
         true
