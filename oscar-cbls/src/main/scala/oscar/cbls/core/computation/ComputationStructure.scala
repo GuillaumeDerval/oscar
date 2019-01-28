@@ -269,7 +269,7 @@ object Invariant{
 trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
 
   /**register to determining element. It must be in the static dependency graph*/
-  def registerDeterminingDependency(v:Value,i:Long = -1L){
+  def registerDeterminingDependency(v:Value,i:Int = -1){
     registerDeterminingElement(v,i)
   }
 
@@ -280,7 +280,7 @@ trait VaryingDependencies extends Invariant with VaryingDependenciesPE{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return a handle that is required to remove the listened var from the dynamically listened ones
     */
-  override def registerDynamicDependency(v:Value,i:Long = -1):KeyForElementRemoval = {
+  override def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
   }
 
@@ -353,12 +353,12 @@ trait Invariant extends PropagationElement{
     * @param v the variable that we want to register to
     * @param i the integer value that will be passed to the invariant to notify some changes in the value of this variable
     */
-  def registerStaticAndDynamicDependency(v:Value,i:Long = -1L){
+  def registerStaticAndDynamicDependency(v:Value,i:Int = -1){
     registerStaticDependency(v)
     registerDynamicDependency(v,i)
   }
 
-  def registerStaticAndDynamicDependencies(v:((Value,Long))*){
+  def registerStaticAndDynamicDependencies(v:((Value,Int))*){
     for (varint <- v){
       registerStaticDependency(varint._1)
       registerDynamicDependency(varint._1,varint._2)
@@ -404,7 +404,7 @@ trait Invariant extends PropagationElement{
     * @param i: an integer value that will be passed when updates on this variable are notified to the invariant
     * @return null
     */
-  def registerDynamicDependency(v:Value,i:Long = -1):KeyForElementRemoval = {
+  def registerDynamicDependency(v:Value,i:Int = -1):KeyForElementRemoval = {
     registerDynamicallyListenedElement(v,i)
     null
   }
@@ -504,7 +504,7 @@ trait Variable extends AbstractVariable{
     if(definingInvariant == null){
       definingInvariant = i
       registerStaticallyListenedElement(i)
-      registerDynamicallyListenedElement(i,0L)
+      registerDynamicallyListenedElement(i,0)
     }else{
       throw new Exception("variable [" + name + "] cannot have more than one controlling invariant, already has " + definingInvariant)
     }

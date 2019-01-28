@@ -176,11 +176,7 @@ class Event(v:Value, w:Variable, ModifiedVars:Iterable[Variable])
     scheduleForPropagation()
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long,
-                                addedValues: Iterable[Long],
-                                removedValues: Iterable[Long],
-                                oldValue: SortedSet[Long],
-                                newValue: SortedSet[Long]) {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     scheduleForPropagation()
   }
 

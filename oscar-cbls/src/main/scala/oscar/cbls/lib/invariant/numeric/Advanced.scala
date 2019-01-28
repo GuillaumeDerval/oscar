@@ -38,7 +38,7 @@ case class SumConstants(vars: Array[Long], cond: SetValue)
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues)  this :+= vars(added)
     for (deleted <- removedValues) this :-= vars(deleted)
   }
@@ -88,7 +88,7 @@ case class SumElements(vars: Array[IntValue], cond: SetValue)
     this :+= (NewVal - OldVal)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -144,7 +144,7 @@ case class ProdConstants(vars: Array[Long], cond: SetValue)
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -239,7 +239,7 @@ case class ProdElements(vars: Array[IntValue], cond: SetValue)
     affectOutput()
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }

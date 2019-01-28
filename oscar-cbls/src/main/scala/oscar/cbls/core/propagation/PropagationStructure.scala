@@ -857,7 +857,7 @@ object PropagationElement {
  * This class is used in as a handle to register and unregister dynamically to variables
  * @author renaud.delandtsheer@cetic.be
  */
-class KeyForElementRemoval(val keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Long)], val keyForListeningElement: DPFDLLStorageElement[PropagationElement]) {
+class KeyForElementRemoval(val keyForListenedElement: DPFDLLStorageElement[(PropagationElement, Int)], val keyForListeningElement: DPFDLLStorageElement[PropagationElement]) {
   def performRemove(): Unit = {
     keyForListeningElement.delete()
     keyForListenedElement.delete()
@@ -887,7 +887,7 @@ trait BasicPropagationElement {
    * @param listening the dynamically listening element
    * @param i: the payload that will be given for the notification, according to what the PE is supposed to do
    */
-  protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Long) {}
+  protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Int) {}
 
   /**
    * @param listening the listening element
@@ -896,7 +896,7 @@ trait BasicPropagationElement {
    * @return a key for dependency removal
    */
   protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement,
-                                                                 i: Long,
+                                                                 i: Int,
                                                                  sccOfListening: StronglyConnectedComponentTopologicalSort,
                                                                  dynamicallyListenedElementDLLOfListening:DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = DummyKeyForElementRemoval
 
@@ -964,7 +964,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   private[propagation] var staticallyListenedElements: List[PropagationElement] = List.empty
   private[propagation] var staticallyListeningElements: List[PropagationElement] = List.empty
 
-  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)]
+  private final val dynamicallyListeningElements: DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)] = new DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
 
   /**
    * through this method, the PropagationElement must declare which PropagationElement it is listening to
@@ -980,7 +980,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    */
   protected[core] final def getStaticallyListeningElements: Iterable[PropagationElement] = staticallyListeningElements
 
-  private[core] final def getDynamicallyListeningElements:DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Long)]
+  private[core] final def getDynamicallyListeningElements:DelayedPermaFilteredDoublyLinkedList[(PropagationElement, Int)]
   = dynamicallyListeningElements
 
   protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = staticallyListenedElements
@@ -996,7 +996,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   }
 
   /**this will not return a key because we do not have varying dependencies*/
-  protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Long): KeyForElementRemoval = {
+  protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Int): KeyForElementRemoval = {
     b.registerDynamicallyListeningElementNoKey(this, i)
     null
   }
@@ -1009,7 +1009,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * can only be called before model closing
    * @param listening the dynamically listening element
    */
-  override protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Long) {
+  override protected[propagation] def registerDynamicallyListeningElementNoKey(listening: PropagationElement, i: Int) {
     dynamicallyListeningElements.addElem(listening, i)
   }
 
@@ -1019,7 +1019,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
    * @param dynamicallyListenedElementDLLOfListening the PFDLL
    * @return a key for dependency removal
    */
-  override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Long,
+  override protected[propagation] def registerDynamicallyListeningElement(listening: PropagationElement, i: Int,
                                                                           sccOfListening: StronglyConnectedComponentTopologicalSort,
                                                                           dynamicallyListenedElementDLLOfListening: DelayedPermaFilteredDoublyLinkedList[PropagationElement]): KeyForElementRemoval = {
     if (sccOfListening != null && sccOfListening == this.mySchedulingHandler) {
@@ -1170,7 +1170,7 @@ trait VaryingDependenciesPE extends PropagationElement {
    * @param i an additional value that is stored in this element together with the reference to this,
    * can be use for notification purposes
    */
-  protected final def registerDeterminingElement(p: BasicPropagationElement, i: Long) {
+  protected final def registerDeterminingElement(p: BasicPropagationElement, i: Int) {
     p match {
       case pe: PropagationElement =>
         assert(this.getStaticallyListenedElements.exists(e => e == pe),
@@ -1186,7 +1186,7 @@ trait VaryingDependenciesPE extends PropagationElement {
 
   override protected[core] def getDynamicallyListenedElements: Iterable[PropagationElement] = dynamicallyListenedElements
 
-  override protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Long): KeyForElementRemoval =
+  override protected def registerDynamicallyListenedElement(b: BasicPropagationElement, i: Int): KeyForElementRemoval =
     b.registerDynamicallyListeningElement(
       this,
       i,

@@ -149,7 +149,7 @@ abstract class MiaxConstArray(vars: Array[Long], cond: SetValue, default: Long)
     this := vars(h.getFirst)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
     if (h.isEmpty) {
@@ -301,7 +301,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Long], cond: SetValue, default: Lo
     backlogSize = 0L
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     //insert first because reduces chances of flush
     val itAdded = addedValues.iterator
     while(itAdded.hasNext){

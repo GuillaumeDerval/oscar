@@ -1286,11 +1286,11 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
       case cp :: tail =>
         topCheckpoint = cp
         checkPointStackNotTop = tail
-        assert(levelTopCheckpoint +1L == checkPointStackNotTop.size)
-        levelTopCheckpoint -= 1L
+        assert(levelTopCheckpoint + 1 == checkPointStackNotTop.size)
+        levelTopCheckpoint -= 1
       case _ =>
         topCheckpoint = null
-        levelTopCheckpoint = -1L
+        levelTopCheckpoint = -1
     }
   }
 
@@ -1299,7 +1299,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
       checkPointStackNotTop = topCheckpoint :: checkPointStackNotTop
     }
     topCheckpoint = newCheckpoint
-    levelTopCheckpoint += 1L
+    levelTopCheckpoint += 1
   }
 
   def digestChanges(changes:SeqUpdate){
@@ -1314,7 +1314,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
         digestChanges(prev)
         toValue.remove(position,changes.newValue)
       case SeqUpdateAssign(s) =>
-        while(levelTopCheckpoint >=0L){
+        while(levelTopCheckpoint >=0){
           toValue.releaseTopCheckpoint()
           popTopCheckpoint()
         }
@@ -1476,8 +1476,8 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   private def popCheckpoint(){
-    require(checkpointStackLevel >=0L)
-    if(checkpointStackLevel>0L){
+    require(checkpointStackLevel >=0)
+    if(checkpointStackLevel>0){
       val top = checkpointStackNotTop.head
       checkpointStackNotTop = checkpointStackNotTop.tail
       _topCheckpoint = top._1
@@ -1486,7 +1486,7 @@ class SeqCheckpointedValueStack[@specialized T]{
       _topCheckpoint = null
       _outputAtTopCheckpoint = null.asInstanceOf[T]
     }
-    checkpointStackLevel -= 1L
+    checkpointStackLevel -= 1
   }
 
 
@@ -1498,12 +1498,12 @@ class SeqCheckpointedValueStack[@specialized T]{
   def topCheckpoint:IntSequence = _topCheckpoint
 
   def defineTopCheckpoint(checkpoint:IntSequence,savedValue:T){
-    if(checkpointStackLevel>=0L){
+    if(checkpointStackLevel>=0){
       checkpointStackNotTop = (_topCheckpoint,_outputAtTopCheckpoint) :: checkpointStackNotTop
     }
     _topCheckpoint = checkpoint
     _outputAtTopCheckpoint = savedValue
-    checkpointStackLevel += 1L
+    checkpointStackLevel += 1
   }
 
   def rollBackAndOutputValue(checkpoint:IntSequence,checkpointLevel:Int):T = {
@@ -1512,8 +1512,8 @@ class SeqCheckpointedValueStack[@specialized T]{
   }
 
   def defineCheckpoint(checkpoint:IntSequence,checkpointLevel:Int,savedValue:T){
-    require(checkpointLevel <= checkpointStackLevel+1L)
-    require(checkpointLevel >= 0L)
+    require(checkpointLevel <= checkpointStackLevel+1)
+    require(checkpointLevel >= 0)
     popCheckpointStackToLevel(checkpointLevel,true)
     defineTopCheckpoint(checkpoint:IntSequence,savedValue:T)
   }

@@ -46,7 +46,7 @@ case class Union(left: SetValue, right: SetValue)
   finishInitialization()
 
   //TODO: not obvious at all, if left == right!!
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -102,7 +102,7 @@ case class UnionAll(sets: Iterable[SetValue])
   sets foreach (registerStaticAndDynamicDependency(_))
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -155,7 +155,7 @@ case class Inter(left: SetValue, right: SetValue)
   finishInitialization()
 
   //TODO: handle left == right!
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -206,7 +206,7 @@ case class SetMap(a: SetValue, fun: Long => Long,
     outputCount += ((mappedV, oldCount + 1L))
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for (deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
@@ -253,7 +253,7 @@ case class Diff(left: SetValue, right: SetValue)
   registerStaticAndDynamicDependency(right)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     assert(((oldValue ++ addedValues) -- removedValues).toList equals newValue.toList,"oldValue:" + oldValue + " addedValues:" + addedValues + " removedValues:" + removedValues + " newValue:" + newValue)
 
     val addedIt = addedValues.iterator
@@ -315,7 +315,7 @@ case class Cardinality(v: SetValue)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     this := newValue.size
   }
 
@@ -459,7 +459,7 @@ case class TakeAny(from: SetValue, default: Long)
     this := from.value.head
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     if (wasEmpty) {
       if(newValue.nonEmpty){
         wasEmpty = false
@@ -535,7 +535,7 @@ case class TakeAnyToSet(from: SetValue)
     this := SortedSet(from.value.head)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     if (wasEmpty) {
       if(newValue.nonEmpty){
         wasEmpty = false
@@ -584,8 +584,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
     this := (if (set.value.contains(NewVal)) 1L else 0L)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long],
-                                removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     if((removedValues.nonEmpty && this.newValue == 1L) || (addedValues.nonEmpty && this.newValue == 0L)){
       this := (if (newValue.contains(this.v.value)) 1L else 0L)
     }

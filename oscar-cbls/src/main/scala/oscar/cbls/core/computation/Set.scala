@@ -78,9 +78,9 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
     (acc,intval) => if(acc.equalsIgnoreCase("")) ""+intval else acc+","+intval) + "}"
 
   //mechanism that manage key with value changes
-  private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Long)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Long.MinValue})
+  private val listeningElementsNonValueWise:DoublyLinkedList[(PropagationElement,Int)] = getDynamicallyListeningElements.permaFilter({case (pe,id) => id != Int.MinValue})
 
-  override protected[core] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Long) : Unit = {
+  override protected[core] def registerDynamicallyListeningElementNoKey(listening : PropagationElement, i : Int) : Unit = {
     super.registerDynamicallyListeningElementNoKey(listening, i)
   }
 
@@ -248,7 +248,7 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
             this.model.notifiedInvariant = target.asInstanceOf[Invariant]
             true
           })
-          target.notifySetChanges(this, Long.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
+          target.notifySetChanges(this, Int.MinValue, addedValues, deletedValues, OldValue, m_NewValue)
           assert({
             this.model.notifiedInvariant = null
             true
@@ -304,19 +304,20 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
 trait SetNotificationTarget extends PropagationElement{
   /**
    * this method will be called just before the variable "v" is actually updated.
-   * @param v
-   * @param d d is always MinValue when notified for a valueWiseKey
+    *
+    * @param v
+   * @param id d is always MinValue when notified for a valueWiseKey
    * @param addedValues
    * @param removedValues
    * @param oldValue
    * @param newValue
    */
-  def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long])
+  def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit
 
   def registerDynamicValueWiseDependency(s:SetValue):ValueWiseKey = {
     s match{
       case c:ChangingSetValue =>
-        val key = registerDynamicallyListenedElement(c,Long.MinValue)
+        val key = registerDynamicallyListenedElement(c,Int.MinValue)
         val valueWiseKey = c.instrumentKeyToValueWiseKey(key)
         valueWiseKey.target = this
         valueWiseKey
@@ -328,8 +329,8 @@ trait SetNotificationTarget extends PropagationElement{
 
 class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,var target:SetNotificationTarget){
 
-  val sizeOfSet = cbls.longToInt(setValue.max - setValue.min +1L)
-  val offset = cbls.longToInt(setValue.min)
+  val sizeOfSet:Int = cbls.longToInt(setValue.max - setValue.min + 1L)
+  val offset:Int = cbls.longToInt(setValue.min)
   var currentValueWisePropagationWaveIdentifier:ValueWisePropagationWaveIdentifier = null
 
   def performRemove(){
@@ -340,16 +341,14 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
     originalKey.performRemove()
   }
 
-  val minValue = setValue.min
-  val maxValue = setValue.max
+  val minValue:Long = setValue.min
+  val maxValue:Long = setValue.max
 
   //var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
 
   val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
   def addToKey(value:Long) {
-    //TODO: change to assert
-
     val intValue = cbls.longToInt(value)
     require(valueToKeyArray(intValue) == null)
     valueToKeyArray(intValue) = setValue.addToValueWiseKeys(this,intValue)
@@ -506,7 +505,7 @@ class IdentitySet(toValue:CBLSSetVar, fromValue:ChangingSetValue)
 
   toValue := fromValue.value
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
     assert(v == this.fromValue)
     for(added <- addedValues)toValue.insertValueNotPreviouslyIn(added)
     for(deleted <- removedValues) toValue.deleteValuePreviouslyIn(deleted)

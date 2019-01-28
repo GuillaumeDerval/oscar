@@ -53,8 +53,7 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
     notifyInsert(value)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long],
-                                removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsert(added)
     for (deleted <- removedValues) notifyDelete(deleted)
   }
@@ -124,8 +123,7 @@ case class ValuesInViolatedClauses(s: SetValue, clauseAndMaxOccList:Iterable[(It
     notifyInsert(value)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long],
-                                removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsert(added)
     for (deleted <- removedValues) notifyDelete(deleted)
   }

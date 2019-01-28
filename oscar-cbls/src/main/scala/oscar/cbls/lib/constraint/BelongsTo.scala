@@ -50,7 +50,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
     violation := (if (set.value.contains(v.value)) 0L else 1L)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     if (newValue.contains(this.v.value)) violation := 0L
     else violation := 1L
   }

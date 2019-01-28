@@ -54,8 +54,8 @@ object IntValue {
       (o1, o2) match {
         case (a: CBLSIntConst, b: CBLSIntConst) => a.value compare b.value
         case (a: ChangingIntValue, b: ChangingIntValue) => a.uniqueID - b.uniqueID
-        case (_:CBLSIntConst, _:ChangingIntValue) => -1L
-        case (_:ChangingIntValue, _:CBLSIntConst) => 1L
+        case (_:CBLSIntConst, _:ChangingIntValue) => -1
+        case (_:ChangingIntValue, _:CBLSIntConst) => 1
       }
     }
   }

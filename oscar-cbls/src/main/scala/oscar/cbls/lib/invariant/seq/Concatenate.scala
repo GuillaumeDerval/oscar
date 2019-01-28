@@ -78,12 +78,12 @@ class Concatenate(a:ChangingSeqValue,b:ChangingSeqValue,maxPivotPerValuePercent:
 
   def digestChanges(isFirst : Boolean, changes : SeqUpdate) : Boolean = {
     changes match {
-      case SeqUpdateInsert(value : Long, pos : Long, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(isFirst, prev)) return false
         this.insertAtPosition(value, if (isFirst) pos else pos + a.value.size)
         true
 
-      case SeqUpdateMove(fromIncluded : Long, toIncluded : Long, after : Long, flip : Boolean, prev : SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(isFirst, prev)) return false
         if (isFirst) {
           this.move(fromIncluded, toIncluded, after, flip)

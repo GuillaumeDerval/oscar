@@ -42,7 +42,7 @@ abstract class MiaxSet(v: SetValue)
 
   var wasEmpty:Boolean = v.value.isEmpty
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }

@@ -216,7 +216,7 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   }
 
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     assert(index == v)
     for(value <- addedValues){
       KeysToInputArray(value) = registerDynamicDependency(inputarray(value))
@@ -312,7 +312,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     this := inputarray(NewVal).value
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     assert(v == inputarray.apply(index.value))
     this := newValue
   }

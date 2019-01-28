@@ -46,9 +46,9 @@ case class DenseRef(references:Array[SetValue], referencing:Array[CBLSSetVar])
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
-    for (added <- addedValues) referencing(added).insertValue(d)
-    for (deleted <- removedValues)  referencing(deleted).deleteValue(d)
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+    for (added <- addedValues) referencing(added).insertValue(id)
+    for (deleted <- removedValues)  referencing(deleted).deleteValue(id)
   }
 
   /** To override whenever possible to spot errors in invariants.

@@ -42,7 +42,7 @@ case class SetSum(on: SetValue, fun: (Long => Long) = (a: Long) => a)
   registerStaticAndDynamicDependency(on)
   finishInitialization()
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     var delta = 0L
     for (added <- addedValues) delta += fun(added)
     for (deleted <- removedValues) delta -= fun(deleted)
@@ -77,7 +77,7 @@ case class SetProd(on: SetValue)
     this := nonZeroProduct
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Long, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]){
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (deleted <- removedValues) if (deleted != 0L) {nonZeroProduct /= deleted}
     for (added <- addedValues) if (added != 0L) {nonZeroProduct *= added}
     if (newValue.contains(0L)) {

@@ -44,13 +44,9 @@ class MinConstArrayValueWise(constArray: Array[Long], condSet: SetValue, default
 
   this := (if(heapOfConsideredPositions.isEmpty) default else constArray(heapOfConsideredPositions.getFirst))
 
-  override def notifySetChanges(v : ChangingSetValue, d : Long,
-                                addedValues : Iterable[Long],
-                                removedValues : Iterable[Long],
-                                oldValue : SortedSet[Long],
-                                newValue : SortedSet[Long]){
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     //we start wit the added because we want to avoid exploring the values for nothing
-    require(d == Long.MinValue)
+    require(id == Int.MinValue)
 
     val removedValuesIt = removedValues.iterator
     while(removedValuesIt.hasNext){
