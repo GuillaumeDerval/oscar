@@ -9,19 +9,19 @@ import oscar.cbls.algo.seq.IntSequence
 abstract class FunctionForPreCompute {
 
   val fun: PiecewiseLinearFun
-  val externalPositionOfLastRoutedNode: Long
+  val externalPositionOfLastRoutedNode: Int
 
   def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute
 
-  def kindOfComputation(fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep]
+  def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep]
 
-  def stackInsert(value: Long, pos: Long): FunctionForPreCompute = new InsertStackedFunction(this.commitStackedUpdatesToConcrete(), value, pos)
+  def stackInsert(value: Long, pos: Int): FunctionForPreCompute = new InsertStackedFunction(this.commitStackedUpdatesToConcrete(), value, pos)
 
-  def stackDelete(pos: Long): FunctionForPreCompute = new DeleteStackedFunction(this.commitStackedUpdatesToConcrete(), pos)
+  def stackDelete(pos: Int): FunctionForPreCompute = new DeleteStackedFunction(this.commitStackedUpdatesToConcrete(), pos)
 
-  def stackMove(startPositionIncluded: Long,
-                endPositionIncluded: Long,
-                moveAfterPosition: Long,
+  def stackMove(startPositionIncluded: Int,
+                endPositionIncluded: Int,
+                moveAfterPosition: Int,
                 flip: Boolean): FunctionForPreCompute =
     new MoveStackedFunction(this.commitStackedUpdatesToConcrete(), startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 }
@@ -38,7 +38,7 @@ object ConcreteFunctionForPreCompute {
     */
   def apply(seq: IntSequence): ConcreteFunctionForPreCompute ={
     val bij = PiecewiseLinearFun.identity
-    val lastRoutedNodePos = seq.size-1L
+    val lastRoutedNodePos = seq.size-1
     new ConcreteFunctionForPreCompute(bij, lastRoutedNodePos, lastRoutedNodePos, lastRoutedNodePos)
   }
 }
@@ -54,22 +54,22 @@ object ConcreteFunctionForPreCompute {
   */
 
 class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
-                                    val externalPositionOfLastRoutedNode: Long,
-                                    val externalPositionOfLastRemovedNodeWithPreCompute: Long,
+                                    val externalPositionOfLastRoutedNode: Int,
+                                    val externalPositionOfLastRemovedNodeWithPreCompute: Int,
                                     val maxValueWithPreCompute: Long)
   extends FunctionForPreCompute{
 
   override def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute = this
 
-  override def kindOfComputation(fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep] = {
+  override def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
 
     val pivotOfFromIncluded =
       fun.pivotApplyingTo(fromPosIncluded) match {
-        case None => new Pivot(0L, LinearTransform.identity)
+        case None => new Pivot(0, LinearTransform.identity)
         case Some(p) => p
       }
     val pivotOfToIncluded = fun.pivotApplyingTo(toPosIncluded) match {
-      case None => new Pivot(0L, LinearTransform.identity)
+      case None => new Pivot(0, LinearTransform.identity)
       case Some(p) => p
     }
 
@@ -88,9 +88,9 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
         val currentPivotValue = pivotExplorer.value.fromValue
 
         if(prevPivotValue == pivotOfFromIncluded.fromValue)
-          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, fromPosIncluded, currentPivotValue - 1L)
+          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, fromPosIncluded, currentPivotValue - 1)
         else
-          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, prevPivotValue, currentPivotValue - 1L)
+          computationSteps = computationSteps ++ kindOfComputationOnSegment(prevPivot, prevPivotValue, currentPivotValue - 1)
 
 
         if (currentPivotValue == pivotOfToIncluded.fromValue) {
@@ -107,7 +107,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
     }
   }
 
-  private def kindOfComputationOnSegment(pivot: Pivot, fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep] = {
+  private def kindOfComputationOnSegment(pivot: Pivot, fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
     require(0L <= fromPosIncluded && fromPosIncluded <= externalPositionOfLastRoutedNode,
       "fromPositionInclude(= " + fromPosIncluded + ") should be in [0L, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
 
@@ -128,7 +128,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
       else {
         val posMaxValueWithPreCompute = fromPosIncluded + (maxValueWithPreCompute - fromValue)
         computationsSteps = computationsSteps :+ FetchFromPreCompute(fromPosIncluded, posMaxValueWithPreCompute, false)
-        computationsSteps = computationsSteps :+ FromScratch(posMaxValueWithPreCompute + 1L, toPosIncluded)
+        computationsSteps = computationsSteps :+ FromScratch(posMaxValueWithPreCompute + 1, toPosIncluded)
       }
     }
     else {
@@ -138,7 +138,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
         computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, toPosIncluded)
       else {
         val posMaxValueWithPreCompute = toPosIncluded - (maxValueWithPreCompute - toPosIncluded)
-        computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, posMaxValueWithPreCompute - 1L)
+        computationsSteps = computationsSteps :+ FromScratch(fromPosIncluded, posMaxValueWithPreCompute - 1)
         computationsSteps = computationsSteps :+ FetchFromPreCompute(posMaxValueWithPreCompute, toPosIncluded, true)
       }
     }
@@ -147,10 +147,10 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
 }
 
 
-class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, pos: Long) extends FunctionForPreCompute {
+class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, pos: Int) extends FunctionForPreCompute {
 
   val fun: PiecewiseLinearFun = base.fun
-  val externalPositionOfLastRoutedNode : Long = base.externalPositionOfLastRoutedNode + 1L
+  val externalPositionOfLastRoutedNode : Int = base.externalPositionOfLastRoutedNode + 1
 
   override def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute = {
     val funForPreCompute = base.commitStackedUpdatesToConcrete()
@@ -159,37 +159,37 @@ class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, po
     val externalPositionOfLastRoutedNode = funForPreCompute.externalPositionOfLastRoutedNode
     val externalPositionOfLastRemovedNode = funForPreCompute.externalPositionOfLastRemovedNodeWithPreCompute
 
-    val size = externalPositionOfLastRemovedNode + 1L
+    val size = externalPositionOfLastRemovedNode + 1
     val updatedFun =
       if (pos == size) {
         //inserting at end of the sequence
         fun.updateForCompositionBefore(
-          (size, size, LinearTransform (externalPositionOfLastRemovedNode + 1L - pos, false) ) )
+          (size, size, LinearTransform (externalPositionOfLastRemovedNode + 1 - pos, false) ) )
         //TODO: this might be always identity, actually, so useless!
       }
       else {
         //inserting somewhere within the sequence, need to shift upper part
-        fun.swapAdjacentZonesShiftFirst (pos, size - 1L, size, false)
+        fun.swapAdjacentZonesShiftFirst (pos, size - 1, size, false)
       }
 
     new ConcreteFunctionForPreCompute(updatedFun,
-      externalPositionOfLastRoutedNode + 1L,
-      externalPositionOfLastRemovedNode + 1L,
+      externalPositionOfLastRoutedNode + 1,
+      externalPositionOfLastRemovedNode + 1,
       maxValueWithPreCompute)
   }
 
 
-  override def kindOfComputation(fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep] = {
+  override def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
     val fromPosBeforeInsert =
       if (fromPosIncluded < pos) fromPosIncluded
-      else fromPosIncluded - 1L
+      else fromPosIncluded - 1
 
     val toPosBeforeInsert =
       if(toPosIncluded < pos) toPosIncluded
-      else toPosIncluded - 1L
+      else toPosIncluded - 1
 
     if(fromPosIncluded < pos && toPosIncluded >= pos){
-      val stepBeforePos = base.kindOfComputation(fromPosBeforeInsert, pos-1L)
+      val stepBeforePos = base.kindOfComputation(fromPosBeforeInsert, pos-1)
       val stepAfterInsert =
         if (toPosIncluded == pos) List[ComputationStep]()
         else base.kindOfComputation(pos, toPosBeforeInsert)
@@ -201,10 +201,10 @@ class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, po
 }
 
 
-class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Long) extends FunctionForPreCompute{
+class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Int) extends FunctionForPreCompute{
 
   val fun: PiecewiseLinearFun = base.fun
-  val externalPositionOfLastRoutedNode: Long = base.externalPositionOfLastRoutedNode -1L
+  val externalPositionOfLastRoutedNode: Int = base.externalPositionOfLastRoutedNode -1
 
   override def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute = {
     val funForPreCompute = base.commitStackedUpdatesToConcrete()
@@ -221,29 +221,29 @@ class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Long) exte
     val newExternalPosOfLastRemovedNode =
       if (removedValue <= maxValueWithPreCompute) externalPosOfLastRemovedNode
       else {
-        externalPosOfLastRemovedNode - 1L
+        externalPosOfLastRemovedNode - 1
       }
 
     new ConcreteFunctionForPreCompute(updatedBij,
-      externalPositionOfLastRoutedNode - 1L,
+      externalPositionOfLastRoutedNode - 1,
       newExternalPosOfLastRemovedNode,
       maxValueWithPreCompute)
   }
 
-  override def kindOfComputation(fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep] = {
+  override def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
     val fromPosBeforeDelete =
       if (fromPosIncluded < pos) fromPosIncluded
-      else fromPosIncluded + 1L
+      else fromPosIncluded + 1
 
     val toPosBeforeDelete =
       if (toPosIncluded < pos) toPosIncluded
-      else toPosIncluded +1L
+      else toPosIncluded +1
 
     if (fromPosBeforeDelete < pos && toPosBeforeDelete >= pos){
-      val stepsBeforePos = base.kindOfComputation(fromPosBeforeDelete, pos-1L)
+      val stepsBeforePos = base.kindOfComputation(fromPosBeforeDelete, pos-1)
       val stepsAfterPos =
         if (toPosBeforeDelete == pos) List[ComputationStep]()
-        else base.kindOfComputation(pos+1L, toPosBeforeDelete)
+        else base.kindOfComputation(pos+1, toPosBeforeDelete)
 
       stepsBeforePos ++ stepsAfterPos
     }
@@ -254,13 +254,13 @@ class DeleteStackedFunction(base: ConcreteFunctionForPreCompute, pos: Long) exte
 }
 
 class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
-                          startPositionIncluded: Long,
-                          endPositionIncluded: Long,
-                          moveAfterPosition: Long,
+                          startPositionIncluded: Int,
+                          endPositionIncluded: Int,
+                          moveAfterPosition: Int,
                           flip: Boolean) extends FunctionForPreCompute{
 
   val fun: PiecewiseLinearFun = base.fun
-  val externalPositionOfLastRoutedNode: Long = base.externalPositionOfLastRoutedNode
+  val externalPositionOfLastRoutedNode: Int = base.externalPositionOfLastRoutedNode
 
   override def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute = {
     val functionForPreCompute = base.commitStackedUpdatesToConcrete()
@@ -269,11 +269,11 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
     val externalPositionOfLastRemovedNode = functionForPreCompute.externalPositionOfLastRemovedNodeWithPreCompute
     val maxValueWithPreCompute = functionForPreCompute.maxValueWithPreCompute
 
-    val size = externalPositionOfLastRoutedNode + 1L
+    val size = externalPositionOfLastRoutedNode + 1
 
-    require(startPositionIncluded >= 0L && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[")
-    require(endPositionIncluded >= 0L && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0L,size(="+size+")[ ")
-    require(moveAfterPosition >= -1L && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size=" + size+"[ ")
+    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0L,size(="+size+")[ ")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size=" + size+"[ ")
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
@@ -281,7 +281,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
     require(startPositionIncluded <= endPositionIncluded, "startPositionIncluded=" + startPositionIncluded + " should be <= endPositionIncluded=" + endPositionIncluded)
 
 
-    if (moveAfterPosition + 1L == startPositionIncluded) {
+    if (moveAfterPosition + 1 == startPositionIncluded) {
       //not moving
       if (flip) {
         //just flipping
@@ -311,7 +311,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
             fun.swapAdjacentZonesShiftSecond(
               startPositionIncluded,
               endPositionIncluded,
-              moveAfterPosition: Long,
+              moveAfterPosition: Int,
               true)
           }
 
@@ -325,14 +325,14 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
         val updatedFun =
           if(!flip) {
             fun.swapAdjacentZonesShiftBest(
-              moveAfterPosition+1L,
-              startPositionIncluded-1L,
+              moveAfterPosition+1,
+              startPositionIncluded-1,
               endPositionIncluded)
           }
           else {
             fun.swapAdjacentZonesShiftFirst(
-              moveAfterPosition+1L,
-              startPositionIncluded-1L,
+              moveAfterPosition+1,
+              startPositionIncluded-1,
               endPositionIncluded,true)
           }
 
@@ -344,9 +344,9 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
     }
   }
 
-  override def kindOfComputation(fromPosIncluded: Long, toPosIncluded: Long): List[ComputationStep] = {
+  override def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
     // we suppose that fromPosIncluded is the starting point of a vehicle and toPosIncluded the last point of this vehicle
-    if (moveAfterPosition + 1L == startPositionIncluded){
+    if (moveAfterPosition + 1 == startPositionIncluded){
       if (flip){
         // simple flip
 
@@ -356,7 +356,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
           val stepsBeforeFlip = base.kindOfComputation(fromPosIncluded, moveAfterPosition)
           val flippedSteps = flipListOfSteps(base.kindOfComputation(startPositionIncluded, endPositionIncluded))
           val stepsAfterFlip = if (toPosIncluded == endPositionIncluded) List[ComputationStep]()
-          else base.kindOfComputation(endPositionIncluded + 1L, toPosIncluded)
+          else base.kindOfComputation(endPositionIncluded + 1, toPosIncluded)
 
           stepsBeforeFlip ++ flippedSteps ++ stepsAfterFlip
         }
@@ -369,7 +369,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
         base.kindOfComputation(fromPosIncluded, toPosIncluded)
     }
     else{
-      val movedSegSize = endPositionIncluded - startPositionIncluded +1L
+      val movedSegSize = endPositionIncluded - startPositionIncluded +1
 
       if(moveAfterPosition > startPositionIncluded){
         // move upwards
@@ -381,17 +381,17 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
 
         else if(fromPosIncluded < startPositionIncluded && toPosIncluded >= moveAfterPosition){
           // move on same vehicle. Wa are at the vehicle of the move
-          val stepBeforeMove = base.kindOfComputation(fromPosIncluded, startPositionIncluded - 1L)
+          val stepBeforeMove = base.kindOfComputation(fromPosIncluded, startPositionIncluded - 1)
 
           val stepOnMovedSegment =
             if(flip) flipListOfSteps(base.kindOfComputation(startPositionIncluded, endPositionIncluded))
             else base.kindOfComputation(startPositionIncluded, endPositionIncluded)
 
-          val stepOnSegOfAfterPos = base.kindOfComputation(endPositionIncluded+1L, moveAfterPosition)
+          val stepOnSegOfAfterPos = base.kindOfComputation(endPositionIncluded+1, moveAfterPosition)
 
           val stepAfterMove =
             if(toPosIncluded == moveAfterPosition) List[ComputationStep]()
-            else base.kindOfComputation(moveAfterPosition+1L, toPosIncluded)
+            else base.kindOfComputation(moveAfterPosition+1, toPosIncluded)
 
           stepBeforeMove ++ stepOnSegOfAfterPos ++ stepOnMovedSegment ++ stepAfterMove
         }
@@ -403,7 +403,7 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
 
           val stepBeforeMove = base.kindOfComputation(fromPosIncluded + movedSegSize, moveAfterPosition)
           val stepAfterMove =
-            if(toPosIncluded != moveAfterPosition) base.kindOfComputation(moveAfterPosition+1L, toPosIncluded)
+            if(toPosIncluded != moveAfterPosition) base.kindOfComputation(moveAfterPosition+1, toPosIncluded)
             else List[ComputationStep]()
 
           stepBeforeMove ++ movedStep ++ stepAfterMove
@@ -411,8 +411,8 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
         else if (fromPosIncluded < startPositionIncluded && toPosIncluded + movedSegSize >= endPositionIncluded){
           // move on different vehicles. We are at the source vehicle
 
-          val stepBeforeMove = base.kindOfComputation(fromPosIncluded, startPositionIncluded -1L)
-          val stepAfterMove = base.kindOfComputation(endPositionIncluded+1L, toPosIncluded + movedSegSize)
+          val stepBeforeMove = base.kindOfComputation(fromPosIncluded, startPositionIncluded -1)
+          val stepAfterMove = base.kindOfComputation(endPositionIncluded+1, toPosIncluded + movedSegSize)
 
           stepBeforeMove ++ stepAfterMove
         }
@@ -429,13 +429,13 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
         else if(fromPosIncluded <= moveAfterPosition && toPosIncluded >= endPositionIncluded){
           // we are looking at the vehicle of movement
           val stepBeforeMove = base.kindOfComputation(fromPosIncluded, moveAfterPosition)
-          val stepOnSegmentOfAfter = base.kindOfComputation(moveAfterPosition+1L, startPositionIncluded-1L)
+          val stepOnSegmentOfAfter = base.kindOfComputation(moveAfterPosition+1, startPositionIncluded-1)
           val stepOnMovedSegment =
             if(flip) flipListOfSteps(base.kindOfComputation(startPositionIncluded, endPositionIncluded))
             else base.kindOfComputation(startPositionIncluded, endPositionIncluded)
           val stepAfterMove =
             if(toPosIncluded == endPositionIncluded) List[ComputationStep]()
-            else base.kindOfComputation(endPositionIncluded+1L, toPosIncluded)
+            else base.kindOfComputation(endPositionIncluded+1, toPosIncluded)
 
           stepBeforeMove ++ stepOnMovedSegment ++ stepOnSegmentOfAfter ++ stepAfterMove
         }
@@ -449,17 +449,17 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
 
           val stepAfterMove =
             if(toPosIncluded - movedSegSize == moveAfterPosition) List[ComputationStep]()
-            else base.kindOfComputation(moveAfterPosition+1L, toPosIncluded - movedSegSize)
+            else base.kindOfComputation(moveAfterPosition+1, toPosIncluded - movedSegSize)
 
           stepBeforeMove ++ stepOnMovedSegment ++ stepAfterMove
         }
         else if (fromPosIncluded - movedSegSize < startPositionIncluded && toPosIncluded >= endPositionIncluded){
           // move on different vehicle. We are at the source vehicle
 
-          val stepBeforeMove = base.kindOfComputation(fromPosIncluded - movedSegSize, startPositionIncluded-1L)
+          val stepBeforeMove = base.kindOfComputation(fromPosIncluded - movedSegSize, startPositionIncluded-1)
           val stepAfterMove =
             if(toPosIncluded == endPositionIncluded) List[ComputationStep]()
-            else base.kindOfComputation(endPositionIncluded + 1L, toPosIncluded)
+            else base.kindOfComputation(endPositionIncluded + 1, toPosIncluded)
 
           stepBeforeMove ++ stepAfterMove
         }
