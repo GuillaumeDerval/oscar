@@ -125,10 +125,10 @@ case class SegmentExchange(val vrp: VRP,
             val otherVehicles : Iterable[Long] = firstNodeVehicleToNodeRoutePosition.keys.filter((v : Long) => secondNodeVehicleToNodeRoutePosition.isDefinedAt(v))
             for (otherVehicle <- otherVehicles) {
 
-              val (relevantNeighborsForFirstNodeNodeVPos:Iterable[(Long, Long, Long)],notifyFound4) =
+              val (relevantNeighborsForFirstNodeNodeVPos,notifyFound4) =
                 selectFirstNodeOfSecondSegmentBehavior.toIterable(firstNodeVehicleToNodeRoutePosition(otherVehicle))
 
-              val (relevantNeighborsForSecondNodeNodeVPos:Iterable[(Long, Long, Long)],notifyFound5) =
+              val (relevantNeighborsForSecondNodeNodeVPos,notifyFound5) =
                 selectSecondNodeOfSecondSegmentBehavior.toIterable(secondNodeVehicleToNodeRoutePosition(otherVehicle))
 
               //TODO: double loop and some post-filtering is naive, some pre-filtering could be done before, eg based on a sort of the relevant neighbors by position

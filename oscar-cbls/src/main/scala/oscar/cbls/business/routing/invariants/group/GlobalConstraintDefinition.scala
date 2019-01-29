@@ -416,7 +416,7 @@ class ModifiedValues[@specialized(Long) U](val vehicle : Long,
   }
 }
 
-sealed abstract class Segment[@specialized(Long)T]()
+trait Segment[@specialized T]{}
 
 /**
   * This represents a subsequence starting at startNode and ending at endNode.
@@ -427,7 +427,7 @@ sealed abstract class Segment[@specialized(Long)T]()
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class PreComputedSubSequence[@specialized(Long)T](startNode:Long,
+case class PreComputedSubSequence[@specialized T](startNode:Long,
                                                       startNodeValue:T,
                                                       endNode:Long,
                                                       endNodeValue:T) extends Segment[T]{
@@ -446,7 +446,7 @@ case class PreComputedSubSequence[@specialized(Long)T](startNode:Long,
   * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
   * @tparam T the type of precomputation
   */
-case class FlippedPreComputedSubSequence[@specialized(Long)T](startNode:Long,
+case class FlippedPreComputedSubSequence[@specialized T](startNode:Long,
                                                              startNodeValue:T,
                                                              endNode:Long,
                                                              endNodeValue:T) extends Segment[T]{
@@ -459,7 +459,7 @@ case class FlippedPreComputedSubSequence[@specialized(Long)T](startNode:Long,
   * This represent that a node that was not present in the initial sequence when pre-computation was performed.
   * @param node
   */
-case class NewNode[@specialized(Long)T](node:Long) extends Segment[T]{
+case class NewNode[@specialized T](node:Long) extends Segment[T]{
   override def toString: String = {
     "NewNode - Node : " + node
   }
