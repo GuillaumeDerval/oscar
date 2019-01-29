@@ -21,8 +21,8 @@ import oscar.cbls.core._
 
 //TODO: document, test and put into modeling API
 case class SubSequence(v: SeqValue,index:Long, length: Long,
-                       override val maxPivotPerValuePercent:Long = 10L,
-                       override val maxHistorySize:Long = 10L)
+                       override val maxPivotPerValuePercent:Int = 10,
+                       override val maxHistorySize:Int = 10)
   extends SeqInvariant(IntSequence.empty(), v.max, maxPivotPerValuePercent, maxHistorySize)
     with SeqNotificationTarget{
 

@@ -25,7 +25,7 @@ import oscar.cbls.core._
  * @param maxPivotPerValuePercent
  * @param maxHistorySize
  */
-case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Long = 10L, override val maxHistorySize:Long = 10L)
+case class Flip(v: SeqValue,override val maxPivotPerValuePercent:Int = 10, override val maxHistorySize:Int = 10)
   extends SeqInvariant(v.value.flip(true,true), v.max, maxPivotPerValuePercent, maxHistorySize)
   with SeqNotificationTarget{
 

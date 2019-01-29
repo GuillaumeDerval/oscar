@@ -159,7 +159,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
       if(prevNodeOfNodes
     }
   }*/
-/*
+
   /**
     * Compute the previous node of all nodes in the routes.
     * If the node isn't routed or is a depot, his previous is n.
@@ -167,7 +167,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     */
   def getGlobalPrevNodeOfAllNodes: Array[Long] = {
     val it = routes.value.iterator
-    val prevNodeOfNodes = Array.fill(n)(n)
+    val prevNodeOfNodes = Array.fill[Long](n)(n)
     var prev = n
     while(it.hasNext){
       val node = it.next()
@@ -186,7 +186,7 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     */
   def getGlobalNextNodeOfAllNodes: Array[Long] = {
     val it = routes.value.iterator
-    val nextNodeOfNodes = Array.fill(n)(n)
+    val nextNodeOfNodes = Array.fill[Long](n)(n)
     var prev = it.next()
     while(it.hasNext){
       val node = it.next()
@@ -200,8 +200,8 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
     nextNodeOfNodes
   }
 
-  def getRoutePositionOfAllNode:Array[Long] = {
-    def buildRoutePositionOfAllNode(it: Iterator[Long],currentPosition: Long, nodeToPosition: List[Long]): Array[Long] = {
+  def getRoutePositionOfAllNode:Array[Int] = {
+    def buildRoutePositionOfAllNode(it: Iterator[Long],currentPosition: Int, nodeToPosition: List[Int]): Array[Int] = {
       if(!it.hasNext)
         nodeToPosition.toArray
       else{
@@ -214,20 +214,20 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
       }
     }
     val it = routes.value.iterator
-    buildRoutePositionOfAllNode(it,0L,List.empty)
+    buildRoutePositionOfAllNode(it,0,List.empty)
   }
 
-  def getGlobalRoutePositionOfAllNode:Array[Long] = {
+  def getGlobalRoutePositionOfAllNode:Array[Int] = {
     val it = routes.value.iterator
     val globalRoutePosition = Array.fill(n)(n)
-    var inc = 0L
+    var inc = 0
     while(it.hasNext) {
       globalRoutePosition(it.next()) = inc
-      inc += 1L
+      inc += 1
     }
     globalRoutePosition
   }
-*/
+
   /**
     * Redefine the toString method.
     * @return the VRP problem as a String.
