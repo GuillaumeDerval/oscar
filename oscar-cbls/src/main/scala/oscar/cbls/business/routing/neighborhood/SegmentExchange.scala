@@ -47,13 +47,13 @@ case class SegmentExchange(val vrp: VRP,
                            tryFlip:Boolean = true)
   extends EasyNeighborhoodMultiLevel[SegmentExchangeMove](neighborhoodName) {
 
-  var firstSegmentStartPosition:Long = -1L
-  var firstSegmentEndPosition:Long = -1L
+  var firstSegmentStartPosition:Int = -1
+  var firstSegmentEndPosition:Int = -1
   var flipFirstSegment:Boolean = false
-  var secondSegmentStartPosition: Long = -1L
-  var secondSegmentEndPosition: Long = -1L
+  var secondSegmentStartPosition: Int = -1
+  var secondSegmentEndPosition: Int = -1
   var flipSecondSegment:Boolean = false
-  var startVehicle = 0L
+  var startVehicle:Int = 0
 
   val v = vrp.v
   val seq = vrp.routes
@@ -138,12 +138,12 @@ case class SegmentExchange(val vrp: VRP,
 
                   val isReversedFromFirstSecondNodesSecondSegment =
                     if (relevantFirstPos < relevantSecondPos) {
-                      secondSegmentStartPosition = relevantFirstPos + 1L
-                      secondSegmentEndPosition = relevantSecondPos - 1L
+                      secondSegmentStartPosition = relevantFirstPos + 1
+                      secondSegmentEndPosition = relevantSecondPos - 1
                       false
                     } else {
-                      secondSegmentStartPosition = relevantSecondPos + 1L
-                      secondSegmentEndPosition = relevantFirstPos - 1L
+                      secondSegmentStartPosition = relevantSecondPos + 1
+                      secondSegmentEndPosition = relevantFirstPos - 1
                       true
                     }
 
@@ -174,7 +174,7 @@ case class SegmentExchange(val vrp: VRP,
 
     }//end loop on vehicles
     seq.releaseTopCheckpoint()
-    startVehicle = firstVehicle + 1L
+    startVehicle = firstVehicle + 1
   } //end def
 
   override def instantiateCurrentMove(newObj: Long): SegmentExchangeMove = {
@@ -231,12 +231,12 @@ case class SegmentExchangeOnSegments(vrp: VRP,
                                     )
   extends EasyNeighborhoodMultiLevel[SegmentExchangeOnSegmentsMove](neighborhoodName){
 
-  var firstSegmentStartPosition:Long = -1L
-  var firstSegmentEndPosition:Long = -1L
-  var secondSegmentStartPosition: Long = -1L
-  var secondSegmentEndPosition: Long = -1L
+  var firstSegmentStartPosition:Int = -1
+  var firstSegmentEndPosition:Int = -1
+  var secondSegmentStartPosition: Int = -1
+  var secondSegmentEndPosition: Int = -1
   var tryFlip: Boolean = false
-  var startVehicle = 0L
+  var startVehicle:Int = 0
 
   val n = vrp.n
   val v = vrp.v
@@ -276,7 +276,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
         (nextNodeOfAllNodes(end2) < v || isNodeInRelevantNeighborsOfNodes(nextNodeOfAllNodes(end2))(end1))
     }
 
-    if(!hotRestart)startVehicle = 0L
+    if(!hotRestart)startVehicle = 0
 
     val (listOfVehicleForFirstVehicle,notifyFound1) = selectFirstVehicleBehavior.toIterable(vehiclesNow.drop(startVehicle))
     for(firstVehicle <- listOfVehicleForFirstVehicle){
@@ -300,7 +300,7 @@ case class SegmentExchangeOnSegments(vrp: VRP,
         }
       }
     }
-    startVehicle += 1L
+    startVehicle += 1
     seq.releaseTopCheckpoint()
   }
 
@@ -348,11 +348,11 @@ case class SegmentExchangeOnSegmentsMove(firstSegmentStartPosition:Long,
   }
 }
 
-case class SegmentExchangeMove(firstSegmentStartPosition:Long,
-                               firstSegmentEndPosition:Long,
+case class SegmentExchangeMove(firstSegmentStartPosition:Int,
+                               firstSegmentEndPosition:Int,
                                flipFirstSegment:Boolean,
-                               secondSegmentStartPosition: Long,
-                               secondSegmentEndPosition: Long,
+                               secondSegmentStartPosition:Int,
+                               secondSegmentEndPosition:Int,
                                flipSecondSegment:Boolean,
                                override val objAfter: Long,override val neighborhood:SegmentExchange,
                                override val neighborhoodName:String = "SegmentExchangeMove")
