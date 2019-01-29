@@ -22,8 +22,8 @@ object VoronoiZones{
             defaultDistanceForUnreachableNodes:Long):VoronoiZones = {
 
     val trackedNodeToDistanceAndCentroid = SortedMap.empty[Int,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
-      nodeID -> (CBLSIntVar(m, 0, 0 to (defaultDistanceForUnreachableNodes max graphDiameterOverApprox), "distanceToClosestCentroid_Node" + nodeID),
-        CBLSIntVar(m, 0, -1 to centroids.max, "closestCentroidToNode" + nodeID))
+      cbls.longToInt(nodeID) -> (CBLSIntVar(m, 0, 0L to (defaultDistanceForUnreachableNodes max graphDiameterOverApprox), "distanceToClosestCentroid_Node" + nodeID),
+        CBLSIntVar(m, 0, -1L to centroids.max, "closestCentroidToNode" + nodeID))
     )
 
     new VoronoiZones(graph,
@@ -35,8 +35,14 @@ object VoronoiZones{
 
   def orphanNodes(v:VoronoiZones):ChangingSetValue = {
     //TODO: embed this into the VoronoiVone invariant to have better runtime?
-    val idToNodeAndCentroid:Array[(Int,Node)] = v.trackedNodeToDistanceAndCentroidMap.toList.map({case (id,(_,centroid)) => (id,centroid)}).toArray
-    SetMap(Filter(idToNodeAndCentroid.map(_._2),_!= -1),idToNodeAndCentroid(_)._1,Domain.setToRomainRange(idToNodeAndCentroid.map(_._1).toSet))
+    val idToNodeAndCentroid:Array[(Int,IntValue)] = v.trackedNodeToDistanceAndCentroidMap.toList.map({case (id,(_,centroid)) => (id,centroid)}).toArray
+
+    SetMap(
+      Filter(
+        idToNodeAndCentroid.map(_._2),
+        _!= -1),
+      (nodeID:Long) => idToNodeAndCentroid(cbls.longToInt(nodeID))._1,
+      Domain.setToDomain(idToNodeAndCentroid.map(_._1:Long).toSet))
   }
 }
 
@@ -118,7 +124,7 @@ class VoronoiZones(graph:ConditionalGraph,
   private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
 
   for(c <- openConditions.value){
-    isConditionalEdgeOpen(c) = true
+    isConditionalEdgeOpen(cbls.longToInt(c)) = true
   }
 
   private def isEdgeOpen(edge: Edge): Boolean =
@@ -222,11 +228,11 @@ class VoronoiZones(graph:ConditionalGraph,
       //println("change on centroids(addedValues:" + addedValues + " removedValues:" + removedValues)
       for (added <- addedValues) {
         val addedInt = cbls.longToInt(added)
-        labelNode(addedInt,VoronoiZone(graph.nodes(added),0))
+        labelNode(addedInt,VoronoiZone(graph.nodes(addedInt),0))
         loadOrCorrectNodeIDIntoHeap(addedInt)
       }
       for (removed <- removedValues) {
-        loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(removed))
+        loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(cbls.longToInt(removed)))
       }
     } else if (v == openConditions) {
       //opening or closing edges
@@ -260,7 +266,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
   //we can only put node with an existing under-approximated distance to the target, this only needs
   // to be checked on the source node, actually
-  private val nodeIDHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
+  private val nodeIDHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
     nodeID => nodeLabeling(cbls.longToInt(nodeID)).asInstanceOf[VoronoiZone].distance, graph.nbNodes, graph.nbNodes)
 
   private def performLabelingFromCurrentHeap() {
@@ -443,7 +449,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
     require(nodeIDHeap.isEmpty)
 
-    val centroids:Iterable[Node] = this.centroids.value.toList.map(nodeID => graph.nodes(nodeID))
+    val centroids:Iterable[Node] = this.centroids.value.toList.map(nodeID => graph.nodes(cbls.longToInt(nodeID)))
     val isConditionalEdgeOpen = (conditionID:Int) => this.openConditions.value contains conditionID
 
     //checking for each node the centroid (this is very costly: nbNodes*Dijkstra)

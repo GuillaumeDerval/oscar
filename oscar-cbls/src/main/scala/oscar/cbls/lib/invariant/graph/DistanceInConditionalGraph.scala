@@ -29,10 +29,11 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
   var listenedValues:SortedSet[Int] = SortedSet.empty
   def setListenedValueOnValueWiseKey(newListenedValues:SortedSet[Int]): Unit ={
     val toRemoveValues = listenedValues -- newListenedValues
-    toRemoveValues.foreach(key.removeFromKey)
+
+    toRemoveValues.foreach(k => key.removeFromKey(k))
 
     val toAddValues = newListenedValues -- listenedValues
-    toAddValues.foreach(key.addToKey)
+    toAddValues.foreach(k => key.addToKey(k))
 
     listenedValues = newListenedValues
   }
@@ -56,7 +57,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
       {val o = openConditions.value; condition => o contains condition},false)
 
     match{
-      case d@Distance(from, to,distance:Int, requiredConditions, unlockingConditions,_) =>
+      case d@Distance(from, to,distance:Long, requiredConditions, unlockingConditions,_) =>
         //println("computeAffectAndAdjustValueWiseKey" + d)
         setListenedValueOnValueWiseKey(requiredConditions ++ unlockingConditions)
 
@@ -81,10 +82,16 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
   override def notifySetChanges(v: ChangingSetValue,
                                 d: Int,
-                                addedValues: Iterable[Int],
-                                removedValues: Iterable[Int],
-                                oldValue: SortedSet[Int],
-                                newValue: SortedSet[Int]): Unit = {
+                                addedValues: Iterable[Long],
+                                removedValues: Iterable[Long],
+                                oldValue: SortedSet[Long],
+                                newValue: SortedSet[Long]): Unit = {
+
+    //this looks a bit drastic,
+    // however, we are in a value-wise context;
+    // so this method is only called
+    // when something happened to the graph
+    // that requires the path to be re-computed
     scheduleForPropagation()
   }
 
