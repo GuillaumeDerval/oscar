@@ -9,7 +9,7 @@ abstract sealed class RevisableDistance(from:Node,
 
 case class Distance(from:Node,
                     to:Node,
-                    distance:Int,
+                    distance:Long,
                     requiredConditions:SortedSet[Int],
                     unlockingConditions:SortedSet[Int],
                     path:Option[List[Edge]]) extends RevisableDistance(from,to)
@@ -26,9 +26,9 @@ case class NotConnected(from:Node,
   * @param underApproximatingDistance MaxInt is where thre is no connexion
   */
 class RevisableAStar(graph:ConditionalGraph,
-                     underApproximatingDistance:(Int,Int) => Int){
+                     underApproximatingDistance:(Int,Int) => Long){
 
-  private val nodeToDistance = Array.fill[Int](graph.nodes.length)(Int.MaxValue)
+  private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
 
   def search(from:Node,
              to:Node,
@@ -42,7 +42,7 @@ class RevisableAStar(graph:ConditionalGraph,
         case Some(condition) => isConditionalEdgeOpen(condition)
       }
 
-    if (underApproximatingDistance(from.nodeId, to.nodeId) == Int.MaxValue) {
+    if (underApproximatingDistance(from.nodeId, to.nodeId) == Long.MaxValue) {
       return NeverConnected(from, to)
     }
 
@@ -53,7 +53,7 @@ class RevisableAStar(graph:ConditionalGraph,
     var reachedNodeIDs:QList[Int] = null
 
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
-    val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
+    val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
       nodeID => nodeToDistance(nodeID) + underApproximatingDistance(nodeID, to.nodeId),
       graph.nodes.length,
       graph.nodes.length - 1)
@@ -76,7 +76,7 @@ class RevisableAStar(graph:ConditionalGraph,
           _ match{
             case None => true
             case Some(c) => isConditionalEdgeOpen(c)},
-          nodeToDistance:Array[Int],
+          nodeToDistance:Array[Long],
           pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to.nodeId,nodeToDistance(to.nodeId)),
           includePath)
         resetReachedNodes(reachedNodeIDs)
@@ -113,7 +113,7 @@ class RevisableAStar(graph:ConditionalGraph,
   }
 
 
-  def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Int):SortedSet[Int] = {
+  def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
     reachedClosedConditions.filter((conditionID:Int) => {
       val edge = graph.conditionToConditionalEdges(conditionID)
 
@@ -132,7 +132,7 @@ class RevisableAStar(graph:ConditionalGraph,
   private def resetReachedNodes(reachedNodes:QList[Int]): Unit ={
     var remainingNodeIDs = reachedNodes
     while(remainingNodeIDs != null){
-      nodeToDistance(remainingNodeIDs.head) = Int.MaxValue
+      nodeToDistance(remainingNodeIDs.head) = Long.MaxValue
       remainingNodeIDs = remainingNodeIDs.tail
     }
   }
@@ -140,11 +140,11 @@ class RevisableAStar(graph:ConditionalGraph,
   private def extractAnswerFromFinishedSearch(from:Node,
                                               to:Node,
                                               isConditionalEdgeOpen:Option[Int] => Boolean,
-                                              nodeToDistance:Array[Int],
+                                              nodeToDistance:Array[Long],
                                               reachedClosedEdges: SortedSet[Int],
                                               includePath:Boolean):RevisableDistance = {
 
-    if (nodeToDistance(to.nodeId) == Int.MaxValue) {
+    if (nodeToDistance(to.nodeId) == Long.MaxValue) {
       // not reached
       NotConnected(
         from: Node,
@@ -161,12 +161,12 @@ class RevisableAStar(graph:ConditionalGraph,
             from:Node,
             to:Node,
             isConditionalEdgeOpen:Option[Int] => Boolean,
-            nodeToDistance:Array[Int]),
+            nodeToDistance:Array[Long]),
         unlockingConditions = reachedClosedEdges,
         path = if(includePath) Some(extractPath(from:Node,
           to:Node,
           isConditionalEdgeOpen:Option[Int] => Boolean,
-          nodeToDistance:Array[Int])) else None
+          nodeToDistance:Array[Long])) else None
       )
     }
   }
@@ -174,18 +174,18 @@ class RevisableAStar(graph:ConditionalGraph,
   private def extractRequiredConditions(from:Node,
                                         to:Node,
                                         isConditionalEdgeOpen:Option[Int] => Boolean,
-                                        nodeToDistance:Array[Int]):SortedSet[Int] = {
+                                        nodeToDistance:Array[Long]):SortedSet[Int] = {
     //we extract the set of conditions found on the actual path
     var toReturn: SortedSet[Int] = SortedSet.empty
     var currentNode: Node = to
-    var currentDistance: Int = nodeToDistance(to.nodeId)
+    var currentDistance: Long = nodeToDistance(to.nodeId)
     while (currentNode != from) {
       for (incomingEdge <- currentNode.incidentEdges if isConditionalEdgeOpen(incomingEdge.conditionID)) {
 
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.nodeId)
 
-        if (newDistance != Int.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
 
           currentDistance = newDistance
           currentNode = newNode
@@ -203,18 +203,18 @@ class RevisableAStar(graph:ConditionalGraph,
   def extractPath(from:Node,
                   to:Node,
                   isConditionalEdgeOpen:Option[Int] => Boolean,
-                  nodeToDistance:Array[Int]):List[Edge] = {
+                  nodeToDistance:Array[Long]):List[Edge] = {
     //we extract the set of conditions found on the actual path
     var toReturn: List[Edge] = List.empty
     var currentNode: Node = to
-    var currentDistance: Int = nodeToDistance(to.nodeId)
+    var currentDistance: Long = nodeToDistance(to.nodeId)
     while (currentNode != from) {
       for (incomingEdge <- currentNode.incidentEdges if isConditionalEdgeOpen(incomingEdge.conditionID)) {
 
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.nodeId)
 
-        if (newDistance != Int.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
 
           currentDistance = newDistance
           currentNode = newNode

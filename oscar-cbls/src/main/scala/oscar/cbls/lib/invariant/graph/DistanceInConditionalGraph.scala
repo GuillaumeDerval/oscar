@@ -12,7 +12,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  to:Int,
                                  openConditions:SetValue,
                                  distanceIfNotConnected:Int)
-                                (underApproximatingDistance:(Int,Int) => Int
+                                (underApproximatingDistance:(Int,Int) => Long
                                  = {val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true);
                                   (a:Int,b:Int) =>{
                                     underApproxDistanceMatrix(a)(b)

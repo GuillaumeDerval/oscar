@@ -709,3 +709,168 @@ class BinomialHeapWithMoveInt(getKey:Int => Int,val maxsize:Int, val maxKey:Int)
 }
 
 
+
+
+/**
+  * beware that this heap does not delete references that are passed to it, so GC will not be able to recover this space.
+  * it does not hurt if you only use this datastruct to store object that are permanently living in you memory anyway
+  * @author renaud.delandtsheer@cetic.be
+  * @param getKey
+  * @param maxsize
+  * @param maxKey
+  */
+class BinomialHeapWithMoveLong(getKey:Int => Long,val maxsize:Int, val maxKey:Int){
+  private[this] val heapArray:Array[Int] = new Array[Int](maxsize)
+
+  private[this] val position:Array[Int] = Array.fill[Int](maxKey+1)(-1)
+
+  var size:Int=0
+
+  def checkInternals(){
+    for(i <- heapArray.indices if i < size-1L){
+      if (leftChild(i) < size){
+        require(getKey(heapArray(i)) <= getKey(heapArray(leftChild(i))),"heap error " + this + i)
+        require(father(leftChild(i)) == i,"heap error " + this)
+      }
+      if (rightChild(i) < size){
+        require(getKey(heapArray(i)) <= getKey(heapArray(rightChild(i))),"heap error " + this)
+        require(father(rightChild(i)) == i,"heap error " + this)
+      }
+    }
+  }
+
+  def isEmpty:Boolean = size == 0
+
+  override def toString:String = {
+    heapArray.toList.toString()
+  }
+
+  def insert(elem:Int){
+    //insert en derniere position, puis bubble up
+    heapArray(size)=elem
+    position(elem) = size
+    size +=1
+    pushUp(size-1)
+  }
+
+  def contains(value:Int):Boolean = position(value) != -1
+
+  private def swapPositions(position1:Int,position2:Int){
+    position(heapArray(position1)) = position2
+    position(heapArray(position2)) = position1
+
+    val tmp:Int = heapArray(position1)
+    heapArray(position1)=heapArray(position2)
+    heapArray(position2)=tmp
+  }
+
+  //returns the last position of the moved item
+  private def pushDown(startposition:Int):Int = {
+    var position = startposition
+    val positionKey = getKey(heapArray(position))
+    while(true)
+      if(leftChild(position) < size && positionKey > getKey(heapArray(leftChild(position)))){
+        //examiner aussi left child
+        if(rightChild(position) < size && getKey(heapArray(rightChild(position))) < getKey(heapArray(leftChild(position)))){
+          //c'est avec le right child qu'il faut inverser
+          swapPositions(position,rightChild(position))
+          position = rightChild(position)
+        }else{
+          //c'est avec le left chile qu'il faut inverser
+          swapPositions(position,leftChild(position))
+          position = leftChild(position)
+        }
+      }else if(rightChild(position) < size && positionKey > getKey(heapArray(rightChild(position)))){
+        //only consider right child
+        swapPositions(position,rightChild(position))
+        position = rightChild(position)
+      }else{
+        return position
+      }
+    require(false) //jamais execute
+    position
+  }
+
+  private def pushUp(startposition:Int):Int = {
+    var position = startposition
+    val positionKey = getKey(heapArray(position))
+    while(true){
+      val fatherposition:Int = father(position)
+      if (fatherposition >= 0 && positionKey < getKey(heapArray(fatherposition))){
+        swapPositions(position,fatherposition)
+        position = fatherposition
+      }else{
+        return position
+      }
+    }
+    position //never reached
+  }
+
+  @inline
+  private def leftChild(position:Int):Int = (position+1)*2-1
+  @inline
+  private def rightChild(position:Int):Int =(position+1)*2
+  @inline
+  private def father(position:Int):Int =  (position-1)/2
+
+  def getFirsts:List[Int] = {
+    def ExploreFirsts(key:Long,startposition:Int,acc:List[Int]):List[Int] = {
+      if(startposition < size && getKey(heapArray(startposition)) == key){
+        val acc1 = ExploreFirsts(key,leftChild(startposition),heapArray(startposition) :: acc)
+        ExploreFirsts(key,rightChild(startposition),acc1)
+      }else{
+        acc
+      }
+    }
+    if(size == 0)List.empty
+    else ExploreFirsts(getKey(heapArray(0)),0,List.empty)
+  }
+
+  def getFirst:Long=heapArray(0)
+
+  /**
+    *
+    * removes the smallest element and returns its value
+    * @return
+    */
+  def removeFirst():Int={
+    val toreturn:Int = heapArray(0)
+    swapPositions(0,size-1)
+    size -=1
+    position(toreturn) = -1
+    pushDown(0)
+    toreturn
+  }
+
+  def notifyChange(elem:Int){
+    val startposition = position(elem)
+    pushDown(pushUp(startposition))
+  }
+
+  def delete(elem:Int){
+    val startposition:Int = position(elem)
+    if (startposition == size-1){
+      size -=1
+      position(elem) = -1
+    }else{
+      swapPositions(startposition,size-1)
+      size -=1
+      position(elem) = -1
+      pushDown(pushUp(startposition))
+    }
+  }
+
+  /**
+    * removes one elem from the heap if present
+    * @param elem
+    * @return trus if it was in the heap, false otherwise
+    */
+  def deleteIfPresent(elem:Int):Boolean = {
+    if(contains(elem)){
+      delete(elem)
+      true
+    }else false
+  }
+}
+
+

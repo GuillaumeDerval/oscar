@@ -3,7 +3,7 @@ package oscar.cbls.algo.graph
 object FloydWarshall{
 
   def buildDistanceMatrix(g:ConditionalGraph,
-                          isConditionalEdgeOpen:Int => Boolean):Array[Array[Int]] = {
+                          isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
     val m = buildAdjacencyMatrix(g:ConditionalGraph,
       isConditionalEdgeOpen:Int => Boolean)
     saturateAdjacencyMatrixToDistanceMatrix(m)
@@ -11,7 +11,7 @@ object FloydWarshall{
   }
 
   def buildAdjacencyMatrix(g:ConditionalGraph,
-                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Int]] = {
+                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
 
     def isEdgeOpen(edge: Edge): Boolean =
       edge.conditionID match {
@@ -20,23 +20,23 @@ object FloydWarshall{
       }
 
     val n = g.nbNodes
-    val matrix:Array[Array[Int]] = Array.tabulate(n)(_ => Array.fill(n)(Int.MaxValue))
+    val distanceMatrix:Array[Array[Long]] = Array.tabulate(n)(_ => Array.fill(n)(Long.MaxValue))
 
     for(node <- g.nodes.indices){
-      matrix(node)(node) = 0
+      distanceMatrix(node)(node) = 0
     }
 
     for(edge <- g.edges if isEdgeOpen(edge)){
-      val sl = edge.length min matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId)
-      matrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
-      matrix(edge.nodeB.nodeId)(edge.nodeA.nodeId) = sl
+      val sl = edge.length min distanceMatrix(edge.nodeA.nodeId)(edge.nodeB.nodeId)
+      distanceMatrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
+      distanceMatrix(edge.nodeB.nodeId)(edge.nodeA.nodeId) = sl
     }
 
-    matrix
+    distanceMatrix
   }
 
   def buildAdjacencyHalfMatrix(g:ConditionalGraph,
-                               isConditionalEdgeOpen:Int => Boolean):Array[Array[Int]] = {
+                               isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
 
     def isEdgeOpen(edge: Edge): Boolean =
       edge.conditionID match {
@@ -45,7 +45,7 @@ object FloydWarshall{
       }
 
     val n = g.nbNodes
-    val matrix:Array[Array[Int]] = Array.tabulate(n)(n2 => Array.fill(n2+1)(Int.MaxValue))
+    val matrix:Array[Array[Long]] = Array.tabulate(n)(n2 => Array.fill(n2+1)(Long.MaxValue))
 
     for(node <- g.nodes.indices){
       matrix(node)(node) = 0
@@ -65,14 +65,14 @@ object FloydWarshall{
     matrix
   }
 
-  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Int]]){
+  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Long]]){
     val n = w.length
 
     for (k <- 0 to n-1) {
       for (i <- (0 to n-1).par) {
         for (j <- i to n-1) {
 
-          if(w(i)(k) != Int.MaxValue && w(k)(j)!= Int.MaxValue) {
+          if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue) {
             val newDistance = w(i)(k) + w(k)(j)
             if (newDistance < w(i)(j)) {
               w(i)(j) = newDistance

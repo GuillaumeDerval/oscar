@@ -41,7 +41,7 @@ class ConditionalGraphWithIntegerNodeCoordinates(val nodeswithCoordinates:Array[
 class Edge(val edgeId:Int,
            val nodeA:Node,
            val nodeB:Node,
-           val length:Int,
+           val length:Long,
            val conditionID:Option[Int]){
   require(length > 0)
   require(nodeA != nodeB)

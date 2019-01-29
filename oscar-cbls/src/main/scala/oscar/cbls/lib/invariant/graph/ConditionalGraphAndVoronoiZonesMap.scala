@@ -242,7 +242,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
       case Distance(
       from: Node,
       to: Node,
-      distance: Int,
+      distance: Long,
       requiredConditions: SortedSet[Int],
       unlockingConditions: SortedSet[Int],
       path: Option[List[Edge]]) =>

@@ -13,7 +13,7 @@ class DijkstraMT(g:ConditionalGraph){
         case Some(condition) => isConditionalEdgeOpen(condition)
       }
 
-    val nodeToDistance = Array.fill[Int](g.nodes.length)(Int.MaxValue)
+    val nodeToDistance = Array.fill[Long](g.nodes.length)(Long.MaxValue)
 
     val isTarget:Array[Boolean] = Array.fill[Boolean](g.nodes.length)(false)
     for(target <- targets){
@@ -24,7 +24,7 @@ class DijkstraMT(g:ConditionalGraph){
       return VoronoiZone(from, 0)
     }
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
-    val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveInt(
+    val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
       nodeID => nodeToDistance(nodeID),
       g.nodes.length,
       g.nodes.length - 1)
@@ -33,7 +33,7 @@ class DijkstraMT(g:ConditionalGraph){
     toDevelopHeap.insert(from.nodeId)
 
     var toReturn:ClosestCentroidLabeling = Unreachable
-    var maxDistance:Int = Int.MaxValue
+    var maxDistance:Long = Long.MaxValue
 
     while (true) {
 
@@ -47,9 +47,9 @@ class DijkstraMT(g:ConditionalGraph){
 
       for (outgoingEdge <- currentNode.incidentEdges) {
         if (isEdgeOpen(outgoingEdge)) {
-          val otherNode = outgoingEdge.otherNode(currentNode)
-          val newDistance = currentNodeDistance + outgoingEdge.length
-          val otherNodeID = otherNode.nodeId
+          val otherNode:Node = outgoingEdge.otherNode(currentNode)
+          val newDistance:Long = currentNodeDistance + outgoingEdge.length
+          val otherNodeID:Int = otherNode.nodeId
 
           if (toDevelopHeap.contains(otherNodeID)) {
             val oldDistance = nodeToDistance(otherNodeID)

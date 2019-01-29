@@ -9,7 +9,7 @@ abstract sealed class ClosestCentroidLabeling{
   }
 }
 
-case class VoronoiZone(centroid:Node,distance:Int) extends ClosestCentroidLabeling{
+case class VoronoiZone(centroid:Node,distance:Long) extends ClosestCentroidLabeling{
   override def <(that: ClosestCentroidLabeling): Boolean = that match{
     case Unreachable => true
     case that:VoronoiZone =>
@@ -21,7 +21,7 @@ case class VoronoiZone(centroid:Node,distance:Int) extends ClosestCentroidLabeli
     case that:VoronoiZone => that.distance == this.distance && this.centroid == that.centroid
   }
 
-  def + (length:Int):VoronoiZone = VoronoiZone(centroid,distance+length)
+  def + (length:Long):VoronoiZone = VoronoiZone(centroid,distance+length)
 
   override def toString: String = "VoronoiZone(centroid:" + centroid.nodeId + " distance:" + distance + ")"
 }
