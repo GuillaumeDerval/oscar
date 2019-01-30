@@ -42,7 +42,7 @@ class Sort(var values:Array[IntValue], ReversePerm:Array[CBLSIntVar])
   finishInitialization()
 
   //position in initial array -> position in sort
-  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0L,0L to values.size,"ForwardPerm"))
+  val ForwardPerm:Array[CBLSIntVar]=ReversePerm.map(i => CBLSIntVar(this.model,0L,Domain(0L , values.size),"ForwardPerm"))
 
   //reverse perm: position in sort -> position in initial array
 

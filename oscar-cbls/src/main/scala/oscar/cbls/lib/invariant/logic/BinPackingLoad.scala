@@ -18,7 +18,7 @@ case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Long]) extend
   assert(minVal==0L)
   private val maxLoad = itemsizes.foldLeft(0L)((acc,l) => acc+ l)
 
-  val binLoad = Array.tabulate(maxVal+1L)(i => CBLSIntVar(this.model,0L, 0L to maxLoad, "bin_"+i))
+  val binLoad = Array.tabulate(maxVal+1L)(i => CBLSIntVar(this.model,0L, Domain(0L , maxLoad), "bin_"+i))
   for( b <- binLoad){
     b.setDefiningInvariant(this)
   }

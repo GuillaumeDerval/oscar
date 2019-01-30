@@ -55,7 +55,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Long, Max:Long, pred
   val count:Array[Long] = Array.tabulate(sequences.size)(i => 0L)
 
   /**the violation of the sequence starting here*/
-  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0L, 0L to length - Max, "is_violated_sequence" + i))
+  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0L, 0 to length - Max, "is_violated_sequence" + i))
 
   for(v <- violated) v.setDefiningInvariant(this)
 
@@ -75,7 +75,7 @@ case class Sequence(variables: Array[_ <: IntValue], length:Long, Max:Long, pred
     Violations = Violations + ((variables(i),violationOfVariableI))
   }
 
-  val Violation = CBLSIntVar(model,0L, 0L to variables.length * length ,"sequence_violations")
+  val Violation = CBLSIntVar(model,0L, 0 to variables.length * length ,"sequence_violations")
   Violation.setDefiningInvariant(this)
 
   for(i <- variables.indices){

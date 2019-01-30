@@ -41,7 +41,7 @@ case class BelongsTo(v: IntValue, set: SetValue)
   finishInitialization()
 
   /** the violation is 1L if v is not in set, 0L otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, if (set.value.contains(v.value)) 0L else 1L, 0L to 1L, "belongsTo(" + v.name + "," + set.name + ")")
+  override val violation: CBLSIntVar = CBLSIntVar(model, if (set.value.contains(v.value)) 0L else 1L, Domain(0L ,1L), "belongsTo(" + v.name + "," + set.name + ")")
 
   violation.setDefiningInvariant(this)
 
@@ -109,7 +109,7 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Long])
   finishInitialization()
 
   /** the violation is 1L if v is not in set, 0L otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, dists(v.value-v.min), 0L to dists.max, "belongsToPreComp(" + v.name + "," + set.mkString("{",",","}") + ")")
+  override val violation: CBLSIntVar = CBLSIntVar(model, dists(v.value-v.min), 0 to dists.max, "belongsToPreComp(" + v.name + "," + set.mkString("{",",","}") + ")")
 
   violation.setDefiningInvariant(this)
 
@@ -172,7 +172,7 @@ case class BelongsToConstCaching(v: IntValue, set: Set[Long])
   finishInitialization()
 
   /** the violation is 1L if v is not in set, 0L otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, dist(v.value-v.min,set), 0L to Math.max(v.max - set.min, set.max - v.min), "belongsToCache(" + v.name + "," + set.mkString("{",",","}") + ")")
+  override val violation: CBLSIntVar = CBLSIntVar(model, dist(v.value-v.min,set), 0 to Math.max(v.max - set.min, set.max - v.min), "belongsToCache(" + v.name + "," + set.mkString("{",",","}") + ")")
 
   violation.setDefiningInvariant(this)
 

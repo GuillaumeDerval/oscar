@@ -37,7 +37,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
 
   private val sumdur = duration.sum
 
-  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, 0L to sumdur*start.length, "ViolationOfDisjunctive")
+  private val Violation: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumdur*start.length, "ViolationOfDisjunctive")
   Violation.setDefiningInvariant(this)
 
 
@@ -45,7 +45,7 @@ case class DisjunctiveConstDuration(start: Array[IntValue],
   private val Violations: SortedMap[IntValue, CBLSIntVar] = start.foldLeft(
     SortedMap.empty[IntValue, CBLSIntVar])(
     (acc, intvar) => {
-      val newvar = new CBLSIntVar(model, 0L, 0L to sumdur, "Violation_Disjunctive_" + intvar.name)
+      val newvar = new CBLSIntVar(model, 0L, 0 to sumdur, "Violation_Disjunctive_" + intvar.name)
       acc + ((intvar, newvar))
     })
 
@@ -124,11 +124,11 @@ case class Disjunctive(start: Array[IntValue],
 
   private val sumMaxDur = duration.foldLeft(0L)((acc,v) => acc + v.max)
 
-  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, 0L to sumMaxDur*start.length, "ViolationOfDisjunctive")
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0L,sumMaxDur*start.length), "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
   private val violationVarsArray = Array.tabulate(start.length)(i => {
-    val newVar = new CBLSIntVar(model, 0L, 0L to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    val newVar = new CBLSIntVar(model, 0L, Domain(0L,sumMaxDur), "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
     newVar.setDefiningInvariant(this)
     newVar}
   )
@@ -289,11 +289,11 @@ case class DisjunctiveWithTransitions(start: Array[IntValue],
 
   private val sumMaxDur = duration.foldLeft(0L)((acc,v) => acc + v.max)
 
-  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, 0L to sumMaxDur*start.length, "ViolationOfDisjunctive")
+  private val violationVar: CBLSIntVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur*start.length, "ViolationOfDisjunctive")
   violationVar.setDefiningInvariant(this)
 
   private val violationVarsArray = Array.tabulate(start.length)(i => {
-    val newVar = new CBLSIntVar(model, 0L, 0L to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
+    val newVar = new CBLSIntVar(model, 0L, 0 to sumMaxDur, "Violation_Disjunctive_" + start(i).name + "_and_" + duration(i).name)
     newVar.setDefiningInvariant(this)
     newVar}
   )

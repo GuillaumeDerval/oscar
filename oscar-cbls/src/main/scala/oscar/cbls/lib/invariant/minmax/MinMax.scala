@@ -195,7 +195,7 @@ object Max{
  * @author renaud.delandtsheer@cetic.be
  * */
 case class Max2(a: IntValue, b: IntValue)
-  extends IntInt2Int(a, b, (x: Long, y: Long) => x.max(y), a.min.max(b.min) to a.max.max(b.max))
+  extends IntInt2Int(a, b, (x: Long, y: Long) => x.max(y), Domain(a.min.max(b.min),a.max.max(b.max)))
 
 /**
  * maintains output = Min(a,b)
@@ -204,4 +204,4 @@ case class Max2(a: IntValue, b: IntValue)
  * @author renaud.delandtsheer@cetic.be
  * */
 case class Min2(a: IntValue, b: IntValue)
-  extends IntInt2Int(a, b, (x: Long, y: Long) => x.min(y), a.min.min(b.min) to a.max.min(b.max))
+  extends IntInt2Int(a, b, (x: Long, y: Long) => x.min(y), Domain(a.min.min(b.min) , a.max.min(b.max)))

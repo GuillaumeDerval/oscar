@@ -46,11 +46,23 @@ object Domain{
 
   implicit def intToDomain(i:Long) = SingleValueDomain(i)
 
+
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+
   def apply(v:Iterable[Long]):Domain =
     v match{
       case r:Range => r
-      case s:SortedSet[Long] => (s.firstKey, s.lastKey)
+      case s:SortedSet[Long] => DomainRange(s.firstKey,s.lastKey)
     }
+  def apply(min:Long,max:Long) = DomainRange(min,max)
+  def apply(min:Int,max:Int) = DomainRange(min,max)
+  def apply(min:Int,max:Long) = DomainRange(min,max)
+  def apply(min:Long,max:Int) = DomainRange(min,max)
+  def apply(range:Range) = DomainRange(range.min,range.max)
+
 }
 
 sealed abstract class Domain{
@@ -84,7 +96,7 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   override def randomValue(): Long = (min to max)(Random.nextInt(max-min+1L))
   override def intersect(d: Domain): Domain = {
     val newDomain:Domain = d match{
-      case r:DomainRange => math.max(r.min,min) to math.min(r.max,max)
+      case r:DomainRange => (math.max(r.min,min), math.min(r.max,max))
       case FullRange => this
       case d:SingleValueDomain => d.intersect(this)
       case s:DomainSet =>  s.intersect(this)
@@ -96,11 +108,11 @@ case class DomainRange(override val min: Long, override val max: Long) extends D
   override def union(d: Domain): Domain = {
     val newDomain:Domain = d match{
       case r:DomainRange =>
-          math.min(r.min,min) to math.max(r.max,max)
+        ( math.min(r.min,min) , math.max(r.max,max))
       case FullRange => FullRange
       case SingleValueDomain(v) =>
-        if(v < min) v to max
-        else if (max < v) min to v
+        if(v < min) (v , max)
+        else if (max < v) (min , v)
         else this
       case d:DomainSet =>  d.union(this)
     }
@@ -183,7 +195,7 @@ case class SingleValueDomain(value:Long) extends Domain{
     d match {
       case SingleValueDomain(v) =>
         if(v == value) this
-        else if(math.abs(v-value) == 1L) math.min(v,value) to math.max(v,value)
+        else if(math.abs(v-value) == 1L) (math.min(v,value) , math.max(v,value))
         else Set(v) union Set(value)
       case _ => d.union(this)
     }

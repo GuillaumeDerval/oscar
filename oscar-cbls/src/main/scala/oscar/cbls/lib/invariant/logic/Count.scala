@@ -131,7 +131,7 @@ object DenseCount{
     val mbValues = maxMax - minMin + 1L
     val m:Store = InvariantHelper.findModel(vars)
     val nbVars = vars.length
-    val counts = Array.tabulate(mbValues)(i => CBLSIntVar(m,0L, 0L to nbVars, "count_" + (i-minMin)))
+    val counts = Array.tabulate(mbValues)(i => CBLSIntVar(m,0L, Domain(0L , nbVars), "count_" + (i-minMin)))
     DenseCount(vars,counts,-minMin)
   }
 }

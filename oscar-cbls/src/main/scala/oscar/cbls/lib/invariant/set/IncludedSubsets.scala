@@ -27,7 +27,7 @@ import scala.collection.immutable.SortedSet
  * @param subsetToMonitorAndMaxValues iterable of (subset, max occurrence in the subset, weight in case of violation)
  */
 case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(Iterable[Long],Long,Long)])
-  extends IntInvariant(0L,0L to subsetToMonitorAndMaxValues.map(_._3).sum)
+  extends IntInvariant(0L,Domain(0L , subsetToMonitorAndMaxValues.map(_._3).sum))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependenciesNoID(s)

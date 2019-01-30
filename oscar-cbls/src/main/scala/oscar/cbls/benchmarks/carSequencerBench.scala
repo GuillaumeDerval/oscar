@@ -31,7 +31,9 @@ import scala.util.Random
 object carSequencerBench  extends CBLSModel with App {
 
   val orderedCarsByType:SortedMap[Long,Long] = SortedMap(0L -> 110L, 1L -> 60L, 2L -> 110L , 3L -> 120L, 4L -> 40L, 5L -> 30L)
-  val carTypes = 0L to 5L
+
+  val nbCarTypes = 6
+  val carTypes:Domain = ((0,nbCarTypes-1))
 
   println("carSequencing")
   println("orderedCarTypes:" + orderedCarsByType)
@@ -46,7 +48,7 @@ object carSequencerBench  extends CBLSModel with App {
   //5L  F   T   F   T
 
   def makeBoolArray(values:Long*):Array[Boolean] = {
-    val toReturn = Array.fill(carTypes.end +1L)(false)
+    val toReturn = Array.fill(nbCarTypes)(false)
     values.foreach(toReturn(_) = true)
     toReturn
   }

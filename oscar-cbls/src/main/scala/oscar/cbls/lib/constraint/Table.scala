@@ -52,7 +52,7 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     val tmp = CBLSIntVar(this.model,
                          table(i).zip(variables).foldLeft(0L)((acc, p) => acc + (if (p._1 == p._2.value) 0L else 1L)),
                          //table(i).zip(variables).foldLeft(0L)((acc, p) => acc + Math.abs(p._1 - p._2.value)),
-                         0L to table.size)
+                         0 to table.size)
     tmp.setDefiningInvariant(this)
     tmp
   }

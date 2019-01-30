@@ -28,7 +28,7 @@ import scala.collection.immutable.SortedSet
 
 //Log
 abstract class MiaxSet(v: SetValue)
-  extends IntInvariant(initialDomain = v.min to v.max)
+  extends IntInvariant(initialDomain = Domain(v.min , v.max))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(v)

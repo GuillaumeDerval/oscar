@@ -47,7 +47,7 @@ object PositionsOf{
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOf(v: SeqValue, a:IntValue)
-  extends SetInvariant(v.value.positionsOfValue(a.value).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i) , 0L to DomainHelper.safeAddMax(v.max,1L))
+  extends SetInvariant(v.value.positionsOfValue(a.value).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i) , Domain(0L , DomainHelper.safeAddMax(v.max,1L)))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("PositionOf(" + a.name + " in " + v.name + ")")
@@ -82,7 +82,7 @@ class PositionsOf(v: SeqValue, a:IntValue)
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOfConst(v: SeqValue, a:Long)
-  extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i), 0L to DomainHelper.safeAddMax(v.max,1L))
+  extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i), Domain(0L , DomainHelper.safeAddMax(v.max,1L)))
   with SeqNotificationTarget{
 
   setName("PositionOf(" + a + " in " + v.name + ")")

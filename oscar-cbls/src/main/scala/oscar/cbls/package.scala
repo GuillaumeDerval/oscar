@@ -186,7 +186,7 @@ package object cbls extends ModelingAPI{
       if(x.domain contains 0L) extremeValues = 0L :: extremeValues
       if(x.domain contains -1L) extremeValues = (-1L/i) :: extremeValues
       if(x.domain contains 1L) extremeValues = (1L/i) :: extremeValues
-      new Int2Int(x,_/i,extremeValues.min to extremeValues.max)
+      new Int2Int(x,_/i,Domain(extremeValues.min , extremeValues.max))
     }
 
     def %(v: IntValue): IntInvariant = Mod(x, v)
@@ -245,6 +245,9 @@ package object cbls extends ModelingAPI{
   implicit def longToInt(l:Long):Int = Math.toIntExact(l)
   implicit def intToLong(i:Int):Long = i
 
-  implicit def longRangeToDomain(r:NumericRange.Inclusive[Long]):Domain = DomainRange(r.min,r.max)
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
 }

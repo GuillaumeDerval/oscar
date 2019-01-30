@@ -63,7 +63,7 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
     profile.change(start(v).value, duration(v).value, amount(v).value)
   }
 
-  val variableViolation = start.map(i => CBLSIntVar(model, 0L, 0L to amount.map(_.max).sum))
+  val variableViolation = start.map(i => CBLSIntVar(model, 0L, Domain(0L,amount.map(_.max).sum)))
   for(v <- variableViolation) v.setDefiningInvariant(this)
   updateVarViolation(0L,start.map(_.max).max + duration.map(_.max).max)
 
@@ -135,14 +135,14 @@ case class CumulativePrototype(start: Array[IntValue], duration: Array[IntValue]
 }
 
 class CumulativeProfile(m:Store, val nTasks:Long, val horizon:Long, val maxHeight:Long, var limit:IntValue){
-  val blocks:Array[ProfileBlock] = Array.tabulate(2L*nTasks+4L)( i => new ProfileBlock(0L,0L,CBLSIntVar(m,0L,0L to maxHeight),limit,horizon))
+  val blocks:Array[ProfileBlock] = Array.tabulate(2L*nTasks+4L)( i => new ProfileBlock(0L,0L,CBLSIntVar(m,0L,Domain(0L ,maxHeight)),limit,horizon))
 
   val freeBlocks = blocks(0L)
   for( i <- 1L until blocks.length)
     freeBlocks.insertBlock(blocks(i))
 
-  val endBlock = new ProfileBlock(-1L,-2L,CBLSIntVar(m,-1L,-2L to -1L,"DummyBlock"),limit,horizon)
-  val profile = new ProfileBlock(-1L,-2L,CBLSIntVar(m,-1L,-2L to -1L,"DummyBlock"),limit,horizon)
+  val endBlock = new ProfileBlock(-1L,-2L,CBLSIntVar(m,-1L,Domain(-2L,-1L),"DummyBlock"),limit,horizon)
+  val profile = new ProfileBlock(-1L,-2L,CBLSIntVar(m,-1L,Domain(-2L ,-1L),"DummyBlock"),limit,horizon)
   profile.insertBlock(endBlock)
   val initialBlock = freeBlocks.popNext()
   initialBlock.setProfile(0L,horizon,0L)
@@ -209,7 +209,7 @@ class ProfileBlock(private[this] var _start:Long, private[this] var _end:Long, v
   var prev:ProfileBlock = null
   var next:ProfileBlock = null
 
-  val width = CBLSIntVar(height.model, 0L, 0L to horizon )
+  val width = CBLSIntVar(height.model, 0L, Domain(0L, horizon))
   val overLimit = MinusOffsetPos(height,limit,0L)
   val blockViolation = Prod2(width,overLimit)
 

@@ -17,6 +17,7 @@
 
 package oscar.cbls.lib.invariant.logic
 
+import oscar.cbls.Domain
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.minmax.{Miax, MiaxArray}
@@ -39,7 +40,7 @@ import scala.collection.immutable.SortedSet
 case class And(vars: Iterable[IntValue])
   extends IntInvariant(
     vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
-    0L to vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
+    Domain(0 ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -51,7 +52,7 @@ case class And(vars: Iterable[IntValue])
 
   override def checkInternals(c: Checker) {
     c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
-            Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
+      Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
 
@@ -93,7 +94,7 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
     if(vars.exists(_.value == 0L)) { 0L } else { vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value)/vars.length },
-    0L to vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max)))
+    Domain(0L ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -109,7 +110,7 @@ case class Or(vars: Array[IntValue])
 
   override def checkInternals(c: Checker) {
     c.check(this.value == vars.foldLeft(0L)((acc, intvar) => acc + intvar.value),
-            Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
+      Some("output.value == vars.foldLeft(0L)((acc,intvar) => acc+intvar.value)"))
   }
 }
 
@@ -125,7 +126,7 @@ case class Or(vars: Array[IntValue])
   * @author gustav.bjordal@it.uu.se
   */
 case class Bool2Int(v: IntValue)
-  extends IntInvariant(if(v.value == 0L) 1L else 0L, 0L to 1L)
+  extends IntInvariant(if(v.value == 0L) 1L else 0L, 0 to 1)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
@@ -148,7 +149,7 @@ case class Bool2Int(v: IntValue)
   * @author gustav.bjordal@it.uu.se
   */
 case class BoolLEInv(a: IntValue, b:IntValue)
-  extends IntInvariant(if(a.value > 0L && b.value == 0L) a.value else 0L, 0L to a.max)
+  extends IntInvariant(if(a.value > 0L && b.value == 0L) a.value else 0L, Domain(0L , a.max))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
@@ -184,7 +185,7 @@ case class BoolLEInv(a: IntValue, b:IntValue)
   * @author gustav.bjordal@it.uu.se
   */
 case class BoolLTInv(a: IntValue, b:IntValue)
-  extends IntInvariant(if(a.value > 0L) a.value else if(b.value == 0L) 1L else 0L, 0L to a.max)
+  extends IntInvariant(if(a.value > 0L) a.value else if(b.value == 0L) 1L else 0L, Domain(0 ,a.max))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
@@ -202,7 +203,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
         if(NewVal >0L && a.value == 0L)
           0L
         else
-         (NewVal + a.value + 1L)
+          (NewVal + a.value + 1L)
       }) / 2L
 
   }
@@ -220,7 +221,7 @@ case class BoolLTInv(a: IntValue, b:IntValue)
   */
 case class XOR(a: IntValue, b:IntValue)
   extends IntInvariant(if((a.value > 0L && b.value > 0L) || (a.value == 0L && b.value == 0L)) (a.value + b.value + 1L) else 0L,
-                       0L to Math.max(a.max,b.max))
+    Domain(0 ,Math.max(a.max,b.max)))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)
@@ -253,7 +254,7 @@ case class XOR(a: IntValue, b:IntValue)
   */
 case class XORArray(vars: Array[IntValue])
   extends IntInvariant((vars.foldLeft(1L)((acc,v) => if(v.value > 0L) acc+1L else acc)%2L)*vars.length,
-                       0L to vars.foldLeft(0L)((acc,v)=>acc+v.max))
+    Domain(0L,vars.foldLeft(0L)((acc,v)=>acc+v.max)))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(vars)
@@ -289,7 +290,7 @@ object BoolNE{
   */
 case class Not(a: IntValue)
   extends IntInvariant(if(a.value > 0L) 0L else 1L,
-                       0L to 1L)
+    0 to 1)
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)

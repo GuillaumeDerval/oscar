@@ -24,7 +24,7 @@ import oscar.cbls.core._
  * @param a is the value that is to locate in the sequence
  */
 case class OccurrencesOf(v: SeqValue, a:IntValue)
-  extends IntInvariant(v.value.nbOccurrence(a.value), 0L to DomainHelper.safeAddMax(v.max,1L))
+  extends IntInvariant(v.value.nbOccurrence(a.value), Domain(0L , DomainHelper.safeAddMax(v.max,1L)))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("PositionOf(" + a.name + " in " + v.name + ")")

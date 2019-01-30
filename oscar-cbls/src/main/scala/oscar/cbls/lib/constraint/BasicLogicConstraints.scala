@@ -125,7 +125,7 @@ case class NE(left: IntValue, right: IntValue) extends Invariant with Constraint
   finishInitialization()
 
   /** the violation is 1L if the variables are equal, 0L otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, if (left.value == right.value) 1L else 0L, 0L to 1L, "equals")
+  override val violation: CBLSIntVar = CBLSIntVar(model, if (left.value == right.value) 1L else 0L, Domain(0L ,1L), "equals")
 
   violation.setDefiningInvariant(this)
 
@@ -191,7 +191,7 @@ case class BoolEQ(a: IntValue, b: IntValue) extends Constraint {
   */
 case class BoolEQInv(a: IntValue, b:IntValue)
   extends IntInvariant(if((a.value > 0L && b.value > 0L) || (a.value == 0L && b.value == 0L)) 0L else a.value+b.value+1L,
-                       0L to Math.max(a.max,b.max))
+                       Domain(0L,Math.max(a.max,b.max)))
     with IntNotificationTarget{
 
   registerStaticAndDynamicDependency(a)

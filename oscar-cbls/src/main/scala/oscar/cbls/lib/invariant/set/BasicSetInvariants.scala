@@ -37,7 +37,7 @@ import scala.collection.immutable.{SortedMap, SortedSet};
  * @author renaud.delandtsheer@cetic.be
  */
 case class Union(left: SetValue, right: SetValue)
-  extends SetInvariant(left.value.union(right.value), left.min.min(right.min) to left.max.max(right.max))
+  extends SetInvariant(left.value.union(right.value), Domain(left.min.min(right.min) , left.max.max(right.max)))
   with SetNotificationTarget{
   require(left != right, "left and right canot be the same instance for Union!")
 
@@ -147,7 +147,7 @@ case class UnionAll(sets: Iterable[SetValue])
  */
 case class Inter(left: SetValue, right: SetValue)
   extends SetInvariant(left.value.intersect(right.value),
-    left.min.max(right.min) to left.max.min(right.max))
+    Domain(left.min.max(right.min) , left.max.min(right.max)))
   with SetNotificationTarget{
   require(left != right,"left and right cannot hte the same instance for Inter")
   registerStaticAndDynamicDependency(left)
@@ -243,7 +243,7 @@ case class SetMap(a: SetValue, fun: Long => Long,
  * @author renaud.delandtsheer@cetic.be
  */
 case class Diff(left: SetValue, right: SetValue)
-  extends SetInvariant(left.value.diff(right.value), left.min to left.max)
+  extends SetInvariant(left.value.diff(right.value), Domain(left.min , left.max))
   with SetNotificationTarget{
 
   //TODO: handle left == right
@@ -309,7 +309,7 @@ case class Diff(left: SetValue, right: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class Cardinality(v: SetValue)
-  extends IntInvariant(v.value.size, 0L to (v.max - v.min +1L))
+  extends IntInvariant(v.value.size, Domain(0L , (v.max - v.min +1L)))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
@@ -386,7 +386,7 @@ case class MakeSet(on: SortedSet[IntValue])
  * @author renaud.delandtsheer@cetic.be
  */
 case class Interval(lb: IntValue, ub: IntValue)
-  extends SetInvariant(initialDomain = lb.min to ub.max)
+  extends SetInvariant(initialDomain = Domain(lb.min , ub.max))
   with IntNotificationTarget{
   assert(ub != lb)
 
@@ -444,7 +444,7 @@ case class Interval(lb: IntValue, ub: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class TakeAny(from: SetValue, default: Long)
-  extends IntInvariant(default, from.min to from.max)
+  extends IntInvariant(default, Domain(from.min , from.max))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(from)
@@ -520,7 +520,7 @@ case class Singleton(v: IntValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class TakeAnyToSet(from: SetValue)
-  extends SetInvariant(SortedSet.empty, from.min to from.max)
+  extends SetInvariant(SortedSet.empty, Domain(from.min , from.max))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(from)
@@ -573,7 +573,7 @@ case class TakeAnyToSet(from: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class BelongsTo(v: IntValue, set: SetValue)
-  extends IntInvariant(0L,0L to 1L)
+  extends IntInvariant(0L,Domain(0L , 1L))
   with IntNotificationTarget
   with SetNotificationTarget{
 

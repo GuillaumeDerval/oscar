@@ -445,7 +445,7 @@ trait SeqNotificationTarget {
 }
 
 class CBLSSeqConst(override val value:ConcreteIntSequence) extends SeqValue{
-  override def domain : Domain = value.largestValue match{case None => Domain.empty case Some(v) => 0L to v}
+  override def domain : Domain = value.largestValue match{case None => Domain.empty case Some(v) => Domain(0L , v)}
   override def name : String = value.toString
 }
 
@@ -593,7 +593,7 @@ abstract class ChangingSeqValue(initialValue: Iterable[Long], val maxValue: Long
   private var mOldValue:IntSequence = IntSequence(initialValue)
   protected[computation] var toNotify:SeqUpdate = SeqUpdateLastNotified(mOldValue)
 
-  override def domain : Domain = 0L to maxValue
+  override def domain : Domain = Domain(0L,maxValue)
   override def max : Long = maxValue
   override def min : Long = 0L
 

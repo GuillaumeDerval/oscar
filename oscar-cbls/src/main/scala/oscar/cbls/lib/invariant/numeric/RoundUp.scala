@@ -63,7 +63,7 @@ case class RoundUpModulo(from: IntValue, duration: IntValue, period: Long, zone:
       from + (period + zone - reducedfrom)
     else
       from
-  }, from.min to from.max + zone) {
+  }, Domain(from.min , from.max + zone)) {
 }
 
 object TestRoundUpModulo extends App {
@@ -110,7 +110,7 @@ object TestRoundUpModulo extends App {
  * @author renaud.delandtsheer@cetic.be
  */
 case class RoundUpCustom(from: IntValue, duration: IntValue, forbiddenZones: List[(Long, Long)])
-  extends IntInvariant(initialDomain = from.min to forbiddenZones.maxBy(_._2)._2 + 1L)
+  extends IntInvariant(initialDomain = Domain(from.min , forbiddenZones.maxBy(_._2)._2 + 1L))
   with IntNotificationTarget{
 
   /**
@@ -279,11 +279,11 @@ case class PreEmption(startTime: IntValue, duration: IntValue,
         }
       }
       newDuration
-    }, duration.min to (if (resume) {
+    }, Domain(duration.min , (if (resume) {
       duration.max + preEmptDuration
     } else {
       (preEmptStartTime - startTime.min) + preEmptDuration
-    })) {
+    }))) {
 }
 
 // replace with a so-called test

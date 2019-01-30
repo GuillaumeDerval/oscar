@@ -66,7 +66,7 @@ case class CumulativeSparse(start: Array[IntValue], duration: Array[IntValue], a
 class Profile(n: Long,maxh: Long,model:Store){
   val profile_start = Array.fill(2L*n+2L)(-1L)
   val profile_length = Array.fill(2L*n+2L)(0L)
-  val profile_height = Array.fill(2L*n+2L)(new CBLSIntVar(model,0L,0L to maxh,"height"))
+  val profile_height = Array.fill(2L*n+2L)(new CBLSIntVar(model,0L,0 to maxh,"height"))
   val profile_next = Array.fill(2L*n+2L)(-1L)
   val profile_prev = Array.fill(2L*n+2L)(-1L)
   var first_free = 1L

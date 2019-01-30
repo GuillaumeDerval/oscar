@@ -193,7 +193,7 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Long, verbose:Long, sy
 
   val distanceOut = Array.tabulate(n)((node:Int) => {
     val maxDistance = symmetricDistanceMatrix(node).max
-    int2Int(next(node), nextNode => if(nextNode == n) 0L else symmetricDistanceMatrix(node)(nextNode),0L to maxDistance,false)})
+    int2Int(next(node), nextNode => if(nextNode == n) 0L else symmetricDistanceMatrix(node)(nextNode),(0,maxDistance),false)})
 
   val totalRouteLengthSlow = sum(distanceOut)
 

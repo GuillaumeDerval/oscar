@@ -46,7 +46,7 @@ object ForwardCumulativeConstraintOnVehicle {
              maxCheckpointLevel:Long,
              capacityName:String):ChangingIntValue = {
 
-    val violation = new CBLSIntVar(routes.model, 0L, 0L to Long.MaxValue, "violation of capacity " + capacityName)
+    val violation = new CBLSIntVar(routes.model,0L,(0L,Long.MaxValue), "violation of capacity " + capacityName)
 
     new ForwardCumulativeConstraintOnVehicle(
       routes,

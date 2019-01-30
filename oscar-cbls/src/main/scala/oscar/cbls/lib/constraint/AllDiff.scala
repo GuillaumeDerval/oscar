@@ -47,7 +47,7 @@ case class AllDiff(variables: Iterable[IntValue])
 
   //le degré global de violation est la somme des tailles -1L des ensembles de var ayant meme value
   // et on ne prend que les ensembles de cardinalite > 1L
-  private val violationVariable: CBLSIntVar = new CBLSIntVar(model, 0L, 0L to n, "ViolationsOfAllDiff")
+  private val violationVariable: CBLSIntVar = new CBLSIntVar(model, 0L, Domain(0L ,n), "ViolationsOfAllDiff")
   violationVariable.setDefiningInvariant(this)
 
   private val N0: Long = maxValueOfVars
@@ -58,7 +58,7 @@ case class AllDiff(variables: Iterable[IntValue])
   private val range = 0L to N
 
   private val valueMinusOffsetToNbOccurrence: Array[CBLSIntVar] = Array.tabulate[CBLSIntVar](N + 1L)((i: Int) => {
-    val tmp = new CBLSIntVar(model,0L, 0L to n, "alldiff_count_of_value_" + (i - offset))
+    val tmp = new CBLSIntVar(model,0L, Domain(0L ,n), "alldiff_count_of_value_" + (i - offset))
     tmp.setDefiningInvariant(this)
     tmp
   })

@@ -25,7 +25,7 @@ import oscar.cbls.core._
  * @author renaud.delandtsheer@cetic.be
  */
 case class Length(v: SeqValue,maxSequenceLength:Long = Long.MaxValue)
-  extends IntInvariant(v.value.size, 0L to maxSequenceLength)
+  extends IntInvariant(v.value.size, Domain(0L , maxSequenceLength))
   with SeqNotificationTarget{
 
   setName("Length(" + v.name + ")")
