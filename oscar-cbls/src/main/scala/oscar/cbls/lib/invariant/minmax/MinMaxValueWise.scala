@@ -15,7 +15,8 @@ import scala.collection.immutable.SortedSet
  *                    the actual diameter is kept between 1L and tis value, lazily
  */
 class MinConstArrayValueWise(constArray: Array[Long], condSet: SetValue, default: Long, maxDiameter:Long = 2L)
-  extends IntInvariant with SetNotificationTarget{
+  extends IntInvariant(initialDomain = Domain(constArray.min min default,constArray.max max default))
+    with SetNotificationTarget{
 
   private val n = constArray.length
   private val range = 0L until n

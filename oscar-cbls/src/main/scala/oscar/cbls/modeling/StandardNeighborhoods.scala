@@ -160,7 +160,7 @@ trait StandardNeighborhoods {
    */
   def shuffleNeighborhood(vars:Array[CBLSIntVar],
                           indicesToConsider:()=>Iterable[Long] = null,
-                          numberOfShuffledPositions:() => Int = () => Long.MaxValue,
+                          numberOfShuffledPositions:() => Long = () => Long.MaxValue,
                           name:String = "ShuffleNeighborhood",
                           checkNoMoveFound:Boolean = true) =
     ShuffleNeighborhood(vars, indicesToConsider, numberOfShuffledPositions, name, checkNoMoveFound)

@@ -1,5 +1,5 @@
 package oscar.examples.cbls.car
-/*
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -88,7 +88,7 @@ object carSequencer  extends CBLSModel with App {
   println("starting search")
 
   val search =
-    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => {val v = mostViolatedCars.value; (_,_) => v.map(longToInt)}, symmetryCanBeBrokenOnIndices = false))
+    (Profile(swapsNeighborhood(carSequence,"mostViolatedSwap", searchZone2 = () => {val v = mostViolatedCars.value; (_,_) => v}, symmetryCanBeBrokenOnIndices = false))
       exhaust Profile(WideningFlipNeighborhood(carSequence)) //it seems useless to try swaps once flip is exhausted, so simple exhaust is used here
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, mostViolatedCars, name = "shuffleMostViolatedCars")) guard(() => mostViolatedCars.value.size > 2), 2, obj)
       onExhaustRestartAfter(Profile(shuffleNeighborhood(carSequence, violatedCars, name = "shuffleSomeViolatedCars", numberOfShuffledPositions = () => 5 max (violatedCars.value.size/2))), 2, obj)
@@ -106,4 +106,3 @@ object carSequencer  extends CBLSModel with App {
 
   println(if(c.violation.value == 0) "Problem solved" else s"PROBLEM COULD NOT BE SOLVED: ${c.violation}")
 }
-*/

@@ -1,5 +1,5 @@
 package oscar.examples.cbls.flowShop
-/*
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,7 @@ import oscar.cbls.modeling.CBLSModel
 
 object flowShopManyAndRestart  extends CBLSModel with App {
 
-  val machineToJobToDuration:Array[Array[Int]] =
+  val machineToJobToDuration:Array[Array[Long]] =
     Array(
       Array(1,2,1,7,2,5,5,6,7),
       Array(4,5,3,1,8,3,7,8,4),
@@ -79,4 +79,3 @@ object flowShopManyAndRestart  extends CBLSModel with App {
   println("startingTimes:\n" + printValMatrix(machineToRoundToStartingTimes) + "\n")
   println("endingTimes:\n" + printValMatrix(machineToRoundToEndingTimes) + "\n")
 }
-*/

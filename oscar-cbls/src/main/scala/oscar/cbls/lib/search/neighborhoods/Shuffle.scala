@@ -35,7 +35,7 @@ import scala.util.Random
  */
 case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
                                indicesToConsider:()=>Iterable[Long] = null,
-                               numberOfShuffledPositions:() => Int = () => Int.MaxValue,
+                               numberOfShuffledPositions:() => Long = () => Long.MaxValue,
                                name:String = "ShuffleNeighborhood",
                                checkNoMoveFound:Boolean = true)
   extends Neighborhood(name) with LinearSelectors{
@@ -52,7 +52,7 @@ case class ShuffleNeighborhood(vars:Array[CBLSIntVar],
       if (minValue == maxValue) return NoMoveFound
     }
 
-    val numberOfShuffledPositionsThisTime:Int = numberOfShuffledPositions()
+    val numberOfShuffledPositionsThisTime:Long = numberOfShuffledPositions()
     val subsetOfIndicesToConsider:List[Int] = if(numberOfShuffledPositionsThisTime >= numberOfIndicesToConsider){
       realIndicesToConsider
     }else{

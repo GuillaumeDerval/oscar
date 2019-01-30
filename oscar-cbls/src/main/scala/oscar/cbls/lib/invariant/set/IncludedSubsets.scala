@@ -48,7 +48,7 @@ case class IncludedSubsets(s: SetValue, subsetToMonitorAndMaxValues:Iterable[(It
   }
 
   this := 0L
-  val subsetToNbPresent:Array[Long] = Array.fill(n)(0L)
+  val subsetToNbPresent = Array.fill[Long](n)(0)
   for(value <- s.value){
     notifyInsert(value)
   }
