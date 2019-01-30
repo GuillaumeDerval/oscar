@@ -77,7 +77,7 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
       // compute maximum of start+duration for preceding activities
       val maxEndTimePrecsActI = if (precedencesActI.isEmpty) 0
         else precedencesActI.map(precInd =>
-          startTimes(precInd).value + schP.activities(precInd).valDuration
+          startTimesArray(precInd).value + schP.activities(precInd).valDuration
         ).max
       // compute maximum of starting times for availability of resources
       var maxStartTimeAvailableResActI = 0

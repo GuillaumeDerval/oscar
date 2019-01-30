@@ -10,12 +10,12 @@ object SeqSchedulingWithoutResources {
   // CBLS Store
   val m = new Store()
   // Activities
-  val a = new Activity(m, "A", 3)
-  val b = new Activity(m, "B", 4)
-  val c = new Activity(m, "C", 3)
-  val d = new Activity(m, "D", 1)
-  val e = new Activity(m, "E", 3)
-  val f = new Activity(m, "F", 3)
+  val a = new Activity(m, "Analysis", 10)
+  val b = new Activity(m, "Design", 10)
+  val c = new Activity(m, "Coding", 15)
+  val d = new Activity(m, "Testing", 25)
+  val e = new Activity(m, "Quality control", 50)
+  val f = new Activity(m, "Project Management", 60)
   val activities = new BoundedArray[Activity](6, Activity.setIndex)
   activities.:::(List(a, b, c, d, e, f))
   // No resources
@@ -23,10 +23,10 @@ object SeqSchedulingWithoutResources {
   val resUsages = new ActivityResourceUsages(6, 0)
   // Precedences
   val precedences = new Precedences(6)
-  precedences.addPrecedence(a, d)
-  precedences.addPrecedence(a, e)
+  precedences.addPrecedence(a, b)
   precedences.addPrecedence(b, c)
-  precedences.addPrecedence(d, f)
+  precedences.addPrecedence(c, d)
+  precedences.addPrecedence(a, e)
   // Scheduling Problem
   val scProblem = new SchedulingProblem(m, activities, resources, precedences, resUsages)
   // Model closed
