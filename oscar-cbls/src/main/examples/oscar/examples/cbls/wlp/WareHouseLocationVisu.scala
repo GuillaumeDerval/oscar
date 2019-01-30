@@ -25,7 +25,8 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.wlp.WareHouseLocationWindow
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.wlp.WareHouseLocationMap
 
 import scala.language.postfixOps
 
@@ -63,7 +64,9 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   m.close()
 
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+  val visual = new WareHouseLocationMap(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+
+  SingleFrameWindow.show(visual,"Uncapacitated Warehouse Location Problem",width = 960,height = 960)
 
   var bestObj = Int.MaxValue
 

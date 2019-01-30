@@ -24,7 +24,7 @@ import scala.collection.immutable.SortedSet
 
 case class GradientComponent(variable:CBLSIntVar,
                              initiValue:Long,
-                             indice:Long,
+                             indice:Int,
                              slope:Double,
                              minStep:Long,
                              maxStep:Long){
@@ -44,8 +44,7 @@ case class GradientDescent(vars:Array[CBLSIntVar],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,
                            linearSearch:LinearOptimizer,
-                           maxSlopeRatio:Long,
-                           trySubgradient:Boolean)
+                           trySubgradient:Boolean = false)
   extends EasyNeighborhoodMultiLevel[GradientMove](name) {
 
   var gradientDefinition:List[GradientComponent] = List.empty

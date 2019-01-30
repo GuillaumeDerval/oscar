@@ -358,18 +358,34 @@ case class Abs(v: IntValue)
     Domain((if (v.min <= 0L) 0L else v.min) , v.max.max(-v.min)))
 
 /**
+  * abs(v) (absolute value)
+  * where output and v are IntVar
+  * @author renaud.delandtsheer@cetic.be
+  */
+case class Square(v: IntValue)
+  extends Int2Int(v, ((x: Long) => x*x),
+    Domain(if (v.min <= 0) 0 else ((v.min)*(v.min)), (v.max.max(-v.min))*(v.max.max(-v.min))))
+
+case class Sqrt(v: IntValue)
+  extends Int2Int(v, ((x: Long) => math.sqrt(x).floor.toLong),
+    Domain(math.sqrt(v.min).floor.toLong,math.sqrt(v.max).floor.toLong)){
+  require(v.min >= 0)
+}
+
+
+/**
  * This invariant implements a step function. Values higher than pivot are mapped to ifval
  * values lower or equal to pivot are mapped to elseval
  * @author renaud.delandtsheer@cetic.be, suggested by Jean-Noël Monette
  *
  * @param x the IntVar parameter of the invariant
  * @param pivot the pivot value
- * @param thenval the value returned when x > pivot
- * @param elseval the value returned when x <= pivot
+ * @param thenVal the value returned when x > pivot
+ * @param elseVal the value returned when x <= pivot
  */
-case class Step(x: IntValue, pivot: Long = 0L, thenval: Long = 1L, elseval: Long = 0L)
-  extends Int2Int(x, (a: Long) => if (a > pivot) thenval else elseval,
-    Domain(math.min(thenval,elseval) , math.max(thenval,elseval)))
+case class Step(x: IntValue, pivot: Long = 0L, thenVal: Long = 1L, elseVal: Long = 0L)
+  extends Int2Int(x, (a: Long) => if (a > pivot) thenVal else elseVal,
+    Domain(math.min(thenVal,elseVal) , math.max(thenVal,elseVal)))
 
 /**
  * This invariant implements the identity function within the min-max range.

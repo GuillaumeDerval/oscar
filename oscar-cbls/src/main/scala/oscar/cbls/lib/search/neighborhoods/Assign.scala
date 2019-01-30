@@ -231,7 +231,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class AssignMove(i:CBLSIntVar,v:Long, id:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class AssignMove(i:CBLSIntVar,v:Long, id:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i := v}

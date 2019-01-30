@@ -65,7 +65,8 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
                              selectSecondVariableBehavior:LoopBehavior = First(),
                              symmetryClassOfVariables1:Option[Long => Long] = None,
                              symmetryClassOfVariables2:Option[Long => Long] = None,
-                             hotRestart:Boolean = true)
+                             hotRestart:Boolean = true,
+                             adjustIfNotInProperDomain:Boolean = false)
   extends EasyNeighborhoodMultiLevel[SwapMove](name){
 
   //also used as the indice to start with for the exploration
@@ -115,13 +116,30 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
         if ((!symmetryCanBeBrokenOnIndices || firstVarIndice < secondVarIndice) //we break symmetry on variables
           && firstVarIndice != secondVarIndice
           && (!symmetryCanBeBrokenOnValue || oldValOfFirstVar < oldValOfSecondVar) //we break symmetry on values
-          && oldValOfFirstVar != oldValOfSecondVar
-          && secondVar.domain.contains(oldValOfFirstVar)//TODO: we should tolerate a slide if not in the domain...
-          && firstVar.domain.contains(oldValOfSecondVar)) {
+          && oldValOfFirstVar != oldValOfSecondVar){
 
-          if(evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
-            notifyFound1()
-            notifyFound2()
+
+          if (adjustIfNotInProperDomain) {
+
+            val adjustedValueToSecondVar:Long = secondVar.domain.adjust(oldValOfFirstVar)
+            val adjustedValueToFirstVar:Long = firstVar.domain.adjust(oldValOfSecondVar)
+
+            if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.assignVal(
+              List(
+                (firstVar, adjustedValueToFirstVar),
+                (secondVar, adjustedValueToSecondVar))))) {
+              notifyFound1()
+              notifyFound2()
+            }
+
+          } else {
+            if (secondVar.domain.contains(oldValOfFirstVar)
+              && firstVar.domain.contains(oldValOfSecondVar)) {
+              if (evaluateCurrentMoveObjTrueIfSomethingFound(obj.swapVal(firstVar, secondVar))) {
+                notifyFound1()
+                notifyFound2()
+              }
+            }
           }
         }
       }
@@ -146,7 +164,7 @@ case class SwapsNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Long, idJ:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class SwapMove(i:CBLSIntVar,j:CBLSIntVar, idI:Int, idJ:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i :=: j}

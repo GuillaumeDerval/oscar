@@ -71,6 +71,9 @@ sealed abstract class Domain{
   def size: Long
   def contains(v:Long): Boolean
   //  def intersect(d:Domain):Domain
+
+  def adjust(v:Long):Long = (v max this.min) min this.max
+
   def values:Iterable[Long]
   def randomValue():Long
   def restrict(d:Domain):Domain = intersect(d)

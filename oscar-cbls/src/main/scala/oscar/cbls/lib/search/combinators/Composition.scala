@@ -252,24 +252,37 @@ case class SnapShotOnEntry(a: Neighborhood, valuesToSave:Iterable[AbstractVariab
 
 
 /**
- * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
- * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
- * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
- *
- * @param a
- */
-case class Atomic(a: Neighborhood, bound: Long = Long.MaxValue) extends NeighborhoodCombinator(a) {
+  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+  *
+  * @param a
+  */
+case class AtomicJump(a: Neighborhood, bound: Int = Int.MaxValue) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Long.MaxValue, this.getClass.getSimpleName, () => "Atomic(" + a + ")")
+    CallBackMove(() => a.doAllMoves(_ > bound, obj, acceptanceCriterion), Int.MaxValue, this.getClass.getSimpleName, () => "Atomic(" + a + ")")
   }
 }
 
-case class Atomic2(a: Neighborhood, shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
+/**
+  * This is an atomic combinator, it represent that the neighborhood below should be considered as a single piece.
+  * When you commit a move from this neighborhood, "a" is reset, and exhausted in a single move from Atomic(a)
+  * Also, Atomic is a jump neighborhood as it cannot evaluate any objective function before the move is committed.
+  *
+  * @param a
+  */
+case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves:Boolean = false) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
 
-    val allMoves = a.getAllMoves(shouldStop, obj, acceptanceCriterion)
+    val stopProc = if(stopAsSoonAsAcceptableMoves){
+      nbId:Int => shouldStop(nbId) || acceptanceCriterion(initialObj,obj.value)
+    }else{
+      shouldStop
+    }
+
+    val allMoves = a.getAllMoves(stopProc, obj, acceptanceCriterion)
 
     //restore the initial solution
     val endObj = obj.value
@@ -281,4 +294,9 @@ case class Atomic2(a: Neighborhood, shouldStop:Int => Boolean) extends Neighborh
       CompositeMove(allMoves,endObj,"Aomic(" + a + ")")
     }
   }
+
+  def stopAsSoonAsAcceptable:Atomic = {
+    Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAcceptableMoves=true)
+  }
 }
+

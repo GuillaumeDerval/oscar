@@ -226,7 +226,8 @@ trait CompositionCombinators{
    *
    * @param a
    */
-  def atomic(a: Neighborhood, bound: Long = Long.MaxValue) = Atomic(a, bound)
+  def atomic(a: Neighborhood, shouldStop: Int => Boolean = _ => false, stopAsSoonAsAcceptableMoves:Boolean = false) =
+    Atomic(a, shouldStop,stopAsSoonAsAcceptableMoves)
 }
 
 
