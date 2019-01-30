@@ -264,7 +264,7 @@ case class Atomic(a: Neighborhood, bound: Long = Long.MaxValue) extends Neighbor
   }
 }
 
-case class Atomic2(a: Neighborhood, shouldStop:Long => Boolean) extends NeighborhoodCombinator(a) {
+case class Atomic2(a: Neighborhood, shouldStop:Int => Boolean) extends NeighborhoodCombinator(a) {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
 
     val startSolution = obj.model.solution(true)
