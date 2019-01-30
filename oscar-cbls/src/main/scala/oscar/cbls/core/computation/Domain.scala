@@ -208,29 +208,27 @@ case class SingleValueDomain(value:Long) extends Domain{
 
 class EmptyDomainException extends Exception("domain is empty")
 
+/**
+  * this object provides a few methods that perform safe operzations that do not overflow.
+  * in case of overflow, the returned value is set to Min or MaxValue, depending on the considered operation.
+  */
 object DomainHelper{
 
-  def safeAddMax(a:Long,b:Long):Long = {
+  def safeAdd(a:Long, b:Long):Long = {
     val tmp = a.toLong + b.toLong
-    if(tmp > Long.MaxValue) Long.MaxValue
-    else tmp.toInt
+
+    if (a > 0 && b > 0 && tmp < 0) Long.MaxValue
+    else if (a <0 && b <0 && tmp > 0) Long.MinValue
+    else tmp
   }
 
-  def safeAddMin(a:Long,b:Long):Long = {
-    val tmp = a.toLong + b.toLong
-    if(tmp < Long.MinValue) Long.MinValue
-    else tmp.toInt
-  }
-
-  def safeMulMax(a:Long,b:Long):Long = {
+  def safeMul(a:Long, b:Long):Long = {
     val tmp = a.toLong * b.toLong
-    if(tmp > Long.MaxValue) Long.MaxValue
-    else tmp.toInt
-  }
 
-  def safeMulMin(a:Long,b:Long):Long = {
-    val tmp = a.toLong * b.toLong
-    if(tmp < Long.MinValue) Long.MaxValue
-    else tmp.toInt
+    if (a > 0 && b > 0 && tmp < 0) Long.MaxValue
+    else if (a < 0 && b < 0 && tmp > 0) Long.MaxValue
+    else if (a < 0 && b > 0 && tmp > 0) Long.MinValue
+    else if (a > 0 && b < 0 && tmp > 0) Long.MinValue
+    else tmp
   }
 }

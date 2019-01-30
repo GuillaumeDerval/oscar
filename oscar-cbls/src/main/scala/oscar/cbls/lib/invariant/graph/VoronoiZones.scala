@@ -22,7 +22,8 @@ object VoronoiZones{
             defaultDistanceForUnreachableNodes:Long):VoronoiZones = {
 
     val trackedNodeToDistanceAndCentroid = SortedMap.empty[Long,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
-      nodeID -> (CBLSIntVar(m, 0, Domain(0L,(defaultDistanceForUnreachableNodes max graphDiameterOverApprox)), "distanceToClosestCentroid_Node" + nodeID),
+      nodeID -> (
+        CBLSIntVar(m, 0, Domain(0L,(defaultDistanceForUnreachableNodes max graphDiameterOverApprox)), "distanceToClosestCentroid_Node" + nodeID),
         CBLSIntVar(m, 0, Domain(-1L , centroids.max), "closestCentroidToNode" + nodeID))
     )
 

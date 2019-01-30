@@ -40,7 +40,7 @@ import scala.collection.immutable.SortedSet
 case class And(vars: Iterable[IntValue])
   extends IntInvariant(
     vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
-    Domain(0 ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))))
+    Domain(0 ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -94,7 +94,7 @@ case class Or(vars: Array[IntValue]) extends MiaxArray(vars, null, vars.foldLeft
 case class Or(vars: Array[IntValue])
   extends IntInvariant(
     if(vars.exists(_.value == 0L)) { 0L } else { vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value)/vars.length },
-    Domain(0L ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))))
+    Domain(0L ,vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
     with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)

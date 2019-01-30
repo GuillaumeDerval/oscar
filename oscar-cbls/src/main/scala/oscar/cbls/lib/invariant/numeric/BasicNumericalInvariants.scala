@@ -50,7 +50,7 @@ object Prod {
 class Sum(vars: Iterable[IntValue])
   extends IntInvariant(
     vars.foldLeft(0L)((a: Long, b: IntValue) => a + b.value),
-    Domain(vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMin(acc, intvar.min)) , vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc, intvar.max))))
+    Domain(vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.min)) , vars.foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc, intvar.max))))
   with IntNotificationTarget{
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
@@ -76,8 +76,8 @@ class Sum(vars: Iterable[IntValue])
 class Linear(vars: Iterable[IntValue], coeffs: IndexedSeq[Long])
   extends IntInvariant(
 		  vars.zip(coeffs).foldLeft(0L)((acc, intvar) => acc + intvar._1.value*intvar._2),
-    Domain(vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMin(acc,DomainHelper2.getMinProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))) ,
-		  vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAddMax(acc,DomainHelper2.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2)))))
+    Domain(vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc,DomainHelper2.getMinProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2))) ,
+		  vars.zip(coeffs).foldLeft(0L)((acc, intvar) => DomainHelper.safeAdd(acc,DomainHelper2.getMaxProd(intvar._1.min,intvar._1.max,intvar._2,intvar._2)))))
   with IntNotificationTarget {
 
   //coeffs needs to be indexed as we need to access it be index from the index of vars (as given in notifyIntChanged)
@@ -312,7 +312,7 @@ case class Sum2(left: IntValue, right: IntValue)
   extends IntInt2Int(left, right, (if(DomainHelper2.isSafeAdd(left,right))
                                       (l,r) => l + r
                                    else ((l: Long, r: Long) => DomainHelper2.safeAdd(l,r))),
-    Domain(DomainHelper.safeAddMin(left.min, right.min) , DomainHelper.safeAddMax(left.max, right.max)))
+    Domain(DomainHelper.safeAdd(left.min, right.min) , DomainHelper.safeAdd(left.max, right.max)))
 //TODO: Should return simply left if right is the constant zero. (use a companion object)
 
 /**

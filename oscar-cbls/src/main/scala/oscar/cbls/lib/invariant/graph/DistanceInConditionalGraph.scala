@@ -3,7 +3,7 @@ package oscar.cbls.lib.invariant.graph
 import oscar.cbls.SetValue
 import oscar.cbls.algo.graph._
 import oscar.cbls.core._
-import oscar.cbls.core.computation.SetNotificationTarget
+import oscar.cbls.core.computation.{Domain, SetNotificationTarget}
 
 import scala.collection.immutable.SortedSet
 
@@ -11,13 +11,13 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  from:Int,
                                  to:Int,
                                  openConditions:SetValue,
-                                 distanceIfNotConnected:Int)
+                                 distanceIfNotConnected:Long)
                                 (underApproximatingDistance:(Int,Int) => Long
                                  = {val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true);
                                   (a:Int,b:Int) =>{
                                     underApproxDistanceMatrix(a)(b)
                                   }})
-  extends IntInvariant() with VaryingDependencies with SetNotificationTarget {
+  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to),distanceIfNotConnected)) with VaryingDependencies with SetNotificationTarget {
 
   registerStaticDependency(openConditions)
   private var key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
