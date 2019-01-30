@@ -179,7 +179,7 @@ object TSProutePoints extends App {
   //performRandomBenchmark()
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Long, verbose:Long, symmetricDistanceMatrix:Array[Array[Long]],printobj:Boolean = false) extends StopWatch{
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Long, verbose:Int, symmetricDistanceMatrix:Array[Array[Long]],printobj:Boolean = false) extends StopWatch{
 
 
   //  println("restrictions:" + restrictions)

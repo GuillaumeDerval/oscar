@@ -1,5 +1,10 @@
 package oscar.cbls.lib.search.neighborhoods
 
+import oscar.cbls.{IntValue, Store}
+import oscar.cbls.core.computation.{CBLSIntVar, Domain}
+import oscar.cbls.core.objective.Objective
+import oscar.cbls.lib.invariant.numeric.Sum2
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -340,7 +345,7 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
     (positionOfBestSoFar,bestObjSoFar)
   }
 }
-/*
+
 object TestRN extends App{
 
   def f1:Long => Long = x => {x*x - 150L*x + 5090L}
@@ -373,8 +378,8 @@ object Paraboloide extends App{
 
   val m = new Store()
 
-  val x = new CBLSIntVar(m,10L,0L to 1000L,"x")
-  val y = new CBLSIntVar(m,10L,0L to 1000L,"y")
+  val x = CBLSIntVar(m,10,Domain(0,1000),"x")
+  val y = new CBLSIntVar(m,10,Domain(0,1000),"y")
 
   val a:IntValue = (x - 300L) * (x - 300L)
   val b:IntValue = (y - 100L) * (y - 100L)
@@ -390,15 +395,14 @@ object Paraboloide extends App{
     println("f:" + f)
   }
   val search = GradientDescent(Array(x,y),
-    selectVars= 0L to 1L,
+    selectVars = 0L to 1L,
     variableIndiceToDeltaForGradientDefinition = _ => 10L,
     linearSearch = new NarrowingStepSlide(3L, minStep = 1L),
-    maxSlopeRatio = 10L,
     trySubgradient = true)
 
-  search.verbose = 2L
+  search.verbose = 2
 
   search.doAllMoves(obj = obj)
 
   printModel()
-}*/
+}

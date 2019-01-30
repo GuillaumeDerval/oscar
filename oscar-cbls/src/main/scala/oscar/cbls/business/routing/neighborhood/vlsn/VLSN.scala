@@ -348,7 +348,7 @@ class VLSN(v:Int,
                   reOptimizeNeighborhoodGenerator(vehicle) match{
                     case None => ;
                     case Some(n) =>
-                      n.verbose = 0L
+                      n.verbose = 0
                       val nbPerformedMoves = n.doAllMoves(obj=globalObjective)
                       if((printTakenMoves && nbPerformedMoves > 0L) || (printExploredNeighborhoods && nbPerformedMoves == 0L)){
                         println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")

@@ -14,7 +14,7 @@ package oscar.examples.cbls.routing
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*
+
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
@@ -49,8 +49,8 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   val (symmetricDistanceMatrix1,nodesPositions) = RoutingMatrixGenerator.apply(n,1000)
 
   val symmetricDistanceMatrix = Array.tabulate(n)({a =>
-    Array.tabulate(n)({b =>
-      symmetricDistanceMatrix1(a min b)(a max b).toInt
+    Array.tabulate[Long](n)({b =>
+      symmetricDistanceMatrix1(a min b)(a max b)
     })})
 
   val maxWorkloadPerVehicle = 2500
@@ -110,16 +110,16 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       "maxWorkloadPerVehicle:" + maxWorkloadPerVehicle + "\n" + "serviceTimePerNode:" + serviceTimePerNode + "\n" + obj
 
 
-  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
+  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val closestRelevantNeighborsByDistance = Array.tabulate(n)((node:Int) => DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(node))
 
   val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
   val unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
 
   def vlsn(l:Int = Int.MaxValue) = {
 
-    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
-      SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+    val lClosestNeighborsByDistance: Array[SortedSet[Long]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Long] ++ myVRP.kFirst(l, (node:Long) => closestRelevantNeighborsByDistance(node))(node))
 
     //VLSN neighborhood
     val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
@@ -206,9 +206,9 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
     new VLSN(
       v,
-      () => SortedMap.empty[Int, SortedSet[Int]] ++
+      () => SortedMap.empty[Long, SortedSet[Long]] ++
         vehicles.map((vehicle: Int) =>
-          (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
+          (vehicle:Long, SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
       () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
@@ -276,4 +276,3 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
 
   graphical.drawRoutes(force = true)
 }
-*/

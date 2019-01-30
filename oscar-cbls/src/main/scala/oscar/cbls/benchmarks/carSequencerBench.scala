@@ -101,7 +101,7 @@ object carSequencerBench  extends CBLSModel with App {
       orElse (Profile(shuffleNeighborhood(carSequence, name = "shuffleAllCars")) maxMoves 4L)
       saveBestAndRestoreOnExhaust obj) //in case we do not solve it, we want to restore the best solution anyway
 
-  search.verbose = 1L
+  search.verbose = 1
   search.doAllMoves(_ => c.isTrue,obj)
 
   println(search.profilingStatistics)

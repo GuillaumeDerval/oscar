@@ -39,7 +39,7 @@ case class GradientComponent(variable:CBLSIntVar,
 
 case class GradientDescent(vars:Array[CBLSIntVar],
                            name:String = "GradientDescent",
-                           maxNbVars:Long = Integer.MAX_VALUE,
+                           maxNbVars:Int = Integer.MAX_VALUE,
                            selectVars:Iterable[Long],
                            variableIndiceToDeltaForGradientDefinition:Long => Long,
                            hotRestart:Boolean = true,

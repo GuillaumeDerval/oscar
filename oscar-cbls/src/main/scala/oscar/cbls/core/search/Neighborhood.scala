@@ -134,9 +134,9 @@ abstract class Neighborhood(name:String = null) {
    * 2L: moves + failed searches
    * 3L: moves + explored neighbors
    */
-  var _verbose: Long = 0L
-  def verbose: Long = _verbose
-  def verbose_=(i: Long) {
+  var _verbose: Int = 0
+  def verbose: Int = _verbose
+  def verbose_=(i: Int) {
     _verbose = i
     additionalStringGenerator = null
   }
@@ -147,7 +147,7 @@ abstract class Neighborhood(name:String = null) {
    * sets the verbosity level with an additiojnal string generator that ins called eieher on eahc move (level = 1L)
    *   or for each explored neighbor (level = 2L)
    */
-  def verboseWithExtraInfo(verbosity: Long, additionalString: () => String) {
+  def verboseWithExtraInfo(verbosity: Int, additionalString: () => String) {
     verbose = verbosity
     additionalStringGenerator = additionalString
   }

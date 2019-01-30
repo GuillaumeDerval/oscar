@@ -66,8 +66,8 @@ object Benchmark extends StopWatch{
         for (n <- strategies) {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
-          strategyInstance._2.verbose = 0L
-          if (verbose > 1L) println("Warm up run of " + strategyInstance._1)
+          strategyInstance._2.verbose = 0
+          if (verbose > 1) println("Warm up run of " + strategyInstance._1)
           strategyInstance._2.doAllMoves(_ => false, obj)
           if (this.getWatch >= warmupInMs) break
         }
@@ -80,7 +80,7 @@ object Benchmark extends StopWatch{
         for (trial <- 1L to nRuns) yield {
           m.restoreSolution(initialSolution)
           val strategyInstance = n()
-          strategyInstance._2.verbose = if (verbose > 0L) verbose else 0L
+          strategyInstance._2.verbose = if (verbose > 0) verbose else 0
           if (verbose > 1L) println("Benchmarking " + strategyInstance._1 + " run " + trial + " of " + nRuns)
           this.startWatch()
           val it = strategyInstance._2.doAllMoves(_ => false, obj)
