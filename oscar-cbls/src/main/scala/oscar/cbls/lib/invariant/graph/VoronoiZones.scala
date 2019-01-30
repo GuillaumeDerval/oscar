@@ -21,8 +21,8 @@ object VoronoiZones{
             m:Store,
             defaultDistanceForUnreachableNodes:Long):VoronoiZones = {
 
-    val trackedNodeToDistanceAndCentroid = SortedMap.empty[Int,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
-      cbls.longToInt(nodeID) -> (CBLSIntVar(m, 0, 0L to (defaultDistanceForUnreachableNodes max graphDiameterOverApprox), "distanceToClosestCentroid_Node" + nodeID),
+    val trackedNodeToDistanceAndCentroid = SortedMap.empty[Long,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
+      nodeID -> (CBLSIntVar(m, 0, 0L to (defaultDistanceForUnreachableNodes max graphDiameterOverApprox), "distanceToClosestCentroid_Node" + nodeID),
         CBLSIntVar(m, 0, -1L to centroids.max, "closestCentroidToNode" + nodeID))
     )
 
@@ -35,7 +35,7 @@ object VoronoiZones{
 
   def orphanNodes(v:VoronoiZones):ChangingSetValue = {
     //TODO: embed this into the VoronoiVone invariant to have better runtime?
-    val idToNodeAndCentroid:Array[(Int,IntValue)] = v.trackedNodeToDistanceAndCentroidMap.toList.map({case (id,(_,centroid)) => (id,centroid)}).toArray
+    val idToNodeAndCentroid:Array[(Int,IntValue)] = v.trackedNodeToDistanceAndCentroidMap.toList.map({case (id,(_,centroid)) => (cbls.longToInt(id),centroid)}).toArray
 
     SetMap(
       Filter(
@@ -61,7 +61,7 @@ object VoronoiZones{
 class VoronoiZones(graph:ConditionalGraph,
                    openConditions:SetValue,
                    centroids:SetValue,
-                   val trackedNodeToDistanceAndCentroidMap:SortedMap[Int,(CBLSIntVar,CBLSIntVar)],
+                   val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,(CBLSIntVar,CBLSIntVar)],
                    defaultDistanceForUnreachableNodes:Long)
   extends Invariant with SetNotificationTarget {
 

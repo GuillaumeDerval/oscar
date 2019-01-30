@@ -5,6 +5,7 @@ import java.awt.geom.Rectangle2D
 import java.awt.{BorderLayout, Color, Dimension, Graphics}
 
 import javax.swing.JFrame
+import oscar.cbls
 import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
@@ -35,17 +36,17 @@ class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithInteger
     colorForEmphasizedEdges:Color,
     colorForEmphasizedEdges2:Color)
 
-  def redraw(openConditions:SortedSet[Int],
-             centroids:SortedSet[Int],
-             nodeToCentroid:SortedMap[Int,Int],
+  def redraw(openConditions:SortedSet[Long],
+             centroids:SortedSet[Long],
+             nodeToCentroid:SortedMap[Long,Long],
              hideClosedEdges:Boolean = false,
              hideRegularEdges:Boolean = false,
              hideOpenEdges:Boolean=false,
              emphasizeEdges:Iterable[Edge] = List.empty,
              extraPath:Iterable[RevisableDistance]){
-    visual.redraw(openConditions:SortedSet[Int],
-      centroids:SortedSet[Int],
-      nodeToCentroid:SortedMap[Int,Int],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges,extraPath:Iterable[RevisableDistance])
+    visual.redraw(openConditions:SortedSet[Long],
+      centroids:SortedSet[Long],
+      nodeToCentroid:SortedMap[Long,Long],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges,extraPath:Iterable[RevisableDistance])
   }
   val frame = new JFrame()
   frame.setTitle(title)
@@ -89,9 +90,9 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
     super.addShape(shape,false)
   }
 
-  def redraw(openConditions:SortedSet[Int],
-             centroids:SortedSet[Int],
-             nodeToCentroid:SortedMap[Int,Int],
+  def redraw(openConditions:SortedSet[Long],
+             centroids:SortedSet[Long],
+             nodeToCentroid:SortedMap[Long,Long],
              hideClosedEdges:Boolean = false,
              hideRegularEdges:Boolean = false,
              hideOpenEdges:Boolean=false,
@@ -107,17 +108,17 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
       drawPath(path,emphNodes = true:Boolean,emphEdges=true)
     }
 
-    drawEdges(openConditions:SortedSet[Int],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
+    drawEdges(openConditions:SortedSet[Long],hideClosedEdges,hideRegularEdges, hideOpenEdges,emphasizeEdges)
 
-    drawNodes(centroids:SortedSet[Int],
-      nodeToCentroid:SortedMap[Int,Int])
+    drawNodes(centroids:SortedSet[Long],
+      nodeToCentroid:SortedMap[Long,Long])
 
     //double buffering still does not work!
     super.repaint()
   }
 
-  def drawNodes(centroids:SortedSet[Int],
-                nodeToCentroid:SortedMap[Int,Int]): Unit ={
+  def drawNodes(centroids:SortedSet[Long],
+                nodeToCentroid:SortedMap[Long,Long]): Unit ={
 
     for(node <- graph.nodeswithCoordinates){
       if(centroids contains node.nodeId){
@@ -133,7 +134,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
               drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
             }else{
               //reachable by centroidID
-              drawNode(node:NodeWithIntegerCoordinates,centroidColor(centroidID),false)
+              drawNode(node:NodeWithIntegerCoordinates,centroidColor(cbls.longToInt(centroidID)),false)
             }
           case None =>
           //not a marked node, set default black color, small dot
@@ -175,7 +176,7 @@ class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCo
     tempPoint.innerCol_$eq(color)
   }
 
-  def drawEdges(openConditions:SortedSet[Int],
+  def drawEdges(openConditions:SortedSet[Long],
                 hideClosedEdges:Boolean,
                 hideRegularEdges:Boolean = false,
                 hideOpenEdges:Boolean=false,

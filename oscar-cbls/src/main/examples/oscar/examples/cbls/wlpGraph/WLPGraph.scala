@@ -78,7 +78,7 @@ object WLPGraph extends App with StopWatch{
   val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distance(warehouseToNode(w1),warehouseToNode(w2))))
 
 
-  val costForOpeningWarehouse =  Array.fill(W)(800)
+  val costForOpeningWarehouse =  Array.fill[Long](W)(800)
 
   val m = Store() //checker = Some(new ErrorChecker()))
   println("model")
@@ -91,18 +91,17 @@ object WLPGraph extends App with StopWatch{
 
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 
-  println("creating Voronoï zones invariant")
+  println("Creating Voronoï zones invariant")
 
   val vor = VoronoiZones(graph,
     graphDiameterOverApprox = Int.MaxValue,
     openConditions = openConditions,
     centroids = openWarehouses,
-    trackedNodes = deliveryToNode.map(_.nodeId),
+    trackedNodes = deliveryToNode.map(_.nodeId:Long),
     m,
     defaultDistanceForUnreachableNodes = 10000)
 
-  val trackedNodeToDistanceAndCentroid: SortedMap[Int,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
-
+  val trackedNodeToDistanceAndCentroid: SortedMap[Long,(CBLSIntVar,CBLSIntVar)] = vor.trackedNodeToDistanceAndCentroidMap
 
   println("done init voronoï zones")
 
@@ -175,7 +174,7 @@ object WLPGraph extends App with StopWatch{
     maxDepth = width,
     intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
