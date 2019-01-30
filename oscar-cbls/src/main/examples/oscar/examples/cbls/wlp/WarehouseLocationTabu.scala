@@ -14,22 +14,22 @@ package oscar.examples.cbls.wlp
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*
+
 import oscar.cbls._
 import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
-import oscar.cbls.lib.search.neighborhoods.AssignNeighborhood
+import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
 
 import scala.language.postfixOps
 
 /**
- * this is a WarehouseLocation problem with a Tabu.
- * the purpose is to illustrate how standard neighborhoods can be tuned to encompass
- * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
- * this set of variables is maintained through invariants
- */
+  * this is a WarehouseLocation problem with a Tabu.
+  * the purpose is to illustrate how standard neighborhoods can be tuned to encompass
+  * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
+  * this set of variables is maintained through invariants
+  */
 object WarehouseLocationTabu extends App{
 
   //the number of warehouses
@@ -47,12 +47,6 @@ object WarehouseLocationTabu extends App{
   val m = Store()
 
   val warehouseOpenArray = Array.tabulate(W)(w => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + w + "_open"))
-
-  //We store in each warehouse variable its warehouse ID, using the
-  // [[oscar.cbls.invariants.core.computation.DistributedStorageUtility]] mechanism
-  //so we first ask a storageKey to the model
-  val warehouseKey = m.newStorageKey()
-  m.storeIndexesAt(warehouseOpenArray, warehouseKey)
 
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
@@ -77,11 +71,11 @@ object WarehouseLocationTabu extends App{
   val tabuTenure = 3
   val switchWithTabuNeighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouseTabu",
     searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
-    beforeMove((mo:Move) => {
-    for (v <- mo.touchedVariables) {
-      TabuArray(v.getStorageAt[Int](warehouseKey)) := It.value + tabuTenure
-    }
-    It :+= 1 }) acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
+    afterMoveOnMove((a:AssignMove) =>
+  {
+    TabuArray(a.id) := It.value + tabuTenure
+    It :+= 1
+  }) acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 
   switchWithTabuNeighborhood.verbose = 1
 
@@ -90,4 +84,3 @@ object WarehouseLocationTabu extends App{
 
   println(openWarehouses)
 }
-*/
