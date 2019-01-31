@@ -21,7 +21,7 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
 import oscar.cbls.core._
 
-object ConstantRoutingDistance {
+object RouteLength {
 
   /**
    *
@@ -48,7 +48,7 @@ object ConstantRoutingDistance {
       else Array.fill(1L)(CBLSIntVar(routes.model,name="overallDistance"))
 
     if(precomputeFW || precomputeBW){
-      new ConstantRoutingDistancePrecompute(routes,
+      new RouteLengthPrecompute(routes,
         n,
         v,
         distanceMatrix,
@@ -56,7 +56,7 @@ object ConstantRoutingDistance {
         distanceIsSymmetric,
         precomputeFW,precomputeBW)
     }else{
-      new ConstantRoutingDistance(routes,
+      new RouteLength(routes,
         n,
         v,
         distanceMatrix,
@@ -113,13 +113,13 @@ object ConstantRoutingDistance {
  * These values must always be present in the sequence in increasing order
  * they cannot be included within a moved segment
  */
-class ConstantRoutingDistance(routes:ChangingSeqValue,
-                              n:Int,
-                              v:Int,
-                              distanceMatrix:Array[Array[Long]],
-                              distance:Array[CBLSIntVar],
-                              distanceIsSymmetric:Boolean,
-                              nodeToMatrixID:Long=>Long = x => x)
+class RouteLength(routes:ChangingSeqValue,
+                  n:Int,
+                  v:Int,
+                  distanceMatrix:Array[Array[Long]],
+                  distance:Array[CBLSIntVar],
+                  distanceIsSymmetric:Boolean,
+                  nodeToMatrixID:Long=>Long = x => x)
   extends Invariant() with SeqNotificationTarget{
 
   protected def distanceMatrixOnNode(from:Long)(to:Long):Long = {
@@ -504,7 +504,7 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
   }
 
   def check(c : Checker,s:IntSequence) {
-    c.check(!distanceIsSymmetric || ConstantRoutingDistance.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
+    c.check(!distanceIsSymmetric || RouteLength.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
 
     if (perVehicle) {
       val values = computeValueFromScratch(s)
@@ -547,15 +547,15 @@ class ConstantRoutingDistance(routes:ChangingSeqValue,
  * These values must always be present in the sequence in increasing order
  * they cannot be included within a moved segment
  */
-class ConstantRoutingDistancePrecompute(routes:ChangingSeqValue,
-                                        n:Int,
-                                        v:Int,
-                                        distanceMatrix:Array[Array[Long]],
-                                        distance:Array[CBLSIntVar],
-                                        distanceIsSymmetric:Boolean,
-                                        precomputeFW:Boolean,
-                                        precomputeBW:Boolean)
-  extends ConstantRoutingDistance(routes:ChangingSeqValue,
+class RouteLengthPrecompute(routes:ChangingSeqValue,
+                            n:Int,
+                            v:Int,
+                            distanceMatrix:Array[Array[Long]],
+                            distance:Array[CBLSIntVar],
+                            distanceIsSymmetric:Boolean,
+                            precomputeFW:Boolean,
+                            precomputeBW:Boolean)
+  extends RouteLength(routes:ChangingSeqValue,
     n,
     v:Int,
     distanceMatrix:Array[Array[Long]],

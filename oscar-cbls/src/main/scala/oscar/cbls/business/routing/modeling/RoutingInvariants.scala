@@ -30,15 +30,15 @@ trait RoutingInvariants {
    * @return if the distance is PerVehicle, it is an array that maps each vehicle to its drive distance
    *         if the distance is global, it is a array with a single variable that is equal to the sum of all drive distance
    */
-  def constantRoutingDistance(routes : ChangingSeqValue,
-                              n : Long,
-                              v : Long,
-                              perVehicle : Boolean,
-                              distanceMatrix : Array[Array[Long]],
-                              distanceIsSymmetric : Boolean,
-                              precomputeFW : Boolean = false,
-                              precomputeBW : Boolean = false) : Array[CBLSIntVar] =
-    ConstantRoutingDistance(routes,
+  def routeLength(routes : ChangingSeqValue,
+                  n : Long,
+                  v : Long,
+                  perVehicle : Boolean,
+                  distanceMatrix : Array[Array[Long]],
+                  distanceIsSymmetric : Boolean,
+                  precomputeFW : Boolean = false,
+                  precomputeBW : Boolean = false) : Array[CBLSIntVar] =
+    RouteLength(routes,
       n,
       v,
       perVehicle,
