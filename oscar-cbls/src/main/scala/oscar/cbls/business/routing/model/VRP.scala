@@ -244,9 +244,10 @@ class VRP(val m: Store, val n: Int, val v: Int, maxPivotPerValuePercent:Long = 4
         toReturn +=  "vehicle " + vehicle + ": " +  routeOfV.mkString("->") + "->" + vehicle + "\n"
       }
     }
+    val u = unroutedNodes
     "Vehicle routing n:" + n + " v:" + v + "\n" +
-    "unrouted nodes:{" + unroutedNodes.toList.mkString(",") + "}\n" +
-    "not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
+    "" + u.size + " unrouted nodes:{" + u.toList.mkString(",") + "}\n" +
+    "" + notMoving.size + " not used vehicles:{" + notMoving.reverse.mkString(",") + "}\n" +
       toReturn
   }
 }
