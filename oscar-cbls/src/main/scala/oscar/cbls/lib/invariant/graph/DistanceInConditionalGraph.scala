@@ -101,4 +101,38 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
     //note: this will be called even if not needed simply because we have an output that requires propagation.
     computeAffectAndAdjustValueWiseKey()
   }
+
+  /** To override whenever possible to spot errors in invariants.
+    * this will be called for each invariant after propagation is performed.
+    * It requires that the Model is instantiated with the variable debug set to true.
+    */
+  override def checkInternals(c: Checker): Unit = {
+
+    //We rely on the existing Astar, but call it twice.
+
+    val fwd = aStar.search(
+      graph.nodes(from),
+      graph.nodes(to),
+      {val o = openConditions.value; condition => o contains condition},false)
+
+    val bwt = aStar.search(
+      graph.nodes(to),
+      graph.nodes(from),
+      {val o = openConditions.value; condition => o contains condition},false)
+
+    (fwd,bwt) match{
+      case (Distance(a, b,distance1, _, _,_),Distance(c, d,distance2, _, _,_)) =>
+        require(this.value == distance1)
+        require(distance1 == distance2)
+
+      case (NeverConnected(a,b),NeverConnected(c,d)) =>
+
+        require(this.value == distanceIfNotConnected)
+
+      case (NotConnected(a, b, _),NotConnected(c, d, _))=>
+        //println("computeAffectAndAdjustValueWiseKey" + n)
+        require(this.value == distanceIfNotConnected)
+      case _ => throw new Error("disagreeing aStar")
+    }
+  }
 }

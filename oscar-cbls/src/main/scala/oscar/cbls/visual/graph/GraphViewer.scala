@@ -1,4 +1,4 @@
-package oscar.cbls.lib.invariant.graph
+package oscar.cbls.visual.graph
 
 import java.awt.Color
 import java.awt.geom.Line2D.Double
@@ -12,14 +12,14 @@ import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualSha
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.swing.Color
 
-class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCoordinates,
-                                         centroidColor:SortedMap[Int,Color],
-                                         colorForUnreachableNodes:Color  = Color.black,
-                                         colorForPermanentEdges:Color =Color.black,
-                                         colorForOpenEdges:Color = Color.green,
-                                         colorForClosedEdges:Color = Color.red,
-                                         colorForEmphasizedEdges:Color = Color.blue,
-                                         colorForEmphasizedEdges2:Color = Color.orange)
+class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
+                  centroidColor:SortedMap[Int,Color],
+                  colorForUnreachableNodes:Color  = Color.black,
+                  colorForPermanentEdges:Color =Color.black,
+                  colorForOpenEdges:Color = Color.green,
+                  colorForClosedEdges:Color = Color.red,
+                  colorForEmphasizedEdges:Color = Color.blue,
+                  colorForEmphasizedEdges2:Color = Color.orange)
   extends VisualDrawing(false,false){
 
   this.setDoubleBuffered(true) //does not work.

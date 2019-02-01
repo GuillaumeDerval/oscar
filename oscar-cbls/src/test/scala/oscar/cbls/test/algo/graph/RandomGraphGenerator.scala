@@ -1,4 +1,4 @@
-package oscar.examples.cbls.wlpGraph
+package oscar.cbls.test.algo.graph
 
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, NodeWithIntegerCoordinates}
 

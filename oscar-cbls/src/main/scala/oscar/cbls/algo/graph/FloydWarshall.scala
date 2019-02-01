@@ -1,5 +1,9 @@
 package oscar.cbls.algo.graph
 
+/**
+  * this is a FloydWarshall algorithm for the [[ConditionalGraph]] data structure.
+  * this data structure is non-directed graph, the FloydWarshall is tehrefore tuned accordignly
+  */
 object FloydWarshall{
 
   def buildDistanceMatrix(g:ConditionalGraph,
@@ -70,7 +74,7 @@ object FloydWarshall{
 
     for (k <- 0 to n-1) {
       for (i <- (0 to n-1).par) {
-        for (j <- i to n-1) {
+        for (j <- i+1 to n-1) {
 
           if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue) {
             val newDistance = w(i)(k) + w(k)(j)
@@ -83,5 +87,4 @@ object FloydWarshall{
       }
     }
   }
-
 }
