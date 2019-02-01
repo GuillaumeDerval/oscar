@@ -79,6 +79,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           //TODO: il faut cadrer dans le domaine des variables!!
 
           def evaluate(delta:Long): Long ={
+            this.delta = delta
             firstVar := oldValOfFirstVar + delta
             secondVar := oldValOfSecondVar - delta
             val newObj = obj.value
@@ -103,10 +104,10 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     }
     firstVarIndice = firstVarIndice + 1L
     secondVarIndice = -1L
-    firstVar = null
-    secondVar = null
     require(firstVar.newValue == oldValOfFirstVar)
     require(secondVar.newValue == oldValOfSecondVar)
+    firstVar = null
+    secondVar = null
   }
 
 
