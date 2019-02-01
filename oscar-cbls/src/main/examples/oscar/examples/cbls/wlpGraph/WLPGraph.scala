@@ -28,7 +28,7 @@ import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.ColorGenerator
+import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
 import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
@@ -135,8 +135,10 @@ object WLPGraph extends App with StopWatch{
 
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
-  val visual = new ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))),title = "Warehouse and new road location")
+  val visual = new ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCoordinates,
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
+
+  SingleFrameWindow.show(visual,title = "Warehouse and new road location")
 
   var bestDisplayedObj = Int.MaxValue
 

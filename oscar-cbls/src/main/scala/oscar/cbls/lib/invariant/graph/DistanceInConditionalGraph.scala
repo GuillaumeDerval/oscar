@@ -17,7 +17,9 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
                                   (a:Int,b:Int) =>{
                                     underApproxDistanceMatrix(a)(b)
                                   }})
-  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to),distanceIfNotConnected)) with VaryingDependencies with SetNotificationTarget {
+  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to),distanceIfNotConnected))
+    with VaryingDependencies
+    with SetNotificationTarget {
 
   registerStaticDependency(openConditions)
   private var key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)

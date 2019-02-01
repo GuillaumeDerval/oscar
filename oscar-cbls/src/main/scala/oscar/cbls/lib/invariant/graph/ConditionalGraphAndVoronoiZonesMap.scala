@@ -1,81 +1,25 @@
 package oscar.cbls.lib.invariant.graph
 
+import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
-import java.awt.{BorderLayout, Color, Dimension, Graphics}
 
-import javax.swing.JFrame
 import oscar.cbls
 import oscar.cbls.algo.graph._
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
-import scala.collection.mutable
 import scala.swing.Color
-
-
-
-class ConditionalGraphAndVoronoiZonesMapWindow(graph:ConditionalGraphWithIntegerNodeCoordinates,
-                                               centroidColor:SortedMap[Int,Color],
-                                               colorForUnreachableNodes:Color = Color.black,
-                                               colorForPermanentEdges:Color =Color.black,
-                                               colorForOpenEdges:Color = Color.green,
-                                               colorForClosedEdges:Color = Color.red,
-                                               colorForEmphasizedEdges:Color = Color.blue,
-                                               colorForEmphasizedEdges2:Color = Color.orange,
-                                               title:String = "ConditionalGraphAndVoronoiZonesMap"){
-
-  val visual = new ConditionalGraphAndVoronoiZonesMap(
-    graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor:SortedMap[Int,Color],
-    colorForUnreachableNodes:Color,
-    colorForPermanentEdges:Color,
-    colorForOpenEdges:Color,
-    colorForClosedEdges:Color,
-    colorForEmphasizedEdges:Color,
-    colorForEmphasizedEdges2:Color)
-
-  def redraw(openConditions:SortedSet[Long],
-             centroids:SortedSet[Long],
-             nodeToCentroid:SortedMap[Long,Long],
-             hideClosedEdges:Boolean = false,
-             hideRegularEdges:Boolean = false,
-             hideOpenEdges:Boolean=false,
-             emphasizeEdges:Iterable[Edge] = List.empty,
-             extraPath:Iterable[RevisableDistance]){
-    visual.redraw(openConditions:SortedSet[Long],
-      centroids:SortedSet[Long],
-      nodeToCentroid:SortedMap[Long,Long],hideClosedEdges:Boolean,hideRegularEdges, hideOpenEdges,emphasizeEdges,extraPath:Iterable[RevisableDistance])
-  }
-  val frame = new JFrame()
-  frame.setTitle(title)
-  frame.setLayout(new BorderLayout())
-  frame.setPreferredSize(new Dimension(960,960))
-  frame.add(visual, BorderLayout.CENTER)
-  frame.pack()
-  frame.revalidate()
-  frame.setVisible(true)
-}
-
-class DoubleBufferedDrawing(flipped: Boolean, scalable: Boolean) extends VisualDrawing(false,false){
-
-  override def paint(g: Graphics): Unit = {
-    val d = getSize()
-    val offScreenImageDrawed = createImage(d.width, d.height)
-    super.paint(offScreenImageDrawed.getGraphics())
-    g.drawImage(offScreenImageDrawed, 0, 0, null)
-  }
-}
 
 class ConditionalGraphAndVoronoiZonesMap(graph:ConditionalGraphWithIntegerNodeCoordinates,
                                          centroidColor:SortedMap[Int,Color],
-                                         colorForUnreachableNodes:Color,
-                                         colorForPermanentEdges:Color,
-                                         colorForOpenEdges:Color,
-                                         colorForClosedEdges:Color,
-                                         colorForEmphasizedEdges:Color,
-                                         colorForEmphasizedEdges2:Color)
+                                         colorForUnreachableNodes:Color  = Color.black,
+                                         colorForPermanentEdges:Color =Color.black,
+                                         colorForOpenEdges:Color = Color.green,
+                                         colorForClosedEdges:Color = Color.red,
+                                         colorForEmphasizedEdges:Color = Color.blue,
+                                         colorForEmphasizedEdges2:Color = Color.orange)
   extends VisualDrawing(false,false){
 
   this.setDoubleBuffered(true) //does not work.

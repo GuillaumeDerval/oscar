@@ -89,8 +89,7 @@ sealed abstract class Domain{
 
 /**this is an inclusive domain*/
 case class DomainRange(override val min: Long, override val max: Long) extends Domain {
-  if (min > max)
-    throw new EmptyDomainException
+  require(min <= max, "domain should not be empty, got min:" + min + " max: " + max)
   def contains(v:Long): Boolean = min <= v && max >= v
   override def size: Long =
     if(min + Long.MaxValue <= max) Long.MaxValue
