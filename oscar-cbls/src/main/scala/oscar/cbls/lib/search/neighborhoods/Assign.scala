@@ -15,10 +15,10 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
-import oscar.cbls.core.computation.{Variable }
-import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 import oscar.cbls._
+import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
+import oscar.cbls.core.computation.Variable
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 
 /**

@@ -42,7 +42,11 @@ object WLPGraph extends App with StopWatch{
   //the number of delivery points
   val D:Int = 1000
 
-  val c:Int = 200
+  //nb conditional edges
+  val nbConditionalEdges:Int = 200
+
+  //nb non conditional edges
+  val nbNonConditionalEdges =  (W+D)*5
 
   val displayDelay = 100
 
@@ -53,8 +57,8 @@ object WLPGraph extends App with StopWatch{
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
     nbNodes=(W+D),
-    nbConditionalEdges=c,
-    nbNonConditionalEdges=(W+D)*5,
+    nbConditionalEdges=nbConditionalEdges,
+    nbNonConditionalEdges=nbNonConditionalEdges,
     mapSide = 1000)
 
 
@@ -87,7 +91,7 @@ object WLPGraph extends App with StopWatch{
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
 
-  val edgeConditionArray = Array.tabulate(c)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
+  val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
 
   val openConditions = Filter(edgeConditionArray).setName("openConditions")
 

@@ -138,15 +138,17 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long)  extends LinearOpti
     val width = maxValue - minValue
 
     if(width < dividingRatio) {
-      val search = new Exhaustive(step = 1L, skipInitial = true,maxIt = Long.MaxValue)
-      search.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+      val localExhaustiveSearch = new Exhaustive(step = 1L, skipInitial = true,maxIt = Long.MaxValue)
+      localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
     }else{
       val step = width/dividingRatio
-      if(step < minStep){
-        (startPos, startObj)
+      if(step <= minStep){
+        //we have to do one search, with minStep, and return
+        val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true, maxIt = Long.MaxValue)
+        localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
       }else {
-        val search = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
-        val (newVal, newObj) = search.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
+        val localExhaustiveSearch = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
+        val (newVal, newObj) = localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
 
         this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
       }
@@ -370,7 +372,7 @@ object TestRN extends App{
   eval(new Exhaustive(step = 50L, maxIt = maxIt) carryOnTo new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step = 1L, maxIt: Long))
   eval(new Exhaustive(step = 50L, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step = 1L, maxIt: Long)))
   eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step=1L, maxIt: Long))
-  eval(new NarrowingExhaustive(100L, maxIt: Long))
+  eval(new NarrowingExhaustive(100L, minStep = 1))
 
 }
 

@@ -35,9 +35,11 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   //the indice to start with for the exploration
   var firstVarIndice:Long = 0L
   var firstVar:CBLSIntVar = null
+  var oldValOfFirstVar:Long = 0
 
   var secondVarIndice:Long = -1L
   var secondVar:CBLSIntVar = null
+  var oldValOfSecondVar:Long = 0
 
   var delta:Long = 0L
 
@@ -57,9 +59,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationSchemeZone)
     while (iIterator.hasNext) {
       firstVarIndice = iIterator.next()
-
       firstVar = vars(firstVarIndice)
-      val oldValOfFirstVar = firstVar.newValue
+      oldValOfFirstVar = firstVar.newValue
 
       val secondIterationSchemeZone = if (searchZone2ForThisSearch == null) 0L until vars.length else searchZone2ForThisSearch(firstVarIndice,oldValOfFirstVar)
       val searchZoneForDeltaL2 = searchZoneForDeltaL1(firstVarIndice,oldValOfFirstVar)
@@ -68,23 +69,24 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
       while (jIterator.hasNext) {
         secondVarIndice = jIterator.next()
         secondVar = vars(secondVarIndice)
-        val oldValOfSecondVar = secondVar.newValue
+        oldValOfSecondVar = secondVar.newValue
 
         if ((!symmetryCanBeBrokenOnIndices || firstVarIndice < secondVarIndice) //we break symmetry on variables
-          && firstVarIndice != secondVarIndice
-          && secondVar.domain.contains(oldValOfFirstVar)
-          && firstVar.domain.contains(oldValOfSecondVar)) {
-
-          this.secondVar = secondVar
+          && firstVarIndice != secondVarIndice) {
 
           val iterationOnDelta:LinearOptimizer = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
           //TODO: il faut cadrer dans le domaine des variables!!
 
           def evaluate(delta:Long): Long ={
-            val newObj = obj.assignVal(Seq((firstVar,firstVar.value + delta),(secondVar,secondVar.value - delta)))
+            firstVar := oldValOfFirstVar + delta
+            secondVar := oldValOfSecondVar - delta
+            val newObj = obj.value
+            firstVar := oldValOfFirstVar
+            secondVar := oldValOfSecondVar
             newObj
           }
+
           val minValueForDelta = (secondVar.min - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.max)
           val maxValueForDelta = (secondVar.max - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.min)
 
@@ -99,13 +101,20 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
-    firstVarIndice = firstVarIndice +1L
+    firstVarIndice = firstVarIndice + 1L
     secondVarIndice = -1L
+    firstVar = null
+    secondVar = null
+    require(firstVar.newValue == oldValOfFirstVar)
+    require(secondVar.newValue == oldValOfSecondVar)
   }
 
 
   override def instantiateCurrentMove(newObj: Long) =
-    TransferMove(firstVar, secondVar, delta:Long, firstVarIndice,secondVarIndice,newObj, name)
+    TransferMove(
+      firstVar, oldValOfFirstVar, firstVarIndice,
+      secondVar, oldValOfSecondVar, secondVarIndice,
+      delta:Long,newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
@@ -122,12 +131,14 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class TransferMove(firstVar:CBLSIntVar, secondVar:CBLSIntVar, delta:Long, idI:Long, idJ:Long, override val objAfter:Long, override val neighborhoodName:String = null)
+case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndice:Long,
+                        secondVar:CBLSIntVar, oldValOfSecondVar: Long, secondVarIndice:Long,
+                        delta:Long,override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {
-    firstVar :+= delta
-    secondVar :-= delta
+    firstVar := oldValOfFirstVar + delta
+    secondVar := oldValOfSecondVar - delta
   }
 
   override def toString: String  = {
