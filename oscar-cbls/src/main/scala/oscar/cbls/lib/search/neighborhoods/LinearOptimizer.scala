@@ -123,7 +123,7 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
   }
 
   def generateSteps(maxStepSize:Long):List[Long] = {
-    if(maxStepSize < minStep) List.empty
+    if(maxStepSize <= minStep) List(minStep)
     else if(maxStepSize < dividingRatio) List(1L)
     else  maxStepSize :: generateSteps(maxStepSize/dividingRatio)
   }
