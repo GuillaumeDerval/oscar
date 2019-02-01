@@ -38,14 +38,14 @@ object RoutingMatrixGenerator {
         n2 => distance(pointPosition(n1), pointPosition(n2)))),pointPosition)
   }
 
-  def generateRestrictions(n:Int,v:Int,nbRestrictions:Int):Iterable[(Int,Int)] = {
-    var toReturn = List.empty[(Int,Int)]
+  def generateRestrictions(n:Int,v:Int,nbRestrictions:Int):Iterable[(Long,Long)] = {
+    var toReturn = List.empty[(Long,Long)]
 
     var toGenerate = nbRestrictions
     while(toGenerate !=0){
       val vehicle = (random.nextFloat()*v).toInt
       val node = ((random.nextFloat()*(n-v))+v).toInt
-      toReturn = (node,vehicle) :: toReturn
+      toReturn = (node:Long,vehicle:Long) :: toReturn
       toGenerate -= 1
     }
     toReturn

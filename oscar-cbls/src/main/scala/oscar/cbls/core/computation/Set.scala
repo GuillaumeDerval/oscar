@@ -147,12 +147,17 @@ abstract class ChangingSetValue(initialValue:SortedSet[Long], initialDomain:Doma
 
   private def createValueWiseMechanicsIfNeeded(){
     if(valueToValueWiseKeys == null){
+      require(Int.MinValue <= domain.min, "when using valueWise mechanism, the domain of sets should have a min >= Int.MinValue")
+
+      offsetForValueWiseKey = cbls.longToInt(domain.min)
       val nbValues = this.domain.max - this.domain.min + 1L
+      require(Int.MinValue <= nbValues, "when using valueWise mechanism, the domain of sets should be reasonably small")
+
       valueToValueWiseKeys = Array.tabulate(cbls.longToInt(nbValues))(_ => new DoublyLinkedList[ValueWiseKey]())
     }
   }
   private[this] var valueToValueWiseKeys:Array[DoublyLinkedList[ValueWiseKey]] = null
-  private[this] val offsetForValueWiseKey = cbls.longToInt(domain.min)
+  private[this] var offsetForValueWiseKey:Int = Int.MaxValue
 
   @inline
   def addToValueWiseKeys(key:ValueWiseKey,value:Int):DLLStorageElement[ValueWiseKey] = {

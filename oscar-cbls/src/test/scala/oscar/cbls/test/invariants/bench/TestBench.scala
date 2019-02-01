@@ -51,18 +51,18 @@ object InvGen {
   /**
    * Function to generate a random move.
    */
-  def randomTuples(nbVal: Int, range: Range): List[(Int, Int)] = {
-    val valList = Gen.containerOfN[List, Int](nbVal,
-      Gen.choose(range.min, range.max).sample.get).sample.get
-    valList.map((value: Int) => (
-      value, Gen.choose(range.min, range.max).sample.get))
+  def randomTuples(nbVal: Int, range: Range): List[(Long, Long)] = {
+    val valList = Gen.containerOfN[List, Long](nbVal,
+      Gen.choose(range.min:Long, range.max:Long).sample.get).sample.get
+    valList.map((value: Long) => (
+      value, Gen.choose(range.min:Long, range.max:Long).sample.get))
   }
 
-  def randomIntSortedMap(nbVal: Int, valRange: Range, boundRange: Range): SortedMap[Int, Int] = {
-    val valList = Gen.containerOfN[List, Int](nbVal,
-      Gen.choose(valRange.min, valRange.max).sample.get).sample.get
-    val map = valList.map((value: Int) => (
-      value, Gen.choose(boundRange.min, boundRange.max).sample.get))
+  def randomIntSortedMap(nbVal: Int, valRange: Range, boundRange: Range): SortedMap[Long, Long] = {
+    val valList = Gen.containerOfN[List, Long](nbVal,
+      Gen.choose(valRange.min:Long, valRange.max:Long).sample.get).sample.get
+    val map = valList.map((value: Long) => (
+      value, Gen.choose(boundRange.min:Long, boundRange.max:Long).sample.get))
     SortedMap(map: _*)
   }
 

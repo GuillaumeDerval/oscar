@@ -14,7 +14,7 @@ package oscar.cbls.test.invariants
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-/*
+
 import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
@@ -112,25 +112,25 @@ class InvariantTests extends FunSuite with Checkers {
   }
 
   test("AtLeast") {
-    def myMapValues[B,C](s:SortedMap[Int,B],f:B=>C):SortedMap[Int,C] =
-      s.foldLeft[SortedMap[Int,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
+    def myMapValues[B,C](s:SortedMap[Long,B],f:B=>C):SortedMap[Long,C] =
+      s.foldLeft[SortedMap[Long,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
 
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    AtLeast(bench.genIntVars(10), myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
+    AtLeast(bench.genIntVars(10), myMapValues(constantMap, (_:Long) => bench.genIntVar(0 to 30)))
     bench.run()
   }
 
   test("AtMost") {
 
-    def myMapValues[B,C](s:SortedMap[Int,B],f:B=>C):SortedMap[Int,C] =
-      s.foldLeft[SortedMap[Int,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
+    def myMapValues[B,C](s:SortedMap[Long,B],f:B=>C):SortedMap[Long,C] =
+      s.foldLeft[SortedMap[Long,C]](SortedMap.empty)((acc,couple) => acc+((couple._1,f(couple._2))))
 
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     val constantMap = InvGen.randomIntSortedMap(10, 0 to 30, 0 to 30)
-    AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Int) => bench.genIntVar(0 to 30)))
+    AtMost(bench.genIntVars(10, range = 0 to 30),myMapValues(constantMap, (_:Long) => bench.genIntVar(0 to 30)))
 
     bench.run()
   }
@@ -194,7 +194,7 @@ class InvariantTests extends FunSuite with Checkers {
   test("Sparse Cluster maintains a cluster of the indexes of an array.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Cluster.makeSparse(bench.genIntVarsArray(50),
-      Gen.containerOfN[List, Int](100, Gen.choose(0, 100)).sample.get)
+      Gen.containerOfN[List, Long](100, Gen.choose(0, 100)).sample.get)
     bench.run()
   }
 
@@ -227,7 +227,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Filter(
       bench.genIntVarsArray(4, 0 to 5),
-      (i: Int) => (i % 2) == 0)
+      (i: Long) => (i % 2) == 0)
     bench.run()
   }
 
@@ -322,9 +322,9 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  def randomArray(size:Int,values:Range):Array[Int] = {
+  def randomArray(size:Int,values:Range):Array[Long] = {
     def randomValue(r:Range):Int = {
-      r.start + (r.length * scala.math.random).toInt
+      r.start + (r.length * scala.math.random).toLong
     }
     Array.tabulate(size)(_ => randomValue(values))
   }
@@ -575,7 +575,7 @@ class InvariantTests extends FunSuite with Checkers {
   test ("Map "){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(range = 0 to 100)
-    oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2*n))
+    oscar.cbls.lib.invariant.seq.Map(seqVar, Array.tabulate(101)(n => 2L*n))
     bench.run()
   }
 
@@ -601,7 +601,7 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  test ("OccurenceOf maintains the occurence of a certain value"){
+  test ("OccurenceOf maintains the number of occurrence's of a certain value in a sequence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar()
     OccurrencesOf(seqVar,Gen.choose(0, 100).sample.get)
@@ -659,7 +659,7 @@ class InvariantTests extends FunSuite with Checkers {
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    ConstantRoutingDistance(route,n,v,false,distanceMatrix,true)
+    RouteLength(route,n,v,false,distanceMatrix,true)
     bench.run()
   }
 
@@ -669,7 +669,7 @@ class InvariantTests extends FunSuite with Checkers {
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
+    RouteLength(route,n,v,true,distanceMatrix,true)
     bench.run()
   }
 
@@ -733,10 +733,10 @@ class InvariantTests extends FunSuite with Checkers {
     }
 
     val oper = genOperation(n)
-    def op(n1:Int,n2:Int,c:Int): Int= {
+    def op(n1:Long,n2:Long,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0 max c - matrix(n1)(n2)
+        case 1 => 0L max c - matrix(longToInt(n1))(longToInt(n2))
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -788,10 +788,10 @@ class InvariantTests extends FunSuite with Checkers {
     }
 
     val oper = genOperation(n)
-    def op(n1:Int,n2:Int,c:Int): Int= {
+    def op(n1:Long,n2:Long,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0 max c - matrix(n1)(n2)
+        case 1 => 0L max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -838,16 +838,16 @@ class InvariantTests extends FunSuite with Checkers {
     }
 
     val oper = genOperation(n)
-    def op(n1:Int,n2:Int,c:Int): Int= {
+    def op(n1:Long,n2:Long,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0 max c - matrix(n1)(n2)
+        case 1 => 0L max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
     }
 
-    def start() : Array[Int]= { Array.tabulate(v)((car:Int)=> scala.util.Random.nextInt(limite))}
+    def start() : Array[Long]= { Array.tabulate(v)((car:Int)=> scala.util.Random.nextInt(limite))}
     val  s = start()
 
     val inv = ForwardCumulativeConstraintOnVehicle(route,n,v,op,limite,s,
@@ -869,9 +869,8 @@ class InvariantTests extends FunSuite with Checkers {
     val v = 4
     val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
+    RouteLength(route,n,v,true,distanceMatrix,true)
     bench.run()
   }
 }
 
-*/
