@@ -305,7 +305,6 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
-
   private def markNodeUnreachableAndRemoveFromHeapIfPresent(node:Node): Unit ={
     val nodeID = node.nodeId
     labelNode(nodeID,Unreachable)
@@ -313,8 +312,10 @@ class VoronoiZones(graph:ConditionalGraph,
   }
 
   private def loadCentroidsIntoHeap(centroids: Iterable[Long]): Unit = {
+    //we also mark them as centroids, actually
     for (centroid <- centroids) {
       val centroidInt = cbls.longToInt(centroid)
+      labelNode(centroidInt,VoronoiZone(graph.nodes(centroidInt),0))
       if (!nodeIDHeap.contains(centroidInt)) {
         loadOrCorrectNodeIDIntoHeap(centroidInt)
       }
@@ -447,7 +448,6 @@ class VoronoiZones(graph:ConditionalGraph,
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   override def checkInternals(c: Checker){
-
     require(nodeIDHeap.isEmpty)
 
     val centroids:Iterable[Node] = this.centroids.value.toList.map(nodeID => graph.nodes(cbls.longToInt(nodeID)))
