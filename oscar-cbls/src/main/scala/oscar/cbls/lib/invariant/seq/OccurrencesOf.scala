@@ -19,15 +19,15 @@ import oscar.cbls._
 import oscar.cbls.core._
 
 /**
- * the position of value a in sequence v; default if not in the sequence
+ * the number of occurrences of value a in sequence v; default if not in the sequence
  * @param v is a SeqValue
  * @param a is the value that is to locate in the sequence
  */
 case class OccurrencesOf(v: SeqValue, a:IntValue)
-  extends IntInvariant(v.value.nbOccurrence(a.value), Domain(0L , DomainHelper.safeAdd(v.max,1L)))
+  extends IntInvariant(v.value.nbOccurrence(a.value), Domain(0L , Int.MaxValue))
   with SeqNotificationTarget with IntNotificationTarget{
 
-  setName("PositionOf(" + a.name + " in " + v.name + ")")
+  setName("OccurrencesOf(" + a.name + " in " + v.name + ")")
 
   registerStaticAndDynamicDependency(v)
   registerStaticAndDynamicDependency(a)
@@ -47,7 +47,7 @@ case class OccurrencesOf(v: SeqValue, a:IntValue)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a.value).size)
+    require(this.value == v.value.positionsOfValue(a.value).size, "this.value:" + this.value + " v.value.positionsOfValue(a.value).size:" + v.value.positionsOfValue(a.value).size + " v.value.nbOccurrence(a.value):" + v.value.nbOccurrence(a.value))
   }
 }
 
