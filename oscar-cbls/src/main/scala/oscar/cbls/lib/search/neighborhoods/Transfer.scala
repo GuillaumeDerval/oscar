@@ -21,10 +21,24 @@ import oscar.cbls.core.computation.{CBLSIntVar, Variable}
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 
+/**
+  *
+  * @param vars
+  * @param name
+  * @param searchZone1
+  * @param searchZone2
+  * @param appliedFactors given variableID1,value1,variableID2,value2 you can specify factor1,factor2
+  * @param searchZoneForDelta
+  * @param symmetryCanBeBrokenOnIndices
+  * @param selectFirstVariableBehavior
+  * @param selectSecondVariableBehavior
+  * @param hotRestart
+  */
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
                                 searchZone1:()=>Iterable[Long] = null,
                                 searchZone2:() => (Long,Long)=>Iterable[Long] = null,
+                                appliedFactors:() => (Long,Long,Long,Long) => (Long,Long) = () => _ => (1,1),
                                 searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
                                 selectFirstVariableBehavior:LoopBehavior = First(),
@@ -42,6 +56,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   var oldValOfSecondVar:Long = 0
 
   var delta:Long = 0L
+  var factor1:Long = 1L
+  var factor2:Long = 1L
 
   override def exploreNeighborhood(initialObj: Long){
 
@@ -55,6 +71,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
     val searchZone2ForThisSearch = if (searchZone2 == null) null else searchZone2()
     val searchZoneForDeltaL1 = searchZoneForDelta()
+
+    val appliedFactorsForThisTime = appliedFactors()
 
     val (iIterator,notifyFound1) = selectFirstVariableBehavior.toIterator(firstIterationSchemeZone)
     while (iIterator.hasNext) {
@@ -78,18 +96,20 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
           //TODO: il faut cadrer dans le domaine des variables!!
 
+           (factor1,factor2) = appliedFactorsForThisTime(firstVarIndice,oldValOfFirstVar,secondVarIndice,oldValOfSecondVar)
+
           def evaluate(delta:Long): Long ={
             this.delta = delta
-            firstVar := oldValOfFirstVar + delta
-            secondVar := oldValOfSecondVar - delta
+            firstVar := oldValOfFirstVar + (delta * factor1)
+            secondVar := oldValOfSecondVar - (delta * factor2)
             val newObj = obj.value
             firstVar := oldValOfFirstVar
             secondVar := oldValOfSecondVar
             newObj
           }
 
-          val minValueForDelta = (secondVar.min - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.max)
-          val maxValueForDelta = (secondVar.max - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.min)
+          val minValueForDelta = ((secondVar.min - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.max)) / factor1
+          val maxValueForDelta = ((secondVar.max - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.min)) / factor2
 
           val (bestDelta,objForDelta) = iterationOnDelta.search(0L, initialObj, minValueForDelta, maxValueForDelta, evaluate)
 
@@ -115,7 +135,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     TransferMove(
       firstVar, oldValOfFirstVar, firstVarIndice,
       secondVar, oldValOfSecondVar, secondVarIndice,
-      delta:Long,newObj, name)
+      factor1,factor2,delta:Long,
+      newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
@@ -134,16 +155,17 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
   */
 case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndice:Long,
                         secondVar:CBLSIntVar, oldValOfSecondVar: Long, secondVarIndice:Long,
-                        delta:Long,override val objAfter:Long, override val neighborhoodName:String = null)
+                        factor1:Long,factor2:Long,delta:Long,
+                        override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {
-    firstVar := oldValOfFirstVar + delta
-    secondVar := oldValOfSecondVar - delta
+    firstVar := oldValOfFirstVar + (delta * factor1)
+    secondVar := oldValOfSecondVar - (delta * factor2)
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "Transfer(" + firstVar + " :+= " + delta + " "  + secondVar + ":-=" + delta + objToString + ")"
+    neighborhoodNameToString + "Transfer(" + firstVar + " :+= " + (delta * factor1) + " "  + secondVar + ":-=" + (delta * factor2) + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = List(firstVar,secondVar)
