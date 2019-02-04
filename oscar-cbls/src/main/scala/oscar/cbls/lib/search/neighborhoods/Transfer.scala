@@ -44,7 +44,9 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
   * @param searchZone1
   * @param searchZone2
   * @param appliedFactors given variableID1,value1,variableID2,value2 you can specify factor1,factor2
-  * @param searchZoneForDelta
+  *                       both are expected to be > 0 (notice that the delta can be negative)
+  * @param searchZoneForDelta specifies the numeric method to use for searching the values for delta.
+  *                           you are given (firstVarIndice,oldValOfFirstVar)(secondVarIndice,oldValOfSecondVar) and ou return the linear optimization method
   * @param symmetryCanBeBrokenOnIndices trus if the neighborhood has to ensure that i < j
   *                                     default is true
   * @param selectFirstVariableBehavior
