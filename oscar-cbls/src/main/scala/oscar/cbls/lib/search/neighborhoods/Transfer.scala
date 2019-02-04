@@ -22,6 +22,22 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 
 /**
+  * This neighborhood searches for moves of the form
+  *
+  * vars(i) :+= delta*factor1   ars(j) :+= delta*factor2
+  *
+  * where
+  * i, and j are explored,
+  *
+  * j is the outer loop, specified by searchZone1
+  * and First or best are selected by  selectFirstVariableBehavior
+  *
+  * j is the inner loop, specified by searchZone2
+  * and First or best are selected by  selectSecondVariableBehavior
+  *
+  * delta is explored through numeric method specified by searchZoneForDelta
+  *
+  * factor1 and factor2 can be specified through appliedFactors; by default we use (1,1)
   *
   * @param vars
   * @param name
@@ -29,17 +45,19 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
   * @param searchZone2
   * @param appliedFactors given variableID1,value1,variableID2,value2 you can specify factor1,factor2
   * @param searchZoneForDelta
-  * @param symmetryCanBeBrokenOnIndices
+  * @param symmetryCanBeBrokenOnIndices trus if the neighborhood has to ensure that i < j
+  *                                     default is true
   * @param selectFirstVariableBehavior
   * @param selectSecondVariableBehavior
-  * @param hotRestart
+  * @param hotRestart true if a hot restart is to be used on the first varaible selection, false otherwise.
+  *                   default is true
   */
 case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
                                 searchZone1:()=>Iterable[Long] = null,
                                 searchZone2:() => (Long,Long)=>Iterable[Long] = null,
-                                appliedFactors:() => (Long,Long,Long,Long) => (Long,Long) = () => _ => (1,1),
-                                searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                                appliedFactors:() => ((Long,Long,Long,Long)) => (Long,Long) = () => _ => (1:Long,1:Long),
+                                searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOsTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
                                 selectFirstVariableBehavior:LoopBehavior = First(),
                                 selectSecondVariableBehavior:LoopBehavior = First(),
@@ -94,10 +112,13 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
           val iterationOnDelta:LinearOptimizer = searchZoneForDeltaL2(secondVarIndice,oldValOfSecondVar)
 
-          //TODO: il faut cadrer dans le domaine des variables!!
+          val (factor1i,factor2i) = appliedFactorsForThisTime(firstVarIndice,oldValOfFirstVar,secondVarIndice,oldValOfSecondVar)
 
-           (factor1,factor2) = appliedFactorsForThisTime(firstVarIndice,oldValOfFirstVar,secondVarIndice,oldValOfSecondVar)
+          factor1 = factor1i
+          factor2 = factor2i
+
           require(factor1 > 0)
+
           require(factor2 > 0)
 
           def evaluate(delta:Long): Long ={
@@ -110,9 +131,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
             newObj
           }
 
-          val minValueForDelta = (secondVar.max - oldValOfSecondVar)/factor2 max (oldValOfFirstVar - firstVar.min)/factor1
-          val maxValueForDelta = (oldValOfSecondVar - secondVar.min)/factor2 min (firstVar.max - oldValOfFirstVar)/factor1
-
+          val minValueForDelta = (oldValOfFirstVar - firstVar.min)/factor1 max (secondVar.max - oldValOfSecondVar)/factor2
+          val maxValueForDelta = (firstVar.max - oldValOfFirstVar)/factor1 min (oldValOfSecondVar - secondVar.min)/factor2
 
           val (bestDelta,objForDelta) = iterationOnDelta.search(0L, initialObj, minValueForDelta, maxValueForDelta, evaluate)
 
@@ -125,6 +145,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
         }
       }
     }
+
     firstVarIndice = firstVarIndice + 1L
     secondVarIndice = -1L
     require(firstVar.newValue == oldValOfFirstVar)
@@ -162,13 +183,16 @@ case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndi
                         override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
+  val newValOfFirstVar = oldValOfFirstVar + (delta * factor1)
+  val newValOfSecondVar = oldValOfSecondVar - (delta * factor2)
+
   override def commit() {
-    firstVar := oldValOfFirstVar + (delta * factor1)
-    secondVar := oldValOfSecondVar - (delta * factor2)
+    firstVar := newValOfFirstVar
+    secondVar := newValOfSecondVar
   }
 
   override def toString: String  = {
-    neighborhoodNameToString + "Transfer(" + firstVar + " :+= " + (delta * factor1) + " "  + secondVar + ":-=" + (delta * factor2) + objToString + ")"
+    neighborhoodNameToString + "Transfer(" + firstVar + " := " +newValOfFirstVar + " "  + secondVar + ":=" + newValOfSecondVar + objToString + ")"
   }
 
   override def touchedVariables: List[Variable] = List(firstVar,secondVar)
