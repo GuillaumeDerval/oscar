@@ -83,7 +83,7 @@ case class AndThen(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer
 
 case class RestrictBounds(a:LinearOptimizer, newMinValue:Long, newMaxValue:Long) extends LinearOptimizer{
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) =
-    a.search(startPos: Long, startObj: Long, minValue max newMaxValue, maxValue min newMaxValue, obj)
+    a.search(startPos: Long, startObj: Long, minValue max newMinValue, maxValue min newMaxValue, obj)
 }
 
 case class RestrictSlide(a:LinearOptimizer, maxIncrease:Long, maxDecrease:Long) extends LinearOptimizer{

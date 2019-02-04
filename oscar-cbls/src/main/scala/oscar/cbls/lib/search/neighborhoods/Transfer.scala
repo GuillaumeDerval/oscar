@@ -97,6 +97,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           //TODO: il faut cadrer dans le domaine des variables!!
 
            (factor1,factor2) = appliedFactorsForThisTime(firstVarIndice,oldValOfFirstVar,secondVarIndice,oldValOfSecondVar)
+          require(factor1 > 0)
+          require(factor2 > 0)
 
           def evaluate(delta:Long): Long ={
             this.delta = delta
@@ -108,8 +110,9 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
             newObj
           }
 
-          val minValueForDelta = ((secondVar.min - oldValOfSecondVar) max (oldValOfFirstVar - firstVar.max)) / factor1
-          val maxValueForDelta = ((secondVar.max - oldValOfSecondVar) min (oldValOfFirstVar - firstVar.min)) / factor2
+          val minValueForDelta = (secondVar.max - oldValOfSecondVar)/factor2 max (oldValOfFirstVar - firstVar.min)/factor1
+          val maxValueForDelta = (oldValOfSecondVar - secondVar.min)/factor2 min (firstVar.max - oldValOfFirstVar)/factor1
+
 
           val (bestDelta,objForDelta) = iterationOnDelta.search(0L, initialObj, minValueForDelta, maxValueForDelta, evaluate)
 

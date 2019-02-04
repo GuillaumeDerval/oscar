@@ -379,7 +379,7 @@ class Retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) extends Neighborho
   * You can return [[NoMoveNeighborhood]] if tehre is no actul neighborhood to explore
   * @param f a function that generated the neighborhood to explore
   */
-class Dyn(f:() => Neighborhood) extends Neighborhood {
+class Dyn(f:() => Neighborhood,name : String = "Dyn()") extends Neighborhood(name) {
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val neighborhood = f()
     neighborhood.verbose = this.verbose
