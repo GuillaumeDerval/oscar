@@ -5,9 +5,36 @@ import oscar.cbls.algo.search.LazyQuicksort
 import oscar.cbls.core._
 import oscar.cbls.core.computation.Domain
 
+object  NthSmallest {
+  /**
+    * if smallest is true
+    * maintains nth smallest value from vars
+    * otherwise maintains nth biggest value from vars
+    *
+    * @param vars some variables
+    * @param nTh the nTh value you want in the sort
+    * @param smallest true to get the smallest, false to get the biggest
+    */
+  def apply(vars: Array[IntValue], nTh: Int, smallest: Boolean = true):NthSmallest = {
+    if(nTh <= vars.length/2) {
+      new NthSmallest(vars, nTh, smallest)
+    }else{
+      new NthSmallest(vars, vars.length - nTh - 1, !smallest)
+    }
+  }
+}
 
-class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
-  extends IntInvariant(initialDomain = Domain(vars.foldLeft((Long.MaxValue,Long.MinValue))((acc, v) => ((acc._1 min v.min),acc._2 max v.max))),
+/**
+  * if smallest is true
+  * maintains nth smallest value from vars
+  * otherwise maintains nth biggest value from vars
+  *
+  * @param vars some variables
+  * @param nTh the nTh value you want in the sort. should be <= vars.length/2
+  * @param smallest true to get the smallest, false to get the biggest
+  */
+class NthSmallest(vars: Array[IntValue], nTh: Int, smallest:Boolean = true)
+  extends IntInvariant(initialDomain = Domain(vars.foldLeft((Long.MaxValue,Long.MinValue))((acc, v) => (acc._1 min v.min,acc._2 max v.max))),
     initialValue = vars.foldLeft(Long.MaxValue)((acc, v) => acc min v.min))
     with IntNotificationTarget{
 
@@ -50,7 +77,7 @@ class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
     if(changeTrackSinceLastPropagation == 0) return //change are compensating each other
     changeTrackSinceLastPropagation = 0
 
-    //we use a lazy quicksort here.
+    //we use a lazy quicksort here, and hope nTh is small
     val lq = new LazyQuicksort(vars.map(_.value), if (smallest) (a => a) else (a => -a))
 
     this := lq(nTh)
