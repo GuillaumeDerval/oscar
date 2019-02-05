@@ -14,6 +14,8 @@ class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
   require(nTh >= 0, "nthShould be positive")
   require(nTh < vars.length, "nTh should fall within the number of variables")
 
+  require(nTh <= (vars.length/2), "invert the invariant for efficiency reasons, nTh:" + nTh + " should be <="+(vars.length/2))
+
   registerStaticAndDynamicDependencyArrayIndex(vars)
   finishInitialization()
 
@@ -24,7 +26,7 @@ class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
 
   //the principle is that we keep output unchanged unless ome value that on onee side of the percentile changes side.
   //we count the number of such changes (positive if goes aboe, negative if goes below)
-  //exception if the chenged value is the percentile
+  //exception if the changed value is the percentile
   //upon propagation, if the amount is zero, nothing to do, otherwise, we compute the percentile from scratch, unsing lazy quicksort method.
   //the signal itself is setting the counter to MaxInt
   override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
@@ -50,6 +52,7 @@ class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
 
     //we use a lazy quicksort here.
     val lq = new LazyQuicksort(vars.map(_.value), if (smallest) (a => a) else (a => -a))
+
     this := lq(nTh)
   }
 
@@ -61,9 +64,9 @@ class Percentile(vars: Array[IntValue], nTh: Int, smallest:Boolean = false)
 
     val sortedValues:Array[Long] = this.vars.map(_.value).sorted
     if(smallest){
-      c.check(sortedValues(nTh) == this.newValue)
+      c.check(sortedValues(nTh) == this.newValue,Some("smallest sortedValues:" +sortedValues.mkString(",") + " nTh:" + nTh + " expected:" +this.newValue))
     }else{
-      c.check(sortedValues(vars.length - nTh) == this.newValue)
+      c.check(sortedValues(vars.length - (nTh + 1)) == this.newValue,Some("biggest sortedValues:" +sortedValues.mkString(",") + " nTh:" + nTh + " expected:" +this.newValue))
     }
   }
 }

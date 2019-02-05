@@ -65,6 +65,7 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
+
   test("LE maintains the violation of a lesser or equal test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
@@ -111,6 +112,15 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     AllDiff(bench.genIntVarsArray(10, -10 to 10))
+    bench.run()
+  }
+
+  test("Percentile") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
+      Random(), RandomDiff()))
+    new Percentile(bench.genIntVarsArray(10, -10 to 10),3,true)
+    new Percentile(bench.genIntVarsArray(10, -10 to 10),4,false)
+
     bench.run()
   }
 
