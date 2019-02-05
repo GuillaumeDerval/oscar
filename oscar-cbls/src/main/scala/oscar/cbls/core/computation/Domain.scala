@@ -62,6 +62,7 @@ object Domain{
   def apply(min:Int,max:Long) = DomainRange(min,max)
   def apply(min:Long,max:Int) = DomainRange(min,max)
   def apply(range:Range) = DomainRange(range.min,range.max)
+  def apply(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
 }
 

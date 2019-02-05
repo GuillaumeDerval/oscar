@@ -23,34 +23,34 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
 
 /**
   * This neighborhood searches for moves of the form
+  * vars(i) :+= delta*factor1   vars(j) :+= delta*factor2
   *
-  * vars(i) :+= delta*factor1   ars(j) :+= delta*factor2
+  * where:
   *
-  * where
-  * i, and j are explored,
+  * i is explored in the outer loop, specified by searchZone1
+  * and First or Best are selected by selectFirstVariableBehavior
   *
-  * j is the outer loop, specified by searchZone1
-  * and First or best are selected by  selectFirstVariableBehavior
-  *
-  * j is the inner loop, specified by searchZone2
-  * and First or best are selected by  selectSecondVariableBehavior
+  * j is explored in the inner loop, specified by searchZone2
+  * and First or Best are selected by selectSecondVariableBehavior
   *
   * delta is explored through numeric method specified by searchZoneForDelta
+  * so delta is not explored exhaustively, unlike i and j.
   *
-  * factor1 and factor2 can be specified through appliedFactors; by default we use (1,1)
+  * factor1 and factor2 are specified through appliedFactors; by default we use (1,1)
   *
-  * @param vars
-  * @param name
-  * @param searchZone1
-  * @param searchZone2
+  * @param vars the array of vars taht is searched
+  * @param name the name of the neighborhood, used for console printing
+  * @param searchZone1 the set of indices to explore for i.
+  * @param searchZone2 the set of indices to explore for j,
+  *                    which is determined based on the current indice of the frist variable, and its value.
   * @param appliedFactors given variableID1,value1,variableID2,value2 you can specify factor1,factor2
   *                       both are expected to be > 0 (notice that the delta can be negative)
   * @param searchZoneForDelta specifies the numeric method to use for searching the values for delta.
   *                           you are given (firstVarIndice,oldValOfFirstVar)(secondVarIndice,oldValOfSecondVar) and ou return the linear optimization method
   * @param symmetryCanBeBrokenOnIndices trus if the neighborhood has to ensure that i < j
   *                                     default is true
-  * @param selectFirstVariableBehavior
-  * @param selectSecondVariableBehavior
+  * @param selectFirstVariableBehavior specifies First or Best for i
+  * @param selectSecondVariableBehavior specifies First or Best for j
   * @param hotRestart true if a hot restart is to be used on the first varaible selection, false otherwise.
   *                   default is true
   */
@@ -58,8 +58,8 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
                                 name:String = "TransferNeighborhood",
                                 searchZone1:()=>Iterable[Long] = null,
                                 searchZone2:() => (Long,Long)=>Iterable[Long] = null,
-                                appliedFactors:() => ((Long,Long,Long,Long)) => (Long,Long) = () => _ => (1:Long,1:Long),
-                                searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer, //donne des delta à essayer (TOsTO: faire un enwton raphson ou regula falsi ou dichotomoe ici!!!
+                                appliedFactors:() => (Long,Long,Long,Long) => (Long,Long) = () => (_,_,_,_) => (1L,1L),
+                                searchZoneForDelta:() => (Long,Long) => (Long,Long) => LinearOptimizer,
                                 symmetryCanBeBrokenOnIndices:Boolean = true,
                                 selectFirstVariableBehavior:LoopBehavior = First(),
                                 selectSecondVariableBehavior:LoopBehavior = First(),

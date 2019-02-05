@@ -164,6 +164,11 @@ class LazyQuicksort(val array:Array[Long], key:Long => Long = a => a) extends It
     else lastSortedPosition = j //this is an incomplete update, but this is an approximate value, so we do not care too much.
   }
 
+  def apply(nThSmallestValue:Int):Long = {
+    sortUntil(nThSmallestValue)
+    array(nThSmallestValue)
+  }
+
   override def iterator: Iterator[Long] = new LazyQuickSortIterator(this)
 
   class LazyQuickSortIterator(l:LazyQuicksort) extends Iterator[Long]{
