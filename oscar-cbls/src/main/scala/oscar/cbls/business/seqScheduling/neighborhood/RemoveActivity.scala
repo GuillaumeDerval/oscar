@@ -5,16 +5,15 @@ import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-class SwapActivity(schP: SchedulingProblem,
-                   neighborhoodName: String,
-                   selectIndiceBehavior:LoopBehavior = First(),
-                   selectSwapBehavior:LoopBehavior = Best(),
-                   searchIndices: Option[() => Iterable[Int]] = None,
-                   hotRestart:Boolean = true)
-  extends EasyNeighborhoodMultiLevel[SwapActivityMove](neighborhoodName) {
+class RemoveActivity(schP: SchedulingProblem,
+                     neighborhoodName: String = "RemoveActivity",
+                     selectActivityBehavior:LoopBehavior = First(),
+                     activitiesToRemove: Option[() => Iterable[Int]] = None,
+                     hotRestart:Boolean = false)
+  extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
 
-  var currentIndex: Int = Constants.NO_INDEX
-  var swappingIndex: Int = Constants.NO_INDEX
+  var currentActivityPosition: Int = -1
+  var currentActivity: Int = -1
 
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
@@ -25,7 +24,7 @@ class SwapActivity(schP: SchedulingProblem,
     // Iteration zone on activities indices
     // Checking the Hot Restart
     val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
-
+    val hotRestart = true
     val iterationZone =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
@@ -60,28 +59,27 @@ class SwapActivity(schP: SchedulingProblem,
   override def instantiateCurrentMove(newObj: Int): SwapActivityMove =
     SwapActivityMove(schP, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
 
-  def performMove(currentIndex: Int, swappingIndex: Int): Unit = {
+  def performMove(): Unit = {
     // Swap 1-segments in sequence
-    schP.activitiesPriorList.swapSegments(currentIndex, currentIndex, false,
-      swappingIndex, swappingIndex, false)
+    schP.activitiesPriorList.remove(currentActivityPosition)
   }
 }
 
-case class SwapActivityMove(schP: SchedulingProblem,
-                            firstIndex: Int,
-                            secondIndex: Int,
-                            override val neighborhood: SwapActivity,
-                            override val neighborhoodName: String = "SwapActivityMove",
-                            override val objAfter: Int)
+case class RemoveActivityMove(schP: SchedulingProblem,
+                              activityPosition:Int,
+                              removedActivity:Int,
+                              override val neighborhood: SwapActivity,
+                              override val neighborhoodName: String = "SwapActivityMove",
+                              override val objAfter: Int)
   extends SchedulingMove(schP, neighborhood, neighborhoodName, objAfter) {
   // The sequence variable
   val activitiesSeq: CBLSSeqVar = schP.activitiesPriorList
 
-  override def impactedActivities: Iterable[Int] = IndexedSeq(firstIndex, secondIndex)
+  override def impactedActivities: Iterable[Int] = ???
 
   /** to actually take the move */
   override def commit(): Unit = {
     // swap the values in indices
-    activitiesSeq.swapSegments(firstIndex, firstIndex, false, secondIndex, secondIndex, false)
+    activitiesSeq.remove(activityPosition)
   }
 }

@@ -5,11 +5,13 @@ import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
+//TODO: if this is a move activity, call it move activity, because re-insert strictly means that something was removed, and is not being inserted
 class ReinsertActivity(schP: SchedulingProblem,
                        neighborhoodName: String,
                        selectIndiceBehavior:LoopBehavior = First(),
                        selectReinsertBehavior:LoopBehavior = Best(),
-                       searchIndices: Option[() => Iterable[Int]] = None)
+                       searchIndices: Option[() => Iterable[Int]] = None,
+                       hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[ReinsertActivityMove](neighborhoodName) {
 
   var currentIndex: Int = Constants.NO_INDEX
@@ -24,7 +26,6 @@ class ReinsertActivity(schP: SchedulingProblem,
     // Iteration zone on activities indices
     // Checking the Hot Restart
     val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
-    val hotRestart = true
     val iterationZone =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
       else iterationZone1()
