@@ -136,6 +136,11 @@ class SchedulingProblem(val m: Store,
     var seqIndexIndAct = Constants.NO_INDEX
     var i = 0
     var inCycle = true
+    //TODO: this is by probably too slow. you can:
+    // * explore the sequence using explorers instead of performing valueAt position queries
+    // * not iterate on the full sequence,
+    //      rather, query for set predecessors and successors from the precedences, and reason on their positions
+    //     (that you get through valueAtPOsition in this case, but there are few of them)
     while (inCycle && i < activities.size) {
       val activityAtI = prioritySequence.valueAtPosition(i).get
       // is i the index for the activity indAct ?
