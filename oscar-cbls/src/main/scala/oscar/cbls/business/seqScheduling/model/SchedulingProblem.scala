@@ -2,7 +2,7 @@ package oscar.cbls.business.seqScheduling.model
 
 import oscar.cbls.{CBLSSeqVar, Objective, Store}
 import oscar.cbls.algo.boundedArray.BoundedArray
-import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.algo.seq.{ConcreteIntSequenceExplorer, IntSequence}
 import oscar.cbls.business.seqScheduling.invariants.StartTimesActivities
 
 /**
@@ -57,14 +57,16 @@ class SchedulingProblem(val m: Store,
     var lastPrecSeqIndex = Constants.NO_INDEX
     var firstSuccSeqIndex = activities.size
     var seqIndexIndAct = Constants.NO_INDEX
-    var i = 0
-    var inCycle = true
-    while (inCycle && i < activities.size) {
-      val activityAtI = prioritySequence.valueAtPosition(i).get
+    var inLoop = true
+    var optExplorer = prioritySequence.explorerAtPosition(0)
+    while (inLoop && optExplorer.isDefined) {
+      val actExplorer = optExplorer.get
+      val i = actExplorer.position
+      val activityAtI = actExplorer.value
       // is i the index for the activity indAct ?
       if (i == indAct) {
         seqIndexIndAct = i
-        inCycle = hasSuccessors
+        inLoop = hasSuccessors
       } else if (seqIndexIndAct == Constants.NO_INDEX && hasPredecessors) {
         // we check if this index is a predecessor
         if (predActIndices.contains(activityAtI)) {
@@ -75,24 +77,26 @@ class SchedulingProblem(val m: Store,
         // have stopped
         if (succActIndices.contains(activityAtI)) {
           firstSuccSeqIndex = i
-          // we can stop cycle because we found the first successor
-          inCycle = false
+          // we can stop loop because we found the first successor
+          inLoop = false
         }
       }
-      i += 1
+      optExplorer = actExplorer.next
     }
     // The swappable indices are those between the bounds (excluded the bounds and
     // the index of the activity)
     var swappableIndices: List[Int] = List()
     for { i <- lastPrecSeqIndex+1 until firstSuccSeqIndex if i != seqIndexIndAct } {
-      val activityAtI = prioritySequence.valueAtPosition(i).get
+      optExplorer = prioritySequence.explorerAtPosition(i)
+      val activityAtI = optExplorer.get.value
       if (i > seqIndexIndAct) {
         // if index i is after indAct, check that there is no predecessor
         // between indAct and i, in that case i, indAct are not swappable
         val predecessorsOfI = precedences.precArray(activityAtI)
         var noPrecBetweenIndAct_I = true
         for { j <- indAct+1 until i if noPrecBetweenIndAct_I} {
-          val activityAtJ = prioritySequence.valueAtPosition(j).get
+          optExplorer = prioritySequence.explorerAtPosition(j)
+          val activityAtJ = optExplorer.get.value
           noPrecBetweenIndAct_I = !predecessorsOfI.contains(activityAtJ)
         }
         if (noPrecBetweenIndAct_I) {
@@ -105,7 +109,8 @@ class SchedulingProblem(val m: Store,
         val successorsOfI = precedences.succArray(activityAtI)
         var noSuccBetweenI_IndAct = true
         for { j <- i+1 until seqIndexIndAct if noSuccBetweenI_IndAct} {
-          val activityAtJ = prioritySequence.valueAtPosition(j).get
+          optExplorer = prioritySequence.explorerAtPosition(j)
+          val activityAtJ = optExplorer.get.value
           noSuccBetweenI_IndAct = !successorsOfI.contains(activityAtJ)
         }
         if (noSuccBetweenI_IndAct) {
@@ -134,14 +139,16 @@ class SchedulingProblem(val m: Store,
     var lastPrecSeqIndex = Constants.NO_INDEX
     var firstSuccSeqIndex = activities.size
     var seqIndexIndAct = Constants.NO_INDEX
-    var i = 0
-    var inCycle = true
-    while (inCycle && i < activities.size) {
-      val activityAtI = prioritySequence.valueAtPosition(i).get
+    var inLoop = true
+    var optExplorer = prioritySequence.explorerAtPosition(0)
+    while (inLoop && optExplorer.isDefined) {
+      val actExplorer = optExplorer.get
+      val i = actExplorer.position
+      val activityAtI = actExplorer.value
       // is i the index for the activity indAct ?
       if (i == indAct) {
         seqIndexIndAct = i
-        inCycle = hasSuccessors
+        inLoop = hasSuccessors
       } else if (seqIndexIndAct == Constants.NO_INDEX && hasPredecessors) {
         // we check if this index is a predecessor
         if (predActIndices.contains(activityAtI)) {
@@ -152,11 +159,11 @@ class SchedulingProblem(val m: Store,
         // have stopped
         if (succActIndices.contains(activityAtI)) {
           firstSuccSeqIndex = i
-          // we can stop cycle because we found the first successor
-          inCycle = false
+          // we can stop loop because we found the first successor
+          inLoop = false
         }
       }
-      i += 1
+      optExplorer = actExplorer.next
     }
     // The reinsertable indices are those between the bounds (excluded the bounds and
     // the index of the activity)
