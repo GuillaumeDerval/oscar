@@ -196,6 +196,7 @@ object LogReducedFlippedPreComputedSubSequence {
       */
     def composeSteps(firstStep: T, secondStep: T): T
 
+    //TODO: this method might also sent the vehicle value when pre-computation was performed?
     /**
       * this method is called by the framework when the value of a vehicle must be computed.
       *

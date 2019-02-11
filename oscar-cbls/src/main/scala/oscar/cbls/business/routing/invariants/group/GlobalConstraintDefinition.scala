@@ -159,6 +159,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
   //          val realEndNodePosition = bijection(endNodePosition)
   //          println("Start Node position : " + startNodePosition + " - Node at startNodePosition : " + prevRoutes.valueAtPosition(startNodePosition).get + " -- RealStartNodePosition : " + realStartNodePosition + " - Node atRealStartNodePOsitiono : " + prevRoutes.valueAtPosition(realStartNodePosition).get)
   //          println("End Node position : " + endNodePosition + " - Node at endNodePosition : " + prevRoutes.valueAtPosition(endNodePosition).get + " -- RealEndNodePosition : " + realEndNodePosition + " - Node atRealEndNodePOsitiono : " + prevRoutes.valueAtPosition(realEndNodePosition).get)
+            //TODO: improve this; valueAtPosition is where most of the time is wasted.
             val startNode = prevRoutes.valueAtPosition(startNodePosition).get
             val endNode = prevRoutes.valueAtPosition(endNodePosition).get
             //println("NextEndNode : " + explorer.get.value)

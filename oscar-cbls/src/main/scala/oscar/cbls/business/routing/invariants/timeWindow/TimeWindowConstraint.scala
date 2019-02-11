@@ -49,6 +49,9 @@ object TimeWindowConstraint {
       travelTimeMatrix, violations)
   }
 
+  //TODO: this is not defensive and not useful to have two aply with different parameters. add taskDuration in both.
+  // and generate the violation array in the apply, because it is boring to do.
+
   /**
     * This method instantiate a TimeWindow constraint given the following input.
     * @param routes The route of the problem (ChangingSeqValue created in the VRP class)

@@ -36,6 +36,11 @@ object TimeWindowConstraintWithLogReduction {
       travelTimeMatrix, violations)
   }
 
+  //TODO: generate the violation variable in the apply method
+  //TODO: avoid duplicate apply like that; just use earlyLine,duration,deadline for all tasks.
+  //TODO: violation variables should be a property of the invariant, defined wit ha val, so it can be accesed by the user.
+  //TODO: the apply should return the invariant itself.
+
   /**
     * This method instantiate a TimeWindow constraint given the following input.
     * @param routes The route of the problem (ChangingSeqValue created in the VRP class)
