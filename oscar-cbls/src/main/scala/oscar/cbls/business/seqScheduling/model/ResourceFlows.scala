@@ -100,18 +100,24 @@ object ResourceFlow {
     * @return a new list of resource flows with qty consumed.
     */
   def flowQuantityResource(qty: Int,
+                           maxCapacity: Int,
                            resourceFlows: AbstractHeap[ResourceFlow]): AbstractHeap[ResourceFlow] = {
     var qtyToConsume = qty
-    while (qtyToConsume > 0) {
-      val resFlow = resourceFlows.popFirst()
-      if (resFlow.quantity > qtyToConsume) {
-        resourceFlows.insert(resFlow.changedQuantity(resFlow.quantity - qtyToConsume))
-        qtyToConsume = 0
+    val it = resourceFlows.iterator
+    val result = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
+    while (it.hasNext) {
+      val resFlow = it.next()
+      if (qtyToConsume > 0) {
+        if (resFlow.quantity > qtyToConsume) {
+          result.insert(resFlow.changedQuantity(resFlow.quantity - qtyToConsume))
+        } else {
+          qtyToConsume -= resFlow.quantity
+        }
       } else {
-        qtyToConsume -= resFlow.quantity
+        result.insert(resFlow)
       }
     }
-    resourceFlows
+    result
   }
 
   /**
@@ -174,16 +180,15 @@ object ResourceFlow {
 /**
   * This class carries the state of a resource flow in the scheduling
   *
+  * @param resourceIndex the index of the resource
   * @param initialModeInd the index of the initial mode of the resource
   * @param maxCapacity the maximum capacity of the resource
   */
-class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
-  //TODO: je suis pas convaincu parce-que toutes les catégories de resources ont le même state du coup
-
+class ResourceFlowState(val resourceIndex: Int, initialModeInd: Int, maxCapacity: Int) {
   // Last activity that used this resource
   var lastActivityIndex: Int = -1
   // Forward flows after last activity that used this resource
-  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](_.endTime, maxCapacity)
+  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
   forwardFlows.insert(SourceFlow(maxCapacity))
   // Running mode of last activity that used this resource
   var lastRunningMode: Int = initialModeInd
@@ -193,6 +198,7 @@ class ResourceFlowState(initialModeInd: Int, maxCapacity: Int) {
   override def toString: String =
     s"""****
        |RFW:
+       |Resource index : $resourceIndex
        |Initial mode : $initialModeInd
        |Max capacity : $maxCapacity
        |Last mode : $lastRunningMode

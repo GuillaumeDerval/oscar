@@ -51,8 +51,8 @@ object SeqSchedulingWithRiskResources {
   resUsages.addActivityResourceUsage(design, res_analyst, rm_analysis, 1)
   resUsages.addActivityResourceUsage(coding, res_senior_dev_test, rm_dev, 2)
   resUsages.addActivityResourceUsage(test, res_senior_dev_test, rm_test, 1)
-  resUsages.addActivityResourceUsage(qa, res_analyst, rm_qa_pm, 1)
-  resUsages.addActivityResourceUsage(pm, res_analyst, rm_qa_pm, 1)
+  resUsages.addActivityResourceUsage(qa, res_analyst, rm_analysis, 1)
+  resUsages.addActivityResourceUsage(pm, res_analyst, rm_analysis, 1)
 
   // Precedences
   val precedences = new Precedences(6)
@@ -60,8 +60,6 @@ object SeqSchedulingWithRiskResources {
   precedences.addPrecedence(design, coding)
   precedences.addPrecedence(coding, test)
   precedences.addPrecedence(analysis, qa)
-
-  println(s"Precedencies = $precedences")
 
   // Scheduling Problem
   val scProblem = new SchedulingProblem(m, activities, resources, precedences, resUsages)

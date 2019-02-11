@@ -63,7 +63,8 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
     // Initialization
     setupTimes.reset()
     val resourceFlowStates: Array[ResourceFlowState] = Array.tabulate(schP.resources.size) { i =>
-      new ResourceFlowState(schP.resources(i).runningModes.initialModeIndex,
+      new ResourceFlowState(schP.resources(i).index,
+                            schP.resources(i).runningModes.initialModeIndex,
                             schP.resources(i).capacity)
     }
     var makeSpanValue = 0
@@ -159,7 +160,9 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
             resourceQty,
             schP.activities(indAct).valDuration,
             startTimesArray,
-            ResourceFlow.flowQuantityResource(resourceQty, lastResFlows)
+            ResourceFlow.flowQuantityResource(resourceQty,
+                                              schP.resources(resInd).valCapacity,
+                                              lastResFlows)
           )
         }
       }
