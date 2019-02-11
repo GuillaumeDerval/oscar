@@ -8,8 +8,6 @@ case class SetupTimeData(resourceIndex: Int,
                          modeToInd: Int,
                          startTime: Int,
                          duration: Int)
-//TODO: je pense que les SetupTimeData devraient être dans la resource concernée
-
 /**
   * This is a container class for setup times
   */

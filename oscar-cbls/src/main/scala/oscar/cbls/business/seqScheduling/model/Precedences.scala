@@ -40,21 +40,23 @@ class Precedences(numActivities: Int) {
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
   def getPriorityList: List[Int] = {
-    // Auxiliary function
-    def addIndexToList(ind: Int, list: List[Int]): List[Int] = {
-      list match {
-        case Nil => List(ind)
-        case i::is =>
-          if (succArray(ind).contains(i))
-            ind::list
-          else
-            i::addIndexToList(ind, is)
+    def descendants(ind: Int, blocked: List[Int]): List[Int] = {
+      def descendants(inds: List[Int], acc: List[Int], blocked: List[Int]): List[Int] = {
+        inds match {
+          case Nil => acc.reverse
+          case i::is =>
+            val succI = succArray(i).filterNot(s => acc.contains(s) || blocked.contains(s)).toList
+            descendants(succI:::is, i::acc, blocked)
+        }
       }
+      descendants(List(ind), Nil, blocked)
     }
     /////
     var result: List[Int] = Nil
     for {i <- 0 until numActivities} {
-      result = addIndexToList(i, result)
+      if (!result.contains(i)) {
+        result = descendants(i, result):::result
+      }
     }
     result
   }

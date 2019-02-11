@@ -37,7 +37,7 @@ class SchedulingProblem(val m: Store,
     val prL = precedences.getPriorityList
     println(s"Initial Priority List = $prL")
     prL
-  } //precedences.getPriorityList
+  }
 
   /**
     * Given an activity index (indAct), obtain the sequence of indices that
