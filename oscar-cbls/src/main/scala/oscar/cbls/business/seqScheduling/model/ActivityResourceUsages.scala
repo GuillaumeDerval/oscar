@@ -45,11 +45,11 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
     *
     * @param indAct the index of the activity
     * @param indRes the index of the resource
-    * @return the data (running mode and used capacity) of the usage of
-    *         the resource indRes by the activity indAct
+    * @return the data (running mode and used capacity) for the usage of
+    *         the resource indRes by the activity indAct, as an Option value
     */
-  def getActivityResourceUsage(indAct: Int, indRes: Int): ResourceUsage = {
-    resourceUsages(indAct)(indRes).get
+  def getActivityResourceUsage(indAct: Int, indRes: Int): Option[ResourceUsage] = {
+    resourceUsages(indAct)(indRes)
   }
 
   /**
@@ -58,10 +58,30 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
     * @param act the activity
     * @param res the resource
     * @return the data (running mode and used capacity) of the usage of
-    *         the resource res by the activity act
+    *         the resource res by the activity act, as an Option value
     */
-  def getActivityResourceUsage(act: Activity, res: Resource): ResourceUsage = {
-    resourceUsages(act.index)(res.index).get
+  def getActivityResourceUsage(act: Activity, res: Resource): Option[ResourceUsage] = {
+    resourceUsages(act.index)(res.index)
+  }
+
+  /**
+    * Gets the set of usage data for all the resources of one activity
+    *
+    * @param indAct the index of the activity
+    * @return the set of resource usages for the activity indAct
+    */
+  def getActivityResourceUsages(indAct: Int): Set[ResourceUsage] = {
+    for {indRes <- activityResources(indAct)} yield getActivityResourceUsage(indAct, indRes).get
+  }
+
+  /**
+    * Gets the set of usage data for all the resources of one activity
+    *
+    * @param act the activity
+    * @return he set of resource usages for the activity act
+    */
+  def getActivityResourceUsages(act: Activity): Set[ResourceUsage] = {
+    getActivityResourceUsages(act.index)
   }
 
 }
