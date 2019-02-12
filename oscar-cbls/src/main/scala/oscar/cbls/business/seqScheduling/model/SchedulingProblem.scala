@@ -2,7 +2,7 @@ package oscar.cbls.business.seqScheduling.model
 
 import oscar.cbls.{CBLSSeqVar, Objective, Store}
 import oscar.cbls.algo.boundedArray.BoundedArray
-import oscar.cbls.algo.seq.{ConcreteIntSequenceExplorer, IntSequence}
+import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.seqScheduling.invariants.StartTimesActivities
 
 /**

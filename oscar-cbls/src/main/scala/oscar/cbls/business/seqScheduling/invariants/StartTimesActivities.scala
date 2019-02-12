@@ -161,7 +161,6 @@ class StartTimesActivities(priorityActivitiesList: ChangingSeqValue,
             schP.activities(indAct).valDuration,
             startTimesArray,
             ResourceFlow.flowQuantityResource(resourceQty,
-                                              schP.resources(resInd).valCapacity,
                                               lastResFlows)
           )
         }

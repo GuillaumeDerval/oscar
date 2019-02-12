@@ -100,24 +100,18 @@ object ResourceFlow {
     * @return a new list of resource flows with qty consumed.
     */
   def flowQuantityResource(qty: Int,
-                           maxCapacity: Int,
                            resourceFlows: AbstractHeap[ResourceFlow]): AbstractHeap[ResourceFlow] = {
     var qtyToConsume = qty
-    val it = resourceFlows.iterator
-    val result = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
-    while (it.hasNext) {
-      val resFlow = it.next()
-      if (qtyToConsume > 0) {
-        if (resFlow.quantity > qtyToConsume) {
-          result.insert(resFlow.changedQuantity(resFlow.quantity - qtyToConsume))
-        } else {
-          qtyToConsume -= resFlow.quantity
-        }
+    while (qtyToConsume > 0) {
+      val resFlow = resourceFlows.popFirst()
+      if (resFlow.quantity > qtyToConsume) {
+        resourceFlows.insert(resFlow.changedQuantity(resFlow.quantity - qtyToConsume))
+        qtyToConsume = 0
       } else {
-        result.insert(resFlow)
+        qtyToConsume -= resFlow.quantity
       }
     }
-    result
+    resourceFlows
   }
 
   /**
@@ -146,18 +140,16 @@ object ResourceFlow {
     *         of resource in resFlows
     */
   def getEndTimeResourceFlows(resQty: Int, resFlows: AbstractHeap[ResourceFlow]): Int = {
-    val it = resFlows.iterator
-    var endTime = 0
+    var resExplored: List[ResourceFlow] = List()
     var qtyToConsume = resQty
-    while (qtyToConsume > 0 && it.hasNext) {
-      val resFlow = it.next()
+    var endTime = 0
+    while (qtyToConsume > 0 && resFlows.nonEmpty) {
+      val resFlow = resFlows.popFirst()
       endTime = resFlow.endTime
-      if (resFlow.quantity > qtyToConsume) {
-        qtyToConsume = 0
-      } else {
-        qtyToConsume -= resFlow.quantity
-      }
+      qtyToConsume -= resFlow.quantity
+      resExplored ::= resFlow
     }
+    resExplored.foreach(resFlows.insert)
     endTime
   }
 
@@ -168,11 +160,14 @@ object ResourceFlow {
     * @return the endtime of the last resource flow in the list
     */
   def getLastEndTimeResourceFlow(resFlows: AbstractHeap[ResourceFlow]): Int = {
-    val it = resFlows.iterator
+    var resExplored: List[ResourceFlow] = List()
     var endTime = 0
-    while (it.hasNext) {
-      endTime = it.next().endTime
+    while (resFlows.nonEmpty) {
+      val resFlow = resFlows.popFirst()
+      endTime = resFlow.endTime
+      resExplored ::= resFlow
     }
+    resExplored.foreach(resFlows.insert)
     endTime
   }
 }
@@ -188,7 +183,8 @@ class ResourceFlowState(val resourceIndex: Int, initialModeInd: Int, maxCapacity
   // Last activity that used this resource
   var lastActivityIndex: Int = -1
   // Forward flows after last activity that used this resource
-  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
+  //var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
+  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](_.endTime, maxCapacity)
   forwardFlows.insert(SourceFlow(maxCapacity))
   // Running mode of last activity that used this resource
   var lastRunningMode: Int = initialModeInd

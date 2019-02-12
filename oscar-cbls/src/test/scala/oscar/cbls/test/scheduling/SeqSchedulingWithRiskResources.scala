@@ -39,7 +39,7 @@ object SeqSchedulingWithRiskResources {
   runningModesForDevTest.addSetupTime(rm_test, rm_dev, 2)
 
   // Resources
-  val res_analyst = new Resource(m, "AnalystQAPM", 3, runningModesForAnalysisQAPM)
+  val res_analyst = new Resource(m, "AnalystQAPM", 5, runningModesForAnalysisQAPM)
   val res_senior_dev_test = new Resource(m, "Senior Dev/test", 2, runningModesForDevTest)
 
   val resources = new BoundedArray[Resource](2, Resource.setIndex)
