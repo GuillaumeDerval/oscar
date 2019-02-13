@@ -291,20 +291,6 @@ trait MetaheuristicCombinators{
   def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) =
     Restart(n,randomizationNeighborhood, maxRestartWithoutImprovement, obj)
 
-  /**
-   * this combinator injects a metropolis acceptation function.
-   * the criterion accepts all improving moves, and for worsening moves, it applies the metropolis criterion:
-   * accept if math.random(0.0; 1.0) < base exponent (-gain / temperatureValue)
-   *
-   * @param a the original neighborhood
-   * @param temperature a function that inputs the number of moves of a that have been actually taken,
-   *                    and outputs a temperature, for use in the criterion
-   *                    the number of steps is reset to zero when the combinator is reset
-   *                    by default, it is the constant function returning 100L
-   * @param base the base for the exponent calculation. default is 2L
-   */
-  def metropolis(a: Neighborhood, temperature: Long => Float = _ => 100L, base: Float = 2L) =
-    new Metropolis(a, temperature, base)
 }
 
 trait NeighborhoodSelectionCombinators{
