@@ -1,20 +1,16 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
-import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
-import oscar.cbls.core.computation.CBLSSeqVar
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls.algo.seq.IntSequenceExplorer
+import oscar.cbls.business.seqScheduling.model.SchedulingProblem
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
 class RemoveActivity(schP: SchedulingProblem,
                      neighborhoodName: String = "RemoveActivity",
                      selectActivityBehavior:LoopBehavior = First(),
-                     activitiesToRemove: Option[() => Iterable[Int]] = None,
-                     hotRestart:Boolean = false)
+                     activitiesToRemove: Option[() => Iterable[Int]] = None)
   extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
 
-  var currentActivityPosition: Int = -1
-  var currentActivity: Int = -1
-
+  var currentExplorer:IntSequenceExplorer = null
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
@@ -23,63 +19,63 @@ class RemoveActivity(schP: SchedulingProblem,
   override def exploreNeighborhood(initialObj: Int): Unit = {
     // Iteration zone on activities indices
     // Checking the Hot Restart
-    val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
-    val hotRestart = true
-    val iterationZone =
-      if (hotRestart) HotRestart(iterationZone1(), currentIndex)
-      else iterationZone1()
+    val iterationZone1:Iterable[IntSequenceExplorer] = activitiesToRemove match {
+      case Some(activities:Iterable[Int]) => activities.flatMap(a => schP.activitiesPriorList.value.explorerAtAnyOccurrence(a))
+      case None => schP.activitiesPriorList.value.explorerAtPosition(0).get.forward
+    }
 
     // Define checkpoint on sequence (activities list)
     val seqValueCheckPoint = schP.activitiesPriorList.defineCurrentValueAsCheckpoint(true)
     // iterating over the indices in the activity list
-    val (indicesIterator, notifyIndexFound) = selectIndiceBehavior.toIterator(iterationZone)
+    val (activityExplIterator, notifyFound) = selectActivityBehavior.toIterator(iterationZone1)
 
-    while (indicesIterator.hasNext) {
-      currentIndex = indicesIterator.next()
-      // explore the swappable zone from the current index
-      val swappableZone = schP.swappableIndices(currentIndex)
-      val (swappableIterator, notifySwappingFound) = selectSwapBehavior.toIterator(swappableZone)
-      while (swappableIterator.hasNext) {
-        swappingIndex = swappableIterator.next()
-        // Perform move on sequence
-        performMove(currentIndex, swappingIndex)
-        val newObj = obj.value
-        // Notification of finding indices
-        if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
-          notifyIndexFound()
-          notifySwappingFound()
-        }
-        // Rollback to checkpoint
-        schP.activitiesPriorList.rollbackToTopCheckpoint(seqValueCheckPoint)
+    while (activityExplIterator.hasNext) {
+      currentExplorer = activityExplIterator.next()
+
+      performRemove()
+      val newObj = obj.value
+      // Notification of finding indices
+      if (evaluateCurrentMoveObjTrueIfSomethingFound(newObj)) {
+        notifyFound()
       }
+      // Rollback to checkpoint
+      schP.activitiesPriorList.rollbackToTopCheckpoint(seqValueCheckPoint)
     }
+
+    currentExplorer = null
     schP.activitiesPriorList.releaseTopCheckpoint()
   }
 
-  override def instantiateCurrentMove(newObj: Int): SwapActivityMove =
-    SwapActivityMove(schP, currentIndex, swappingIndex, this, neighborhoodNameToString, newObj)
+  override def instantiateCurrentMove(newObj: Int): RemoveActivityMove =
+    RemoveActivityMove(schP,
+      currentExplorer.position,
+      currentExplorer.value,
+      this,
+      neighborhoodName,
+      newObj)
 
-  def performMove(): Unit = {
-    // Swap 1-segments in sequence
-    schP.activitiesPriorList.remove(currentActivityPosition)
+
+  def performRemove(): Unit = {
+    schP.activitiesPriorList.remove(currentExplorer.position)
   }
 }
 
 case class RemoveActivityMove(schP: SchedulingProblem,
                               activityPosition:Int,
                               removedActivity:Int,
-                              override val neighborhood: SwapActivity,
-                              override val neighborhoodName: String = "SwapActivityMove",
+                              override val neighborhood: RemoveActivity,
+                              override val neighborhoodName: String,
                               override val objAfter: Int)
   extends SchedulingMove(schP, neighborhood, neighborhoodName, objAfter) {
-  // The sequence variable
-  val activitiesSeq: CBLSSeqVar = schP.activitiesPriorList
 
-  override def impactedActivities: Iterable[Int] = ???
+  override def impactedActivities: Iterable[Int] = Some(removedActivity)
 
   /** to actually take the move */
   override def commit(): Unit = {
-    // swap the values in indices
-    activitiesSeq.remove(activityPosition)
+    schP.activitiesPriorList.remove(activityPosition)
   }
+
+  override def toString: String =
+    neighborhoodName + "::" + "RemoveActivityMove(activity:" + removedActivity + "position:" + activityPosition + objToString + ")"
 }
+

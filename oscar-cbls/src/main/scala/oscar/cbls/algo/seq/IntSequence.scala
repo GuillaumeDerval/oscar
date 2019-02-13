@@ -602,12 +602,46 @@ class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Itera
   }
 }
 
+class IntSequenceExplorerIterator(var crawler:Option[IntSequenceExplorer], forward:Boolean) extends Iterator[IntSequenceExplorer] {
+
+  override def hasNext : Boolean =
+    crawler match{
+      case None => false
+      case Some(_) => true}
+
+  override def next() : IntSequenceExplorer = {
+    val position = crawler.head
+
+    crawler = if(forward) {
+      position.next
+    }else {
+      position.prev
+    }
+
+    position
+  }
+}
+
+class IterableIntSequenceExplorer(startPos:Option[IntSequenceExplorer], forward:Boolean)
+  extends Iterable[IntSequenceExplorer]{
+
+  override def iterator: Iterator[IntSequenceExplorer] = {
+    new IntSequenceExplorerIterator(startPos,forward)
+  }
+}
+
+
 abstract class IntSequenceExplorer{
   val value:Int
   def position:Int
   def next:Option[IntSequenceExplorer]
   def prev:Option[IntSequenceExplorer]
+
+  def forward:Iterable[IntSequenceExplorer] = new IterableIntSequenceExplorer(Some(this),true)
+  def backward:Iterable[IntSequenceExplorer] = new IterableIntSequenceExplorer(Some(this), false)
 }
+
+
 
 
 class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
