@@ -1,5 +1,5 @@
 package oscar.examples.cbls.car
-
+/*
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -29,7 +29,7 @@ import scala.util.Random
 /**
  * Created by rdl on 29-01-16.
  */
-object CarSequencerBenchmarker  extends CBLSModel with App {
+object carSequencerBenchmarker  extends CBLSModel with App {
 
   val orderedCarsByType:SortedMap[Int,Int] = SortedMap(0 -> 90, 1 -> 60, 2 -> 110 , 3 -> 120, 4 -> 40, 5 -> 30)
   val carTypes = 0 to 5
@@ -180,3 +180,4 @@ object CarSequencerBenchmarker  extends CBLSModel with App {
   println(Benchmark.benchToStringSimple(obj, 5, List(search1,search2,search3, search4,search5,search6),verbose = 3))
 
 }
+*/

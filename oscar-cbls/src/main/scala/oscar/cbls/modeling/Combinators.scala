@@ -46,7 +46,7 @@ trait BasicCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMoves(a: Neighborhood, maxMove: Int, cond: Option[Move => Boolean] = None) = new MaxMoves(a, maxMove, cond)
+  def maxMoves(a: Neighborhood, maxMove: Long, cond: Option[Move => Boolean] = None) = new MaxMoves(a, maxMove, cond)
 
   /**
    * bounds the number of tolerated moves without improvements over the best value
@@ -60,8 +60,8 @@ trait BasicCombinators{
    */
   def maxMovesWithoutImprovement(a: Neighborhood,
                                  cond: Option[Move => Boolean],
-                                 maxMovesWithoutImprovement: Int,
-                                 obj: () => Int,
+                                 maxMovesWithoutImprovement: Long,
+                                 obj: () => Long,
                                  countBeforeMove:Boolean = false) =
     new MaxMovesWithoutImprovement(a,
       cond,
@@ -112,23 +112,21 @@ trait BasicCombinators{
    * calls the neighborhood until an improvement over obj is achieved
    * the improvement is "since the last reset"
    *
-   * @param a the used neighborhood
+   * @param a
    * @param minMoves the min number of queries that will be forwarded to a (priority over the improvement)
    * @param maxMove the max number of queries that will be forwarded to a (priority over the improvement)
    * @param over the obj that is looked for improvement
    * @author renaud.delandtsheer@cetic.be
    */
-  def untilImprovement(a: Neighborhood, over: () => Int, minMoves: Int = 0, maxMove: Int = Int.MaxValue) =
+  def untilImprovement(a: Neighborhood, over: () => Long, minMoves: Long = 0L, maxMove: Long = Long.MaxValue) =
     new UntilImprovement(a, over, minMoves, maxMove)
 
   /**
    * this combinator bounds the number of time the search is actually performed
    *
-   * @param a the neighborhood
-   * @param maxMove the maximum number of moves
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxSearches(a: Neighborhood,  maxMove: Int) = new MaxSearches(a, maxMove)
+  def maxSearches(a: Neighborhood,  maxMove: Long) = new MaxSearches(a, maxMove)
 
   /**
    * once given condition has turned true,
@@ -140,7 +138,7 @@ trait BasicCombinators{
    * @author renaud.delandtsheer@cetic.be
    * @author yoann.guyot@cetic.be
    */
-  def retry(a: Neighborhood, cond: Int => Boolean = _ <= 1) = new Retry(a, cond)
+  def retry(a: Neighborhood, cond: Long => Boolean = _ <= 1L) = new Retry(a, cond)
 
 
   /**
@@ -151,6 +149,7 @@ trait BasicCombinators{
     */
   def dyn(f:() => Neighborhood) = new Dyn(f)
 }
+
 
 trait CompositionCombinators{
 
@@ -179,7 +178,7 @@ trait CompositionCombinators{
    */
   def andThen[FirstMoveType<:Move](a: Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                    b: Neighborhood,
-                                   maximalIntermediaryDegradation: Int = Int.MaxValue) =
+                                   maximalIntermediaryDegradation: Long = Long.MaxValue) =
     new AndThen[FirstMoveType](a,b,maximalIntermediaryDegradation)
 
   val mu = Mu
@@ -210,13 +209,13 @@ trait CompositionCombinators{
    */
   def dynAndThen[FirstMoveType<:Move](a:Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                       b:(FirstMoveType => Neighborhood),
-                                      maximalIntermediaryDegradation: Int = Int.MaxValue) =
+                                      maximalIntermediaryDegradation: Long = Long.MaxValue) =
     new DynAndThen[FirstMoveType](a,b,maximalIntermediaryDegradation)
 
 
   def DynAndThenWithPrev[FirstMoveType<:Move](x:Neighborhood with SupportForAndThenChaining[FirstMoveType],
                                               b:((FirstMoveType,Snapshot) => Neighborhood),
-                                              maximalIntermediaryDegradation:Int = Int.MaxValue,
+                                              maximalIntermediaryDegradation:Long = Long.MaxValue,
                                               valuesToSave:Iterable[AbstractVariable]) =
     new DynAndThenWithPrev[FirstMoveType](x, b, maximalIntermediaryDegradation, valuesToSave)
 
@@ -227,7 +226,8 @@ trait CompositionCombinators{
    *
    * @param a
    */
-  def atomic(a: Neighborhood, bound: Int = Int.MaxValue) = Atomic(a, bound)
+  def atomic(a: Neighborhood, shouldStop: Int => Boolean = _ => false, stopAsSoonAsAcceptableMoves:Boolean = false) =
+    Atomic(a, shouldStop,stopAsSoonAsAcceptableMoves)
 }
 
 
@@ -288,7 +288,7 @@ trait MetaheuristicCombinators{
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) =
+  def restart(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) =
     Restart(n,randomizationNeighborhood, maxRestartWithoutImprovement, obj)
 
   /**
@@ -300,10 +300,10 @@ trait MetaheuristicCombinators{
    * @param temperature a function that inputs the number of moves of a that have been actually taken,
    *                    and outputs a temperature, for use in the criterion
    *                    the number of steps is reset to zero when the combinator is reset
-   *                    by default, it is the constant function returning 100
-   * @param base the base for the exponent calculation. default is 2
+   *                    by default, it is the constant function returning 100L
+   * @param base the base for the exponent calculation. default is 2L
    */
-  def metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Float = 2) =
+  def metropolis(a: Neighborhood, temperature: Long => Float = _ => 100L, base: Float = 2L) =
     new Metropolis(a, temperature, base)
 }
 
@@ -320,8 +320,8 @@ trait NeighborhoodSelectionCombinators{
    * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
    */
   def bestSlopeFirst(l:List[Neighborhood],
-                     tabuLength:Int = 10,
-                     overrideTabuOnFullExhaust:Int = 9, refresh:Int = 100) =
+                     tabuLength:Long = 10L,
+                     overrideTabuOnFullExhaust:Long = 9L, refresh:Long = 100L) =
     BestSlopeFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
 
@@ -337,8 +337,8 @@ trait NeighborhoodSelectionCombinators{
    * @param refresh a refresh of the slopee measuring must be perfored every refresh iterations
    */
   def fastestFirst(l:List[Neighborhood],
-                   tabuLength:Int = 10,
-                   overrideTabuOnFullExhaust:Int = 9,  refresh:Int = 100) =
+                   tabuLength:Long = 10L,
+                   overrideTabuOnFullExhaust:Long = 9L,  refresh:Long = 100L) =
     FastestFirst(l,tabuLength,overrideTabuOnFullExhaust,refresh)
 
   /**
@@ -347,7 +347,7 @@ trait NeighborhoodSelectionCombinators{
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def roundRobin(l: List[Neighborhood], steps: Int = 1) = new RoundRobin(l, steps)
+  def roundRobin(l: List[Neighborhood], steps: Long = 1L) = new RoundRobin(l, steps)
 
   /**
    * this combinator randomly tries one neighborhood.
@@ -409,19 +409,19 @@ class NeighborhoodOps(n:Neighborhood){
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) = {
+  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) = {
     Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj)
   }
 
 
   /**
-   * alias for (this maxMoves 1) exhaust b
+   * alias for (this maxMoves 1L) exhaust b
    * this wil be queried once, and then, queries will be forwarded to b.
    *
    * @param b
    * @return
    */
-  def sequence(b: Neighborhood): Neighborhood = n maxMoves 1 exhaust b
+  def sequence(b: Neighborhood): Neighborhood = n maxMoves 1L exhaust b
 
   /**
    * this combinator always selects the best move between the two parameters
@@ -471,7 +471,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxSearches(maxMove: Int) = new MaxSearches(n, maxMove)
+  def maxSearches(maxMove: Long) = new MaxSearches(n, maxMove)
 
   /**
    * this one bounds the number of moves done with this neighborhood
@@ -479,7 +479,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMoves(maxMove: Int) = new MaxMoves(n, maxMove)
+  def maxMoves(maxMove: Long) = new MaxMoves(n, maxMove)
 
   /**
    * no move if cond evaluates to false, otherwise ,it forwards the search request to a
@@ -497,9 +497,9 @@ class NeighborhoodOps(n:Neighborhood){
   def guard(cond:()=>Boolean) = Guard(cond,n)
 
   /**
-   * this is an alias for maxMoves 1
+   * this is an alias for maxMoves 1L
    */
-  def once = new MaxMoves(n, 1)
+  def once = new MaxMoves(n, 1L)
 
   def onExhaust(proc:()=>Unit) = DoOnExhaust(n,proc,false)
 
@@ -511,7 +511,7 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @author renaud.delandtsheer@cetic.be
    */
-  def maxMovesWithoutImprovement(maxMove: Int, obj: () => Int) = new MaxMovesWithoutImprovement(n, null, maxMove, obj)
+  def maxMovesWithoutImprovement(maxMove: Long, obj: () => Long) = new MaxMovesWithoutImprovement(n, null, maxMove, obj)
 
   /**
    * makes a round robin on the neighborhood. it swaps as soon as one does not find a move
@@ -618,7 +618,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param cond condition that takes the number of consecutive NoMoveFound, and says if we should try again returns true if yes, false otherwise
    *             by default, we allow a single retry.
    */
-  def retry(cond: Int => Boolean = (n: Int) => n <= 1) = new Retry(n, cond)
+  def retry(cond: Long => Boolean = (n: Long) => n <= 1L) = new Retry(n, cond)
 
   /**
    * to prevent resetting the internal state of this neighborhood
@@ -643,12 +643,12 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param overridingAcceptanceCriterion the acceptance criterion that is used instead of the one given to the overall sear
    */
-  def withAcceptanceCriterion(overridingAcceptanceCriterion: (Int, Int) => Boolean) = new WithAcceptanceCriterion(n, overridingAcceptanceCriterion)
+  def withAcceptanceCriterion(overridingAcceptanceCriterion: (Long, Long) => Boolean) = new WithAcceptanceCriterion(n, overridingAcceptanceCriterion)
 
   /**
    * this combinator overrides accepts all moves (this is the withAcceptanceCriteria, given the fully acceptant criterion
    */
-  def acceptAll() = new WithAcceptanceCriterion(n, (_: Int, _: Int) => true)
+  def acceptAll() = new WithAcceptanceCriterion(n, (_: Long, _: Long) => true)
 
   /**
    * proposes a round-robin with that.
@@ -668,7 +668,7 @@ class NeighborhoodOps(n:Neighborhood){
    * @param obj the obj that is looked for improvement
    * @author renaud.delandtsheer@cetic.be
    */
-  def untilImprovement(obj: () => Int, minMoves: Int = 0, maxMove: Int = Int.MaxValue) = new UntilImprovement(n, obj, minMoves, maxMove)
+  def untilImprovement(obj: () => Long, minMoves: Long = 0L, maxMove: Long = Long.MaxValue) = new UntilImprovement(n, obj, minMoves, maxMove)
 
   /**
    * this combinator injects a metropolis acceptation function.
@@ -677,9 +677,9 @@ class NeighborhoodOps(n:Neighborhood){
    *
    * @param temperature a function that inputs the number of moves taken, and outputs a temperature, for use in the criterion
    *                    the number of steps is reset to zero when the combinator is reset.
-   *                    By default, the temperature is 100/the number of steps
-   * @param base the base for the exponent calculation. default is 2
+   *                    By default, the temperature is 100L/the number of steps
+   * @param base the base for the exponent calculation. default is 2L
    */
-  def metropolis(temperature: Int => Float = (it: Int) => 100 / (it + 1), base: Float = 2) = new Metropolis(n, temperature, base)
+  def metropolis(temperature: Long => Float = (it: Long) => 100L / (it + 1L), base: Float = 2L) = new Metropolis(n, temperature, base)
 
 }

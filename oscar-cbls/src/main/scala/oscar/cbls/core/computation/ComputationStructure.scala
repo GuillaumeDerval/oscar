@@ -419,8 +419,8 @@ trait Invariant extends PropagationElement{
 
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:
-    * 1: it has been registered for propagation since the last time it was propagated
-    * 2: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
+    * 1L: it has been registered for propagation since the last time it was propagated
+    * 2L: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
     * it only propagates the ones that come in the predecessors of the targeted propagation element
     * overriding this method is optional, so an empty body is provided by default */
   override def performPropagation(){performInvariantPropagation()}
@@ -457,9 +457,9 @@ object InvariantHelper{
     null
   }
 
-  def getMinMaxBounds(variables:Iterable[IntValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBounds(variables:Iterable[IntValue]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v.max) MyMax = v.max
       if (MyMin > v.min) MyMin = v.min
@@ -467,14 +467,9 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRange(variables:Iterable[IntValue]):Range = {
-    val (min,max) = getMinMaxBounds(variables)
-    min to max
-  }
-
-  def getMinMaxBoundsInt(variables:Iterable[Int]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsInt(variables:Iterable[Long]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v) MyMax = v
       if (MyMin > v) MyMin = v
@@ -482,24 +477,14 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRangeInt(variables:Iterable[Int]):Range = {
-    val (min,max) = getMinMaxBoundsInt(variables)
-    min to max
-  }
-
-  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Long,Long) = {
+    var myMax = Long.MinValue
+    var myMin = Long.MaxValue
     for (v <- variables) {
-      if (MyMax < v.max) MyMax = v.max
-      if (MyMin > v.min) MyMin = v.min
+      if (myMax < v.max) myMax = v.max
+      if (myMin > v.min) myMin = v.min
     }
-    (MyMin, MyMax)
-  }
-
-  def getMinMaxRangeSet(variables:Iterable[SetValue]):Range = {
-    val (min,max) = getMinMaxBoundsSet(variables)
-    min to max
+    (myMin, myMax)
   }
 
   def arrayToString[T](a:Array[T]):String =

@@ -35,17 +35,17 @@ object Precedence{
    *
    * maintains the number of violated precedences.
    *
-   * @param seq The sequence of integers
-   * @param beforeAfter the list of precedences (Before, After)
+   * @param seq
+   * @param beforeAfter
    * @author renaud.delandtsheer@cetic.be
    */
   def apply(seq:ChangingSeqValue,
-            beforeAfter:List[(Int,Int)]):Precedence = new Precedence(seq,beforeAfter)
+            beforeAfter:List[(Long,Long)]):Precedence = new Precedence(seq,beforeAfter)
   //TODO: maintain set of nodes involved in precedence violation
 }
 
 /**
- * Precedence assumes that number can occur only once in the sequence
+ * precedence assumes that number can occur only once in the sequence
  * so that the constraint is to be enforced from any occurrence to any occurrence,
  * "any" being chosen arbitrarily by tne invariant, and the choice an of course change at any time.
  * also if one of the two value of a precedence is not present in the sequence,
@@ -53,12 +53,12 @@ object Precedence{
  *
  * maintains the number of violated precedences.
  *
- * @param seq The sequence of integers
- * @param beforeAfter the list of precedences (Before, After)
+ * @param seq
+ * @param beforeAfter
  * @author renaud.delandtsheer@cetic.be
  */
 class Precedence(seq:ChangingSeqValue,
-                 beforeAfter:List[(Int,Int)]) //supposed to have zero redundancies.
+                 beforeAfter:List[(Long,Long)]) //supposed to have zero redundancies.
   extends IntInvariant()
   with SeqNotificationTarget {
 
@@ -68,12 +68,12 @@ class Precedence(seq:ChangingSeqValue,
   finishInitialization()
 
   //saving precedences into arrays
-  private val precedencesArray : Array[(Int, Int)] = beforeAfter.toArray
-  val nbPrecedences = precedencesArray.length
-  val precedences = 0 until nbPrecedences
+  private val precedencesArray : Array[(Long, Long)] = beforeAfter.toArray
+  val nbPecedences = precedencesArray.length
+  val precedences = 0L until nbPecedences
 
-  private val beforesToPrecedences : Array[QList[Int]] = Array.fill(seq.maxValue + 1)(null)
-  private val aftersToPrecedences : Array[QList[Int]] = Array.fill(seq.maxValue + 1)(null)
+  private val beforesToPrecedences : Array[QList[Long]] = Array.fill(seq.maxValue + 1L)(null)
+  private val aftersToPrecedences : Array[QList[Long]] = Array.fill(seq.maxValue + 1L)(null)
   for (precedenceID <- precedencesArray.indices) {
     val (fromValue, toValue) = precedencesArray(precedenceID)
     require(fromValue != toValue, "there should be no self precedence!")
@@ -81,24 +81,24 @@ class Precedence(seq:ChangingSeqValue,
     aftersToPrecedences(toValue) = QList(precedenceID, aftersToPrecedences(toValue))
   }
 
-  private val isPrecedenceViolated : Array[Boolean] = Array.fill(nbPrecedences)(false)
+  private val isPrecedenceViolated : Array[Boolean] = Array.fill(nbPecedences)(false)
 
   //TODO: use magic array here
-  private val isViolationChangedSinceCheckpoint:Array[Boolean] = Array.fill(nbPrecedences)(false)
-  private var changedPrecedenceViolationsSinceCheckpoint:QList[Int] = null
-  private val savedViolationAtCheckpoint:Array[Boolean] = Array.fill(nbPrecedences)(false)
+  private val isViolationChangedSinceCheckpoint:Array[Boolean] = Array.fill(nbPecedences)(false)
+  private var changedPrecedenceViolationsSinceCheckpoint:QList[Long] = null
+  private val savedViolationAtCheckpoint:Array[Boolean] = Array.fill(nbPecedences)(false)
   private val cachedPositionFinderAtCheckpoint = new CachedPositionOf(seq.maxValue)
   private var checkpoint:IntSequence = null
-  var violationAtCheckpoint:Int = -1
+  var violationAtCheckpoint:Long = -1L
 
-  //we set a first checkpoint since we are computing everything from scratch here.
+  //we set a frist checkpoint since we are computing everything from scratch here.
   cachedPositionFinderAtCheckpoint.updateToCheckpoint(seq.value)
   computeAndAffectViolationsFromScratch(seq.value)
 
-  def nodesStartingAPrecedence:SortedSet[Int] = SortedSet.empty[Int] ++ beforeAfter.map(_._1)
-  def nodesEndingAPrecedenceStartedAt:(Int => Iterable[Int]) = (before:Int) => beforesToPrecedences(before).map(p => precedencesArray(p)._2)
+  def nodesStartingAPrecedence:SortedSet[Long] = SortedSet.empty[Long] ++ beforeAfter.map(_._1)
+  def nodesEndingAPrecedenceStartedAt:(Long => Iterable[Long]) = (before:Long) => beforesToPrecedences(before).map(p => precedencesArray(p)._2)
 
-  def saveViolationForCheckpoint(precedence:Int){
+  def saveViolationForCheckpoint(precedence:Long){
     if(!isViolationChangedSinceCheckpoint(precedence)){
       isViolationChangedSinceCheckpoint(precedence) = true
       changedPrecedenceViolationsSinceCheckpoint = QList(precedence,changedPrecedenceViolationsSinceCheckpoint)
@@ -107,7 +107,7 @@ class Precedence(seq:ChangingSeqValue,
   }
 
   def reloadViolationsAtCheckpoint(){
-    //TODO: pas moyen de faire du O(1) ici, avec un tableau magique par exemple?
+    //TODO: pas moyen de faire du O(1L) ici, avec un tableau magique par exemple?
     for(precedence <- changedPrecedenceViolationsSinceCheckpoint){
       isViolationChangedSinceCheckpoint(precedence) = false
       isPrecedenceViolated(precedence) = savedViolationAtCheckpoint(precedence)
@@ -135,12 +135,12 @@ class Precedence(seq:ChangingSeqValue,
 
   def computeAndAffectViolationsFromScratch(seq : IntSequence) {
     //this assumes that we have lots of precedence constraints, so that we can afford crawling through the sequence (instead of iterating through the precedences)
-    var totalViolation = 0
-    val hasValueBeenSeen = Array.fill(this.seq.maxValue + 1)(false)
+    var totalViolation = 0L
+    val hasValueBeenSeen = Array.fill(this.seq.maxValue + 1L)(false)
 
     clearAllViolatedPrecedences()
 
-    var explorerOpt = seq.explorerAtPosition(0)
+    var explorerOpt = seq.explorerAtPosition(0L)
 
     while (explorerOpt match {
       case None => false
@@ -159,7 +159,7 @@ class Precedence(seq:ChangingSeqValue,
           if (hasValueBeenSeen(shouldBeAfter)) {
             //the precedence is violated!
             isPrecedenceViolated(precedenceID) = true
-            totalViolation += 1
+            totalViolation += 1L
           }
         }
         explorerOpt = explorer.next
@@ -169,7 +169,7 @@ class Precedence(seq:ChangingSeqValue,
     this := totalViolation
   }
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Int, changes : SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestUpdates(changes)) {
       //this also updates checkpoint links
       computeAndAffectViolationsFromScratch(changes.newValue)
@@ -177,7 +177,7 @@ class Precedence(seq:ChangingSeqValue,
   }
 
   //should always be false when not in use
-  val tmpArrayForDigestUpdate = MagicBoolArray(seq.maxValue+1,false)
+  val tmpArrayForDigestUpdate = MagicBoolArray(seq.maxValue+1L,false)
 
   private def digestUpdates(changes : SeqUpdate) : Boolean = {
     //println("precedence.digestUpdate(" + changes.getClass.getSimpleName + ")")
@@ -185,7 +185,7 @@ class Precedence(seq:ChangingSeqValue,
       case null => throw new Error()
       case SeqUpdateDefineCheckpoint(prev : SeqUpdate, isActive : Boolean, checkpointLevel:Int) =>
         //println("define checkpoint")
-        if(checkpointLevel == 0){
+        if(checkpointLevel == 0L){
           if(!digestUpdates(prev)){
             computeAndAffectViolationsFromScratch(changes.newValue)
           }
@@ -196,7 +196,7 @@ class Precedence(seq:ChangingSeqValue,
         }
 
       case x@SeqUpdateRollBackToCheckpoint(rollBackCheckpoint, checkpointLevel) =>
-        if(checkpointLevel == 0) {
+        if(checkpointLevel == 0L) {
           require(checkpoint quickEquals rollBackCheckpoint)
           reloadViolationsAtCheckpoint()
           true
@@ -204,7 +204,7 @@ class Precedence(seq:ChangingSeqValue,
           digestUpdates(x.howToRollBack)
         }
 
-      case SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
 
         if (!digestUpdates(prev)) return false
 
@@ -221,7 +221,7 @@ class Precedence(seq:ChangingSeqValue,
               if (positionOfEndValueOfPrecedence < pos) {
                 //precedence is violated!
                 saveViolationForCheckpoint(precedenceToCheck)
-                this :+= 1
+                this :+= 1L
                 isPrecedenceViolated(precedenceToCheck) = true
               } // else precedence is not violated
           }
@@ -242,7 +242,7 @@ class Precedence(seq:ChangingSeqValue,
               if (pos <= positionOfStartValueOfPrecedence) {
                 //precedence is violated!
                 saveViolationForCheckpoint(precedenceToCheck)
-                this :+= 1
+                this :+= 1L
                 isPrecedenceViolated(precedenceToCheck) = true
               } // else precedence is not violated
           }
@@ -258,7 +258,7 @@ class Precedence(seq:ChangingSeqValue,
           if (isPrecedenceViolated(precedencesThatShouldOpenAtValue)) {
             saveViolationForCheckpoint(precedencesThatShouldOpenAtValue)
             isPrecedenceViolated(precedencesThatShouldOpenAtValue) = false
-            this :-= 1
+            this :-= 1L
           }
         }
 
@@ -266,7 +266,7 @@ class Precedence(seq:ChangingSeqValue,
           if (isPrecedenceViolated(precedenceThatShouldCloseAtValue)) {
             saveViolationForCheckpoint(precedenceThatShouldCloseAtValue)
             isPrecedenceViolated(precedenceThatShouldCloseAtValue) = false
-            this :-= 1
+            this :-= 1L
           }
         }
 
@@ -306,12 +306,12 @@ class Precedence(seq:ChangingSeqValue,
                   //was violated, so flip to false
                   saveViolationForCheckpoint(precedenceThatShouldOpenAtValue)
                   isPrecedenceViolated(precedenceThatShouldOpenAtValue) = false
-                  this :-=1
+                  this :-=1L
                 }else{
                   //was not violated, now it is violated
                   saveViolationForCheckpoint(precedenceThatShouldOpenAtValue)
                   isPrecedenceViolated(precedenceThatShouldOpenAtValue) = true
-                  this :+=1
+                  this :+=1L
                 }
               }//else we do not have to check anything :-)
             }
@@ -325,7 +325,7 @@ class Precedence(seq:ChangingSeqValue,
 
           //println("full move moveDownwards:" + moveDownwards + " moveUpwards:" + moveUpwards)
 
-          var valuesInMovedSegment : QList[(Int,Int)] = prev.newValue.positionsBetweenFromToAndTheirValues(fromIncluded, toIncluded)
+          var valuesInMovedSegment : QList[(Int,Long)] = prev.newValue.positionsBetweenFromToAndTheirValues(fromIncluded, toIncluded)
           if(prev.newValue quickEquals checkpoint) {
             var toDo = valuesInMovedSegment
             while(toDo != null){
@@ -351,13 +351,13 @@ class Precedence(seq:ChangingSeqValue,
                 if (moveDownwards && positionOfEndValue > after && positionOfEndValue < fromIncluded) {
                   saveViolationForCheckpoint(precedenceStartedAtValue)
                   isPrecedenceViolated(precedenceStartedAtValue) = false
-                  this :-= 1
+                  this :-= 1L
                 } else if (flip && fromIncluded <= positionOfEndValue && positionOfEndValue <= toIncluded) {
                   //the violation of this precedence is inverted (only do this for one half of the precedence)
                   //was violated, so flip to false
                   saveViolationForCheckpoint(precedenceStartedAtValue)
                   isPrecedenceViolated(precedenceStartedAtValue) = false
-                  this :-= 1
+                  this :-= 1L
                 }
 
               } else {
@@ -370,13 +370,13 @@ class Precedence(seq:ChangingSeqValue,
                     if (moveUpwards && positionOfEndValue <= after && positionOfEndValue > toIncluded) {
                       saveViolationForCheckpoint(precedenceStartedAtValue)
                       isPrecedenceViolated(precedenceStartedAtValue) = true
-                      this :+= 1
+                      this :+= 1L
                     } else if (flip && fromIncluded <= positionOfEndValue && positionOfEndValue <= toIncluded) {
                       //the violation of this precedence is inverted (only do this for one half of the precedence)
                       //was not violated, now it is violated
                       saveViolationForCheckpoint(precedenceStartedAtValue)
                       isPrecedenceViolated(precedenceStartedAtValue) = true
-                      this :+= 1
+                      this :+= 1L
                     }
                 }
               }
@@ -394,7 +394,7 @@ class Precedence(seq:ChangingSeqValue,
                   if (positionOfStartValue <= after && positionOfStartValue > toIncluded) {
                     saveViolationForCheckpoint(precedenceEndingAtValue)
                     isPrecedenceViolated(precedenceEndingAtValue) = false
-                    this :-= 1
+                    this :-= 1L
                   }
                 }
 
@@ -410,7 +410,7 @@ class Precedence(seq:ChangingSeqValue,
                       if (after < positionOfStartValue && positionOfStartValue < fromIncluded) {
                         saveViolationForCheckpoint(precedenceEndingAtValue)
                         isPrecedenceViolated(precedenceEndingAtValue) = true
-                        this :+= 1
+                        this :+= 1L
                       }
                   }
                 }
@@ -433,7 +433,7 @@ class Precedence(seq:ChangingSeqValue,
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c : Checker) : Unit = {
-    var nbViol = 0
+    var nbViol = 0L
     val s = seq.value
 
     for(precedenceID <- precedences){
@@ -450,7 +450,7 @@ class Precedence(seq:ChangingSeqValue,
               c.check(isPrecedenceViolated(precedenceID) == (positionOfStartValue > positionOfEndValue),
                 Some("error on violation of precedence " + precedenceID + " considered as violated:" + isPrecedenceViolated(precedenceID)
                   + ":(" + precedencesArray(precedenceID) + ")"))
-              if(isPrecedenceViolated(precedenceID)) nbViol += 1
+              if(isPrecedenceViolated(precedenceID)) nbViol += 1L
           }
       }
     }

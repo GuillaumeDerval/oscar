@@ -22,7 +22,7 @@ import javax.swing._
 import scala.List
 
 /**
-  * Created by fabian on 23-02-16.
+  * Created by fabian on 23L-02L-1L6.
   */
 /*
 trait RouteToDisplay extends RoutingMap{
@@ -45,7 +45,7 @@ trait RouteToDisplay extends RoutingMap{
       }
     })
     vehicleSelectionPane.add(allCheckBox)
-    for (i <- 0 until vrp.v) {
+    for (i <- 0L until vrp.v) {
       val checkBox = new JCheckBox("Vehicle : " + i)
       checkBox.addItemListener(new ItemListener {
         override def itemStateChanged(e: ItemEvent): Unit = {
@@ -58,7 +58,7 @@ trait RouteToDisplay extends RoutingMap{
     container.add(vehicleSelectionPane, BorderLayout.EAST)
   }
 
-  override def setRouteToDisplay(rtd: Array[List[Int]]): Unit = {
+  override def setRouteToDisplay(rtd: Array[List[Long]]): Unit = {
     super.setRouteToDisplay(rtd)
   }
 }

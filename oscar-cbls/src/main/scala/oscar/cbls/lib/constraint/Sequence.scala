@@ -41,7 +41,7 @@ import scala.language.existentials
   *                                                it is the other definition, if it does not, it is zero
   * @author renaud.delandtsheer@cetic.be
   */
-case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
+case class Sequence(variables: Array[_ <: IntValue], length:Long, Max:Long, predicate:Array[Boolean], predicateIsToBeConsideredInVarViolation:Boolean = false)
   extends Invariant with Constraint with IntNotificationTarget{
 
   assert(Max <= length, "the specified maximum is bigger than the ength of the sequences to consider")
@@ -52,10 +52,10 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
   finishInitialization()
 
   /**the number of items in the sequence starting here that enforce the predicate*/
-  val count:Array[Int] = Array.tabulate(sequences.size)(i => 0)
+  val count:Array[Long] = Array.tabulate(sequences.size)(i => 0L)
 
   /**the violation of the sequence starting here*/
-  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0, 0 to length - Max, "is_violated_sequence" + i))
+  val violated = Array.tabulate(sequences.size)(i => CBLSIntVar(model,0L, 0 to length - Max, "is_violated_sequence" + i))
 
   for(v <- violated) v.setDefiningInvariant(this)
 
@@ -68,14 +68,14 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     val violationOfVariableI = if(predicateIsToBeConsideredInVarViolation){
       new LazyIntInt2Int(summedViolationOfSequencesVarIIsInvolvedIn,
         variables(i),
-        (summedViol,varValue) => if (predicate(varValue)) summedViol else 0, summedViolationOfSequencesVarIIsInvolvedIn.domain)
+        (summedViol,varValue) => if (predicate(varValue)) summedViol else 0L, summedViolationOfSequencesVarIIsInvolvedIn.domain)
     }else{
       summedViolationOfSequencesVarIIsInvolvedIn
     }
     Violations = Violations + ((variables(i),violationOfVariableI))
   }
 
-  val Violation = CBLSIntVar(model,0, 0 to variables.length * length ,"sequence_violations")
+  val Violation = CBLSIntVar(model,0L, 0 to variables.length * length ,"sequence_violations")
   Violation.setDefiningInvariant(this)
 
   for(i <- variables.indices){
@@ -83,17 +83,17 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
       val (lb,ub) = sequencesInvolving(i)
       var j = lb
       while(j <= ub){
-        count(j) += 1
+        count(j) += 1L
         if(count(j) > Max){
-          violated(j) :+=1
-          Violation :+= 1
+          violated(j) :+=1L
+          Violation :+= 1L
         }
-        j += 1
+        j += 1L
       }
     }
   }
 
-  private def sequences = 0 to variables.length - length
+  private def sequences = 0L to variables.length - length
 
   /** returns the sequences that involve this position
     *
@@ -101,26 +101,26 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     * @return
     */
   @inline
-  private def sequencesInvolving(i:Int):(Int,Int) = {
-    val lb = 0 max 1+i-length
+  private def sequencesInvolving(i:Long):(Long,Long) = {
+    val lb = 0L max 1L+i-length
     val ub = i min variables.length - length
     (lb,ub)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int){
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
     if (predicate(OldVal)){ //TODO: on peut éventuellement conserver predicate(OldVal) dans un tableau de booléens
       if(!predicate(NewVal)){
         //decrease the count
         val (lb,ub) = sequencesInvolving(i)
         var j = lb
         while(j <= ub){
-          count(j) -= 1
+          count(j) -= 1L
           if(count(j) >= Max){
-            violated(j) :-=1
-            Violation :-= 1
+            violated(j) :-=1L
+            Violation :-= 1L
           }
-          j+=1
+          j+=1L
         }
       }
     }else{
@@ -129,18 +129,18 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
         val (lb,ub) = sequencesInvolving(i)
         var j = lb
         while(j <= ub){
-          count(j) += 1
+          count(j) += 1L
           if(count(j) > Max){
-            violated(j) :+=1
-            Violation :+= 1
+            violated(j) :+=1L
+            Violation :+= 1L
           }
-          j+=1
+          j+=1L
         }
       }
     }
   }
 
-  private def min(a:Int, b:Int):Int = if (a>b) b else a
+  private def min(a:Long, b:Long):Long = if (a>b) b else a
 
   def violation(v: Value): IntValue = Violations.getOrElse(v.asInstanceOf[IntValue],null)
 
@@ -151,19 +151,19 @@ case class Sequence(variables: Array[_ <: IntValue], length:Int, Max:Int, predic
     * It requires that the Model is instantiated with the variable debug set to true.
     */
   override def checkInternals(c: Checker) {
-    val countCheck:Array[Int] = Array.tabulate(sequences.size)(_ => 0)
+    val countCheck:Array[Long] = Array.tabulate(sequences.size)(_ => 0L)
     /**the violation of the sequence starting here*/
-    val violatedCheck = Array.tabulate(sequences.size)(_ => 0)
-    var violationCheck = 0
+    val violatedCheck = Array.tabulate(sequences.size)(_ => 0L)
+    var violationCheck = 0L
 
     for(i <- variables.indices){
       if(predicate(variables(i).value)){
         val (lb,ub) = sequencesInvolving(i)
         for(j <- lb to ub){
-          countCheck(j) += 1
+          countCheck(j) += 1L
           if(countCheck(j) > Max){
-            violatedCheck(j) +=1
-            violationCheck += 1
+            violatedCheck(j) +=1L
+            violationCheck += 1L
           }
         }
       }

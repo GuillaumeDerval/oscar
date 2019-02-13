@@ -17,11 +17,11 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
+/*
 package oscar.cbls.business
 
 /**
- * DEPRECATED: the whole scheduling package is deprecated since OScaR 4.0 and will be fully reworked
+ * DEPECATED: the whole scheduling package is deprecated since OScaR 4.0 and will be fully reworked
  *  This package is a scheduling library.
  * it supports
  - [[oscar.cbls.business.scheduling.model.CumulativeResource]]
@@ -36,3 +36,4 @@ package oscar.cbls.business
 package object scheduling {
 
 }
+*/

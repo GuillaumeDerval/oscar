@@ -9,7 +9,7 @@ import oscar.cbls.algo.seq.ConcreteIntSequence
  */
 object SeqExample extends App{
 
-  val a = IntSequence(0 to 39)
+  val a = IntSequence(0L to 39)
   println(a)
 
   val b = a.moveAfter(10, 19, 9, true, fast = false, autoRework = false).asInstanceOf[ConcreteIntSequence]

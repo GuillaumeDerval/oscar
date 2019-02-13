@@ -15,7 +15,7 @@
  * ****************************************************************************
  */
 package oscar.examples.cbls.routing
-
+/*
 /*
 import oscar.cbls.core.computation.Store
 import oscar.cbls.core.search.{Best, Move}
@@ -130,4 +130,5 @@ class DrcVRP(n:Int, v:Int, m:Store, pointsList:Array[(Double,Double)],
 
   val closestNeighboursForward = computeClosestNeighborsForward()
 }
+*/
 */

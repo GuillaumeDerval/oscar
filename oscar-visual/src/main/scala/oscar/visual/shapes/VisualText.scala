@@ -33,8 +33,8 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     this(d, x, y, t, centered, new Rectangle2D.Double(x, y, 1, 1))
   }
 
-  var lines = text.trim.split("\n")
-  def nLines = lines.length
+  var lines = t.trim.split("\n")
+  def nLines = if(lines == null) 1 else lines.length //Sometime called before lines is initialized
 
   val fm = d.getFontMetrics(d.getFont)
   shape.setRect(x, y, lines.map(lineStr => fm.stringWidth(lineStr)).max, nLines * fm.getHeight)
@@ -57,9 +57,9 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     shape.setRect(x, y, shape.getWidth, shape.getHeight)
     drawing.repaint()
   }
-  
+
   def text = t
-  
+
   def text_=(t: String) {
     this.t = t
     lines = t.trim.split("\n")
@@ -75,7 +75,11 @@ class VisualText(d: VisualDrawing, private var x: Double, private var y: Double,
     }
     else {
       for (i <- 0 until nLines) {
-        g.drawString(lines(i), x.toInt, y.toInt + i * fm.getHeight)
+        g.drawString(
+          lines(i),
+          x.toInt,
+          y.toInt +
+            i * d.getFontMetrics(d.getFont).getHeight)
       }
     }
     shape.setRect(x, y, fm.stringWidth(text), fm.getHeight)

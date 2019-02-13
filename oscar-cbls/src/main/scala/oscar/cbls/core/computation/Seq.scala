@@ -42,7 +42,7 @@ sealed trait SeqValue extends Value{
 }
 
 object SeqValue{
-  implicit def tist2IntSeqVar(a:List[Int]):SeqValue = CBLSSeqConst(IntSequence(a))
+  implicit def tist2IntSeqVar(a:List[Long]):SeqValue = CBLSSeqConst(IntSequence(a))
 }
 
 
@@ -57,10 +57,10 @@ sealed abstract class SeqUpdate(val newValue:IntSequence){
 
   def depth:Int
 
-  final def anyCheckpointDefinition:Boolean = highestLevelOfDeclaredCheckpoint != -1
+  final def anyCheckpointDefinition:Boolean = highestLevelOfDeclaredCheckpoint != -1L
 
   /**the level of he highest declared checkpoint in this sequpdate nd its predecessors.
-    * -1 if no declared checkpoints
+    * -1L if no declared checkpoints
     * */
   def highestLevelOfDeclaredCheckpoint:Int
 }
@@ -73,7 +73,7 @@ sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence)
   def newPos2OldPos(newPos:Int):Option[Int]
   override val depth:Int = {
     val pd = prev.depth
-    if(pd >=0) pd+1 else pd-1
+    if(pd >=0L) pd+1 else pd-1
   }
 
   override protected[computation] def pruneTo(target : IntSequence) : SeqUpdate = {
@@ -85,7 +85,7 @@ sealed abstract class SeqUpdateWithPrev(val prev:SeqUpdate,newValue:IntSequence)
 }
 
 object SeqUpdateInsert {
-  def apply(value : Int, pos : Int, prev : SeqUpdate, seq : IntSequence) : SeqUpdate = {
+  def apply(value : Long, pos : Int, prev : SeqUpdate, seq : IntSequence) : SeqUpdate = {
     prev match {
       //we compare the seq here because seq equality is used for checkpointing stuff to anihilate the moves
       case x@SeqUpdateRemove(removedPosition : Int, prevOfDelete : SeqUpdate)
@@ -100,7 +100,7 @@ object SeqUpdateInsert {
     * @param prev
     * @return
     */
-  def apply(value : Int, pos : Int, prev : SeqUpdate) : SeqUpdate = {
+  def apply(value : Long, pos : Int, prev : SeqUpdate) : SeqUpdate = {
     prev match {
       //here, since there is no seq given, we compare on the move itself to anihilate the moves
       case x@SeqUpdateRemove(removedPosition : Int, prevOfDelete : SeqUpdate)
@@ -113,12 +113,12 @@ object SeqUpdateInsert {
     * @param i
     * @return value, position, prev
     */
-  def unapply(i:SeqUpdateInsert):Option[(Int,Int,SeqUpdate)] = Some(i.value,i.pos,i.prev)
+  def unapply(i:SeqUpdateInsert):Option[(Long,Int,SeqUpdate)] = Some(i.value,i.pos,i.prev)
 }
 
 
-//after is -1 for start position
-class SeqUpdateInsert(val value:Int,val pos:Int,prev:SeqUpdate, seq:IntSequence)
+//after is -1L for start position
+class SeqUpdateInsert(val value:Long,val pos:Int,prev:SeqUpdate, seq:IntSequence)
   extends SeqUpdateWithPrev(prev:SeqUpdate, seq){
   assert(seq equals prev.newValue.insertAtPosition(value,pos,fast=true))
 
@@ -177,9 +177,9 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
 
   def isSimpleFlip:Boolean = after+1 == fromIncluded && flip
   def isNop = after+1 == fromIncluded && !flip
-  def fromValue:Int = prev.newValue.valueAtPosition(fromIncluded).head
-  def toValue:Int = prev.newValue.valueAtPosition(toIncluded).head
-  def afterValue:Int = prev.newValue.valueAtPosition(after).head
+  def fromValue:Long = prev.newValue.valueAtPosition(fromIncluded).head
+  def toValue:Long = prev.newValue.valueAtPosition(toIncluded).head
+  def afterValue:Long = prev.newValue.valueAtPosition(after).head
   def moveDownwards:Boolean = fromIncluded > after
   def moveUpwards:Boolean = fromIncluded < after
   def nbPointsInMovedSegment = toIncluded - fromIncluded + 1
@@ -202,7 +202,7 @@ class SeqUpdateMove(val fromIncluded:Int,val toIncluded:Int,val after:Int, val f
 
   assert({seq match{case m:MovedIntSequence => m.localBijection.checkBijection() case _ => ;};true})
 
-  //TODO: find O(1) solution
+  //TODO: find O(1L) solution
   private var localBijection:PiecewiseLinearBijectionNaive = null
   private def ensureBijection(){
     if(localBijection == null) {
@@ -253,7 +253,7 @@ object SeqUpdateRemove {
 
   def apply(position : Int, prev : SeqUpdate, seq:IntSequence):SeqUpdate = {
     prev match {
-      case SeqUpdateInsert(insertedValue:Int,insertPos:Int,insertPrev:SeqUpdate)
+      case SeqUpdateInsert(insertedValue:Long,insertPos:Int,insertPrev:SeqUpdate)
         if insertPrev.newValue quickEquals seq //comparison must be on quickequals since this is the stuff used for checkpoint cleaning
       => insertPrev
       case _ => new SeqUpdateRemove(position,prev,seq)
@@ -273,7 +273,7 @@ class SeqUpdateRemove(val position:Int,prev:SeqUpdate,seq:IntSequence)
 
   assert(seq equals prev.newValue.delete(position,fast=true),"wrong promize on seq value when building SeqUpdateRemove")
 
-  val removedValue:Int = seq match{
+  val removedValue:Long = seq match{
     case d:RemovedIntSequence if position == d.positionOfDelete && (d.seq quickEquals prev.newValue) => d.removedValue
     case _ => prev.newValue.valueAtPosition(position).head}
 
@@ -362,7 +362,7 @@ object SeqUpdateDefineCheckpoint{
   * @param activeCheckpoint
   * @param maxPivotPerValuePercent
   * @param doRegularize
-  * @param level the first checkpoint to be declared is 0, the second in stack is 1
+  * @param level the first checkpoint to be declared is 0L, the second in stack is 1L
   */
 class SeqUpdateDefineCheckpoint(mprev:SeqUpdate,val activeCheckpoint:Boolean, maxPivotPerValuePercent:Int,val doRegularize:Boolean, val level:Int)
   extends SeqUpdateWithPrev(mprev,if(doRegularize) mprev.newValue.regularizeToMaxPivot(maxPivotPerValuePercent) else mprev.newValue){
@@ -441,11 +441,11 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   * notice that checkpoint definition is sent as any other update (although it is identity operator)
   */
 trait SeqNotificationTarget {
-  def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate)
+  def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit
 }
 
 class CBLSSeqConst(override val value:ConcreteIntSequence) extends SeqValue{
-  override def domain : Domain = value.largestValue match{case None => Domain.empty case Some(v) => 0 to v}
+  override def domain : Domain = value.largestValue match{case None => Domain.empty case Some(v) => Domain(0L , v)}
   override def name : String = value.toString
 }
 
@@ -458,12 +458,12 @@ object CBLSSeqConst{
 
 class CBLSSeqVar(givenModel:Store,
                  initialValue:IntSequence,
-                 val maxVal:Int = Int.MaxValue,
+                 val maxVal:Long = Long.MaxValue,
                  n: String = null,
                  maxPivotPerValuePercent:Int = 4,
                  maxHistorySize:Int = 50)
   extends ChangingSeqValue(initialValue, maxVal, maxPivotPerValuePercent, maxHistorySize) with Variable{
-  require(domain.min == 0)
+  require(domain.min == 0L)
   require(givenModel != null)
 
   model = givenModel
@@ -480,7 +480,7 @@ class CBLSSeqVar(givenModel:Store,
     * @param value the inserted value
     * @param pos the position where the value is located afer the insert is completed
     */
-  override def insertAtPosition(value:Int,pos:Int){
+  override def insertAtPosition(value:Long,pos:Int){
     super.insertAtPosition(value,pos)
   }
 
@@ -490,7 +490,7 @@ class CBLSSeqVar(givenModel:Store,
     * @param pos the position where the value is located afer the insert is completed
     * @param seqAfter the sequence after the insert if performed. if you have it you can set it here, for speed
     */
-  override def insertAtPosition(value:Int,pos:Int,seqAfter:IntSequence){
+  override def insertAtPosition(value:Long,pos:Int,seqAfter:IntSequence){
     super.insertAtPosition(value,pos,seqAfter)
   }
 
@@ -581,7 +581,7 @@ class ChangingSeqValueSnapShot(val variable:ChangingSeqValue,val savedValue:IntS
   * @param maxPivotPerValuePercent
   * @param maxHistorySize
   */
-abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, val maxPivotPerValuePercent: Int, val maxHistorySize:Int)
+abstract class ChangingSeqValue(initialValue: Iterable[Long], val maxValue: Long, val maxPivotPerValuePercent: Int, val maxHistorySize:Int)
   extends AbstractVariable with SeqValue{
 
   override def snapshot : ChangingSeqValueSnapShot = new ChangingSeqValueSnapShot(this,this.value)
@@ -593,9 +593,9 @@ abstract class ChangingSeqValue(initialValue: Iterable[Int], val maxValue: Int, 
   private var mOldValue:IntSequence = IntSequence(initialValue)
   protected[computation] var toNotify:SeqUpdate = SeqUpdateLastNotified(mOldValue)
 
-  override def domain : Domain = 0 to maxValue
-  override def max : Int = maxValue
-  override def min : Int = 0
+  override def domain : Domain = Domain(0L,maxValue)
+  override def max : Long = maxValue
+  override def min : Long = 0L
 
   override def value: IntSequence = {
     if (model == null) return mOldValue
@@ -645,7 +645,7 @@ storeIntoToNotify
 
 quel est le niveau de ce checkpoint?
 il y a un copteur de niveau: currentCheckpointLevel
-qui augmente de 1 chaue fois uq'on en déclare 1 et qui diminue de 1 à chaque release.  et c'est tout.
+qui augmente de 1L chaue fois uq'on en déclare 1L et qui diminue de 1L à chaque release.  et c'est tout.
 
 
 * freeCheckpoint
@@ -680,25 +680,25 @@ et cette stack doit être mise à jour au moment de la notification.
 
 
 
-  protected def insertAtPosition(value:Int,pos:Int){
+  protected def insertAtPosition(value:Long,pos:Int){
     assert(pos <= toNotify.newValue.size)
-    assert(pos >= 0)
+    assert(pos >= 0L)
     recordPerformedIncrementalUpdate((prev,newSeq) =>
       if(newSeq == null) SeqUpdateInsert(value,pos,prev)
       else SeqUpdateInsert(value,pos,prev,newSeq))
     notifyChanged()
   }
 
-  protected def insertAtPosition(value:Int,pos:Int,seqAfter:IntSequence){
+  protected def insertAtPosition(value:Long,pos:Int,seqAfter:IntSequence){
     assert(pos <= toNotify.newValue.size)
-    assert(pos >= 0)
+    assert(pos >= 0L)
     recordPerformedIncrementalUpdate((prev,_) => SeqUpdateInsert(value,pos,prev,seqAfter))
     // println(" notify insert " + toNotify)
     notifyChanged()
   }
 
   protected def remove(position:Int){
-    require(toNotify.newValue.size > position && position >=0,
+    require(toNotify.newValue.size > position && position >=0L,
       "removing at position " + position + " size is " + newValue.size)
     recordPerformedIncrementalUpdate((prev,newSeq) =>
       if(newSeq == null) SeqUpdateRemove(position, prev)
@@ -708,7 +708,7 @@ et cette stack doit être mise à jour au moment de la notification.
   }
 
   protected def remove(position:Int,seqAfter:IntSequence){
-    require(toNotify.newValue.size > position && position >=0, "removing at position " + position + " size is " + newValue.size)
+    require(toNotify.newValue.size > position && position >=0L, "removing at position " + position + " size is " + newValue.size)
     recordPerformedIncrementalUpdate((prev,_) => SeqUpdateRemove(position,prev,seqAfter))
     //println(" notify remove " + toNotify)
     notifyChanged()
@@ -718,13 +718,13 @@ et cette stack doit être mise à jour au moment de la notification.
     move(fromIncludedPosition,toIncludedPosition,fromIncludedPosition-1,true)
   }
 
-  //-1 for first position
+  //-1L for first position
   protected def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean){
     //println("seq.move(fromIncludedPosition:" + fromIncludedPosition + " toIncludedPosition:" + toIncludedPosition +" afterPosition:" + afterPosition + " flip:" + flip+ ")")
     require(toNotify.newValue.size > toIncludedPosition)
     require(toNotify.newValue.size > afterPosition, "toNotify.newValue.size(=" + toNotify.newValue.size + ") > afterPosition(=" + afterPosition + ")")
-    require(0 <= fromIncludedPosition,"move with fromIncludedPosition=" + fromIncludedPosition)
-    require(-1<=afterPosition)
+    require(0L <= fromIncludedPosition,"move with fromIncludedPosition=" + fromIncludedPosition)
+    require(-1L<=afterPosition)
     require(fromIncludedPosition <= toIncludedPosition, "fromIncludedPosition=" + fromIncludedPosition + "should <= toIncludedPosition=" + toIncludedPosition)
 
     require(
@@ -739,15 +739,15 @@ et cette stack doit être mise à jour au moment de la notification.
     notifyChanged()
   }
 
-  //-1 for first position
+  //-1L for first position
   protected def move(fromIncludedPosition:Int,toIncludedPosition:Int,afterPosition:Int,flip:Boolean,seqAfter:IntSequence){
 
     require(toNotify.newValue.size > fromIncludedPosition)
     require(toNotify.newValue.size > toIncludedPosition)
     require(toNotify.newValue.size > afterPosition)
-    require(0 <= fromIncludedPosition)
-    require(0<=toIncludedPosition)
-    require(-1<=afterPosition)
+    require(0L <= fromIncludedPosition)
+    require(0L<=toIncludedPosition)
+    require(-1L<=afterPosition)
     require(fromIncludedPosition <= toIncludedPosition)
 
     recordPerformedIncrementalUpdate((prev,_) =>
@@ -767,11 +767,7 @@ et cette stack doit être mise à jour au moment de la notification.
     require(firstSegmentStartPosition <= firstSegmentEndPosition)
     require(secondSegmentStartPosition <= secondSegmentEndPosition)
 
-    if (firstSegmentEndPosition == secondSegmentStartPosition - 1) {
-      // segments are contiguous, we only need to move the second segment
-      move(secondSegmentStartPosition,secondSegmentEndPosition,firstSegmentStartPosition-1,flipSecondSegment)
-
-    }else if(firstSegmentEndPosition < secondSegmentStartPosition){
+    if(firstSegmentEndPosition < secondSegmentStartPosition){
       //do it
 
       //move lowest segment upward just before the second one (so that its indices do not change)
@@ -798,7 +794,7 @@ et cette stack doit être mise à jour au moment de la notification.
       performedSinceTopCheckpoint = updatefct(performedSinceTopCheckpoint, toNotify.newValue)
     }else{
       //if it is null, it means that no checkpoint was declared.
-      require(currentCheckpointLevel == -1)
+      require(currentCheckpointLevel == -1L)
     }
   }
 
@@ -806,7 +802,7 @@ et cette stack doit être mise à jour au moment de la notification.
     require(
       performedSinceTopCheckpoint == null &&
         !toNotify.anyCheckpointDefinition &&
-        levelOfTopCheckpoint == -1,
+        levelOfTopCheckpoint == -1L,
       "Sequences cannot be assigned when a checkpoint has been defined")
 
     toNotify = SeqUpdateAssign(seq)
@@ -844,7 +840,7 @@ et cette stack doit être mise à jour au moment de la notification.
     * the checkpoint can be used in a star mode or circle mode exploration.
     *
     * for star mode,
-    *    the rollBack will lead to O(1) roll back instructions, and stacked updates will be used in between
+    *    the rollBack will lead to O(1L) roll back instructions, and stacked updates will be used in between
     * for circle mode,
     *    the roll back will lead to computing the reversed list of instructions to bring the value backto the checkpoint.
     *    if this list is bigger than maxHistorySize, it will be replaced with an assign
@@ -954,7 +950,7 @@ et cette stack doit être mise à jour au moment de la notification.
     */
   protected def releaseTopCheckpoint() {
     require(topCheckpoint != null, "No checkpoint defined to release")
-    require(levelOfTopCheckpoint >= 0)
+    require(levelOfTopCheckpoint >= 0L)
 
     //  println("changing seq got release top checkpoint current level is: " + levelOfTopCheckpoint)
 
@@ -977,7 +973,7 @@ et cette stack doit être mise à jour au moment de la notification.
     //in all cases, we must pop the checkpoint from the checkpoint stack since it is working on the NewValues
     checkpointStackNotTop match{
       case top :: tail =>
-        require(levelOfTopCheckpoint > 0)
+        require(levelOfTopCheckpoint > 0L)
         checkpointStackNotTop = tail
         topCheckpoint = top._1
         topCheckpointIsStarMode = top._3
@@ -985,7 +981,7 @@ et cette stack doit être mise à jour au moment de la notification.
         levelOfTopCheckpoint -= 1
       case Nil =>
         //there is no upper checkpoint
-        require(levelOfTopCheckpoint == 0)
+        require(levelOfTopCheckpoint == 0L)
         levelOfTopCheckpoint = -1
         topCheckpoint = null
         performedSinceTopCheckpoint = null
@@ -1053,7 +1049,7 @@ et cette stack doit être mise à jour au moment de la notification.
 
   private def removeAllCheckpointDefinitionAboveOrEqualLevel(updates:SeqUpdate, level:Int):SeqUpdate = {
     updates match {
-      case i@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case i@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         val newPrev = removeAllCheckpointDefinitionAboveOrEqualLevel(prev, level)
         if(newPrev == prev) updates
         else SeqUpdateInsert(value, pos, newPrev,i.newValue)
@@ -1120,7 +1116,7 @@ et cette stack doit être mise à jour au moment de la notification.
                                                     searchedCheckpoint:IntSequence,
                                                     removeDeclaration:Boolean):CleaningResult = {
     updates match{
-      case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
+      case SeqUpdateInsert(value:Long,pos:Int,prev:SeqUpdate) =>
         popToNotifyUntilCheckpointDeclaration(prev,searchedCheckpoint,removeDeclaration) match{
           case NoSimplificationPerformed =>
             if (searchedCheckpoint quickEquals updates.newValue)
@@ -1176,7 +1172,7 @@ et cette stack doit être mise à jour au moment de la notification.
 
   def removeCheckpointDeclarationIfPresent(updates:SeqUpdate,searchedCheckpoint:IntSequence):CleaningResult = {
     updates match{
-      case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
+      case SeqUpdateInsert(value:Long,pos:Int,prev:SeqUpdate) =>
         removeCheckpointDeclarationIfPresent(prev,searchedCheckpoint) match{
           case NoSimplificationPerformed => NoSimplificationPerformed
           case CheckpointDeclarationReachedAndRemoved(newPrev) =>
@@ -1227,10 +1223,10 @@ et cette stack doit être mise à jour au moment de la notification.
   * @author renaud.delandtsheer@cetic.be
   */
 abstract class SeqInvariant(initialValue:IntSequence,
-                            maxValue:Int = Int.MaxValue,
+                            maxValue:Long = Long.MaxValue,
                             maxPivotPerValuePercent:Int = 10,
                             maxHistorySize:Int = 10)
-  extends ChangingSeqValue(initialValue, maxValue:Int, maxPivotPerValuePercent, maxHistorySize)
+  extends ChangingSeqValue(initialValue, maxValue:Long, maxPivotPerValuePercent, maxHistorySize)
     with Invariant{
 
   override def definingInvariant: Invariant = this
@@ -1275,7 +1271,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
 
   toValue := fromValue.value
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     assert(v == fromValue)
     digestChanges(changes)
   }
@@ -1290,7 +1286,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
       case cp :: tail =>
         topCheckpoint = cp
         checkPointStackNotTop = tail
-        assert(levelTopCheckpoint +1 == checkPointStackNotTop.size)
+        assert(levelTopCheckpoint + 1 == checkPointStackNotTop.size)
         levelTopCheckpoint -= 1
       case _ =>
         topCheckpoint = null
@@ -1308,7 +1304,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
 
   def digestChanges(changes:SeqUpdate){
     changes match{
-      case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
+      case SeqUpdateInsert(value:Long,pos:Int,prev:SeqUpdate) =>
         digestChanges(prev)
         toValue.insertAtPosition(value,pos,changes.newValue)
       case SeqUpdateMove(fromIncluded:Int,toIncluded:Int,after:Int,flip:Boolean,prev:SeqUpdate) =>
@@ -1353,7 +1349,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
       Some("IdentitySeq: toValue.value=" + toValue.value + " should equal fromValue.value=" + fromValue.value))
   }
 }
-
+/*
 /**
   *  roll backs to checkpoints above the top of the stack are translated into a linear set of instructions,
   *  so that hte topmost checkpoint is actually managed in a circle fashion, although it is not declared so.
@@ -1362,7 +1358,7 @@ class IdentitySeq(fromValue:ChangingSeqValue, toValue:CBLSSeqVar)
   * @param toValue
   * @param maxStack
   */
-class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValue:CBLSSeqVar, maxStack:Int)
+class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValue:CBLSSeqVar, maxStack:Long)
   extends Invariant
     with SeqNotificationTarget{
 
@@ -1372,7 +1368,7 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
 
   toValue := fromValue.value
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit {
     assert(v == fromValue)
     digestChanges(changes)
   }
@@ -1380,18 +1376,18 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
   private var checkPointStackNotTop:List[IntSequence] = List.empty
   private var topCheckpoint:IntSequence = null
 
-  private var levelTopCheckpoint:Int = -1
+  private var levelTopCheckpoint:Long = -1L
 
   private def popTopCheckpoint(){
     checkPointStackNotTop match{
       case cp :: tail =>
         topCheckpoint = cp
         checkPointStackNotTop = tail
-        assert(levelTopCheckpoint +1 == checkPointStackNotTop.size)
-        levelTopCheckpoint -= 1
+        assert(levelTopCheckpoint +1L == checkPointStackNotTop.size)
+        levelTopCheckpoint -= 1L
       case _ =>
         topCheckpoint = null
-        levelTopCheckpoint = -1
+        levelTopCheckpoint = -1L
     }
   }
 
@@ -1399,22 +1395,22 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
     if(topCheckpoint != null) {
       checkPointStackNotTop = topCheckpoint :: checkPointStackNotTop
       topCheckpoint = newCheckpoint
-      levelTopCheckpoint += 1
+      levelTopCheckpoint += 1L
     }else{
       topCheckpoint = newCheckpoint
-      levelTopCheckpoint += 1
+      levelTopCheckpoint += 1L
     }
   }
 
   def digestChanges(changes:SeqUpdate){
     changes match{
-      case SeqUpdateInsert(value:Int,pos:Int,prev:SeqUpdate) =>
+      case SeqUpdateInsert(value:Long,pos:Long,prev:SeqUpdate) =>
         digestChanges(prev)
         toValue.insertAtPosition(value,pos,changes.newValue)
-      case SeqUpdateMove(fromIncluded:Int,toIncluded:Int,after:Int,flip:Boolean,prev:SeqUpdate) =>
+      case SeqUpdateMove(fromIncluded:Long,toIncluded:Long,after:Long,flip:Boolean,prev:SeqUpdate) =>
         digestChanges(prev)
         toValue.move(fromIncluded,toIncluded,after,flip,changes.newValue)
-      case SeqUpdateRemove(position:Int,prev:SeqUpdate) =>
+      case SeqUpdateRemove(position:Long,prev:SeqUpdate) =>
         digestChanges(prev)
         toValue.remove(position,changes.newValue)
       case SeqUpdateAssign(s) =>
@@ -1422,7 +1418,7 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
       case SeqUpdateLastNotified(value:IntSequence) =>
         //nothing to do here
         assert(value equals toValue.newValue)
-      case r@SeqUpdateRollBackToCheckpoint(value:IntSequence,level:Int) =>
+      case r@SeqUpdateRollBackToCheckpoint(value:IntSequence,level:Long) =>
         while(level > levelTopCheckpoint){
           if(levelTopCheckpoint <= maxStack) {
             toValue.releaseTopCheckpoint()
@@ -1438,7 +1434,7 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
           //and after this roll back, we perform the moves that come back to this point
           toValue.rollbackToTopCheckpoint(value)
         }
-      case SeqUpdateDefineCheckpoint(prev:SeqUpdate,activeCheckpoint:Boolean,level:Int) =>
+      case SeqUpdateDefineCheckpoint(prev:SeqUpdate,activeCheckpoint:Boolean,level:Long) =>
         digestChanges(prev)
         while(level > levelTopCheckpoint){
           if(levelTopCheckpoint <= maxStack) {
@@ -1446,7 +1442,7 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
           }
           popTopCheckpoint()
         }
-        require(level == levelTopCheckpoint +1)
+        require(level == levelTopCheckpoint +1L)
         pushTopCheckpoint(changes.newValue)
         require(level == levelTopCheckpoint)
         if(levelTopCheckpoint <= maxStack) {
@@ -1460,7 +1456,7 @@ class IdentitySeqTopMostCheckpointCircleAbove(fromValue:ChangingSeqValue, toValu
       Some("IdentitySeqTopMostCheckpointCircleAbove: toValue.value=" +toValue.value + " should equal fromValue.value=" + fromValue.value))
   }
 }
-
+*/
 class SeqCheckpointedValueStack[@specialized T]{
   private[this] var checkpointStackNotTop:List[(IntSequence,T)] = List.empty
   private[this] var _topCheckpoint:IntSequence = null

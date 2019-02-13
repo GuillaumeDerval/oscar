@@ -55,7 +55,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
       b.insert(position)
       empty = false
     }else{
-      //this is the desired branch, as it is O(1)
+      //this is the desired branch, as it is O(1L)
       a(position) = QList(elem, otherWithSamePosition)
     }
   }
@@ -65,7 +65,7 @@ class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPositio
   override def popFirsts:List[T] = throw new Error("too inefficient")
 
   override def isEmpty:Boolean = empty
-  override def size = throw new Error("too inefficient")
+  override def size: Int = throw new Error("too inefficient")
 
   override def getFirst: T = a(b.getFirst).head
 
@@ -109,7 +109,7 @@ class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Int,val maxPos
 
   private[this] val a:Array[QArrayList[T]] = Array.tabulate (maxPosition)(_ => new QArrayList[T](initialSizeForArrayList))
 
-  private[this] var msize:Int = 0
+  private[this] var msize:Long = 0
 
   /**makes the datastruct empty*/
   def dropAll(){

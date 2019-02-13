@@ -25,7 +25,8 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.wlp.WareHouseLocationWindow
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.wlp.WareHouseLocationMap
 
 import scala.language.postfixOps
 
@@ -45,7 +46,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-    val costForOpeningWarehouse =  Array.fill(W)(1000)
+    val costForOpeningWarehouse =  Array.fill[Long](W)(1000)
 
   val m = Store() //checker = Some(new ErrorChecker()))
 
@@ -63,7 +64,9 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   m.close()
 
-  val visual = new WareHouseLocationWindow(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+  val visual = new WareHouseLocationMap(deliveryPositions,warehousePositions,distanceCost,costForOpeningWarehouse)
+
+  SingleFrameWindow.show(visual,"Uncapacitated Warehouse Location Problem",width = 960,height = 960)
 
   var bestObj = Int.MaxValue
 
@@ -105,7 +108,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   maxDepth = width,
   intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",

@@ -17,11 +17,12 @@ package oscar.cbls.business.routing.visual
   * ****************************************************************************
   */
 
-import java.awt.{BorderLayout, Dimension}
+import java.awt.{BorderLayout, Color, Dimension}
 import javax.swing.{JFrame, JPanel}
 
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.util.StopWatch
+
 
 /**
   * @author fabian.germeau@student.vinci.be
@@ -31,14 +32,14 @@ class RoutingMapContainer(vrp:VRP,
                           title:String = "Routing map",
                           geolocalisationMap: Boolean = false,
                           routeToDisplay:Boolean = false,
-                          refreshRate: Int = 100
+                          refreshRate: Long = 100L
                             ) extends JFrame with StopWatch {
   setLayout(new BorderLayout())
 
   startWatch()
-  private var lastRefresh: Long = 0
+  private var lastRefresh: Long = 0L
 
-  def refresh(force:Boolean = false): Unit = {
+  def refresh(force:Boolean = false) = {
     val currentTime = getWatch
     if(force || currentTime - lastRefresh >= refreshRate){
       lastRefresh = currentTime

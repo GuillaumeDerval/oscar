@@ -19,14 +19,13 @@ import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.computation.Variable
 import oscar.cbls.core.search.{Move, Neighborhood}
 
-abstract class VRPSMove(override val objAfter: Int,
-                        val neighborhood:Neighborhood,
-                        override val neighborhoodName:String = null,
-                        vrp:VRP)
-  extends Move(objAfter, neighborhoodName) {
+abstract class VRPSMove(override val objAfter: Long,
+                       val neighborhood:Neighborhood,
+                       override val neighborhoodName:String = null, vrp:VRP)
+  extends Move(objAfter, neighborhoodName){
 
   override def touchedVariables: List[Variable] = List(vrp.routes)
 
-  def impactedPoints:Iterable[Int]
+  def impactedPoints:Iterable[Long]
 
 }

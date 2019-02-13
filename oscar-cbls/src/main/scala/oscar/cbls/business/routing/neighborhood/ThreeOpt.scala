@@ -32,12 +32,13 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.{HotRestart, Pairs}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search._
+import oscar.cbls._
 
 
 /**
  * Removes three edges of routes, and rebuilds routes from the segments.
- * Finds 3 candidate points for a 3-opt move, and then
- * chooses on-the-fly between simple 3-opt move and reverse 3-opt move.
+ * Finds 3L candidate points for a 3L-opt move, and then
+ * chooses on-the-fly between simple 3L-opt move and reverse 3L-opt move.
  *
  * Info : it also could be saw as the move of a route's segment to another place.
  * The search complexity is O(n³).
@@ -45,8 +46,8 @@ import oscar.cbls.core.search._
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
-                    relevantNeighbors:()=>Int=>Iterable[Int], //must be routed
+case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Long], //must be routed
+                    relevantNeighbors:()=>Long=>Iterable[Long], //must be routed
                     vrp: VRP,
                     neighborhoodName:String = "ThreeOpt",
                     selectInsertionPointBehavior:LoopBehavior = First(),
@@ -59,19 +60,19 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
   extends EasyNeighborhoodMultiLevel[ThreeOptMove](neighborhoodName) {
 
   //the indice to start with for the exploration
-  var startIndice: Int = 0
+  var startIndice: Long = 0
 
   val v = vrp.v
   val seq = vrp.routes
 
-  def exploreNeighborhood(initialObj: Int): Unit = {
+  def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
     val (iterationSchemeOnZone,notifyFound1) = selectInsertionPointBehavior.toIterable(
       if (hotRestart) HotRestart(potentialInsertionPoints(), startIndice)
       else potentialInsertionPoints())
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
@@ -81,7 +82,7 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
     val nodeToVehicle = vrp.vehicleOfNode.map(_.value)
 
-    var insertionPoint = -1
+    var insertionPoint = -1L
     for (insertionPointTmp <- iterationSchemeOnZone){
       insertionPoint = insertionPointTmp
 
@@ -92,9 +93,9 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
           val vehicleForInsertion = nodeToVehicle(insertionPoint)
 
           val relevantNeighbors = relevantNeighborsNow(insertionPoint)
-          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Int) => nodeToVehicle(neighbor) != -1 && neighbor != insertionPoint && neighbor > v)
+          val routedRelevantNeighbors = relevantNeighbors.filter((neighbor : Long) => nodeToVehicle(neighbor) != -1L && neighbor != insertionPoint && neighbor > v)
 
-          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy(nodeToVehicle).toList)
+          val (routedRelevantNeighborsByVehicle,notifyFound2) = selectMovedSegmentBehavior.toIterable(routedRelevantNeighbors.groupBy((i : Long) => nodeToVehicle(i)).toList)
 
           for((vehicleOfMovedSegment,relevantNodes) <- routedRelevantNeighborsByVehicle if vehicleOfMovedSegment != v){
             val pairsOfNodesWithPosition = Pairs.makeAllSortedPairs(relevantNodes.map(node => (node,seqValue.positionOfAnyOccurrence(node).head)).toList)
@@ -140,17 +141,17 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = insertionPoint + 1
-    segmentStartPositionForInstantiation = -1
+    startIndice = insertionPoint + 1L
+    segmentStartPositionForInstantiation = -1L
   }
 
-  var segmentStartPositionForInstantiation:Int = -1
-  var segmentEndPositionForInstantiation:Int = -1
-  var insertionPointPositionForInstantiation:Int = -1
-  var insertionPointForInstantiation:Int = -1
+  var segmentStartPositionForInstantiation:Long = -1L
+  var segmentEndPositionForInstantiation:Long = -1L
+  var insertionPointPositionForInstantiation:Long = -1L
+  var insertionPointForInstantiation:Long = -1L
   var flipForInstantiation:Boolean = false
 
-  override def instantiateCurrentMove(newObj: Int) =
+  override def instantiateCurrentMove(newObj: Long) =
     ThreeOptMove(segmentStartPositionForInstantiation,
       segmentEndPositionForInstantiation,
       insertionPointPositionForInstantiation,
@@ -162,26 +163,26 @@ case class ThreeOpt(potentialInsertionPoints:()=>Iterable[Int], //must be routed
 
   //this resets the internal state of the Neighborhood
   override def reset(){
-    startIndice = 0
+    startIndice = 0L
   }
 
-  def doMove(insertionPosition: Int, segmentStartPosition: Int, segmentEndPosition: Int, flip: Boolean) {
+  def doMove(insertionPosition: Long, segmentStartPosition: Long, segmentEndPosition: Long, flip: Boolean) {
     seq.move(segmentStartPosition,segmentEndPosition,insertionPosition,flip)
   }
 }
 
 
-case class ThreeOptMove(segmentStartPosition:Int,
-                        segmentEndPosition:Int,
-                        insertionPointPosition: Int,
-                        insertionPoint:Int,
+case class ThreeOptMove(segmentStartPosition:Long,
+                        segmentEndPosition:Long,
+                        insertionPointPosition: Long,
+                        insertionPoint:Long,
                         flipSegment: Boolean,
-                        override val objAfter: Int,
+                        override val objAfter: Long,
                         override val neighborhood:ThreeOpt,
                         override val neighborhoodName:String = "ThreeOptMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName,neighborhood.vrp){
 
-  override def impactedPoints: Iterable[Int] = QList(insertionPoint,neighborhood.vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition))
+  override def impactedPoints: Iterable[Long] = QList(insertionPoint,neighborhood.vrp.routes.value.valuesBetweenPositionsQList(segmentStartPosition,segmentEndPosition))
 
   // overriding methods
   override def commit() {

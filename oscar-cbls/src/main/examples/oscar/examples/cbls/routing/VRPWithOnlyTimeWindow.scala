@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
@@ -217,3 +217,4 @@ class VRPWithOnlyTimeWindow(version: Int, n: Int = 100, v: Int = 10, fullInfo: B
   }
 
 }
+*/

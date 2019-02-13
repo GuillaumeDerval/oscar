@@ -20,7 +20,7 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
 
 //TODO: document, test and put into modeling API
-case class SubSequence(v: SeqValue,index:Int, length: Int,
+case class SubSequence(v: SeqValue,index:Long, length: Long,
                        override val maxPivotPerValuePercent:Int = 10,
                        override val maxHistorySize:Int = 10)
   extends SeqInvariant(IntSequence.empty(), v.max, maxPivotPerValuePercent, maxHistorySize)
@@ -38,10 +38,10 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
         print("[")
       }
       print(seq(i))
-      if(i == index+length-1){
+      if(i == index+length-1L){
         print("]")
       }
-      if(i != seq.length-1){
+      if(i != seq.length-1L){
         print(",")
       }
     }
@@ -54,7 +54,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
     var explorer = s.explorerAtPosition(index)
     var subSeq = IntSequence.empty()
 
-    for(i <- 0 until length){
+    for(i <- 0L until length){
       explorer match {
         case None => return subSeq.regularize()
         case Some(e) =>
@@ -67,7 +67,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
 
   this := computeFromScratch(v.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := computeFromScratch(v.value)
     }
@@ -77,17 +77,17 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
 
   def digestChanges(changes : SeqUpdate) : Boolean = {
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
         if( this.newValue.size == length){
-          this.remove(length-1)
+          this.remove(length-1L)
         }
         if(pos >= index){
           this.insertAtPosition(value, pos-index)
         }else{
           if(changes.newValue.size > index){
-            this.insertAtPosition(changes.newValue.valueAtPosition(index).head,0)
+            this.insertAtPosition(changes.newValue.valueAtPosition(index).head,0L)
           }
         }
         return true
@@ -95,9 +95,9 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
       case SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if((toIncluded < index && after < index) ||
-           (fromIncluded >= index+length && after >= index+length-1)) return true
+           (fromIncluded >= index+length && after >= index+length-1L)) return true
 
-        if(fromIncluded >= index && toIncluded <= index+length-1 && after > index-1 && after <= index+length - 1) {
+        if(fromIncluded >= index && toIncluded <= index+length-1L && after > index-1L && after <= index+length - 1L) {
           this.move(fromIncluded - index, toIncluded - index, after - index, flip)
           return true
         }
@@ -107,7 +107,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
         if (!digestChanges(prev)) return false
         if( pos >= index+length) return true
 
-        changes.newValue.valueAtPosition(index+length-1) match{
+        changes.newValue.valueAtPosition(index+length-1L) match{
           case None => ()
           case Some(v) => this.insertAtPosition(v,length)
         }
@@ -115,7 +115,7 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
         if(pos >= index){
           this.remove(pos-index)
         }else{
-          this.remove(0)
+          this.remove(0L)
         }
 
         true
@@ -151,8 +151,8 @@ case class SubSequence(v: SeqValue,index:Int, length: Int,
 }
 
 //TODO: document, test and put into modeling API
-case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Int, override val maxPivotPerValuePercent:Int = 10,
-                          override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Int = length/2)
+case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length: Long, override val maxPivotPerValuePercent:Int = 10,
+                          override val maxHistorySize:Int = 10)(shiftLimitBeforeRecompute:Long = length/2)
   extends SeqInvariant(IntSequence.empty(), originalSeq.max, maxPivotPerValuePercent, maxHistorySize)
     with SeqNotificationTarget with IntNotificationTarget{
 
@@ -180,7 +180,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   }
 
 
-  def computeFromScratch(s:IntSequence, idx:Int): IntSequence = {
+  def computeFromScratch(s:IntSequence, idx:Long): IntSequence = {
     var explorer = s.explorerAtPosition(idx)
     var subSeq = IntSequence.empty()
 
@@ -197,7 +197,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
   this := computeFromScratch(originalSeq.value, index.value)
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     require(v == index)
     if(NewVal >= originalSeq.value.size  && OldVal >= originalSeq.value.size) return
     if(Math.abs(OldVal-NewVal) > shiftLimitBeforeRecompute){
@@ -205,11 +205,11 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
       return
     }
     if(NewVal > OldVal){
-      for( i <- 0 until NewVal-Math.max(0,OldVal)){
-        this.remove(0)
+      for( i <- 0L until NewVal-Math.max(0L,OldVal)){
+        this.remove(0L)
       }
       var originalExplorer = originalSeq.value.explorerAtPosition(OldVal+length)
-      for( i <- 0 until NewVal-OldVal){
+      for( i <- 0L until NewVal-OldVal){
         originalExplorer match {
           case None => return
           case Some(e) => this.insertAtPosition(e.value, this.newValue.size)
@@ -217,14 +217,14 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
         }
       }
     }else if(OldVal > NewVal){
-      for( i <- 0 until OldVal - NewVal - Math.max(0,(OldVal+length-originalSeq.value.size))){
-        this.remove(this.newValue.size-1)
+      for( i <- 0L until OldVal - NewVal - Math.max(0L,(OldVal+length-originalSeq.value.size))){
+        this.remove(this.newValue.size-1L)
       }
-      var originalExplorer = originalSeq.value.explorerAtPosition(OldVal-1)
-      for( i <- 0 until OldVal-NewVal){
+      var originalExplorer = originalSeq.value.explorerAtPosition(OldVal-1L)
+      for( i <- 0L until OldVal-NewVal){
         originalExplorer match {
           case None => return
-          case Some(e) => this.insertAtPosition(e.value, 0)
+          case Some(e) => this.insertAtPosition(e.value, 0L)
             originalExplorer = e.prev
         }
       }
@@ -232,7 +232,7 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
 
   }
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     if (!digestChanges(changes)) {
       this := computeFromScratch(v.value,index.value)
     }
@@ -241,17 +241,17 @@ case class SubSequenceVar(originalSeq: SeqValue, index:ChangingIntValue, length:
   def digestChanges(changes : SeqUpdate) : Boolean = {
     val currentIndex = index.value
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         if (!digestChanges(prev)) return false
         if( pos >= currentIndex+length) return true
         if( this.newValue.size == length){
-          this.remove(length-1)
+          this.remove(length-1L)
         }
         if(pos >= currentIndex){
           this.insertAtPosition(value, pos-currentIndex)
         }else{
           if(changes.newValue.size > currentIndex){
-            this.insertAtPosition(changes.newValue.valueAtPosition(currentIndex).head,0)
+            this.insertAtPosition(changes.newValue.valueAtPosition(currentIndex).head,0L)
           }
         }
         return true

@@ -20,7 +20,7 @@ object Restart{
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Int, obj:Objective) = {
+  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) = {
     (n orElse (randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeignMeasuredBeforeNeighborhoodExploration)
       ) saveBestAndRestoreOnExhaust obj
@@ -37,35 +37,35 @@ object Restart{
  * @param temperature a function that inputs the number of moves of a that have been actually taken,
  *                    and outputs a temperature, for use in the criterion
  *                    the number of steps is reset to zero when the combinator is reset
- *                    by default, it is the constant function returning 100
- * @param base the base for the exponent calculation. default is 2
+ *                    by default, it is the constant function returning 100L
+ * @param base the base for the exponent calculation. default is 2L
  */
-class Metropolis(a: Neighborhood, temperature: Int => Float = _ => 100, base: Float = 2) extends NeighborhoodCombinator(a) {
+class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100L, base: Float = 2L) extends NeighborhoodCombinator(a) {
 
-  var moveCount = 0
+  var moveCount = 0L
   var temperatureValue: Float = temperature(moveCount)
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
-    a.getMove(obj, initialObj:Int, acceptation) match {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
+    a.getMove(obj, initialObj:Long, acceptation) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => InstrumentedMove(m, notifyMoveTaken _)
     }
 
-  def acceptation(oldObj: Int, newObj: Int): Boolean = {
+  def acceptation(oldObj: Long, newObj: Long): Boolean = {
     val gain = oldObj - newObj
-    if (gain > 0) return true
+    if (gain > 0L) return true
     // metropolis criterion
     math.random < math.pow(base, -gain / temperatureValue)
   }
 
   def notifyMoveTaken() {
-    moveCount += 1
+    moveCount += 1L
     temperatureValue = temperature(moveCount)
   }
 
   //this resets the internal state of the move combinators
   override def reset() {
     super.reset()
-    moveCount = 0
+    moveCount = 0L
     temperatureValue = temperature(moveCount)
   }
 }
@@ -112,15 +112,15 @@ class GuidedLocalSearch(a: Neighborhood, objectives: List[Objective], resetOnExh
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     if (currentSun == null) {
       NoMoveFound
     } else {
-      currentSun.getMove(currentObjective, initialObj:Int, acceptanceCriterion) match {
+      currentSun.getMove(currentObjective, initialObj:Long, acceptanceCriterion) match {
         case NoMoveFound =>
           if (resetOnExhaust) currentSun.asInstanceOf[SaveBest].restoreBest()
           switchToNext()
-          getMove(obj, initialObj:Int, acceptanceCriterion)
+          getMove(obj, initialObj:Long, acceptanceCriterion)
         case m: MoveFound => m
       }
     }
@@ -158,11 +158,11 @@ class AccumulatingSearch(a: Neighborhood, firstObjective: Objective, secondObjec
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    if (firstObjective() != 0) {
-      a.getMove(firstObjective, initialObj:Int, acceptanceCriterion)
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if (firstObjective() != 0L) {
+      a.getMove(firstObjective, initialObj:Long, acceptanceCriterion)
     } else {
-      a.getMove(fullSecondObjective, initialObj:Int, acceptanceCriterion)
+      a.getMove(fullSecondObjective, initialObj:Long, acceptanceCriterion)
     }
   }
 }

@@ -23,7 +23,7 @@ import scala.collection.immutable.SortedSet
 import scala.language.implicitConversions
 
 object IntSequence{
-  def apply(values:Iterable[Int]):IntSequence = {
+  def apply(values:Iterable[Long]):IntSequence = {
     val valuesArray = values.toArray
     val forwardRedBlack = RedBlackTreeMap.makeFromSortedContinuousArray(values.toArray)
     val backwardRedBlack:RedBlackTreeMap[RedBlackTreeMap[Int]] = aggregatePosOnValToInternalPosFrom(valuesArray)
@@ -36,7 +36,7 @@ object IntSequence{
     )
   }
 
-  private def aggregatePosOnValToInternalPosFrom(values:Array[Int]):RedBlackTreeMap[RedBlackTreeMap[Int]] = {
+  private def aggregatePosOnValToInternalPosFrom(values:Array[Long]):RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     var valToPoses = RedBlackTreeMap.empty[RedBlackTreeMap[Int]]
     for(pos <- values.indices){
       val value = values(pos)
@@ -47,7 +47,7 @@ object IntSequence{
   }
 
   def empty():IntSequence = new ConcreteIntSequence(
-    RedBlackTreeMap.empty[Int],
+    RedBlackTreeMap.empty[Long],
     RedBlackTreeMap.empty[RedBlackTreeMap[Int]],
     PiecewiseLinearBijectionNaive.identity,
     0
@@ -56,16 +56,16 @@ object IntSequence{
   implicit def toIterable(seq:IntSequence):IterableIntSequence = new IterableIntSequence(seq)
 }
 
-class IterableIntSequence(sequence:IntSequence) extends Iterable[Int]{
-  override def iterator : Iterator[Int] = sequence.iterator
+class IterableIntSequence(sequence:IntSequence) extends Iterable[Long]{
+  override def iterator : Iterator[Long] = sequence.iterator
 
-  override def head : Int = sequence.valueAtPosition(0).head
+  override def head : Long = sequence.valueAtPosition(0).head
 
-  override def headOption : Option[Int] = sequence.valueAtPosition(0)
+  override def headOption : Option[Long] = sequence.valueAtPosition(0)
 
-  override def last : Int = sequence.valueAtPosition(sequence.size-1).head
+  override def last : Long = sequence.valueAtPosition(sequence.size-1).head
 
-  override def lastOption : Option[Int] = sequence.valueAtPosition(sequence.size-1)
+  override def lastOption : Option[Long] = sequence.valueAtPosition(sequence.size-1)
 }
 
 class Token()
@@ -81,42 +81,42 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def nonEmpty:Boolean = !isEmpty
 
-  def iterator : Iterator[Int] = new IntSequenceIterator(this.explorerAtPosition(0))
+  def iterator : Iterator[Long] = new IntSequenceIterator(this.explorerAtPosition(0))
 
-  def iterateFromAnyOccurrenceOfValue(value:Int):Iterator[Int] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
+  def iterateFromAnyOccurrenceOfValue(value:Long):Iterator[Long] = new IntSequenceIterator(this.explorerAtAnyOccurrence(value))
 
-  def iterable : Iterable[Int] = new IterableIntSequence(this)
+  def iterable : Iterable[Long] = new IterableIntSequence(this)
 
-  def nbOccurrence(value:Int):Int
+  def nbOccurrence(value:Long):Int
 
-  def unorderedContentNoDuplicate : List[Int]
+  def unorderedContentNoDuplicate : List[Long]
 
-  def unorderedContentNoDuplicateWithNBOccurences : List[(Int,Int)]
+  def unorderedContentNoDuplicateWithNBOccurences : List[(Long,Int)]
 
-  def valueAtPosition(position : Int) : Option[Int]
+  def valueAtPosition(position : Int) : Option[Long]
 
-  final def positionsOfValue(value : Int) : Iterable[Int] = {
+  final def positionsOfValue(value : Long) : Iterable[Int] = {
     new IterableQList[Int](positionsOfValueQ(value))
   }
 
-  final def positionsOfValueSet(value : Int) : SortedSet[Int] = {
+  final def positionsOfValueSet(value : Long) : SortedSet[Int] = {
     SortedSet.empty[Int] ++ positionsOfValue(value)
   }
 
-  def positionsOfValueQ(value : Int) : QList[Int]
+  def positionsOfValueQ(value : Long) : QList[Int]
 
-  def contains(value : Int) : Boolean
+  def contains(value : Long) : Boolean
 
   def explorerAtPosition(position : Int) : Option[IntSequenceExplorer]
 
-  def map(fun:Int=>Int):IntSequence = {
-    val l:List[Int] = this.iterator.toList
+  def map(fun:Long=>Long):IntSequence = {
+    val l:List[Long] = this.iterator.toList
     val l2 = l.map(fun)
     IntSequence.apply(l2)
   }
 
-  def valuesBetweenPositionsSet(fromPositionIncluded:Int,toPositionIncluded:Int):SortedSet[Int] = {
-    var toReturn = SortedSet.empty[Int]
+  def valuesBetweenPositionsSet(fromPositionIncluded:Int,toPositionIncluded:Int):SortedSet[Long] = {
+    var toReturn = SortedSet.empty[Long]
     var e = explorerAtPosition(fromPositionIncluded)
     while(e match{
       case None => false
@@ -130,8 +130,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
     toReturn
   }
 
-  def valuesBetweenPositionsQList(fromPositionIncluded:Int,toPositionIncluded:Int):QList[Int] = {
-    var toReturn:QList[Int] = null
+  def valuesBetweenPositionsQList(fromPositionIncluded:Int,toPositionIncluded:Int):QList[Long] = {
+    var toReturn:QList[Long] = null
     var e = explorerAtPosition(fromPositionIncluded)
     while(e match{
       case None => false
@@ -146,8 +146,8 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   }
 
   //List[(position,value)]
-  def positionsBetweenFromToAndTheirValues(fromPositionIncluded:Int,toPositionIncluded:Int):QList[(Int,Int)] = {
-    var toReturn:QList[(Int,Int)] = null
+  def positionsBetweenFromToAndTheirValues(fromPositionIncluded:Int,toPositionIncluded:Int):QList[(Int,Long)] = {
+    var toReturn:QList[(Int,Long)] = null
     var e = explorerAtPosition(fromPositionIncluded)
     while(true){  //TODO: maybe this approach has less overhead than the "while" above?
       e match{
@@ -156,49 +156,49 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
           if (explorer.position > toPositionIncluded) {
             return toReturn
           }
-          toReturn = QList(((explorer.position,explorer.value)),toReturn)
+          toReturn = QList((explorer.position,explorer.value),toReturn)
           e = explorer.next
       }
     }
     return null
   }
 
-  def explorerAtFirstOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    positionOfFirstOccurrence(value : Int) match {
+  def explorerAtFirstOccurrence(value : Long) : Option[IntSequenceExplorer] = {
+    positionOfFirstOccurrence(value : Long) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
     }
   }
 
-  def explorerAtLastOccurrence(value : Int) : Option[IntSequenceExplorer] = {
-    positionOfLastOccurrence(value : Int) match {
+  def explorerAtLastOccurrence(value : Long) : Option[IntSequenceExplorer] = {
+    positionOfLastOccurrence(value : Long) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
     }
   }
 
-  def explorerAtAnyOccurrence(value : Int) : Option[IntSequenceExplorer] = {
+  def explorerAtAnyOccurrence(value : Long) : Option[IntSequenceExplorer] = {
     positionOfAnyOccurrence(value) match {
       case None => None
       case Some(x) => explorerAtPosition(x)
     }
   }
 
-  def positionOfFirstOccurrence(value : Int) : Option[Int] = {
+  def positionOfFirstOccurrence(value : Long) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
       case x => Some(x.min)
     }
   }
 
-  def positionOfLastOccurrence(value : Int) : Option[Int] = {
+  def positionOfLastOccurrence(value : Long) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
       case x => Some(x.max)
     }
   }
 
-  def positionOfAnyOccurrence(value:Int):Option[Int] = {
+  def positionOfAnyOccurrence(value:Long):Option[Int] = {
     positionsOfValue(value) match {
       case null => None
       case x if x.isEmpty => None
@@ -206,7 +206,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
     }
   }
 
-  def insertAtPosition(value:Int, pos:Int, fast:Boolean = false, autoRework:Boolean = true):IntSequence
+  def insertAtPosition(value:Long, pos:Int, fast:Boolean = false, autoRework:Boolean = true):IntSequence
   def delete(pos:Int, fast:Boolean=false,autoRework:Boolean = false):IntSequence
   def moveAfter(startPositionIncluded:Int, endPositionIncluded:Int, moveAfterPosition:Int, flip:Boolean, fast:Boolean = false, autoRework:Boolean = true):IntSequence
 
@@ -232,17 +232,17 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
 
   def descriptorString : String
 
-  def predecessorPos2Val(position:Int):Option[Int] = {
+  def predecessorPos2Val(position:Int):Option[Long] = {
     valueAtPosition(position-1)
   }
 
-  def successorPos2Val(position:Int):Option[Int] = {
+  def successorPos2Val(position:Int):Option[Long] = {
     valueAtPosition(position+1)
   }
 }
 
 
-class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeMap[Int],
+class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeMap[Long],
                           private[seq] val valueToInternalPositions:RedBlackTreeMap[RedBlackTreeMap[Int]],
                           private[seq] val externalToInternalPosition:PiecewiseLinearBijectionNaive,
                           private[seq] val startFreeRangeForInternalPosition:Int,
@@ -268,35 +268,35 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   
   override def isEmpty : Boolean = internalPositionToValue.isEmpty
 
-  override def nbOccurrence(value : Int) : Int = valueToInternalPositions.get(value) match {
+  override def nbOccurrence(value : Long) : Int = valueToInternalPositions.get(value) match {
     case None => 0
     case Some(p) => p.size
   }
 
-  def largestValue : Option[Int] = valueToInternalPositions.biggest match {
+  def largestValue : Option[Long] = valueToInternalPositions.biggest match {
     case None => None
     case Some((k, _)) => Some(k)
   }
 
-  def smallestValue : Option[Int] = valueToInternalPositions.smallest match {
+  def smallestValue : Option[Long] = valueToInternalPositions.smallest match {
     case None => None
     case Some((k, _)) => Some(k)
   }
 
-  def contains(value : Int) : Boolean = valueToInternalPositions.contains(value)
+  def contains(value : Long) : Boolean = valueToInternalPositions.contains(value)
 
-  def valueAtPosition(position : Int) : Option[Int] = {
+  def valueAtPosition(position : Int) : Option[Long] = {
     val internalPosition : Int = externalToInternalPosition.forward(position)
     internalPositionToValue.get(internalPosition)
   }
 
-  override def positionsOfValueQ(value : Int) : QList[Int] = {
+  override def positionsOfValueQ(value : Long) : QList[Int] = {
     valueToInternalPositions.get(value) match {
       case None => null
       case Some(internalPositions) =>
         var toReturn:QList[Int] = null
-        var toDigest:QList[Int] = internalPositions.qKeys
-        while(toDigest != null){
+        var toDigest:List[Int] = internalPositions.values
+        while(toDigest.nonEmpty){
           toReturn = QList(externalToInternalPosition.backward(toDigest.head),toReturn)
           toDigest = toDigest.tail
         }
@@ -322,14 +322,14 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  private def internalInsertToValueToInternalPositions(value : Int, internalPosition : Int, valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]]) : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
+  private def internalInsertToValueToInternalPositions(value : Long, internalPosition : Int, valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]]) : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     valueToInternalPositions.get(value) match {
       case None => valueToInternalPositions.insert(value, RedBlackTreeMap(List((internalPosition, internalPosition))))
       case Some(l) => valueToInternalPositions.insert(value, l.insert(internalPosition, internalPosition))
     }
   }
 
-  private def internalRemoveFromValueToInternalPositions(value : Int, internalPosition : Int,
+  private def internalRemoveFromValueToInternalPositions(value : Long, internalPosition : Int,
                                                          valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]])
   : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     valueToInternalPositions.get(value) match {
@@ -342,7 +342,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  def insertAtPosition(value : Int, pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
+  def insertAtPosition(value : Long, pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
 
     //println(this + ".insertAtPosition(value:" + value + " pos:" + pos + ")")
     require(pos <= size, "inserting past the end of the sequence (size:" + size + " pos:" + pos + ")")
@@ -383,7 +383,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   def delete(pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".delete(pos:" + pos + ")")
     require(pos < size, "deleting past the end of the sequence (size:" + size + " pos:" + pos + ")")
-    require(pos >= 0, "deleting at negative pos:" + pos)
+    require(pos >= 0L, "deleting at negative pos:" + pos)
 
     if (fast) return new RemovedIntSequence(this, pos)
 
@@ -391,7 +391,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     val value = internalPositionToValue.get(internalPosition).head
     val largestInternalPosition = startFreeRangeForInternalPosition - 1
 
-    val valueAtLargestInternalPosition : Int = internalPositionToValue.get(largestInternalPosition).head
+    val valueAtLargestInternalPosition : Long = internalPositionToValue.get(largestInternalPosition).head
 
     val deleteIsAtLargestInternalPosition = internalPosition == largestInternalPosition
 
@@ -433,9 +433,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
 
   def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
-    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0,size[ in UniqueIntSequence.moveAfter")
-    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0,size(="+size+")[ in UniqueIntSequence.moveAfter")
-    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size=" + size+"[ in UniqueIntSequence.moveAfter")
+    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[ in UniqueIntSequence.moveAfter")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0L,size(="+size+")[ in UniqueIntSequence.moveAfter")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size=" + size+"[ in UniqueIntSequence.moveAfter")
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,
@@ -481,7 +481,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
           val tmp = externalToInternalPosition.swapAdjacentZonesShiftSecond(
             startPositionIncluded,
             endPositionIncluded,
-            moveAfterPosition:Int,
+            moveAfterPosition,
             true)
 
           assert(tmp.forward equals externalToInternalPosition.updateBefore(
@@ -555,10 +555,13 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       }else this
     }
   }
+  /*
+  @inline
+  private def longToInt(l:Long):Int = Math.toIntExact(l)*/
 
   def regularize(targetToken : Token = this.token) : ConcreteIntSequence = {
     var explorerOpt = this.explorerAtPosition(0)
-    val newInternalPositionToValues:Array[(Int,Int)] = Array.ofDim[(Int,Int)](this.size)
+    val newInternalPositionToValues:Array[(Long,Long)] = Array.ofDim[(Long,Long)](this.size)
     val oldInternalPosToNewInternalPos:Array[Int] = Array.ofDim[Int](this.size)
 
     while (explorerOpt match {
@@ -571,31 +574,31 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }) {}
 
     new ConcreteIntSequence(RedBlackTreeMap.makeFromSortedArray(newInternalPositionToValues),
-      valueToInternalPositions.updateAll(0,
+      valueToInternalPositions.updateAll(0L,
         oldInternalPositions => {
           val newPositions = oldInternalPositions.keys.map(oldInt => {
-            val newInternalPosition = oldInternalPosToNewInternalPos(oldInt)
-            (newInternalPosition,newInternalPosition)})
-          RedBlackTreeMap(newPositions)}),
+            val newInternalPosition : Int = oldInternalPosToNewInternalPos(oldInt.toInt)
+            (newInternalPosition : Long,newInternalPosition)})
+          RedBlackTreeMap[Int](newPositions)}),
       PiecewiseLinearBijectionNaive.identity,
       newInternalPositionToValues.length, targetToken)
   }
 
   override def commitPendingMoves : IntSequence = this
 
-  override def unorderedContentNoDuplicate : List[Int] = valueToInternalPositions.keys
+  override def unorderedContentNoDuplicate : List[Long] = valueToInternalPositions.keys
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int,Int)] = valueToInternalPositions.content.map({case ((value,positions)) => ((value,positions.size))})
+  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long,Int)] = valueToInternalPositions.content.map({case ((value,positions)) => ((value,positions.size))})
 }
 
-class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Iterator[Int] {
+class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Iterator[Long] {
 
   override def hasNext : Boolean =
     crawler match{
       case None => false
       case Some(_) => true}
 
-  override def next() : Int = {
+  override def next() : Long = {
     val position = crawler.head
     crawler = position.next
     position.value
@@ -603,7 +606,7 @@ class IntSequenceIterator(var crawler:Option[IntSequenceExplorer]) extends Itera
 }
 
 abstract class IntSequenceExplorer{
-  val value:Int
+  val value:Long
   def position:Int
   def next:Option[IntSequenceExplorer]
   def prev:Option[IntSequenceExplorer]
@@ -612,7 +615,7 @@ abstract class IntSequenceExplorer{
 
 class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                   override val position:Int,
-                                  positionInRB:RedBlackTreeMapExplorer[Int],
+                                  positionInRB:RedBlackTreeMapExplorer[Long],
                                   currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
                                   pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
                                    limitAboveForCurrentPivot:Int = pivotAbovePosition match{
@@ -628,12 +631,12 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
 
   override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
 
-  override val value : Int = positionInRB.value
+  override val value : Long = positionInRB.value
 
-  private[seq] def internalPos = positionInRB.key
+  private[seq] def internalPos = positionInRB.key.toInt
 
   override def next : Option[IntSequenceExplorer] = {
-    if(position == sequence.size-1) return None
+    if(position == sequence.size-1L) return None
     if(position == limitAboveForCurrentPivot){
       //change pivot, we are also sure that there is a next, so use .head
       val newPivotAbovePosition = pivotAbovePosition.head.next
@@ -667,7 +670,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
   }
 
   override def prev : Option[IntSequenceExplorer] = {
-    if (position == 0) None
+    if (position == 0L) None
     else if (position  == limitBelowForCurrentPivot) {
       //change pivot
 
@@ -699,22 +702,22 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
 
 abstract class StackedUpdateIntSequence extends IntSequence(){
   override def delete(pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0")
+    require(pos >= 0L, "pos=" + pos + " for delete on UniqueIntSequence should be >= 0L")
     require(pos < size, "cannot delete past end of sequence in UniqueIntSequence")
     new RemovedIntSequence(this,pos)
   }
 
   override def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(startPositionIncluded >= 0 && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0,size" + size + "[ in UniqueIntSequence.moveAfter")
-    require(endPositionIncluded >= 0 && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0,size"+size+"[ in UniqueIntSequence.moveAfter")
-    require(moveAfterPosition >= -1 && moveAfterPosition < size , "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size="+size+"[ in UniqueIntSequence.moveAfter")
+    require(startPositionIncluded >= 0L && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0L,size" + size + "[ in UniqueIntSequence.moveAfter")
+    require(endPositionIncluded >= 0L && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0L,size"+size+"[ in UniqueIntSequence.moveAfter")
+    require(moveAfterPosition >= -1L && moveAfterPosition < size , "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size="+size+"[ in UniqueIntSequence.moveAfter")
 
     new MovedIntSequence(this,startPositionIncluded,endPositionIncluded,moveAfterPosition,flip)
   }
 
-  override def insertAtPosition(value : Int, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
-    require(pos >= 0 && pos <= size , "pos=" + pos + " should be in [0,size="+size+"] in IntSequence.insertAt")
-    new InsertedIntSequence(this,value:Int,pos:Int)
+  override def insertAtPosition(value : Long, pos : Int, fast:Boolean,autoRework:Boolean) : IntSequence = {
+    require(pos >= 0L && pos <= size , "pos=" + pos + " should be in [0L,size="+size+"] in IntSequence.insertAt")
+    new InsertedIntSequence(this,value:Long,pos:Int)
   }
 
 
@@ -737,11 +740,11 @@ object MovedIntSequence{
         //just flipping
         if (startPositionIncluded == 0) {
           PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
-            (0, new Pivot(0, new LinearTransform(endPositionIncluded, true))),
+            (0L, new Pivot(0, new LinearTransform(endPositionIncluded, true))),
             (endPositionIncluded + 1, new Pivot(endPositionIncluded + 1, LinearTransform.identity))))))
         } else {
           PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
-            (0, new Pivot(0, LinearTransform.identity)),
+            (0L, new Pivot(0, LinearTransform.identity)),
             (startPositionIncluded, new Pivot(startPositionIncluded, new LinearTransform(endPositionIncluded + startPositionIncluded, true))),
             (endPositionIncluded + 1, new Pivot(endPositionIncluded + 1, LinearTransform.identity))))))
         }
@@ -757,7 +760,7 @@ object MovedIntSequence{
           (startPositionIncluded, new Pivot(startPositionIncluded, LinearTransform(endPositionIncluded + 1 - startPositionIncluded, false))),
           (moveAfterPosition + startPositionIncluded - endPositionIncluded, new Pivot(moveAfterPosition + startPositionIncluded - endPositionIncluded,
             LinearTransform(if (flip) startPositionIncluded + moveAfterPosition else endPositionIncluded - moveAfterPosition, flip))),
-          (moveAfterPosition + 1, new Pivot(moveAfterPosition + 1, LinearTransform.identity))))))
+          (moveAfterPosition + 1L, new Pivot(moveAfterPosition + 1, LinearTransform.identity))))))
       } else {
         //move downwards
         PiecewiseLinearBijectionNaive(new PiecewiseLinearFun(RedBlackTreeMap.makeFromSortedArray(Array(
@@ -767,7 +770,7 @@ object MovedIntSequence{
           (moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
             new Pivot(moveAfterPosition + endPositionIncluded - startPositionIncluded + 2,
               LinearTransform(startPositionIncluded - endPositionIncluded - 1, false))),
-          (endPositionIncluded +1,
+          (endPositionIncluded +1L,
             new Pivot(endPositionIncluded +1, LinearTransform.identity))
         ))))
       }
@@ -823,9 +826,9 @@ class MovedIntSequence(val seq:IntSequence,
 
   //TODO: provide a cache on the values at the boundary of the move
 
-  override def unorderedContentNoDuplicate : List[Int] = seq.unorderedContentNoDuplicate
+  override def unorderedContentNoDuplicate : List[Long] = seq.unorderedContentNoDuplicate
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
+  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long, Int)] = seq.unorderedContentNoDuplicateWithNBOccurences
 
   override def descriptorString : String = seq.descriptorString + ".moved(startPos:" + startPositionIncluded + " endPos:" + endPositionIncluded + " targetPos:" + moveAfterPosition + " flip:" + flip + ")"
 
@@ -833,7 +836,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   override val size : Int = seq.size
 
-  override def nbOccurrence(value : Int) : Int = seq.nbOccurrence(value)
+  override def nbOccurrence(value : Long) : Int = seq.nbOccurrence(value)
 
   override def commitPendingMoves:IntSequence = seq.commitPendingMoves.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false,autoRework = false)
 
@@ -855,7 +858,7 @@ class MovedIntSequence(val seq:IntSequence,
     tmp
   }
 
-  override def positionsOfValueQ(value : Int) : QList[Int] = {
+  override def positionsOfValueQ(value : Long) : QList[Int] = {
     var positionsBefore = seq.positionsOfValueQ(value)
     var toReturn:QList[Int] = null
     while(positionsBefore != null){
@@ -867,11 +870,11 @@ class MovedIntSequence(val seq:IntSequence,
     toReturn
   }
 
-  override def contains(value : Int) : Boolean = seq.contains(value)
+  override def contains(value : Long) : Boolean = seq.contains(value)
 
   override def isEmpty : Boolean = seq.isEmpty
 
-  override def valueAtPosition(position : Int) : Option[Int] = {
+  override def valueAtPosition(position : Int) : Option[Long] = {
     seq.valueAtPosition(localBijection.forward(position))
   }
 }
@@ -881,18 +884,18 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                positionInBasicSequence:IntSequenceExplorer,
                                currentPivotPosition:Option[RedBlackTreeMapExplorer[Pivot]],
                                pivotAbovePosition:Option[RedBlackTreeMapExplorer[Pivot]])(
-                                limitAboveForCurrentPivot:Int = pivotAbovePosition match{
-                                  case None => Int.MaxValue
-                                  case Some(p) => p.value.fromValue-1},
-                                limitBelowForCurrentPivot:Int = currentPivotPosition match{
-                                  case None => Int.MinValue
+                                limitAboveForCurrentPivot:Long = pivotAbovePosition match{
+                                  case None => Long.MaxValue
+                                  case Some(p) => p.value.fromValue-1L},
+                                limitBelowForCurrentPivot:Long = currentPivotPosition match{
+                                  case None => Long.MinValue
                                   case Some(p) => p.value.fromValue},
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
                                 ) extends IntSequenceExplorer{
 
-  override val value : Int = positionInBasicSequence.value
+  override val value : Long = positionInBasicSequence.value
 
   override def next : Option[IntSequenceExplorer] = {
     if(position == sequence.size-1) return None
@@ -942,7 +945,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
         newPosition,
         sequence.seq.explorerAtPosition(newInternalPosition).head,
         newCurrentPivotPosition,
-        currentPivotPosition)(limitAboveForCurrentPivot = limitBelowForCurrentPivot-1
+        currentPivotPosition)(limitAboveForCurrentPivot = limitBelowForCurrentPivot-1L
       ))
     }else{
       //do not change pivot
@@ -960,21 +963,21 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
 }
 
 class InsertedIntSequence(seq:IntSequence,
-                          val insertedValue:Int,
+                          val insertedValue:Long,
                           val pos:Int)
   extends StackedUpdateIntSequence {
   override val size : Int = seq.size + 1
 
-  override def nbOccurrence(value : Int) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
+  override def nbOccurrence(value : Long) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long, Int)] =
     unorderedContentNoDuplicate.map(value => (value,if(value == insertedValue) seq.nbOccurrence(value) +1 else seq.nbOccurrence(value)))
 
   override def descriptorString : String = seq.descriptorString + ".inserted(val:" + insertedValue + " pos:" + pos + ")"
 
-  override def unorderedContentNoDuplicate : List[Int] = if(seq.nbOccurrence(insertedValue) == 0) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
+  override def unorderedContentNoDuplicate : List[Long] = if(seq.nbOccurrence(insertedValue) == 0L) insertedValue :: seq.unorderedContentNoDuplicate else seq.unorderedContentNoDuplicate
 
-  override def positionsOfValueQ(value : Int) : QList[Int] = {
+  override def positionsOfValueQ(value : Long) : QList[Int] = {
     var positionsBefore = seq.positionsOfValueQ(value)
     var toReturn:QList[Int] = null
     while(positionsBefore != null){
@@ -1012,13 +1015,13 @@ class InsertedIntSequence(seq:IntSequence,
     }
   }
 
-  override def contains(value : Int) : Boolean = value == this.insertedValue || seq.contains(value)
+  override def contains(value : Long) : Boolean = value == this.insertedValue || seq.contains(value)
 
   override def commitPendingMoves : IntSequence = seq.commitPendingMoves.insertAtPosition(insertedValue, pos, fast = false, autoRework = false)
 
   override def isEmpty : Boolean = false
 
-  override def valueAtPosition(position : Int) : Option[Int] = {
+  override def valueAtPosition(position : Int) : Option[Long] = {
     if (position == pos) Some(insertedValue)
     else if (position < pos) seq.valueAtPosition(position)
     else seq.valueAtPosition(position - 1)
@@ -1031,7 +1034,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
                                   atInsertedValue:Boolean,
                                   originalExplorerIsAbove:Boolean)
   extends IntSequenceExplorer {
-  override val value : Int = if(atInsertedValue) seq.insertedValue else explorerInOriginalSeq.head.value
+  override val value : Long = if(atInsertedValue) seq.insertedValue else explorerInOriginalSeq.head.value
 
   override def next : Option[IntSequenceExplorer] = {
     if (atInsertedValue) {
@@ -1049,7 +1052,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
           }
       }
     }else {
-      val nextPosition = position + 1
+      val nextPosition = position + 1L
       if (nextPosition == seq.pos) {
         //we are getting into the inserted position
         Some(new InsertedIntSequenceExplorer(seq, position + 1, explorerInOriginalSeq, atInsertedValue = true, originalExplorerIsAbove = false))
@@ -1078,7 +1081,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
           }
       }
     } else {
-      val prevPosition = position - 1
+      val prevPosition = position - 1L
       if (prevPosition == seq.pos) {
         //we are getting into the inserted position
         Some(new InsertedIntSequenceExplorer(seq, position - 1, explorerInOriginalSeq, atInsertedValue = true, originalExplorerIsAbove = true))
@@ -1101,13 +1104,13 @@ class RemovedIntSequence(val seq:IntSequence,
 
   override def descriptorString : String = seq.descriptorString + ".removed(pos:" + positionOfDelete + " val:" + removedValue + ")"
 
-  override def nbOccurrence(value : Int) : Int = if(value == this.removedValue) seq.nbOccurrence(value) - 1 else seq.nbOccurrence(value)
+  override def nbOccurrence(value : Long) : Int = if(value == this.removedValue) seq.nbOccurrence(value) - 1 else seq.nbOccurrence(value)
 
-  override def unorderedContentNoDuplicate : List[Int] =
-    if(seq.nbOccurrence(removedValue) > 1) seq.unorderedContentNoDuplicate
+  override def unorderedContentNoDuplicate : List[Long] =
+    if(seq.nbOccurrence(removedValue) > 1L) seq.unorderedContentNoDuplicate
     else seq.unorderedContentNoDuplicate.filter(_ != removedValue)
 
-  override def unorderedContentNoDuplicateWithNBOccurences : List[(Int, Int)] =
+  override def unorderedContentNoDuplicateWithNBOccurences : List[(Long, Int)] =
     unorderedContentNoDuplicate.flatMap(value => if(value == removedValue) {
       val occurencesBefore = seq.nbOccurrence(value)
       if (occurencesBefore == 1) None
@@ -1123,7 +1126,7 @@ class RemovedIntSequence(val seq:IntSequence,
     }
   }
 
-  override def positionsOfValueQ(value : Int) : QList[Int] = {
+  override def positionsOfValueQ(value : Long) : QList[Int] = {
     var positionsBefore = seq.positionsOfValueQ(value)
     var toReturn:QList[Int] = null
     while(positionsBefore != null){
@@ -1138,18 +1141,18 @@ class RemovedIntSequence(val seq:IntSequence,
     toReturn
   }
 
-  def oldPos2NewPos(oldPos:Int) = {
-    if (oldPos < this.positionOfDelete) oldPos else oldPos - 1
+  def oldPos2NewPos(oldPos:Long) = {
+    if (oldPos < this.positionOfDelete) oldPos else oldPos - 1L
   }
 
-  override def contains(value : Int) : Boolean = {
-    if(value == removedValue) seq.nbOccurrence(value)>1
+  override def contains(value : Long) : Boolean = {
+    if(value == removedValue) seq.nbOccurrence(value)>1L
     else seq.contains(value)
   }
 
   override def commitPendingMoves : IntSequence = seq.commitPendingMoves.delete(this.positionOfDelete,fast=false,autoRework=false)
 
-  override def valueAtPosition(position : Int) : Option[Int] = {
+  override def valueAtPosition(position : Int) : Option[Long] = {
     if(position >= this.positionOfDelete) seq.valueAtPosition(position+1)
     else seq.valueAtPosition(position)
   }
@@ -1159,7 +1162,7 @@ class RemovedIntSequenceExplorer(seq:RemovedIntSequence,
                                  val position:Int,
                                  explorerInOriginalSeq:IntSequenceExplorer)
   extends IntSequenceExplorer{
-  override val value : Int = explorerInOriginalSeq.value
+  override val value : Long = explorerInOriginalSeq.value
 
   override def prev : Option[IntSequenceExplorer] = {
     explorerInOriginalSeq.prev match {

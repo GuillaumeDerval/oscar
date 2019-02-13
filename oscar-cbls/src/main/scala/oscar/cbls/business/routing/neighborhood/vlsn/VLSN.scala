@@ -21,7 +21,7 @@ import oscar.cbls.Objective
 import oscar.cbls.business.routing.neighborhood.vlsn.CycleFinderAlgoType.CycleFinderAlgoType
 import oscar.cbls.business.routing.neighborhood.vlsn.VLSNMoveType._
 import oscar.cbls.core.search._
-
+import oscar.cbls._
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 /**
@@ -31,26 +31,26 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *     author="Mouthuy, S{\'e}bastien and Hentenryck, Pascal Van and Deville, Yves",
   *     title="Constraint-based Very Large-Scale Neighborhood search",
   *     journal="Constraints",
-  *     year="2012",
+  *     year="2012L",
   *     month="Apr",
-  *     volume="17",
-  *     number="2",
-  *     pages="87--122"}
+  *     volume="17L",
+  *     number="2L",
+  *     pages="87L--122L"}
   * {{{
-  *def vlsn(l:Int = Int.MaxValue) = {
+  *def vlsn(l:Long = Long.MaxValue) = {
   *
-  * val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
-  *   SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+  * val lClosestNeighborsByDistance: Array[SortedSet[Long]] = Array.tabulate(n)(node =>
+  *   SortedSet.empty[Long] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
   *
-  * val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
+  * val nodeToAllVehicles = SortedMap.empty[Long, Iterable[Long]] ++ (v until n).map(node => (node, vehicles))
   *
-  * def routeUnroutedPointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
+  * def routeUnroutedPointVLSN(targetVehicle: Long):(Long => Neighborhood) = {
   *   if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
   *     (_ => NoMoveNeighborhood)
   *   }else {
   *     val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
   *
-  *     unroutedNodeToInsert:Int => {
+  *     unroutedNodeToInsert:Long => {
   *       val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
   *       insertPointUnroutedFirst(
   *         () => List(unroutedNodeToInsert),
@@ -64,13 +64,13 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *   }
   * }
   *
-  * def movePointVLSN(targetVehicle: Int):(Int => Neighborhood) = {
+  * def movePointVLSN(targetVehicle: Long):(Long => Neighborhood) = {
   *   if(vehicletoWorkload(targetVehicle).value + serviceTimePerNode > maxWorkloadPerVehicle){
   *     (_ => NoMoveNeighborhood)
   *   }else {
   *     val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
   *
-  *     nodeToMove:Int => {
+  *     nodeToMove:Long => {
   *       val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(nodeToMove) contains x)
   *       onePointMove(
   *         () => List(nodeToMove),
@@ -84,19 +84,19 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *   }
   * }
   *
-  * def removePointVLSN(node: Int) =
+  * def removePointVLSN(node: Long) =
   *   removePoint(
   *     () => List(node),
   *     myVRP,
   *     positionIndependentMoves = true,
   *     hotRestart = false)
   *
-  * def threeOptOnVehicle(vehicle:Int) = {
+  * def threeOptOnVehicle(vehicle:Long) = {
   *   val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(vehicle)
   *   //insertions points are position where we perform the insert,
   *   // basically the segment will start in plae of the insertion point and the insertion point will be moved upward
   *   val nodesOfTargetVehicleButVehicle = nodesOfTargetVehicle.filter(_ != vehicle)
-  *   val insertionPoints = if(vehicle != v-1) vehicle+1 :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
+  *   val insertionPoints = if(vehicle != v-1L) vehicle+1L :: nodesOfTargetVehicleButVehicle else nodesOfTargetVehicleButVehicle
   *
   *   threeOpt(() => insertionPoints,
   *     () => _ => nodesOfTargetVehicleButVehicle,
@@ -104,7 +104,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *     breakSymmetry = false)
   * }
   *
-  * def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
+  * def removeAndReInsertVLSN(pointToRemove: Long): (() => Unit) = {
   *   val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
   *   require(pointToRemove >= v, "cannot remove vehicle point: " + v)
   *
@@ -125,10 +125,10 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   * new VLSN(
   *   v,
   *   () => {
-  *     SortedMap.empty[Int, SortedSet[Int]] ++ vehicles.map((vehicle: Int) => (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
+  *     SortedMap.empty[Long, SortedSet[Long]] ++ vehicles.map((vehicle: Long) => (vehicle, SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))
   *   },
   *
-  *   () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
+  *   () => SortedSet.empty[Long] ++ myVRP.unroutedNodes,
   *   nodeToRelevantVehicles = () => nodeToAllVehicles,
   *
   *   targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,
@@ -151,7 +151,7 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   *
   * VLSN is a saturating neighborhood, that is: it will run until no more moves can be found, and at this point,
   * it wil return a single move that actually reloads the solution that was reached step-by-step by the VLSN.
-  * Typically, you may want to use VLSN MaxMoves 1 because it is useless to call it more than once.
+  * Typically, you may want to use VLSN MaxMoves 1L because it is useless to call it more than once.
   *
   * @param v the number of vehicles
   * @param initVehicleToRoutedNodesToMove a function that generates a map from vehicle to nodes that are to be moved
@@ -199,18 +199,18 @@ import scala.collection.immutable.{SortedMap, SortedSet}
   * @author renaud.delandtsheer@cetic.be
   */
 class VLSN(v:Int,
-           initVehicleToRoutedNodesToMove:() => SortedMap[Int,SortedSet[Int]],
-           initUnroutedNodesToInsert:() => SortedSet[Int],
-           nodeToRelevantVehicles:() => Map[Int,Iterable[Int]],
+           initVehicleToRoutedNodesToMove:() => SortedMap[Long,SortedSet[Long]],
+           initUnroutedNodesToInsert:() => SortedSet[Long],
+           nodeToRelevantVehicles:() => Map[Long,Iterable[Long]],
 
            // puisqu'on fait pleuiseurs inserts de nodes différents sur le même véhicule.
-           targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
-           targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
-           nodeToRemoveNeighborhood:Int => Neighborhood,
+           targetVehicleNodeToInsertNeighborhood:Long => Long => Neighborhood,
+           targetVehicleNodeToMoveNeighborhood:Long => Long => Neighborhood,
+           nodeToRemoveNeighborhood:Long => Neighborhood,
 
-           removeNodeAndReInsert:Int => () => Unit,
+           removeNodeAndReInsert:Long => () => Unit,
 
-           reOptimizeVehicle:Option[Int => Option[Neighborhood]],
+           reOptimizeVehicle:Option[Long => Option[Neighborhood]],
            useDirectInsert:Boolean,
 
            vehicleToObjective:Array[Objective],
@@ -220,8 +220,8 @@ class VLSN(v:Int,
            name:String = "VLSN") extends Neighborhood {
 
   override def getMove(obj: Objective,
-                       initialObj: Int,
-                       acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+                       initialObj: Long,
+                       acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
     val initialSolution = obj.model.solution(true)
 
@@ -258,8 +258,8 @@ class VLSN(v:Int,
   }
 
 
-  private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                           unroutedNodesToInsert: SortedSet[Int],
+  private def doVLSNSearch(vehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+                           unroutedNodesToInsert: SortedSet[Long],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
     //first, explore the atomic moves, and build VLSN graph
@@ -274,8 +274,8 @@ class VLSN(v:Int,
     def killNodesImpactedByCycle(cycle: List[Edge]): Unit = {
       val theImpactedVehicles = impactedVehicles(cycle)
 
-      val impactedRoutingNodes = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-        val node = edge.from.representedNode; if (node >= 0) Some(node) else None
+      val impactedRoutingNodes = SortedSet.empty[Long] ++ cycle.flatMap(edge => {
+        val node = edge.from.representedNode; if (node >= 0L) Some(node) else None
       })
 
       for (vlsnNode <- vlsnGraph.nodes) {
@@ -285,22 +285,22 @@ class VLSN(v:Int,
       }
     }
 
-    def impactedVehicles(cycle: List[Edge]):SortedSet[Int] = SortedSet.empty[Int] ++ cycle.flatMap(edge => {
-      var l:List[Int] = List.empty
+    def impactedVehicles(cycle: List[Edge]):SortedSet[Long] = SortedSet.empty[Long] ++ cycle.flatMap(edge => {
+      var l:List[Long] = List.empty
       val vehicleFrom = edge.from.vehicle
-      if (vehicleFrom < v && vehicleFrom >= 0) l = vehicleFrom :: Nil
+      if (vehicleFrom < v && vehicleFrom >= 0L) l = vehicleFrom :: Nil
       val vehicleTo = edge.to.vehicle
-      if (vehicleTo < v && vehicleTo >= 0) l = vehicleTo :: Nil
+      if (vehicleTo < v && vehicleTo >= 0L) l = vehicleTo :: Nil
       l
     })
 
     var acc: List[Edge] = List.empty
-    var computedNewObj: Int = globalObjective.value
+    var computedNewObj: Long = globalObjective.value
 
     def performEdgesAndKillCycles(edges:List[Edge]): Unit ={
       acc = edges ::: acc
       val delta = edges.map(edge => edge.deltaObj).sum
-      require(delta < 0, "delta should be negative, got " + delta)
+      require(delta < 0L, "delta should be negative, got " + delta)
       computedNewObj += delta
 
       for(edge <- edges){
@@ -350,7 +350,7 @@ class VLSN(v:Int,
                     case Some(n) =>
                       n.verbose = 0
                       val nbPerformedMoves = n.doAllMoves(obj=globalObjective)
-                      if((printTakenMoves && nbPerformedMoves > 0) || (printExploredNeighborhoods && nbPerformedMoves == 0)){
+                      if((printTakenMoves && nbPerformedMoves > 0L) || (printExploredNeighborhoods && nbPerformedMoves == 0L)){
                         println(s"   - ?  " + globalObjective.value + s"   $name:ReOptimizeVehicle(vehicle:$vehicle, neighborhood:$n nbMoves:$nbPerformedMoves)")
                       }
 
@@ -370,8 +370,8 @@ class VLSN(v:Int,
             return Some(DataForVLSNRestart(
               vlsnGraph,
               acc,
-              vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-              unroutedNodesToInsert: SortedSet[Int]))
+              vehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+              unroutedNodesToInsert: SortedSet[Long]))
           }
       }
     }
@@ -381,18 +381,18 @@ class VLSN(v:Int,
 
   case class DataForVLSNRestart(oldGraph: VLSNGraph,
                                 performedMoves: List[Edge],
-                                oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                oldUnroutedNodesToInsert: SortedSet[Int])
+                                oldVehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+                                oldUnroutedNodesToInsert: SortedSet[Long])
 
   private def restartVLSNIncrementally(oldGraph: VLSNGraph,
                                        performedMoves: List[Edge],
-                                       oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                                       oldUnroutedNodesToInsert: SortedSet[Int]):Option[DataForVLSNRestart] = {
+                                       oldVehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+                                       oldUnroutedNodesToInsert: SortedSet[Long]):Option[DataForVLSNRestart] = {
 
     val (updatedVehicleToRoutedNodesToMove, updatedUnroutedNodesToInsert) =
       updateZones(performedMoves: List[Edge],
-        oldVehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-        oldUnroutedNodesToInsert: SortedSet[Int])
+        oldVehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+        oldUnroutedNodesToInsert: SortedSet[Long])
 
     val cachedExplorations: Option[CachedExplorations] =
       CachedExplorations(
@@ -406,8 +406,8 @@ class VLSN(v:Int,
   }
 
   private def updateZones(performedMoves: List[Edge],
-                          vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                          unroutedNodesToInsert: SortedSet[Int]): (SortedMap[Int, SortedSet[Int]], SortedSet[Int]) = {
+                          vehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+                          unroutedNodesToInsert: SortedSet[Long]): (SortedMap[Long, SortedSet[Long]], SortedSet[Long]) = {
 
     performedMoves match {
       case Nil => (vehicleToRoutedNodesToMove, unroutedNodesToInsert)
@@ -423,7 +423,7 @@ class VLSN(v:Int,
 
             updateZones(
               tail,
-              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + insertedNode)),
+              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Long]) + insertedNode)),
               unroutedNodesToInsert - insertedNode
             )
 
@@ -434,7 +434,7 @@ class VLSN(v:Int,
 
             updateZones(
               tail,
-              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + insertedNode - ejectedNode)),
+              vehicleToRoutedNodesToMove + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Long]) + insertedNode - ejectedNode)),
               unroutedNodesToInsert - insertedNode
             )
 
@@ -446,7 +446,7 @@ class VLSN(v:Int,
             updateZones(
               tail,
               vehicleToRoutedNodesToMove
-                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + movedNode))
+                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Long]) + movedNode))
                 + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )
@@ -459,7 +459,7 @@ class VLSN(v:Int,
             updateZones(
               tail,
               vehicleToRoutedNodesToMove
-                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Int]) + movedNode - ejectedNode))
+                + (targetVehicle -> (vehicleToRoutedNodesToMove.getOrElse(targetVehicle, SortedSet.empty[Long]) + movedNode - ejectedNode))
                 + (fromVehicle -> (vehicleToRoutedNodesToMove(fromVehicle) - movedNode)),
               unroutedNodesToInsert
             )
@@ -483,8 +483,8 @@ class VLSN(v:Int,
     }
   }
 
-  private def buildGraph(vehicleToRoutedNodesToMove: SortedMap[Int, SortedSet[Int]],
-                         unroutedNodesToInsert: SortedSet[Int],
+  private def buildGraph(vehicleToRoutedNodesToMove: SortedMap[Long, SortedSet[Long]],
+                         unroutedNodesToInsert: SortedSet[Long],
                          cachedExplorations: Option[CachedExplorations]): (VLSNGraph,List[Edge]) = {
 
     cachedExplorations match {

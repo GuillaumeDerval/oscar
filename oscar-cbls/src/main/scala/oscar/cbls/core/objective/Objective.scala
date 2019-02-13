@@ -26,10 +26,10 @@ import scala.language.implicitConversions
 
 object Objective{
   implicit def objToChangingIntValue(o:IntVarObjective):ChangingIntValue = o.objective
-  implicit def objToFun(o:Objective):()=>Int = ()=>o.value
-  implicit def funToObj(f:()=>Int) = new FunctionObjective(f)
+  implicit def objToFun(o:Objective):()=>Long = ()=>o.value
+  implicit def funToObj(f:()=>Long) = new FunctionObjective(f)
 
-  def apply(f:()=>Int,model:Store = null) = new FunctionObjective(f,model)
+  def apply(f:()=>Long,model:Store = null) = new FunctionObjective(f,model)
 
   implicit def apply(objective:IntValue) =
     objective match {
@@ -71,34 +71,34 @@ class IntVarObjective(val objective: ChangingIntValue) extends Objective {
 
   def model:Store = objective.model
 
-  def detailedString(short:Boolean,indent:Int = 0):String = "IntVarObjective(" + objective + ")"
+  def detailedString(short:Boolean,indent:Long = 0L):String = "IntVarObjective(" + objective + ")"
 }
 
 /**
- * if (objective1.value > 0) Int.MaxValue/2 + objective1.value
+ * if (objective1.value > 0L) Long.MaxValue/2L + objective1.value
  *   else objective2.value
  *
  *   this is computed partially both for objective and mustBeZeroObjective
  * @param mustBeZeroObjective
  */
-class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Int = Int.MaxValue) extends Objective {
+class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objective,cascadeSize:Long = Long.MaxValue) extends Objective {
 
-  override def detailedString(short: Boolean, indent:Int = 0): String =
+  override def detailedString(short: Boolean, indent:Long = 0L): String =
     (if(short) {
-      if (mustBeZeroObjective.value == 0) {
+      if (mustBeZeroObjective.value == 0L) {
         nSpace(indent) + "CascadingObjective(\n" +
-          nSpace(indent + 2) + "mustBeZeroObjective :=0 \n" +
-          nSpace(indent + 2) + "secondObjective:" + secondObjective.detailedString(true, indent + 2) + "\n" +
+          nSpace(indent + 2L) + "mustBeZeroObjective :=0L \n" +
+          nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(true, indent + 2L) + "\n" +
           nSpace(indent) + ")"
       } else {
         nSpace(indent) + "CascadingObjective(\n" +
-          nSpace(indent + 2) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4) + "\n" +
+          nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
           nSpace(indent) + ")"
       }
     }else {
       nSpace(indent) + "CascadingObjective(\n" +
-        nSpace(indent + 2) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4) + "\n" +
-        nSpace(indent + 2) + "secondObjective:" + secondObjective.detailedString(true, indent + 4) + "\n" +
+        nSpace(indent + 2L) + "mustBeZeroObjective:" + mustBeZeroObjective.detailedString(true, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "secondObjective:" + secondObjective.detailedString(true, indent + 4L) + "\n" +
         nSpace(indent) + ")"
     })
 
@@ -109,14 +109,14 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
    */
   override def value = {
     val firstObjectiveValue = mustBeZeroObjective.value
-    if (firstObjectiveValue!=0) cascadeSize
+    if (firstObjectiveValue!=0L) cascadeSize
     else secondObjective.value
   }
 
   override def model: Store = mustBeZeroObjective.model
 }
 
-class FunctionObjective(f:()=>Int, m:Store = null) extends Objective{
+class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m
 
   /**
@@ -124,16 +124,16 @@ class FunctionObjective(f:()=>Int, m:Store = null) extends Objective{
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  override def value: Int = f()
+  override def value: Long = f()
 
-  override def detailedString(short: Boolean,indent:Int = 0): String = nSpace(indent) + "FunctionObjective(" + value + ")"
+  override def detailedString(short: Boolean,indent:Long = 0L): String = nSpace(indent) + "FunctionObjective(" + value + ")"
 }
 
 trait Objective {
 
-  protected def nSpace(n:Int):String = if(n <= 0) "" else " " + nSpace(n-1)
+  protected def nSpace(n:Long):String = if(n <= 0L) "" else " " + nSpace(n-1L)
   override def toString: String = detailedString(false)
-  def detailedString(short:Boolean, indent:Int = 0):String
+  def detailedString(short:Boolean, indent:Long = 0L):String
 
   def model:Store
 
@@ -142,15 +142,15 @@ trait Objective {
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  def value:Int
-  def isZero:Boolean = value == 0
+  def value:Long
+  def isZero:Boolean = value == 0L
 
   /**returns the value of the objective variable if the two variables a and b were swapped values.
     * This proceeds through explicit state change and restore.
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def swapVal(a: CBLSIntVar, b: CBLSIntVar): Int = {
+  def swapVal(a: CBLSIntVar, b: CBLSIntVar): Long = {
     a :=: b
     val newVal = value
     a :=: b
@@ -162,16 +162,16 @@ trait Objective {
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def assignVal(a: CBLSIntVar, v: Int): Int = assignVal(List((a,v)))
+  def assignVal(a: CBLSIntVar, v: Long): Long = assignVal(List((a,v)))
 
   /**returns the value of the objective variable if the assignment described by parameter a was performed
     * This proceeds through explicit state change and restore.
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def assignVal(a: Iterable[(CBLSIntVar, Int)]): Int = {
+  def assignVal(a: Iterable[(CBLSIntVar, Long)]): Long = {
     //memorize
-    val oldvals: Iterable[(CBLSIntVar, Int)] = a.foldLeft(List.empty[(CBLSIntVar, Int)])(
+    val oldvals: Iterable[(CBLSIntVar, Long)] = a.foldLeft(List.empty[(CBLSIntVar, Long)])(
       (acc, IntVarAndInt) => ((IntVarAndInt._1, IntVarAndInt._1.value)) :: acc)
     //excurse
     for (assign <- a)
@@ -188,7 +188,7 @@ trait Objective {
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Int): Int = {
+  def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Long): Long = {
     a :+= i
     val newVal = value
     a :-= i
@@ -199,7 +199,7 @@ trait Objective {
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def insertVal(a: CBLSSetVar, i:Int): Int = {
+  def insertVal(a: CBLSSetVar, i:Long): Long = {
     if(a.value.contains(i)) return value
     insertValAssumeNotAlreadyIn(a, i)
   }
@@ -208,7 +208,7 @@ trait Objective {
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def removeValAssumeIn(a: CBLSSetVar, i:Int): Int = {
+  def removeValAssumeIn(a: CBLSSetVar, i:Long): Long = {
     a :-= i
     val newVal = value
     a :+= i
@@ -219,7 +219,7 @@ trait Objective {
     * this process is efficiently performed as the objective Variable is registered for partial propagation
     * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
     */
-  def removeVal(a: CBLSSetVar, i:Int): Int = {
+  def removeVal(a: CBLSSetVar, i:Long): Long = {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)
   }
@@ -235,11 +235,11 @@ trait Objective {
 class LoggingObjective(baseObjective:Objective) extends Objective{
   private var evaluationsLog:List[String] = List.empty
 
-  override def detailedString(short: Boolean, indent:Int = 0): String = nSpace(indent) + "LoggingObjective(" + baseObjective.detailedString(short) + ")"
+  override def detailedString(short: Boolean, indent:Long = 0L): String = nSpace(indent) + "LoggingObjective(" + baseObjective.detailedString(short) + ")"
 
   override def model: Store = baseObjective.model
 
-  override def value: Int = {
+  override def value: Long = {
     val toReturn = baseObjective.value
     evaluationsLog = baseObjective.detailedString(true) :: evaluationsLog
     toReturn

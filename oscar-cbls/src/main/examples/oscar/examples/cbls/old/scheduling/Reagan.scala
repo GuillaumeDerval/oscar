@@ -22,7 +22,7 @@
  ******************************************************************************/
 
 package oscar.examples.cbls.old.scheduling
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.scheduling._
 import oscar.cbls.business.scheduling.model._
@@ -80,3 +80,4 @@ object Reagan extends App {
   println(planning.dependencies)
 
 }
+*/

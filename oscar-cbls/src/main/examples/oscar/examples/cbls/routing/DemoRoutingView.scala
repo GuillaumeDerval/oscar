@@ -19,14 +19,14 @@
   * @author fabian.germeau@student.vinci.be
   */
 package oscar.examples.cbls.routing
-
+/*
 import java.awt._
 import java.awt.event.{ActionEvent, ActionListener}
 import javax.swing._
 
 import oscar.cbls.core.computation.IntValue
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.functionGraphic.{ObjFunctionGraphicContainer, Zoom}
+import oscar.cbls.visual.obj.{ObjFunctionGraphicContainer}
 
 import scala.swing.{Dimension, Insets}
 /*
@@ -280,4 +280,5 @@ object DemoRoutingView extends StopWatch{
   }
 
 }
+*/
 */

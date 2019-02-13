@@ -13,7 +13,7 @@ import oscar.cbls.core.search._
  * @param proc the procedure to execute before the neighborhood is queried
  */
 case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     proc()
     a.getMove(obj, initialObj, acceptanceCriteria)
   }
@@ -31,7 +31,7 @@ case class DoOnQuery(a: Neighborhood, proc: () => Unit) extends NeighborhoodComb
  */
 case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends NeighborhoodCombinator(a) {
   var isFirstMove = true
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if (isFirstMove) {
       a.getMove(obj, initialObj, acceptanceCriteria) match {
         case m: MoveFound => InstrumentedMove(m.m, notifyMoveTaken _)
@@ -68,7 +68,7 @@ case class DoOnFirstMove(a: Neighborhood, proc: () => Unit) extends Neighborhood
 case class DoOnMove(a: Neighborhood,
                     procBeforeMove: Move => Unit = null,
                     procAfterMove: Move => Unit = null) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
         InstrumentedMove(m.m, callBackBeforeMove(m.m)_, callBackAfterMove(m.m)_)
@@ -88,7 +88,7 @@ case class DoOnMove(a: Neighborhood,
 case class DoOnExhaust(a:Neighborhood, proc:(()=>Unit),onlyFirst:Boolean) extends NeighborhoodCombinator(a) {
 
   var alreadyExhaustedOnce = false
-  override def getMove(obj : Objective, initialObj:Int, acceptanceCriterion : (Int, Int) => Boolean) : SearchResult =
+  override def getMove(obj : Objective, initialObj:Long, acceptanceCriterion : (Long, Long) => Boolean) : SearchResult =
     a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound =>
         if(!onlyFirst || !alreadyExhaustedOnce){

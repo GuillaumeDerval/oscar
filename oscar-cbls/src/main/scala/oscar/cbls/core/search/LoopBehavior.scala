@@ -17,11 +17,11 @@
 
 package oscar.cbls.core.search
 
-import scala.language.reflectiveCalls
+import scala.language.{reflectiveCalls}
 
 object LoopBehavior{
-  def first(maxNeighbors:() => Int = () => Int.MaxValue) = First(maxNeighbors)
-  def best(maxNeighbors:() => Int = () => Int.MaxValue) = Best(maxNeighbors)
+  def first(maxNeighbors:() => Long = () => Long.MaxValue) = First(maxNeighbors)
+  def best(maxNeighbors:() => Long = () => Long.MaxValue) = Best(maxNeighbors)
 }
 
 sealed abstract class LoopBehavior(){
@@ -44,15 +44,15 @@ trait BoundedIterable[T] extends Iterable[T]{
 //TODO: randomized
 //TODO: best, cap after xxx sucessive not better neighbors
 
-case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
+case class First(maxNeighbors:() => Long = () => Long.MaxValue) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
     val iterable = new BoundedIterable[T]{
       var foundMove:Boolean = false
       var remainingNeighbors = maxNeighbors()
       override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
         val baseIterator = baseIterable.iterator
-        override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0
-        override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0L
+        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next}
         override def hasUnboundedNext() : Boolean = baseIterator.hasNext
         override def unboundedNext() : T = baseIterator.next
       }
@@ -62,25 +62,25 @@ case class First(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavi
       iterable.foundMove = true
     }
 
-    (iterable,() => notifyFound())
+    (iterable,notifyFound _)
   }
 }
 
 //TODO: this is not maxAcceptedNeighbors!!
-case class Best(maxNeighbors:() => Int = () => Int.MaxValue) extends LoopBehavior(){
+case class Best(maxNeighbors:() => Long = () => Long.MaxValue) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
     val iterable = new BoundedIterable[T]{
       var remainingNeighbors = maxNeighbors()
       override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
         val baseIterator = baseIterable.iterator
-        override def hasNext : Boolean = baseIterator.hasNext && remainingNeighbors>0
-        override def next() : T = {remainingNeighbors -= 1; baseIterator.next}
+        override def hasNext : Boolean = baseIterator.hasNext && remainingNeighbors>0L
+        override def next() : T = {remainingNeighbors -= 1L; baseIterator.next}
         override def hasUnboundedNext() : Boolean = baseIterator.hasNext
         override def unboundedNext() : T = baseIterator.next
       }
     }
 
     def notifyFound(){}
-    (iterable,() => notifyFound())
+    (iterable,notifyFound _)
   }
 }

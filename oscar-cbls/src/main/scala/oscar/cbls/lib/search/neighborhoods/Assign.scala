@@ -15,9 +15,10 @@
 
 package oscar.cbls.lib.search.neighborhoods
 
-import oscar.cbls.algo.search.{IdenticalAggregator, HotRestart}
-import oscar.cbls.core.computation.{Variable, CBLSIntVar}
-import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBehavior}
+import oscar.cbls._
+import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
+import oscar.cbls.core.computation.Variable
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, Move}
 
 
 /**
@@ -31,13 +32,13 @@ import oscar.cbls.core.search.{Move, EasyNeighborhoodMultiLevel, First, LoopBeha
   *                   If none is provided, all the array will be considered each time
   * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
   *                      ony one of the variable in each class will be considered to make search faster
-  *                      Int.MinValue is considered different to itself
+  *                      Long.MinValue is considered different to itself
   *                      if you set to None this will not be used at all
   *                      variables of the same class with different values will not be considered as symmetrical
   * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
   *                              and returns a symmetry class for this variable and value
   *                              only values belonging to different symmetry classes will be tested
-  *                             Int.MinValue is considered different to itself
+  *                             Long.MinValue is considered different to itself
   *                             (this is only useful if your model is awfully expensive to evaluate)
   * @param domain a function that receives a variable and its Id in the vars array
   *               and returns the domain that is searched for the variable
@@ -51,23 +52,23 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "AssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Int] = null,
-                              symmetryClassOfVariables:Option[Int => Int] = None,
-                              symmetryClassOfValues:Option[Int => Int => Int] = None,
-                              domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
+                              searchZone:() => Iterable[Long] = null,
+                              symmetryClassOfVariables:Option[Long => Long] = None,
+                              symmetryClassOfValues:Option[Long => Long => Long] = None,
+                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
-  var startIndice:Int = 0
+  var startIndice:Long = 0L
 
   var currentVar:CBLSIntVar = null
-  var currentIndice:Int = 0
-  var newVal:Int = 0
+  var currentIndice:Long = 0L
+  var newVal:Long = 0L
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
-    val iterationZone =
-      if (searchZone == null) vars.indices
+    val iterationZone : Iterable[Long] =
+      if (searchZone == null) 0L until vars.length
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -76,7 +77,7 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
       case None => iterationSchemeOnZone
-      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index:Int) => (s(index),vars(index).value))
+      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index :Long) => (s(index),vars(index).value))
     }
 
     //iterating over the variables to consider
@@ -109,15 +110,15 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
       }
     }
 
-    startIndice = currentIndice + 1
+    startIndice = currentIndice + 1L
   }
 
-  override def instantiateCurrentMove(newObj:Int) =
+  override def instantiateCurrentMove(newObj:Long) =
     AssignMove(currentVar, newVal, currentIndice, newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0
+    startIndice = 0L
   }
 }
 
@@ -133,13 +134,13 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
  *                   If none is provided, all the array will be considered each time
  * @param symmetryClassOfVariables a function that input the ID of a variable and returns a symmetry class;
  *                      ony one of the variable in each class will be considered to make search faster
- *                      Int.MinValue is considered different to itself
+ *                      Long.MinValue is considered different to itself
  *                      if you set to None this will not be used at all
  *                      variables of the same class with different values will not be considered as symmetrical
  * @param symmetryClassOfValues a function that inputs the ID of a variable and a possible value for this variable,
  *                              and returns a symmetry class for this variable and value
  *                              only values belonging to different symmetry classes will be tested
- *                             Int.MinValue is considered different to itself
+ *                             Long.MinValue is considered different to itself
  *                             (this is only useful if your model is awfully expensive to evaluate)
  * @param domain a function that receives a variable and its Id in the vars array
  *               and returns the domain that is searched for the variable
@@ -153,24 +154,24 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
                               name:String = "NumericAssignNeighborhood",
                               selectIndiceBehavior:LoopBehavior = First(),
                               selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Int] = null,
-                              symmetryClassOfVariables:Option[Int => Int] = None,
-                              symmetryClassOfValues:Option[Int => Int => Int] = None,
-                              domain:(CBLSIntVar,Int) => Iterable[Int] = (v,i) => v.domain,
+                              searchZone:() => Iterable[Long] = null,
+                              symmetryClassOfVariables:Option[Long => Long] = None,
+                              symmetryClassOfValues:Option[Long => Long => Long] = None,
+                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
                               domainExplorer:LinearOptimizer,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
-  var startIndice:Int = 0
+  var startIndice:Long = 0L
 
   var currentVar:CBLSIntVar = null
-  var currentIndice:Int = 0
-  var newVal:Int = 0
+  var currentIndice:Long = 0L
+  var newVal:Long = 0L
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val iterationZone =
-      if (searchZone == null) vars.indices
+      if (searchZone == null) 0L until vars.length
       else searchZone()
 
     val iterationSchemeOnZone =
@@ -179,7 +180,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
 
     val iterationSchemeOnSymmetryFreeZone = symmetryClassOfVariables match {
       case None => iterationSchemeOnZone
-      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index:Int) => (s(index),vars(index).value))
+      case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index : Long) => (s(index),vars(index).value))
     }
 
     //iterating over the variables to consider
@@ -196,7 +197,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
         case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
       }
 
-      def eval(value:Int):Int = {
+      def eval(value:Long):Long = {
         this.newVal = value
         obj.assignVal(currentVar,value)
       }
@@ -209,19 +210,19 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
       }
     }
 
-    startIndice = currentIndice + 1
+    startIndice = currentIndice + 1L
   }
 
-  override def instantiateCurrentMove(newObj:Int) =
+  override def instantiateCurrentMove(newObj:Long) =
     AssignMove(currentVar, newVal, currentIndice, newObj, name)
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0
+    startIndice = 0L
   }
 }
 
-/** standard move that assigns an int value to a CBLSIntVar
+/** standard move that assigns an Long value to a CBLSIntVar
   *
   * @param i the variable
   * @param v the value to assign
@@ -230,7 +231,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
   * @param neighborhoodName a string describing the neighborhood hat found the move (for debug purposes)
   * @author renaud.delandtsheer@cetic.be
   */
-case class AssignMove(i:CBLSIntVar,v:Int, id:Int, override val objAfter:Int, override val neighborhoodName:String = null)
+case class AssignMove(i:CBLSIntVar,v:Long, id:Int, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
   override def commit() {i := v}

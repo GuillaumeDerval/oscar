@@ -47,7 +47,7 @@ class IterableMagicBoolArray(override val length:Int,initVal:Boolean = false)
 
   /**
    * Sets the value of each element to "value"
-   * @note complexity is O(1)
+   * @note complexity is O(1L)
    */
   override def all_= (value : Boolean) : Unit = {
     super.all_=(value)

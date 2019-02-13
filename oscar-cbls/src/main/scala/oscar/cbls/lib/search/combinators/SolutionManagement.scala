@@ -19,17 +19,17 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
   require(s != null, "you are using an objective function that has no attached model, so "
     + this.getClass.getSimpleName + " cannot save the model; pass it explicitely to the Objective creation to solve this issue")
 
-  protected var bestObj = if (currentSolutionIsAcceptable) o.value else Int.MaxValue
+  protected var bestObj = if (currentSolutionIsAcceptable) o.value else Long.MaxValue
   protected var best = if (currentSolutionIsAcceptable) s.solution() else null
 
   //this resets the internal state of the move combinators
   override def reset() {
     super.reset()
-    bestObj = Int.MaxValue
+    bestObj = Long.MaxValue
     best = null
   }
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
 
     //we record the obj before move to prevent an additional useless propagation
     val objBeforeMove = o.value
@@ -42,7 +42,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
           //so we save
           best = s.solution(true)
           bestObj = objBeforeMove
-          if (verbose >= 2) println("saving best solution before degradation (obj:" + bestObj + ")")
+          if (verbose >= 2L) println("saving best solution before degradation (obj:" + bestObj + ")")
         }
         MoveFound(m)
     }
@@ -53,18 +53,18 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
   def restoreBest() {
     val isCurrentAccepteable = currentSolutionIsAcceptable
     if (best == null && !isCurrentAccepteable) {
-      if (verbose >= 1) println("no single acceptable solution seen")
+      if (verbose >= 1L) println("no single acceptable solution seen")
     } else if (o.value > bestObj || !isCurrentAccepteable) {
       s.restoreSolution(best)
-      if (verbose >= 1) println("restoring best solution (obj:" + bestObj + ")")
-    } else if (verbose >= 1) println("no better solution to restore")
+      if (verbose >= 1L) println("restoring best solution (obj:" + bestObj + ")")
+    } else if (verbose >= 1L) println("no better solution to restore")
   }
 
   def anythingToRestore:Boolean = {
     best != null && (o.value > bestObj || !currentSolutionIsAcceptable)
   }
 
-  def getBestSolutionToRestore:Option[(Solution,Int)] = {
+  def getBestSolutionToRestore:Option[(Solution,Long)] = {
     if(best != null && (o.value > bestObj || !currentSolutionIsAcceptable)) {
       Some((best,bestObj))
     }else {
@@ -82,7 +82,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective) extends NeighborhoodCombinato
 class SaveBest(a: Neighborhood, o: Objective) extends BasicSaveBest(a: Neighborhood, o: Objective) {
 
   def whenEmpty(violation: SetValue) = new SaveBestWhen(a, o, () => violation.value.isEmpty)
-  def whenZero(violation: IntValue) = new SaveBestWhen(a, o, () => violation.value == 0)
+  def whenZero(violation: IntValue) = new SaveBestWhen(a, o, () => violation.value == 0L)
 
   /**
    * this method restricts the save operation to only the situation where "shouldSave" returns true
@@ -111,7 +111,7 @@ class RestoreBestOnExhaust(a: BasicSaveBest) extends NeighborhoodCombinator(a) {
     super.reset()
   }
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
     if(childExhausted) {
       childExhausted = false
       NoMoveFound

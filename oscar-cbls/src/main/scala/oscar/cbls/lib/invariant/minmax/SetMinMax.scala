@@ -28,27 +28,27 @@ import scala.collection.immutable.SortedSet
 
 //Log
 abstract class MiaxSet(v: SetValue)
-  extends IntInvariant(initialDomain = v.min to v.max)
+  extends IntInvariant(initialDomain = Domain(v.min , v.max))
   with SetNotificationTarget{
 
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  def Better(a: Int, b:Int): Boolean
+  def Better(a: Long, b:Long): Boolean
 
-  def Default: Int
+  def Default: Long
 
   performPropagation()
 
   var wasEmpty:Boolean = v.value.isEmpty
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     if (wasEmpty){
       this := value
     }else if(!this.isScheduled && Better(value,this.newValue)){
@@ -58,7 +58,7 @@ abstract class MiaxSet(v: SetValue)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
     if (v.value.isEmpty){ //TODO: avoid querying this directly on the intsetvar!
       wasEmpty = true
       this := Default
@@ -80,9 +80,9 @@ abstract class MiaxSet(v: SetValue)
   * update is O(log(n))
   * @author renaud.delandtsheer@cetic.be
   */
-case class MinSet(v: SetValue, Default: Int = Int.MaxValue) extends MiaxSet(v) {
+case class MinSet(v: SetValue, Default: Long = Long.MaxValue) extends MiaxSet(v) {
 
-  override def Better(a:Int,b:Int):Boolean = a < b
+  override def Better(a:Long,b:Long):Boolean = a < b
 
   override def performInvariantPropagation(){
     if (v.value.isEmpty){
@@ -96,8 +96,8 @@ case class MinSet(v: SetValue, Default: Int = Int.MaxValue) extends MiaxSet(v) {
     if (v.value.isEmpty){
       c.check(this.value == Default, Some("this.value == Default"))
     }else{
-      c.check(this.value == v.value.foldLeft(Int.MaxValue)((acc,value) => if (acc > value) value else acc),
-        Some("this.value == v.value.foldLeft(Int.MaxValue)((acc,value) => if (acc > value) value else acc)"))
+      c.check(this.value == v.value.foldLeft(Long.MaxValue)((acc,value) => if (acc > value) value else acc),
+        Some("this.value == v.value.foldLeft(Long.MaxValue)((acc,value) => if (acc > value) value else acc)"))
     }
   }
 }
@@ -110,9 +110,9 @@ case class MinSet(v: SetValue, Default: Int = Int.MaxValue) extends MiaxSet(v) {
   * update is O(log(n))
   * @author renaud.delandtsheer@cetic.be
   * */
-case class MaxSet(v: SetValue, Default: Int = Int.MinValue) extends MiaxSet(v) {
+case class MaxSet(v: SetValue, Default: Long = Long.MinValue) extends MiaxSet(v) {
 
-  override def Better(a:Int,b:Int):Boolean = a > b
+  override def Better(a:Long,b:Long):Boolean = a > b
 
   override def performInvariantPropagation(){
     if (v.value.isEmpty){
@@ -126,8 +126,8 @@ case class MaxSet(v: SetValue, Default: Int = Int.MinValue) extends MiaxSet(v) {
     if (v.value.isEmpty){
       c.check(this.value == Default, Some("this.value == Default"))
     }else{
-      c.check(this.value == v.value.foldLeft(Int.MinValue)((acc,value) => if (acc < value) value else acc),
-        Some("this.value == v.value.foldLeft(Int.MinValue)((acc,value) => if (acc < value) value else acc)"))
+      c.check(this.value == v.value.foldLeft(Long.MinValue)((acc,value) => if (acc < value) value else acc),
+        Some("this.value == v.value.foldLeft(Long.MinValue)((acc,value) => if (acc < value) value else acc)"))
     }
   }
 }

@@ -54,7 +54,7 @@ object ColorGenerator {
     val absHash = Math.abs(hash)
     val r = absHash%255
     val g = 255 - (absHash/255)%255
-    val b = ((absHash/255)/255)%255
+    val b = ((absHash/255L)/255)%255
     new Color(r,g,b)
   }
 

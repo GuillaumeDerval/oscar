@@ -23,7 +23,7 @@ class testTransferWithLO extends FlatSpec {
 
   s.close()
 
-  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100,101))
+  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100))
 
   search.doAllMoves(obj = obj)
 

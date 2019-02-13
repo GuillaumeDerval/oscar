@@ -18,6 +18,9 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.{HotRestart, IdenticalAggregator}
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{First, EasyNeighborhoodMultiLevel, LoopBehavior}
+import oscar.cbls._
+
+
 
 
 /**
@@ -32,61 +35,60 @@ abstract class InsertPoint(vrp: VRP,
   val v = vrp.v
   val seq = vrp.routes
 
-  var insertAtPositionForInstantiation:Int = -1
-  var insertedPointForInstantiation:Int = -2
-  var pointWhereToInsertAfter:Int = -3
+  var insertAtPositionForInstantiation:Long = -1L
+  var insertedPointForInstantiation:Long = -2L
+  var pointWhereToInsertAfter:Long = -3L
 
-  override def instantiateCurrentMove(newObj: Int) =
+  override def instantiateCurrentMove(newObj: Long) =
     InsertPointMove(insertedPointForInstantiation, insertAtPositionForInstantiation, pointWhereToInsertAfter, positionIndependentMoves, newObj, this, vrp, neighborhoodNameToString)
 
-  def doMove(insertedPoint: Int, insertAtPosition:Int) {
+  def doMove(insertedPoint: Long, insertAtPosition:Long) {
     seq.insertAtPosition(insertedPoint, insertAtPosition)
   }
-
-  def doMovePositionIndependent(insertedPoint:Int, insertAfterPointForInstantiation:Int): Unit ={
+  def doMovePositionIndependent(insertedPoint:Long, insertAfterPointForInstantiation:Long): Unit ={
     seq.newValue.positionOfAnyOccurrence(insertAfterPointForInstantiation) match{
-      case Some(p) => seq.insertAtPosition(insertedPoint, p+1)
+      case Some(p) => seq.insertAtPosition(insertedPoint, p+1L)
       case None => throw new Error("position independent move is value based, and value was not available at time of commit")
     }
   }
 }
 
-case class InsertPointMove(insertedPoint: Int,
-                           insertAtPosition: Int,
-                           insertAfterPointForInstantiation:Int,
+case class InsertPointMove(insertedPoint: Long,
+                           insertAtPosition: Long,
+                           insertAfterPointForInstantiation:Long,
                            positionIndependentMoves:Boolean,
-                           override val objAfter: Int,
+                           override val objAfter: Long,
                            override val neighborhood: InsertPoint,
                            vrp:VRP,
                            override val neighborhoodName: String = "InsertPointMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, vrp){
 
   //TODO
-  override def impactedPoints: List[Int] = List(insertedPoint)
+  override def impactedPoints: List[Long] = List(insertedPoint)
 
   override def commit() {
-    if (positionIndependentMoves) {
+    if(positionIndependentMoves){
       neighborhood.doMovePositionIndependent(insertedPoint, insertAfterPointForInstantiation)
-    } else {
+    }else{
       neighborhood.doMove(insertedPoint, insertAtPosition)
     }
   }
 
   override def toString: String =
     neighborhoodName + ":InsertPoint(insertedPoint:" + insertedPoint +
-      (if (positionIndependentMoves) " afterPoint " + insertAfterPointForInstantiation + " positionIndependent"
+      (if(positionIndependentMoves) " afterPoint " + insertAfterPointForInstantiation + " positionIndependent"
       else " atPosition:" + insertAtPosition) + objToString + ")"
 
   override def shortString:String =
     "InsertPoint(" + insertedPoint +
-      (if (positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
+      (if(positionIndependentMoves) " after " + insertAfterPointForInstantiation + " pi"
       else " atPos:" + insertAtPosition) + ")"
 }
 
 
 /**
   * Inserts an unrouted point in a route. The size of the neighborhood is O(u*n).
-  * where u is the number of unrouted points, and n is the number of routed points
+  * where u is the numberof unrouted points, and n is the number of routed points
   * it can be cut down to u*k by using the relevant neighbors, and specifying k neighbors for each unrouted point
   * @param unroutedNodesToInsert the nodes that this neighborhood will try to insert SHOULD BE NOT ROUTED
   * @param relevantPredecessor a function that, for each unrouted node gives a list of routed node
@@ -95,10 +97,10 @@ case class InsertPointMove(insertedPoint: Int,
   * @param neighborhoodName the name of this neighborhood
   * @param selectNodeBehavior how should it iterate on nodes to insert?
   * @param selectInsertionPointBehavior how should it iterate on position for insertion?
-  * @param hotRestart set to true for a hot restart feature on the node to insert
+  * @param hotRestart set to true fo a hot restart fearture on the node to insert
   * @param nodeSymmetryClass a function that input the ID of an unrouted node and returns a symmetry class;
   *                      ony one of the unrouted node in each class will be considered for insert
-  *                      Int.MinValue is considered different to itself
+  *                      Long.MinValue is considered different to itself
   *                      if you set to None this will not be used at all
   * @param hotRestartOnNextSymmetryClass when you have symmetries among points to insert and hotRestart,
   *                                  this option will try to have the hotRestart starting
@@ -107,25 +109,25 @@ case class InsertPointMove(insertedPoint: Int,
   * @author Florent Ghilain (UMONS)
   * @author yoann.guyot@cetic.be
   */
-case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
-                                    relevantPredecessor: () => Int => Iterable[Int],
+case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Long],
+                                    relevantPredecessor: () => Long => Iterable[Long],
                                     vrp: VRP,
                                     neighborhoodName: String = "InsertPointUnroutedFirst",
                                     hotRestart: Boolean = true,
                                     selectNodeBehavior:LoopBehavior = First(),
                                     selectInsertionPointBehavior:LoopBehavior = First(),
-                                    nodeSymmetryClass:Option[Int => Int] = None,
+                                    nodeSymmetryClass:Option[Long => Long] = None,
                                     hotRestartOnNextSymmetryClass:Boolean = false,
                                     positionIndependentMoves:Boolean = false)
   extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves){
 
   //the indice to start with for the exploration
-  var startIndice: Int = 0
+  var startIndice: Long = 0L
 
-  override def exploreNeighborhood(initialObj: Int): Unit = {
+  override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
@@ -154,10 +156,10 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
 
       for(a <- positionToInsertIterable){
         pointWhereToInsertAfter = a
-        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match {
+        seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
           case None => //not routed?!
           case Some(position) =>
-            insertAtPositionForInstantiation = position + 1
+            insertAtPositionForInstantiation = position + 1L
 
             doMove(insertedPointForInstantiation, insertAtPositionForInstantiation)
 
@@ -176,19 +178,19 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
       if (nodeToInsertIterator.hasUnboundedNext())
         nodeToInsertIterator.unboundedNext()
       else iterationScheme.head
-    } else{insertedPointForInstantiation + 1}
+    } else{insertedPointForInstantiation + 1L}
 
   }
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0
+    startIndice = 0L
   }
 }
 
 /**
-  * OnePoint inserts a neighborhood that primarily iterates over insertion points, and then over points that can be inserted.
-  * @param insertionPoints the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
+  * OnePoint insert neighborhood htat primarily iterates over insertion point,s and then over poitns that can be iserted.
+  * @param insertionPositions the positions where we can insert points, can be unrouted, in this case it is ignored (but time is wasted)
   * @param relevantSuccessorsToInsert the points to insert, given an insertion point
   * @param vrp the routing problem
   * @param neighborhoodName the name of the neighborhood
@@ -197,28 +199,28 @@ case class InsertPointUnroutedFirst(unroutedNodesToInsert: () => Iterable[Int],
   * @param hotRestart hot restart on the insertion point
   * @param insertedPointsSymetryClass a function that input the ID of an unrouted node and returns a symmetry class;
   *                      ony one of the unrouted node in each class will be considered for insert
-  *                      Int.MinValue is considered different to itself
+  *                      Long.MinValue is considered different to itself
   *                      if you set to None this will not be used at all
   * @author renaud.delandtsheer@cetic.be
   */
-case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
-                                  relevantSuccessorsToInsert: () => Int => Iterable[Int],
+case class InsertPointRoutedFirst(insertionPositions:()=>Iterable[Long],
+                                  relevantSuccessorsToInsert: () => Long => Iterable[Long],
                                   vrp: VRP,
                                   neighborhoodName: String = "InsertPointRoutedFirst",
                                   selectInsertionPointBehavior:LoopBehavior = First(),
                                   selectInsertedNodeBehavior:LoopBehavior = First(),
                                   hotRestart: Boolean = true,
-                                  insertedPointsSymetryClass:Option[Int => Int] = None,
+                                  insertedPointsSymetryClass:Option[Long => Long] = None,
                                   positionIndependentMoves:Boolean = false)
   extends InsertPoint(vrp: VRP,neighborhoodName,positionIndependentMoves) {
 
   //the indice to start with for the exploration
-  var startIndice: Int = 0
+  var startIndice: Long = 0
 
-  override def exploreNeighborhood(initialObj: Int): Unit = {
+  override def exploreNeighborhood(initialObj: Long): Unit = {
     val seqValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(seqValue)
       a
@@ -228,18 +230,18 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
 
     val (iterationSchemeOnInsertionPointIterator,notifyFound1) =
       selectInsertionPointBehavior.toIterator(
-        if (hotRestart) HotRestart(insertionPoints(), startIndice)
-        else insertionPoints()
+        if (hotRestart) HotRestart(insertionPositions(), startIndice)  //TODO: this map is not good!
+        else insertionPositions() //TODO: this map is not good!
       )
 
     while (iterationSchemeOnInsertionPointIterator.hasNext) {
 
-      pointWhereToInsertAfter = iterationSchemeOnInsertionPointIterator.next()
+      pointWhereToInsertAfter = longToInt(iterationSchemeOnInsertionPointIterator.next())
 
       seqValue.positionOfAnyOccurrence(pointWhereToInsertAfter) match{
         case None => //not routed?
         case Some(position) =>
-          insertAtPositionForInstantiation = position + 1
+          insertAtPositionForInstantiation = position + 1L
 
           val (iteratorOnPointsToInsert,notifyFound2) = selectInsertedNodeBehavior.toIterator(insertedPointsSymetryClass match {
             case None => unroutedNodesToInsertNow(pointWhereToInsertAfter)
@@ -261,11 +263,11 @@ case class InsertPointRoutedFirst(insertionPoints:()=>Iterable[Int],
 
     seq.releaseTopCheckpoint()
     //hot restart
-    startIndice = pointWhereToInsertAfter + 1
+    startIndice = pointWhereToInsertAfter + 1L
   }
 
   //this resets the internal state of the Neighborhood
   override def reset(): Unit = {
-    startIndice = 0
+    startIndice = 0L
   }
 }

@@ -25,6 +25,7 @@ import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.modeling.{ModelingAPI, NeighborhoodOps}
 
+import scala.collection.immutable.NumericRange
 import scala.language.implicitConversions
 
 /**
@@ -50,14 +51,14 @@ import scala.language.implicitConversions
   * */
   *object NQueensEasy extends CBLSModel with App{
   *
-  *  val N = 1000
+  *  val N = 1000L
   *  println("NQueensEasy(" + N + ")")
-  *  val range:Range = Range(0,N)
+  *  val range:Range = Range(0L,N)
   *  val init = Random.shuffle(range.toList).iterator
   *
   *  //creating variables, one queen par column,
   *  //initialized on a permutation of the diagolal (all on different rows)
-  *  val queens = Array.tabulate(N)((q:Int) => CBLSIntVar(init.next(),0 until N, "queen" + q))
+  *  val queens = Array.tabulate(N)((q:Long) => CBLSIntVar(init.next(),0L until N, "queen" + q))
   *
   *  c.post(allDiff( for (q <- range) yield queens(q) + q) )
   *  c.post(allDiff( for (q <- range) yield q - queens(q)) )
@@ -72,7 +73,7 @@ import scala.language.implicitConversions
   *
   *  close()
   *
-  *  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0, c.violation)
+  *  val it = neighborhood.doAllMoves(_ >= N || c.violation.value == 0L, c.violation)
   *
   *  println("finished: " + getWatchString)
   *}
@@ -133,6 +134,7 @@ package object cbls extends ModelingAPI{
   type CBLSIntConst = oscar.cbls.core.computation.CBLSIntConst
   final val CBLSIntConst = oscar.cbls.core.computation.CBLSIntConst
 
+  implicit def longToCBLSIntConst(i:Long):IntValue = CBLSIntConst(i)
   implicit def intToCBLSIntConst(i:Int):IntValue = CBLSIntConst(i)
 
   //set types
@@ -164,6 +166,7 @@ package object cbls extends ModelingAPI{
   final val ConstraintSystem = oscar.cbls.core.constraint.ConstraintSystem
 
   //implicits
+  implicit def longToIntVarOps(i:Long):IntValOps = IntValOps(CBLSIntConst(i))
   implicit def intToIntVarOps(i:Int):IntValOps = IntValOps(CBLSIntConst(i))
 
   //some implicit for the CBLS variables, to add infix operators
@@ -178,12 +181,12 @@ package object cbls extends ModelingAPI{
     def *(v: IntValue): IntInvariant = Prod(List(x, v))
 
     def /(v: IntValue): IntInvariant = Div(x, v)
-    def /(i:Int):IntInvariant = {
-      var extremeValues:List[Int] = List(x.domain.min/i,x.domain.max/i)
-      if(x.domain contains 0) extremeValues = 0 :: extremeValues
-      if(x.domain contains -1) extremeValues = (-1/i) :: extremeValues
-      if(x.domain contains 1) extremeValues = (1/i) :: extremeValues
-      new Int2Int(x,_/i,extremeValues.min to extremeValues.max)
+    def /(i:Long):IntInvariant = {
+      var extremeValues:List[Long] = List(x.domain.min/i,x.domain.max/i)
+      if(x.domain contains 0L) extremeValues = 0L :: extremeValues
+      if(x.domain contains -1L) extremeValues = (-1L/i) :: extremeValues
+      if(x.domain contains 1L) extremeValues = (1L/i) :: extremeValues
+      new Int2Int(x,_/i,Domain(extremeValues.min , extremeValues.max))
     }
 
     def %(v: IntValue): IntInvariant = Mod(x, v)
@@ -204,7 +207,7 @@ package object cbls extends ModelingAPI{
 
     def minus(v: SetValue): SetInvariant = Diff(x, v)
 
-    def map(fun: Int => Int,outputDomain:Domain) = SetMap(x, fun, outputDomain)
+    def map(fun: Long => Long,outputDomain:Domain) = SetMap(x, fun, outputDomain)
   }
 
   implicit class IntValueArrayOps(intValueArray: Array[IntValue]) {
@@ -217,7 +220,7 @@ package object cbls extends ModelingAPI{
     def element(index:IntValue): SetInvariant = SetElement(index, setArray)
   }
 
-  implicit class IntArrayOps(intArray: Array[Int]) {
+  implicit class IntArrayOps(intArray: Array[Long]) {
     def element(index:CBLSIntVar) = ConstantIntElement(index, intArray)
 
     def elements(index:SetValue) = Elements(index, intArray.map(CBLSIntConst.apply))
@@ -236,5 +239,15 @@ package object cbls extends ModelingAPI{
   }
 
   // implicit conversion of Range towards a RangeHotRestart, to use the StartBy keyword
-  implicit def instrumentRange(r: Range): InstrumentedRange = new InstrumentedRange(r)
+  implicit def instrumentRange(r: NumericRange[Long]): InstrumentedRange = new InstrumentedRange(r)
+
+  //this one has been added followingthe 32 to 64 bits port of oscar.cbls
+  implicit def longToInt(l:Long):Int = Math.toIntExact(l)
+  implicit def intToLong(i:Int):Long = i
+
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+
 }

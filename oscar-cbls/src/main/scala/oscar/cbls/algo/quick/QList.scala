@@ -17,12 +17,12 @@ package oscar.cbls.algo.quick
 import scala.language.implicitConversions
 
 class QList[@specialized T](val head:T, val tail:QList[T] = null){
-  def size:Int = {
+  def size:Long = {
     var curr = this.tail
-    var toReturn = 1
+    var toReturn = 1L
     while(curr != null){
       curr = curr.tail
-      toReturn += 1
+      toReturn += 1L
     }
     toReturn
   }
@@ -60,7 +60,7 @@ object QList{
     else q.qMap(fun)
   }
 
-  def qFold[T,@specialized(Int)X](q:QList[T],accF:(X,T) => X,initX:X):X = {
+  def qFold[T,@specialized(Long)X](q:QList[T],accF:(X,T) => X,initX:X):X = {
     var l = q
     var acc = initX
     while(l != null){

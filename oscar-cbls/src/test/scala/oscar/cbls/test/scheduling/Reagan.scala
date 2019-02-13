@@ -36,7 +36,7 @@ package oscar.cbls.test.scheduling
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-
+/*
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.scheduling._
 import model.{Planning, SuperActivity, Activity, CumulativeResource}
@@ -96,3 +96,4 @@ object Reagan extends App {
 
 }
 
+*/

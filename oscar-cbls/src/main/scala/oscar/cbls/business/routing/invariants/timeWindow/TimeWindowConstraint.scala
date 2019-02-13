@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.invariants.timeWindow
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core.computation._
+import oscar.cbls._
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -35,9 +36,9 @@ object TimeWindowConstraint {
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earliestArrivalTime: Array[Int],
-            latestLeavingTime: Array[Int],
-            travelTimeMatrix: Array[Array[Int]],
+            earliestArrivalTime: Array[Long],
+            latestLeavingTime: Array[Long],
+            travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
@@ -47,6 +48,9 @@ object TimeWindowConstraint {
       latestLeavingTime,
       travelTimeMatrix, violations)
   }
+
+  //TODO: this is not defensive and not useful to have two aply with different parameters. add taskDuration in both.
+  // and generate the violation array in the apply, because it is boring to do.
 
   /**
     * This method instantiate a TimeWindow constraint given the following input.
@@ -63,10 +67,10 @@ object TimeWindowConstraint {
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earliestArrivalTime: Array[Int],
-            latestLeavingTime: Array[Int],
-            taskDurations: Array[Int],
-            travelTimeMatrix: Array[Array[Int]],
+            earliestArrivalTime: Array[Long],
+            latestLeavingTime: Array[Long],
+            taskDurations: Array[Long],
+            travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraint ={
 
     new TimeWindowConstraint(routes: ChangingSeqValue, n, v,
@@ -94,11 +98,11 @@ object TimeWindowConstraint {
 class TimeWindowConstraint (routes: ChangingSeqValue,
                             n: Int,
                             v: Int,
-                            earliestArrivalTime: Array[Int],
-                            latestArrivalTime: Array[Int],
-                            earliestLeavingTime: Array[Int],
-                            latestLeavingTime: Array[Int],
-                            travelTimeMatrix: Array[Array[Int]],
+                            earliestArrivalTime: Array[Long],
+                            latestArrivalTime: Array[Long],
+                            earliestLeavingTime: Array[Long],
+                            latestLeavingTime: Array[Long],
+                            travelTimeMatrix: Array[Array[Long]],
                             violations: Array[CBLSIntVar]
                            ) extends GlobalConstraintDefinition[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
 
@@ -116,7 +120,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param m The distance between the two TransferFunction
     * @return The composed TransferFunction or an EmptyTransferFunction
     */
-  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
+  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Long): TransferFunction ={
     if(f1.isEmpty)
       return f1
     else if(f2.isEmpty)
@@ -124,8 +128,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
 
     val earliestArrivalTimeAt2 = f1.el + m
     val latestArrivalTimeAt2 =
-      if(f1.la + f1.el - f1.ea + m < 0)
-        Int.MaxValue
+      if(f1.la + f1.el - f1.ea + m < 0L)
+        Long.MaxValue
       else f1.la + f1.el - f1.ea + m
 
     val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
@@ -139,8 +143,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
-          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
-        // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
+          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2L is lower than earliest starting time at 2L
+        // so it doesn't matter when you arrive at 1L the resulting leaving time at 2L will be l2
         // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
           (f2.ea - f1.el - m + f1.ea, f1.la, f2.el)
@@ -151,7 +155,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         case (false,true,false,false) =>
           (f1.ea, f2.la - f1.el - m + f1.ea, f1.el + f2.el - f2.ea + m)
         case (false,false,false,false) =>
-          (1, -1, -1)
+          (1L, -1L, -1L)
         case _ =>
           throw new Error("Unhandled case : " + (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
             earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
@@ -165,7 +169,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       DefinedTransferFunction(ea3, ll3, el3, f1.from, f2.to)
   }
 
-  private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Int, Int, TransferFunction) ={
+  private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Long, Long, TransferFunction) ={
     segment match{
       case seg: PreComputedSubSequence[Array[TransferFunction]] =>
         (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
@@ -183,8 +187,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     *                        BEWARE,other vehicles are also present in this sequence; you must only work on the given vehicle
     * @param preComputedVals The array of precomputed values
     */
-  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
-    def performPreComputeOnRoute(route: List[Int]): Unit ={
+  override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
+    def performPreComputeOnRoute(route: List[Long]): Unit ={
       val node = route.head
       if(preComputedVals(node) == null)preComputedVals(node) = Array.fill(n)(EmptyTransferFunction)
       preComputedVals(node)(node) = transferFunctionOfNode(node)
@@ -196,13 +200,13 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         prevNode = curNode
         lastTF = newTF
       }
-      if(route.size > 1)
+      if(route.size > 1L)
         performPreComputeOnRoute(route.tail)
     }
 
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
-    var route: List[Int] = List.empty
+    var route: List[Long] = List.empty
     while(continue){
       vExplorer match {
         case None => continue = false
@@ -230,18 +234,18 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
+  override def computeVehicleValue(vehicle: Long, segments: List[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
     /**
       * @param segments The list of segment
-      * @param prevLeavingTime The leave time at previous segment (0 if first one)
+      * @param prevLeavingTime The leave time at previous segment (0L if first one)
       * @return The leave time after going through all the segments
       */
-    def arrivalAtDepot(segments: Iterator[Segment[Array[TransferFunction]]], previousSegmentEnd: Int = vehicle, prevLeavingTime: Int = 0): Int ={
+    def arrivalAtDepot(segments: Iterator[Segment[Array[TransferFunction]]], previousSegmentEnd: Long = vehicle, prevLeavingTime: Long = 0L): Long ={
       val segment = segments.next
       val (segmentStart, segmentEnd, transferFunction) = segmentsInfo(segment)
       val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd)(segmentStart)
       val leaveTimeAtSegment = transferFunction(arrivalTimeAtSegment)
-      if(leaveTimeAtSegment >= 0) {
+      if(leaveTimeAtSegment >= 0L) {
         if (segments.hasNext)
           arrivalAtDepot(segments, segmentEnd, leaveTimeAtSegment)
         else
@@ -251,7 +255,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
 
     val arrivalTimeAtDepot = arrivalAtDepot(segments.toIterator)
-    arrivalTimeAtDepot < 0 || arrivalTimeAtDepot > latestLeavingTime(vehicle)
+    arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
   /**
@@ -262,8 +266,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Boolean): Unit = {
-    if(value) violations(vehicle) := 1 else violations(vehicle) := 0
+  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
   }
 
   /**
@@ -274,7 +278,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
     var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
     var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
@@ -312,11 +316,11 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   /**
     * Return all transfer functions of the problem.
     * Meant for post-optimisation. Don't use it during optimisation.
-    * @return A 2-dimension table of TransferFunction
+    * @return A 2L-dimension table of TransferFunction
     */
   def transferFunctions(routes: IntSequence): Array[Array[TransferFunction]] ={
     val transferFunctions: Array[Array[TransferFunction]] = Array.fill(n)(Array.fill(n)(EmptyTransferFunction))
-    for(curV <- 0 to v){
+    for(curV <- 0L to v){
       performPreCompute(curV, routes, transferFunctions)
     }
 

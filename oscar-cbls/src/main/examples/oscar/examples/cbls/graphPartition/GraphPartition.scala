@@ -1,5 +1,6 @@
-package oscar.examples.cbls.graphPartition
+package oscar.examples.cbls.graphPatrition
 
+import oscar.cbls
 import oscar.cbls._
 import oscar.cbls.lib.invariant.logic.{DenseCount, Int2Int}
 import oscar.cbls.modeling._
@@ -17,11 +18,11 @@ object GraphPartition extends CBLSModel with App {
 
   println("nbNodes:" + nbNodes + " nbEdges:" + nbEdges)
 
-  def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Int,Int)],Array[List[Int]]) = {
-    val adjacencyLists:Array[List[Int]] = Array.fill(nbNodes)(List.empty)
+  def generateRandomEdges(nbNodes:Int,nbEdges:Int):(List[(Long,Long)],Array[List[Long]]) = {
+    val adjacencyLists:Array[List[Long]] = Array.fill(nbNodes)(List.empty)
     val allEdges = List.tabulate(nbEdges)(_ => {
-      val nodeA = Random.nextInt(nbNodes)
-      val nodeB = Random.nextInt(nbNodes)
+      val nodeA = Random.nextInt(nbNodes):Long
+      val nodeB = Random.nextInt(nbNodes):Long
       adjacencyLists(nodeA) = nodeB :: adjacencyLists(nodeA)
       adjacencyLists(nodeB) = nodeA :: adjacencyLists(nodeB)
       (nodeA,nodeB)
@@ -93,7 +94,7 @@ object GraphPartition extends CBLSModel with App {
           name = "swap1Most1Most")),
         profile(swapsNeighborhood(nodeToPartition,
           searchZone1 = mostViolatedNodes,
-          searchZone2 = () => (firstNode, itsPartition) => adjacencyLists(firstNode).filter(n => nodeToPartition(n).newValue != itsPartition),
+          searchZone2 = () => (firstNode:Long, itsPartition:Long) => adjacencyLists(cbls.longToInt(firstNode)).filter(n => nodeToPartition(n).newValue != itsPartition),
           hotRestart = false,
           symmetryCanBeBrokenOnIndices = false,
           name = "swap1MostVAdj")),

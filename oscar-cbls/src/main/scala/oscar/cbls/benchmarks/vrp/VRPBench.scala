@@ -27,26 +27,26 @@ import scala.io.Source
 
 object TSProutePoints extends App {
 
-  def printMatrix(m:Array[Array[Int]]){
+  def printMatrix(m:Array[Array[Long]]){
     println(m.map(l => l.mkString(" ")).mkString("\n"))
   }
 
   def benchmarkOnProblem(fileName:String){
-    warmUp(1000)
+    warmUp(1000L)
     val matrix = loadMatrixFromFile(fileName:String)
     val n = matrix.length
-    val v = 1
-    val percent = 3
+    val v = 1L
+    val percent = 3L
     println("benchmarking " + fileName)
     print("n\tv\tpercent\ttime")
     print(n + "\t" + v + "\t" + percent + "\t")
-    new TSPRoutePointsS(n, v, percent, 0, matrix)
+    new TSPRoutePointsS(n, v, percent, 0L, matrix)
   }
 
-  def warmUp(n:Int = 10000){
-    val verbose = 1
-    val maxPivotPerValuePercent = 4
-    val v = 100
+  def warmUp(n:Long = 10000L){
+    val verbose = 1L
+    val maxPivotPerValuePercent = 4L
+    val v = 100L
     val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
     new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose, symmetricDistanceMatrix)
     System.gc()
@@ -57,23 +57,23 @@ object TSProutePoints extends App {
     println("performing warm up")
     warmUp()
     println("done. ")
-    val nbTrials = 100
+    val nbTrials = 100L
 
    // throw new Error("finished")
     println()
     print("n\tv\tpercent")
-    for (t <- 1 to nbTrials) {
+    for (t <- 1L to nbTrials) {
       print("\ttime")
     }
     println
 
-    for { n <- 1000 to 11000 by 2000
-          v <- List(100)
-          maxPivotPerValuePercent <- List(0, 1, 2, 3, 4, 5, 20) } {
+    for { n <- 1000L to 11000L by 2000L
+          v <- List(100L)
+          maxPivotPerValuePercent <- List(0L, 1L, 2L, 3L, 4L, 5L, 20L) } {
       print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-      for (t <- 1 to nbTrials) {
+      for (t <- 1L to nbTrials) {
         val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
-        new TSPRoutePointsS(n, v, maxPivotPerValuePercent, 0, symmetricDistanceMatrix)
+        new TSPRoutePointsS(n, v, maxPivotPerValuePercent, 0L, symmetricDistanceMatrix)
         print("\t")
         System.gc()
       }
@@ -81,7 +81,7 @@ object TSProutePoints extends App {
     }
   }
 
-  def loadMatrixFromFile(filename:String):Array[Array[Int]] = {
+  def loadMatrixFromFile(filename:String):Array[Array[Long]] = {
     val file = Source.fromFile(filename)
     val words: Array[String] = file.mkString.split("\\s+")
     file.close()
@@ -89,10 +89,10 @@ object TSProutePoints extends App {
 
     val n = reader.next().toInt
 
-    val matrix = Array.tabulate(n)(_ => Array.fill(n)(-1))
+    val matrix = Array.tabulate(n)(_ => Array.fill(n)(-1L))
 
-    for(i <- 0 until n){
-      for(j <- 0 until n){
+    for(i <- 0L until n){
+      for(j <- 0L until n){
         matrix(i)(j) = reader.next().toInt
       }
     }
@@ -100,24 +100,24 @@ object TSProutePoints extends App {
     matrix
   }
 
-  def writeMatrix(writer:PrintWriter,matrix:Array[Array[Int]]){
+  def writeMatrix(writer:PrintWriter,matrix:Array[Array[Long]]){
     val n = matrix.length
-    for(i <- 0 until n){
-      for(j <- 0 until n){
+    for(i <- 0L until n){
+      for(j <- 0L until n){
         writer.write(matrix(i)(j) + " ")
       }
       writer.write("\n")
     }
   }
 
-  def saveMatrixToFile(fileName:String,matrix:Array[Array[Int]]){
+  def saveMatrixToFile(fileName:String,matrix:Array[Array[Long]]){
     val writer = new PrintWriter(new File(fileName))
     writer.write(matrix.length + "\n")
     writeMatrix(writer,matrix)
     writer.close()
   }
 
-  def saveMatrixToLocalSolverFile(fileName:String,matrix:Array[Array[Int]]){
+  def saveMatrixToLocalSolverFile(fileName:String,matrix:Array[Array[Long]]){
     val writer = new PrintWriter(new File(fileName))
     val n = matrix.length
     writer.write("NAME: RANDOM" + fileName + "\n")
@@ -142,7 +142,7 @@ object TSProutePoints extends App {
   }
 
   def runAllBenchmarks(){
-    warmUp(200)
+    warmUp(200L)
     println()
     print("balise\tn\ttime\tobj")
     println
@@ -150,36 +150,36 @@ object TSProutePoints extends App {
     for(n <- benchmarkSizes){
       print("runResult " + n + "\t")
       val matrix = loadMatrixFromFile(fileName + n + ".bench")
-      new TSPRoutePointsS(n, 1, 3, 0, matrix,true)
+      new TSPRoutePointsS(n, 1L, 3L, 0L, matrix,true)
       print("\n")
       System.gc()
     }
   }
 
-  def runBenchmark(fileName:String,n:Int){
-    new TSPRoutePointsS(1000, 100, 3, 0, RoutingMatrixGenerator(1000)._1)
+  def runBenchmark(fileName:String,n:Long){
+    new TSPRoutePointsS(1000L, 100L, 3L, 0L, RoutingMatrixGenerator(1000L)._1)
 
     println()
     print("n\ttime\tobj")
     println
       print(n + "\t")
       val matrix = loadMatrixFromFile(fileName + n + ".bench")
-      new TSPRoutePointsS(n, 1, 3, 0, matrix,true)
+      new TSPRoutePointsS(n, 1L, 3L, 0L, matrix,true)
       print("\n")
       System.gc()
   }
 
-  val benchmarkSizes = 500 to 5000 by 500
+  val benchmarkSizes = 500L to 5000L by 500L
   var fileName = "C:\\Users\\rdl\\Documents\\Oscar\\BitBucket3\\oscar-cbls\\src\\main\\examples\\oscar\\examples\\cbls\\routing\\data\\bench"
-  fileName = args(0)
+  fileName = args(0L)
   println("benchmark path: " + fileName)
-  //runBenchmark(fileName,1000)
+  //runBenchmark(fileName,1000L)
  // generateAllBenchmarks()
   runAllBenchmarks()
   //performRandomBenchmark()
 }
 
-class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symmetricDistanceMatrix:Array[Array[Int]],printobj:Boolean = false) extends StopWatch{
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Long, verbose:Int, symmetricDistanceMatrix:Array[Array[Long]],printobj:Boolean = false) extends StopWatch{
 
 
   //  println("restrictions:" + restrictions)
@@ -187,17 +187,17 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
 
   val myVRP = new VRP(model,n,v,maxPivotPerValuePercent = maxPivotPerValuePercent)
 
-  //val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0)
+  //val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistanceMatrix,true,true,false)(0L)
 
   val (next,prev) = routeSuccessorAndPredecessors(myVRP.routes,v,n)()
 
   val distanceOut = Array.tabulate(n)((node:Int) => {
     val maxDistance = symmetricDistanceMatrix(node).max
-    int2Int(next(node), nextNode => if(nextNode == n) 0 else symmetricDistanceMatrix(node)(nextNode),0 to maxDistance,false)})
+    int2Int(next(node), nextNode => if(nextNode == n) 0L else symmetricDistanceMatrix(node)(nextNode),(0,maxDistance),false)})
 
   val totalRouteLengthSlow = sum(distanceOut)
 
-  val penaltyForUnrouted  = 10000
+  val penaltyForUnrouted  = 10000L
 
   val obj = Objective(totalRouteLengthSlow + (penaltyForUnrouted*(n - length(myVRP.routes))))
 
@@ -206,41 +206,41 @@ class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int, symm
   model.close()
 
 
-  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
+  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val closestRelevantNeighborsByDistance = Array.tabulate(n)(i => DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(i))
 
-  def routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
-  def unRoutedPostFilter = (node:Int) => (neighbor:Int) => !myVRP.isRouted(neighbor)
+  def routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
+  def unRoutedPostFilter = (node:Long) => (neighbor:Long) => !myVRP.isRouted(neighbor)
 
-  val routeUnroutdPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  profile(insertPointUnroutedFirst(() => myVRP.unrouted.value,()=> myVRP.kFirst(10L,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutdPoint2 =  profile(insertPointRoutedFirst(() => myVRP.routed.value.toList.filter(_>=v),()=> myVRP.kFirst(10,closestRelevantNeighborsByDistance,unRoutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2))
+  val routeUnroutdPoint2 =  profile(insertPointRoutedFirst(() => myVRP.routed.value.toList.filter(_>=v),()=> myVRP.kFirst(10,(i => closestRelevantNeighborsByDistance(i)),unRoutedPostFilter),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.routes.value.size < n/2L))
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
+  def onePtMove(k:Long) = profile(onePointMove(() => myVRP.routed.value, () => myVRP.kFirst(k,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), myVRP))
 
-  def customTwoOpt(k:Int) = profile(twoOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP))
+  def customTwoOpt(k:Long) = profile(twoOpt(() => myVRP.routed.value, ()=> myVRP.kFirst(k,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) = profile(threeOpt(myVRP.routed, ()=> myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), myVRP,selectFlipBehavior = First(),breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Long, breakSym:Boolean) = profile(threeOpt(() => myVRP.routed.value, ()=> (i => myVRP.kFirst(k,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter)(i)), myVRP,selectFlipBehavior = First(),breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = mu[OnePointMoveMove](
-    onePointMove(myVRP.routed, () => myVRP.kFirst(5,closestRelevantNeighborsByDistance,routedPostFilter),myVRP),
-    l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,closestRelevantNeighborsByDistance,routedPostFilter),myVRP, hotRestart = false)),
+    onePointMove(() => myVRP.routed.value, () => myVRP.kFirst(5L,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter),myVRP),
+    l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter),myVRP, hotRestart = false)),
     intermediaryStops = true,
     maxDepth = 6)
 
-  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance,routedPostFilter), () => myVRP.vehicles)
+  def segExchange(k:Long) = segmentExchange(myVRP,()=>myVRP.kFirst(k,(i => closestRelevantNeighborsByDistance(i)),routedPostFilter), () => myVRP.vehicles)
 
   val search = bestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(15),customTwoOpt(20), customThreeOpt(10,false))) exhaust customThreeOpt(25,false)
 
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
+  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10L) guard (() => myVRP.unrouted.value.size != 0L)),10L)) exhaust BestSlopeFirst(List(onePtMove(20L),twoOpt, threeOpt(10L,true))) exhaust threeOpt(20L,true)
 
   search.verbose = verbose
-  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(1L, ()=> "" + myVRP)
 
   startWatch()
 
-  search.doAllMoves(obj=obj,shouldStop = _ => getWatch >= 200*1000)
+  search.doAllMoves(obj=obj,shouldStop = _ => getWatch >= 200L*1000L)
 
   print(getWatch)
   if(printobj){

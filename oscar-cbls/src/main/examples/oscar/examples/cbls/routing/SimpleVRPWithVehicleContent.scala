@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 
@@ -183,3 +183,4 @@ object SimpleVRPWithVehicleContent extends App{
 
   search.profilingStatistics
 }
+*/

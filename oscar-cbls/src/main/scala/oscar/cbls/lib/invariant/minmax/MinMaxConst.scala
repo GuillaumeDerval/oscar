@@ -24,15 +24,15 @@ import scala.collection.immutable.SortedSet
 
 /**
  * Maintains Min(Var(i) | i in cond)
- * @param varss is an array of Int
+ * @param varss is an array of Long
  * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MinConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue)
+case class MinConstArray(varss: Array[Long], ccond: SetValue, default: Long = Long.MaxValue)
   extends MiaxConstArray(varss, ccond, default) {
 
-  override def Ord(v: Int): Int = v
+  override def Ord(v: Long): Long = v
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default)
@@ -48,10 +48,10 @@ case class MinConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue)
+case class MaxConstArray(varss: Array[Long], ccond: SetValue, default: Long = Long.MinValue)
   extends MiaxConstArray(varss, ccond, default) {
 
-  override def Ord(v: Int): Int = -v
+  override def Ord(v: Long): Long = -v
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default)
@@ -67,17 +67,17 @@ case class MaxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.
  * when there is an update, it is first checked against the TODO-list, for cancellation.
  * if the update does not impact the output, it is postponed
  * if it affects the output, it is performed
- * @param varss is an array of Int
+ * @param varss is an array of Long
  * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
  * @param default the value if ccond is empty
  * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
- * update is O(log(n)), faster (O(1) if you do updates and backtracks
+ * update is O(log(n)), faster (O(1L) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = Int.MaxValue)
+case class MinConstArrayLazy(varss: Array[Long], ccond: SetValue, default: Long = Long.MaxValue, maxBackLogSize:Long = Long.MaxValue)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
-  override def Ord(v: Int): Int = v
+  override def Ord(v: Long): Long = v
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default,Some("default"))
@@ -85,7 +85,7 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
   }
 
   @inline
-  override def equalOrNotImpactingMiax(potentialMiax: Int): Boolean = this.newValue <= potentialMiax
+  override def equalOrNotImpactingMiax(potentialMiax: Long): Boolean = this.newValue <= potentialMiax
 }
 
 
@@ -100,14 +100,14 @@ case class MinConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
  * @param default the value if ccond is empty
  * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
- * update is O(log(n)), faster (O(1) if you do updates and backtracks
+ * update is O(log(n)), faster (O(1L) if you do updates and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue, maxBackLogSize:Int = 10)
+case class MaxConstArrayLazy(varss: Array[Long], ccond: SetValue, default: Long = Long.MinValue, maxBackLogSize:Long = 10L)
   extends MiaxConstArrayLazy(varss, ccond, default, maxBackLogSize) {
 
   @inline
-  override def Ord(v: Int): Int = -v
+  override def Ord(v: Long): Long = -v
 
   override def checkInternals(c: Checker): Unit = {
     if(ccond.value.isEmpty) c.check(value == default,Some("default"))
@@ -115,7 +115,7 @@ case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
   }
 
   @inline
-  override def equalOrNotImpactingMiax(potentialMiax: Int): Boolean = this.newValue >= potentialMiax
+  override def equalOrNotImpactingMiax(potentialMiax: Long): Boolean = this.newValue >= potentialMiax
 }
 
 /**
@@ -126,7 +126,7 @@ case class MaxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = 
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
+abstract class MiaxConstArray(vars: Array[Long], cond: SetValue, default: Long)
   extends IntInvariant
   with SetNotificationTarget{
 
@@ -141,7 +141,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
     h.insert(i)
   }
 
-  def Ord(v: Int): Int
+  def Ord(v: Long): Long
 
   if (h.isEmpty) {
     this := default
@@ -149,7 +149,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
     this := vars(h.getFirst)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
     if (h.isEmpty) {
@@ -160,7 +160,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
 
     //mettre a jour le heap
@@ -168,7 +168,7 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
 
     //mettre a jour le heap
@@ -189,25 +189,25 @@ abstract class MiaxConstArray(vars: Array[Int], cond: SetValue, default: Int)
  * update is O(log(n)), but probably faster if you do neighborhood exploration with moves and backtracks
  * @author renaud.delandtsheer@cetic.be
  * */
-abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int, maxBacklog:Int = Int.MaxValue)
+abstract class MiaxConstArrayLazy(vars: Array[Long], cond: SetValue, default: Long, maxBacklog:Long = Long.MaxValue)
   extends IntInvariant
   with SetNotificationTarget{
 
-  //  var nbAnihilation = 0
-  //  var nbDoIt = 0
+  //  var nbAnihilation = 0L
+  //  var nbDoIt = 0L
 
   val n = vars.length
   var h: BinomialHeapWithMoveInt = new BinomialHeapWithMoveInt(i => Ord(vars(i)), vars.length, vars.length)
 
-  var backLog:QList[Int] = null
-  var backlogSize:Int = 0
+  var backLog:QList[Long] = null
+  var backlogSize:Long = 0L
   val isBacklogged:Array[Boolean] = Array.fill(vars.size)(false)
   val consideredValue:Array[Boolean] = Array.fill(vars.size)(false)
 
   registerStaticAndDynamicDependency(cond)
   finishInitialization()
 
-  def computeMinMax():(Int,Int) = {
+  def computeMinMax():(Long,Long) = {
     var myMin = default
     var myMax = default
     for (i <- vars) {
@@ -223,7 +223,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
     consideredValue(i) = true
   }
 
-  def Ord(v: Int): Int
+  def Ord(v: Long): Long
 
   @inline
   private[this] def updateFromHeap() {
@@ -243,14 +243,14 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   restrictDomain(computeMinMax())
 
   @inline
-  def equalOrNotImpactingMiax(potentialMiax:Int):Boolean
+  def equalOrNotImpactingMiax(potentialMiax:Long):Boolean
 
   @inline
-  private[this] def putIntoBackLog(cond:Int): Unit ={
+  private[this] def putIntoBackLog(cond:Long): Unit ={
     if(!isBacklogged(cond)){
       backLog = QList(cond,backLog)
       isBacklogged(cond) = true
-      backlogSize += 1
+      backlogSize += 1L
     }
   }
 
@@ -262,11 +262,11 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
     while(true){
       if(backLog == null) return
       if(!isBacklogged(backLog.head)){
-        backlogSize -=1
+        backlogSize -=1L
         backLog = backLog.tail
       } else if(backlogSize > maxBacklog){
         val condValue = backLog.head
-        backlogSize -=1
+        backlogSize -=1L
         backLog = backLog.tail
         processThisRealBackLog(condValue)
       }else{
@@ -276,7 +276,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  private[this] def processThisRealBackLog(condValue:Int): Unit ={
+  private[this] def processThisRealBackLog(condValue:Long): Unit ={
     if(consideredValue(condValue)){ //should be removed
       assert(cond.value.contains(condValue))
       h.delete(condValue)
@@ -298,10 +298,10 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
         processThisRealBackLog(condValue)
       }
     }
-    backlogSize = 0
+    backlogSize = 0L
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     //insert first because reduces chances of flush
     val itAdded = addedValues.iterator
     while(itAdded.hasNext){
@@ -315,7 +315,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Int) {
+  def notifyInsertOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     if(consideredValue(value)){ //anihilation
       assert(isBacklogged(value))
@@ -333,7 +333,7 @@ abstract class MiaxConstArrayLazy(vars: Array[Int], cond: SetValue, default: Int
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
     assert(v == cond)
     if(!consideredValue(value)){ //anihilation
       assert(isBacklogged(value))

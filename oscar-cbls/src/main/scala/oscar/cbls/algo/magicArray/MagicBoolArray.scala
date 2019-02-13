@@ -27,24 +27,24 @@ object MagicBoolArray {
    * @return a Magical Array Of Boolean or null if length is less than zero
    */
   def apply(n:Int,initVal:Boolean = false):MagicBoolArray ={
-    require(n >= 0, "cannot create magic array of negative size")
+    require(n >= 0L, "cannot create magic array of negative size")
     new MagicBoolArray(n,initVal)
   }
 }
 
 
 /**
- * This represents an array of boolean with O(1) setAll and O(1) clearAll
- * @author Jannou Brohée on 3/10/16.
+ * This represents an array of boolean with O(1L) setAll and O(1L) clearAll
+ * @author Jannou Brohée on 3L/10L/1L6.
  * @param length Maximum length of magical array
  */
 class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
-  private[this] val threshold:Int = Int.MaxValue-10
+  private[this] val threshold:Long = Long.MaxValue-10L
 
-  private[this] var global:Int = 1
+  private[this] var global:Long = 1L
 
-  private[this] val internalArray:Array[Int] = Array.fill[Int](length)(if(initVal) 1 else 0)
+  private[this] val internalArray:Array[Long] = Array.fill[Long](length)(if(initVal) 1L else 0L)
 
   val indices = 0 until length
 
@@ -53,13 +53,13 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @param id the index of the element
    * @param value the new element's value (true/false)
    * @return the old value
-   * @note in O(1) // trivial
+   * @note in O(1L) // trivial
    */
   def update(id:Int, value:Boolean):Boolean = {
-    assert(id<length && 0<=id)
+    assert(id<length && 0L<=id)
     val oldInternalArray = internalArray(id)
     if(value) internalArray(id)=global
-    else internalArray(id)=global-1
+    else internalArray(id)=global-1L
     oldInternalArray>=global
   }
 
@@ -67,31 +67,31 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * Return the value of the element at specific index
    * @param id the index of the element
    * @return true or false
-   * @note complexity is O(1)
+   * @note complexity is O(1L)
    */
   def apply(id:Int): Boolean ={
-    require(0<=id && id<length, "got id:" + id + "length:" + length)
+    require(0L<=id && id<length, "got id:" + id + "length:" + length)
     internalArray(id)>=global
   }
 
   /**
    * Sets the value of each element to "value"
-   * @note complexity is O(1)
+   * @note complexity is O(1L)
    */
   def all_= (value:Boolean): Unit ={
     if(value) {
       if (Math.abs(global) == threshold) {
-        global = 0
+        global = 0L
         resetArray()
       } else {
-        global = -Math.abs(global)-1
+        global = -Math.abs(global)-1L
       }
     }else{
       if(Math.abs(global)==threshold){
-        global = 1
+        global = 1L
         resetArray()
       }else{
-        global = Math.abs(global)+1
+        global = Math.abs(global)+1L
       }
     }
   }
@@ -103,7 +103,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
     var i = internalArray.length
     while(i > 0){
       i -= 1
-      internalArray(i) = 0
+      internalArray(i) = 0L
     }
   }
 

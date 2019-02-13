@@ -40,23 +40,23 @@ case class BelongsTo(v: IntValue, set: SetValue)
   registerStaticAndDynamicDependenciesNoID(v, set)
   finishInitialization()
 
-  /** the violation is 1 if v is not in set, 0 otherwise*/
-  override val violation: CBLSIntVar = CBLSIntVar(model, if (set.value.contains(v.value)) 0 else 1, 0 to 1, "belongsTo(" + v.name + "," + set.name + ")")
+  /** the violation is 1L if v is not in set, 0L otherwise*/
+  override val violation: CBLSIntVar = CBLSIntVar(model, if (set.value.contains(v.value)) 0L else 1L, Domain(0L ,1L), "belongsTo(" + v.name + "," + set.name + ")")
 
   violation.setDefiningInvariant(this)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
-    violation := (if (set.value.contains(v.value)) 0 else 1)
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+    violation := (if (set.value.contains(v.value)) 0L else 1L)
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
-    if (newValue.contains(this.v.value)) violation := 0
-    else violation := 1
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+    if (newValue.contains(this.v.value)) violation := 0L
+    else violation := 1L
   }
 
-  /** the violation is 1 v is not is set, 0 otherwise*/
-  val constZero:IntValue = 0
+  /** the violation is 1L v is not is set, 0L otherwise*/
+  val constZero:IntValue = 0L
   override def violation(v: Value): IntValue = { if (this.v == v || this.set == v) violation else constZero}
 
   /**
@@ -65,9 +65,9 @@ case class BelongsTo(v: IntValue, set: SetValue)
    * It requires that the Model is instantiated with the variable debug set to true.
    */
   override def checkInternals(c: Checker) {
-    c.check(violation.value == (if (set.value.contains(v.value)) 0 else 1),
+    c.check(violation.value == (if (set.value.contains(v.value)) 0L else 1L),
       Some("Violation.value (" + violation.value
-        + ") == (if(set.value" + set.value + ".contains(v.value (" + v.value + "))) 0 else 1)"))
+        + ") == (if(set.value" + set.value + ".contains(v.value (" + v.value + "))) 0L else 1L)"))
   }
 }
 
@@ -77,45 +77,45 @@ case class BelongsTo(v: IntValue, set: SetValue)
   * Precomputes all possible distances -> constant time updates
   * @author gustav.bjordal@it.uu.se
   */
-case class BelongsToConstPreComputing(v: IntValue, set: Set[Int])
+case class BelongsToConstPreComputing(v: IntValue, set: Set[Long])
     extends Invariant
     with Constraint
     with IntNotificationTarget{
 
-  val sorted = set.toArray[Int].sorted
+  val sorted = set.toArray[Long].sorted
 
-  def dist(value:Int, s:Set[Int]):Int ={
+  def dist(value:Long, s:Set[Long]):Long ={
     val idx = java.util.Arrays.binarySearch(sorted,value)
-    if(idx >= 0){
-      0
+    if(idx >= 0L){
+      0L
     }else{
-      val insertionPoint = -(idx+1)
-      if(insertionPoint == 0){
+      val insertionPoint = -(idx+1L)
+      if(insertionPoint == 0L){
         math.abs(sorted(insertionPoint)-value)
       }else if(insertionPoint == sorted.length){
-        math.abs(sorted(insertionPoint-1)-value)
+        math.abs(sorted(insertionPoint-1L)-value)
       }else {
         math.min(
           math.abs(sorted(insertionPoint)-value),
-          math.abs(sorted(insertionPoint-1)-value))
+          math.abs(sorted(insertionPoint-1L)-value))
       }
     }
   }
 
-  val dists = Array.tabulate(v.max-v.min+1)(i => dist(i+v.min,set))
+  val dists = Array.tabulate(v.max-v.min+1L)(i => dist(i+v.min,set))
   val maxDist = dists.max
   registerConstrainedVariables(v)
   registerStaticAndDynamicDependenciesNoID(v)
   finishInitialization()
 
-  /** the violation is 1 if v is not in set, 0 otherwise*/
+  /** the violation is 1L if v is not in set, 0L otherwise*/
   override val violation: CBLSIntVar = CBLSIntVar(model, dists(v.value-v.min), 0 to dists.max, "belongsToPreComp(" + v.name + "," + set.mkString("{",",","}") + ")")
 
   violation.setDefiningInvariant(this)
 
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
       try{
         violation := dists(NewVal-v.min)
       }catch{
@@ -124,8 +124,8 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Int])
       }
   }
 
-  /** the violation is 1 v is not is set, 0 otherwise*/
-  override def violation(v: Value): IntValue = { if (this.v == v) violation else 0 }
+  /** the violation is 1L v is not is set, 0L otherwise*/
+  override def violation(v: Value): IntValue = { if (this.v == v) violation else 0L }
   /**
     * To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
@@ -140,45 +140,45 @@ case class BelongsToConstPreComputing(v: IntValue, set: Set[Int])
   * Computes updates on the fly and caches results.
   * @author gustav.bjordal@it.uu.se
   */
-case class BelongsToConstCaching(v: IntValue, set: Set[Int])
+case class BelongsToConstCaching(v: IntValue, set: Set[Long])
   extends Invariant
     with Constraint
     with IntNotificationTarget{
 
 
-  val sorted = set.toArray[Int].sorted
+  val sorted = set.toArray[Long].sorted
 
-  def dist(value:Int, s:Set[Int]):Int ={
+  def dist(value:Long, s:Set[Long]):Long ={
     val idx = java.util.Arrays.binarySearch(sorted,value)
-    if(idx >= 0){
-      0
+    if(idx >= 0L){
+      0L
     }else{
-      val insertionPoint = -(idx+1)
-      if(insertionPoint == 0){
+      val insertionPoint = -(idx+1L)
+      if(insertionPoint == 0L){
         math.abs(sorted(insertionPoint)-value)
       }else if(insertionPoint == sorted.length){
-        math.abs(sorted(insertionPoint-1)-value)
+        math.abs(sorted(insertionPoint-1L)-value)
       }else {
         math.min(
           math.abs(sorted(insertionPoint)-value),
-          math.abs(sorted(insertionPoint-1)-value))
+          math.abs(sorted(insertionPoint-1L)-value))
       }
     }
   }
 
-  val dists = mutable.HashMap.empty[Int,Int]
+  val dists = mutable.HashMap.empty[Long,Long]
   registerConstrainedVariables(v)
   registerStaticAndDynamicDependenciesNoID(v)
   finishInitialization()
 
-  /** the violation is 1 if v is not in set, 0 otherwise*/
+  /** the violation is 1L if v is not in set, 0L otherwise*/
   override val violation: CBLSIntVar = CBLSIntVar(model, dist(v.value-v.min,set), 0 to Math.max(v.max - set.min, set.max - v.min), "belongsToCache(" + v.name + "," + set.mkString("{",",","}") + ")")
 
   violation.setDefiningInvariant(this)
 
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if(dists.contains(NewVal)) {
       violation := dists(NewVal)
     }else {
@@ -188,8 +188,8 @@ case class BelongsToConstCaching(v: IntValue, set: Set[Int])
     }
   }
 
-  /** the violation is 1 v is not is set, 0 otherwise*/
-  override def violation(v: Value): IntValue = { if (this.v == v) violation else 0 }
+  /** the violation is 1L v is not is set, 0L otherwise*/
+  override def violation(v: Value): IntValue = { if (this.v == v) violation else 0L }
   /**
     * To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
@@ -200,8 +200,8 @@ case class BelongsToConstCaching(v: IntValue, set: Set[Int])
 }
 
 object BelongsToConst{
-  def apply(v: IntValue, set: Set[Int]) = {
-    if(v.max - v.min < 1000000){
+  def apply(v: IntValue, set: Set[Long]) = {
+    if(v.max - v.min < 1000000L){
       BelongsToConstPreComputing(v,set)
     }else{
       BelongsToConstCaching(v,set)

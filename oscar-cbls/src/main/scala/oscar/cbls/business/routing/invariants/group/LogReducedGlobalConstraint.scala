@@ -19,6 +19,7 @@ package oscar.cbls.business.routing.invariants.group
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
+import oscar.cbls._
 
 
 sealed abstract class LogReducedSegment[T]()
@@ -35,8 +36,8 @@ sealed abstract class LogReducedSegment[T]()
   *             there are O(log(n)) of thee values in the list
   * @tparam T the type of precomputation
   */
-abstract sealed class LogReducedPreComputedSubSequence[T](val startNode:Int,
-                                                          val endNode:Int) extends LogReducedSegment[T]{
+abstract sealed class LogReducedPreComputedSubSequence[T](val startNode:Long,
+                                                          val endNode:Long) extends LogReducedSegment[T]{
 
   def steps:QList[T]
 
@@ -47,15 +48,15 @@ abstract sealed class LogReducedPreComputedSubSequence[T](val startNode:Int,
 }
 
 object LogReducedPreComputedSubSequence{
-  def unapply[T](l:LogReducedPreComputedSubSequence[T]):Option[(Int,Int,QList[T])] = {
+  def unapply[T](l:LogReducedPreComputedSubSequence[T]):Option[(Long,Long,QList[T])] = {
     Some((l.startNode,l.endNode,l.steps))
   }
 }
 
-class LogReducedPreComputedSubSequenceLazy[T](startNode:Int,
-                                              endNode:Int,
+class LogReducedPreComputedSubSequenceLazy[T](startNode:Long,
+                                              endNode:Long,
                                               stepGenerator: () => QList[T])
-  extends  LogReducedPreComputedSubSequence[T](startNode:Int, endNode:Int){
+  extends  LogReducedPreComputedSubSequence[T](startNode:Long, endNode:Long){
 
   private var generatedSteps:Option[QList[T]] = None
   override def steps:QList[T] = {
@@ -75,18 +76,18 @@ class LogReducedPreComputedSubSequenceLazy[T](startNode:Int,
 }
 
 object LogReducedPreComputedSubSequenceLazy{
-  def apply[T](startNode:Int,
-               endNode:Int,
+  def apply[T](startNode:Long,
+               endNode:Long,
                stepGenerator: () => QList[T]):LogReducedPreComputedSubSequenceLazy[T] =
     new LogReducedPreComputedSubSequenceLazy[T](startNode,
       endNode,
       stepGenerator)
 }
 
-class LogReducedPreComputedSubSequenceGiven[T](startNode:Int,
-                                               endNode:Int,
+class LogReducedPreComputedSubSequenceGiven[T](startNode:Long,
+                                               endNode:Long,
                                                val steps:QList[T])
-  extends LogReducedPreComputedSubSequence[T](startNode:Int,endNode:Int){
+  extends LogReducedPreComputedSubSequence[T](startNode:Long,endNode:Long){
 
   override def toString: String = {
     "LogReducedPreComputedSubSequence(startNode:" + startNode +
@@ -97,11 +98,11 @@ class LogReducedPreComputedSubSequenceGiven[T](startNode:Int,
 
 object LogReducedPreComputedSubSequenceGiven {
 
-  def apply[T](startNode: Int,
-               endNode: Int,
+  def apply[T](startNode: Long,
+               endNode: Long,
                steps: QList[T]): LogReducedPreComputedSubSequenceGiven[T] =
-    new LogReducedPreComputedSubSequenceGiven[T](startNode: Int,
-      endNode: Int,
+    new LogReducedPreComputedSubSequenceGiven[T](startNode: Long,
+      endNode: Long,
       steps: QList[T])
 }
 
@@ -117,8 +118,8 @@ object LogReducedPreComputedSubSequenceGiven {
   *             there are O(log(n)) of thee values in the list
   * @tparam T the type of precomputation
   */
-class LogReducedFlippedPreComputedSubSequence[T](val startNode:Int,
-                                                 val endNode:Int,
+class LogReducedFlippedPreComputedSubSequence[T](val startNode:Long,
+                                                 val endNode:Long,
                                                  stepGenerator: () => QList[T]) extends LogReducedSegment[T]{
 
   lazy val steps:QList[T] = stepGenerator()
@@ -131,10 +132,10 @@ class LogReducedFlippedPreComputedSubSequence[T](val startNode:Int,
 
 object LogReducedFlippedPreComputedSubSequence {
 
-  def apply[T](startNode:Int, endNode:Int, stepGenerator: () => QList[T]) =
+  def apply[T](startNode:Long, endNode:Long, stepGenerator: () => QList[T]) =
     new LogReducedFlippedPreComputedSubSequence[T](startNode,endNode, stepGenerator)
 
-  def unapply[T](l: LogReducedFlippedPreComputedSubSequence[T]): Option[(Int, Int, QList[T])] = {
+  def unapply[T](l: LogReducedFlippedPreComputedSubSequence[T]): Option[(Long, Long, QList[T])] = {
     Some((l.startNode, l.endNode, l.steps))
   }
 }
@@ -143,7 +144,7 @@ object LogReducedFlippedPreComputedSubSequence {
     * when pre-computation was performed.
     * @param node
     */
-  case class LogReducedNewNode[T](node:Int, value:T) extends LogReducedSegment[T]{
+  case class LogReducedNewNode[T](node:Long, value:T) extends LogReducedSegment[T]{
     override def toString: String = {
       "LogReducedNewNode(node:" + node + ")"
     }
@@ -155,7 +156,7 @@ object LogReducedFlippedPreComputedSubSequence {
   /**
     * This API provides an easy to use framework for defining a custom global constraint for vehicle routing.
     * it is to be used when the pre-computation needs to be performed on every possible sub-sequence of route,
-    * thus pre-computation is O(n²)-time to achieve O(1) query time per segment.
+    * thus pre-computation is O(n²)-time to achieve O(1L) query time per segment.
     *
     * This particular API provides a reduction of the pre-computation time to O(n)
     * at the cost of performing the segment query in O(log(n))
@@ -170,14 +171,14 @@ object LogReducedFlippedPreComputedSubSequence {
     * @tparam T the type of pre-computation, which is on subsequences (not on nodes)
     * @tparam U the output type of the algorithms, that you need to assign to the output variables
     */
-  abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Int)
+  abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Long)
     extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
 
     /**
       * this method delivers the value of the node
       * @return the type T associated with the node "node"
       */
-    def nodeValue(node: Int): T
+    def nodeValue(node: Long): T
 
     /**
       * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -185,7 +186,7 @@ object LogReducedFlippedPreComputedSubSequence {
       * @param vehicle
       * @return
       */
-    def endNodeValue(vehicle:Int):T
+    def endNodeValue(vehicle:Long):T
 
     /**
       * this method is for composing steps into bigger steps.
@@ -195,6 +196,7 @@ object LogReducedFlippedPreComputedSubSequence {
       */
     def composeSteps(firstStep: T, secondStep: T): T
 
+    //TODO: this method might also sent the vehicle value when pre-computation was performed?
     /**
       * this method is called by the framework when the value of a vehicle must be computed.
       *
@@ -203,10 +205,10 @@ object LogReducedFlippedPreComputedSubSequence {
       *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
       * @return the value associated with the vehicle. This value should only be computed based on the provided segments
       */
-    def computeVehicleValueComposed(vehicle: Int,
+    def computeVehicleValueComposed(vehicle: Long,
                                     segments: QList[LogReducedSegment[T]]): U
 
-    class NodeAndPreComputes(val node:Int,
+    class NodeAndPreComputes(val node:Long,
                              var precomputes:Array[T] = null){
       override def toString: String = {
         "NodeAndPreComputes(node:" + node + " precomputes:" + (if(precomputes == null) null else precomputes.mkString(",")) + ")"
@@ -215,112 +217,112 @@ object LogReducedFlippedPreComputedSubSequence {
 
     private val vehicleToPrecomputes:Array[Array[NodeAndPreComputes]] = Array.fill(v)(null)
 
-    def printVehicleToPrecomputes(vehicle:Int): Unit ={
+    def printVehicleToPrecomputes(vehicle:Long): Unit ={
       val precomputes = vehicleToPrecomputes(vehicle)
       println(precomputes.map(_.toString).mkString("\n"))
     }
-    override def performPreCompute(vehicle:Int,
+    override def performPreCompute(vehicle:Long,
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]): Unit ={
 
       //println("performPreCompute(vehicle:" + vehicle + " v:" + v + " routes:" + routes)
 
       //identify all nodes
-      identifyNodesAndAllocate(routes.explorerAtAnyOccurrence(vehicle),vehicle,0,preComputedVals)
+      identifyNodesAndAllocate(routes.explorerAtAnyOccurrence(vehicle),vehicle,0L,preComputedVals)
 
-      if(vehicleToPrecomputes(vehicle).length > 1) {
+      if(vehicleToPrecomputes(vehicle).length > 1L) {
         var sequenceOfLevels = decomposeToBitNumbersMSBFirst(vehicleToPrecomputes(vehicle).length)
         //println("length of vehicle :" + vehicleToPrecomputes(vehicle).length)
         //println("sequence of levels: " + sequenceOfLevels)
 
-        var positionInRoute = 0
+        var positionInRoute = 0L
         while (sequenceOfLevels.nonEmpty) {
           val currentLevel = sequenceOfLevels.head
           sequenceOfLevels = sequenceOfLevels.tail
 
           decorateAndAllocate(vehicle, positionInRoute, currentLevel, allocateFirst = true)
-          positionInRoute += 1 << currentLevel
+          positionInRoute += 1L << currentLevel
         }
 
-        //      require(positionInRoute == (vehicleToPrecomputes(vehicle).length + 1), positionInRoute + " " + (vehicleToPrecomputes(vehicle).length + 1))
+        //      require(positionInRoute == (vehicleToPrecomputes(vehicle).length + 1L), positionInRoute + " " + (vehicleToPrecomputes(vehicle).length + 1L))
 
       }
-      //printVehicleToPrecomputes(vehicle:Int)
+      //printVehicleToPrecomputes(vehicle:Long)
     }
 
     private def identifyNodesAndAllocate(e:Option[IntSequenceExplorer],
-                                         vehicle:Int,positionInVehicleRoute:Int,
+                                         vehicle:Long,positionInVehicleRoute:Long,
                                          preComputedVals:Array[VehicleAndPosition]): Unit ={
       e match {
         case None =>
           //end
-          vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+          vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1L)(null)
           vehicleToPrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndPreComputes(vehicle)
 
         case  Some(x) if x.value < v && x.value != vehicle => ;
           //end
-          vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1)(null)
+          vehicleToPrecomputes(vehicle) = Array.fill(positionInVehicleRoute+1L)(null)
           vehicleToPrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndPreComputes(vehicle)
 
         case Some(ex) =>
           preComputedVals(ex.value) = new VehicleAndPosition(vehicle, positionInVehicleRoute, node = ex.value)
 
-          identifyNodesAndAllocate(ex.next, vehicle, positionInVehicleRoute + 1, preComputedVals)
+          identifyNodesAndAllocate(ex.next, vehicle, positionInVehicleRoute + 1L, preComputedVals)
 
           vehicleToPrecomputes(vehicle)(positionInVehicleRoute) = new NodeAndPreComputes(ex.value)
       }
     }
 
-    private def decomposeToBitNumbersMSBFirst(x:Int):List[Int] = {
-      require(x >= 0)
+    private def decomposeToBitNumbersMSBFirst(x:Long):List[Long] = {
+      require(x >= 0L)
 
       var remaining = x
-      var offset = 0
-      var toReturn = List.empty[Int]
+      var offset = 0L
+      var toReturn = List.empty[Long]
 
-      while(remaining != 0){
-        if((remaining & 1) != 0) {
+      while(remaining != 0L){
+        if((remaining & 1L) != 0L) {
           toReturn = offset :: toReturn
-          remaining = remaining ^ 1
+          remaining = remaining ^ 1L
         }
-        remaining = remaining >> 1
-        offset = offset + 1
+        remaining = remaining >> 1L
+        offset = offset + 1L
       }
       toReturn
     }
 
-    private def decorateAndAllocate(vehicle:Int,positionInRoute:Int,level:Int,allocateFirst:Boolean){
+    private def decorateAndAllocate(vehicle:Long,positionInRoute:Long,level:Long,allocateFirst:Boolean){
       //println("decorateAndAllocate(vehicle:" + vehicle + " level:" + level + " positionInRoute:" + positionInRoute)
 
       if(allocateFirst){
-        vehicleToPrecomputes(vehicle)(positionInRoute).precomputes = Array.fill(level+1)(null.asInstanceOf[T])
+        vehicleToPrecomputes(vehicle)(positionInRoute).precomputes = Array.fill(level+1L)(null.asInstanceOf[T])
       }
 
-      if(level == 0){
+      if(level == 0L){
         val precompute = vehicleToPrecomputes(vehicle)(positionInRoute)
         val node = precompute.node
 
-        if(node == vehicle && positionInRoute != 0){
-          precompute.precomputes(0) = endNodeValue(node)
+        if(node == vehicle && positionInRoute != 0L){
+          precompute.precomputes(0L) = endNodeValue(node)
         }else{
-          precompute.precomputes(0) = nodeValue(node)
+          precompute.precomputes(0L) = nodeValue(node)
         }
 
       }else{
 
-        val stepSize = 1 << (level-1)
+        val stepSize = 1L << (level-1L)
 
-        decorateAndAllocate(vehicle,positionInRoute,level-1,allocateFirst = false)
-        decorateAndAllocate(vehicle, positionInRoute+stepSize,level-1,allocateFirst=true)
+        decorateAndAllocate(vehicle,positionInRoute,level-1L,allocateFirst = false)
+        decorateAndAllocate(vehicle, positionInRoute+stepSize,level-1L,allocateFirst=true)
 
         vehicleToPrecomputes(vehicle)(positionInRoute).precomputes(level) =
           composeSteps(
-            vehicleToPrecomputes(vehicle)(positionInRoute).precomputes(level-1),
-            vehicleToPrecomputes(vehicle)(positionInRoute + stepSize).precomputes(level-1))
+            vehicleToPrecomputes(vehicle)(positionInRoute).precomputes(level-1L),
+            vehicleToPrecomputes(vehicle)(positionInRoute + stepSize).precomputes(level-1L))
       }
     }
 
-    override def computeVehicleValue(vehicle:Int,
+    override def computeVehicleValue(vehicle:Long,
                                      segments:List[Segment[VehicleAndPosition]],
                                      routes:IntSequence,
                                      preComputedVals:Array[VehicleAndPosition]):U = {
@@ -328,58 +330,58 @@ object LogReducedFlippedPreComputedSubSequence {
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Int,segments:List[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Long,segments:List[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
 
       segments match{
         case Nil =>
           //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
           QList(LogReducedPreComputedSubSequenceGiven[T](
-            vehicle: Int, vehicle: Int,
+            vehicle: Long, vehicle: Long,
             QList(endNodeValue(vehicle))))
 
         case head :: tail =>
           head match {
             case PreComputedSubSequence
-              (startNode: Int, startNodeValue: VehicleAndPosition,
-              endNode: Int, endNodeValue: VehicleAndPosition) =>
+              (startNode: Long, startNodeValue: VehicleAndPosition,
+              endNode: Long, endNodeValue: VehicleAndPosition) =>
 
               if(tail.isEmpty
                 && startNodeValue.vehicle == vehicle
-                && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2){
+                && endNodeValue.positionInVehicleRoute == vehicleToPrecomputes(vehicle).length-2L){
 
                 //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
                 QList(LogReducedPreComputedSubSequenceLazy[T](
-                  startNode: Int, vehicle:Int, //we set vehicle as the real end
+                  startNode: Long, vehicle:Long, //we set vehicle as the real end
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                    vehicleToPrecomputes(vehicle).length-1, flipped = false)))
+                    vehicleToPrecomputes(vehicle).length-1L, flipped = false)))
 
               }else {
                 QList(LogReducedPreComputedSubSequenceLazy[T](
-                  startNode: Int, endNode: Int,
+                  startNode: Long, endNode: Long,
                   stepGenerator = () => extractSequenceOfT(
                     startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
                     endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegments(vehicle, tail))
               }
             case FlippedPreComputedSubSequence(
-            startNode: Int, startNodeValue: VehicleAndPosition,
-            endNode: Int, endNodeValue: VehicleAndPosition) =>
+            startNode: Long, startNodeValue: VehicleAndPosition,
+            endNode: Long, endNodeValue: VehicleAndPosition) =>
 
               QList(LogReducedFlippedPreComputedSubSequence[T](
-                startNode: Int, endNode: Int,
+                startNode: Long, endNode: Long,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
                   endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegments(vehicle, tail))
 
-            case NewNode(node: Int) =>
-              QList(LogReducedNewNode[T](node: Int, value = nodeValue(vehicle)), decorateSegments(vehicle, tail))
+            case NewNode(node: Long) =>
+              QList(LogReducedNewNode[T](node: Long, value = nodeValue(vehicle)), decorateSegments(vehicle, tail))
           }
       }
     }
 
-    def extractSequenceOfT(vehicle:Int,
-                           startPositionInRoute:Int,
-                           endPositionInRoute:Int,
+    def extractSequenceOfT(vehicle:Long,
+                           startPositionInRoute:Long,
+                           endPositionInRoute:Long,
                            flipped:Boolean):QList[T] = {
 
       if(flipped){
@@ -394,60 +396,60 @@ object LogReducedFlippedPreComputedSubSequence {
     }
 
     private def extractSequenceOfTUnflippedGoingUp(vehiclePreComputes:Array[NodeAndPreComputes],
-                                                   startPositionInRoute:Int,
-                                                   endPositionInRoute:Int):QList[T] = {
+                                                   startPositionInRoute:Long,
+                                                   endPositionInRoute:Long):QList[T] = {
 
-      if(startPositionInRoute == endPositionInRoute+1) return null
+      if(startPositionInRoute == endPositionInRoute+1L) return null
 
-      val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1
-      val levelStep = 1 << maxLevel
+      val maxLevel = vehiclePreComputes(startPositionInRoute).precomputes.length - 1L
+      val levelStep = 1L << maxLevel
 
-      if(startPositionInRoute + levelStep > endPositionInRoute+1){
+      if(startPositionInRoute + levelStep > endPositionInRoute+1L){
         //we need to go down
         extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
-          startPositionInRoute:Int,
-          endPositionInRoute:Int,
-          maxLevel-1)
+          startPositionInRoute:Long,
+          endPositionInRoute:Long,
+          maxLevel-1L)
       }else{
         //take the step and go up
         QList(
           vehiclePreComputes(startPositionInRoute).precomputes(maxLevel),
           extractSequenceOfTUnflippedGoingUp(vehiclePreComputes:Array[NodeAndPreComputes],
             startPositionInRoute + levelStep,
-            endPositionInRoute:Int))
+            endPositionInRoute:Long))
       }
     }
 
     private def extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
-                                                     startPositionInRoute:Int,
-                                                     endPositionInRoute:Int,
-                                                     maxLevel:Int):QList[T] = {
+                                                     startPositionInRoute:Long,
+                                                     endPositionInRoute:Long,
+                                                     maxLevel:Long):QList[T] = {
 
-      if(startPositionInRoute == endPositionInRoute+1) return null
+      if(startPositionInRoute == endPositionInRoute+1L) return null
 
-      val levelStep = 1 << maxLevel
+      val levelStep = 1L << maxLevel
 
-      if(startPositionInRoute + levelStep > endPositionInRoute+1) {
+      if(startPositionInRoute + levelStep > endPositionInRoute+1L) {
         //too far, go down further
         extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
-          startPositionInRoute:Int,
-          endPositionInRoute:Int,
-          maxLevel-1)
+          startPositionInRoute:Long,
+          endPositionInRoute:Long,
+          maxLevel-1L)
       }else{
         //take the step and go down
         QList(
           vehiclePreComputes(startPositionInRoute).precomputes(maxLevel),
           extractSequenceOfTUnflippedGoingDown(vehiclePreComputes:Array[NodeAndPreComputes],
             startPositionInRoute + levelStep,
-            endPositionInRoute:Int,
-            maxLevel-1))
+            endPositionInRoute:Long,
+            maxLevel-1L))
       }
     }
   }
 
 
-  case class VehicleAndPosition(val vehicle:Int,
-                                val positionInVehicleRoute:Int,
-                                val node:Int)
+  case class VehicleAndPosition(val vehicle:Long,
+                                val positionInVehicleRoute:Long,
+                                val node:Long)
 
 

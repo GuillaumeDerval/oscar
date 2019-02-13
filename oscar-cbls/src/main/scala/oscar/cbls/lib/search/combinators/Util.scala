@@ -6,7 +6,7 @@ import javax.swing.JFrame
 import oscar.cbls._
 import oscar.cbls.core.search._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.functionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
+import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
 
 trait UtilityCombinators{
   /**
@@ -36,18 +36,18 @@ trait UtilityCombinators{
  */
 class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatch, withZoom:Boolean) extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = if(withZoom) new ObjFunctionGraphicContainer(dimension = new Dimension(940,500)) with Zoom
-  else new ObjFunctionGraphicContainer(dimension = new Dimension(960,540)) with AdjustMaxValue
+  val objGraphic = if(withZoom) new ObjFunctionGraphicContainer(dimension = new Dimension(940L,500L)) with Zoom
+  else new ObjFunctionGraphicContainer(dimension = new Dimension(960L,540L)) with AdjustMaxValue
 
   new Thread(objGraphic,"Graphic Thread").start()
 
   val visualFrame = new JFrame()
-  visualFrame.setPreferredSize(new Dimension(960,540))
+  visualFrame.setPreferredSize(new Dimension(960L,540L))
   visualFrame.add(objGraphic)
   visualFrame.pack()
   visualFrame.setVisible(true)
 
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult ={
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
     a.getMove(obj, initialObj, acceptanceCriteria) match {
       case m: MoveFound =>
         InstrumentedMove(m.m, null, () => notifyNewObjValue(m.m))
@@ -81,8 +81,8 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
    * @return an improving move
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj:Int, acceptanceCriterion) match {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => NamedMove(m, name)
     }
@@ -107,8 +107,8 @@ class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChai
    *                            beware that a changing criteria might interact unexpectedly with stateful neighborhood combinators
    * @return an improving move
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj:Int, acceptanceCriterion) match {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
       case NoMoveFound => NoMoveFound
       case MoveFound(m) => NamedMove(m, name)
     }
@@ -116,7 +116,7 @@ class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChai
 
   override def toString: String = name
 
-  override def instantiateCurrentMove(newObj : Int) : MoveType = a.instantiateCurrentMove(newObj)
+  override def instantiateCurrentMove(newObj : Long) : MoveType = a.instantiateCurrentMove(newObj)
 }
 
 /**
@@ -131,14 +131,14 @@ class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChai
  *                                      with the addition that moves leading to MaxInt will be rejected anyway, except if we are already at MaxInt
  *
  */
-class WithAcceptanceCriterion(a: Neighborhood, overridingAcceptanceCriterion: (Int, Int) => Boolean) extends NeighborhoodCombinator(a) {
+class WithAcceptanceCriterion(a: Neighborhood, overridingAcceptanceCriterion: (Long, Long) => Boolean) extends NeighborhoodCombinator(a) {
   /**
    * @param acceptanceCriterion this criterion is not considered by this combinator.
    * @return an improving move
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult
-  = a.getMove(obj,initialObj:Int,
-    (a, b) => (a == Int.MaxValue || b != Int.MaxValue) && overridingAcceptanceCriterion(a, b))
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult
+  = a.getMove(obj,initialObj:Long,
+    (a, b) => (a == Long.MaxValue || b != Long.MaxValue) && overridingAcceptanceCriterion(a, b))
 }
 
 
@@ -159,7 +159,7 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult =
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
     getMove(overridingObjective, overridingObjective.value,acceptanceCriterion)
 }
 
@@ -176,11 +176,11 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
  */
 case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends NeighborhoodCombinator(a){
 
-  var nbCalls = 0
-  var nbFound = 0
-  var totalGain:Double = 0
-  var totalTimeSpentMoveFound:Long = 0
-  var totalTimeSpentNoMoveFound:Long = 0
+  var nbCalls = 0L
+  var nbFound = 0L
+  var totalGain:Double = 0L
+  var totalTimeSpentMoveFound:Long = 0L
+  var totalTimeSpentNoMoveFound:Long = 0L
 
   def totalTimeSpent = totalTimeSpentMoveFound + totalTimeSpentNoMoveFound
 
@@ -190,11 +190,11 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
   }
 
   def resetThisStatistics() {
-    nbCalls = 0
-    nbFound = 0
-    totalGain = 0
-    totalTimeSpentMoveFound = 0
-    totalTimeSpentNoMoveFound = 0
+    nbCalls = 0L
+    nbFound = 0L
+    totalGain = 0L
+    totalTimeSpentMoveFound = 0L
+    totalTimeSpentNoMoveFound = 0L
   }
 
   /**
@@ -206,71 +206,71 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
    * @param acceptanceCriterion
    * @return
    */
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriterion: (Int, Int) => Boolean): SearchResult = {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    nbCalls += 1
+    nbCalls += 1L
     val startTime = System.nanoTime()
 
-    a.getMove(obj, initialObj:Int, acceptanceCriterion) match {
+    a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
       case NoMoveFound =>
-        totalTimeSpentNoMoveFound += (System.nanoTime() - startTime) / 1000000
+        totalTimeSpentNoMoveFound += (System.nanoTime() - startTime) / 1000000L
         NoMoveFound
       case m: MoveFound =>
-        totalTimeSpentMoveFound += (System.nanoTime() - startTime) / 1000000
-        nbFound += 1
-        if (!ignoreInitialObj || nbCalls > 1) totalGain += initialObj - m.objAfter
+        totalTimeSpentMoveFound += (System.nanoTime() - startTime) / 1000000L
+        nbFound += 1L
+        if (!ignoreInitialObj || nbCalls > 1L) totalGain += initialObj - m.objAfter
         m
     }
   }
 
-  def gainPerCall:String = if(nbCalls ==0) "NA" else "" + (totalGain / nbCalls).toInt
-  def callDuration:String = if(nbCalls == 0 ) "NA" else "" + (totalTimeSpent / nbCalls).toInt
+  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toInt
+  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toInt
   //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0) "NA" else "" + (1000 * totalGain.toDouble / totalTimeSpent.toDouble).toInt
+  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toInt
 
-  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
-  def avgTimeSpendMove:String = if(nbFound == 0) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
-  def waistedTime:String = if(nbCalls - nbFound == 0) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
+  def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
+  def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
+  def waistedTime:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
 
   override def collectProfilingStatistics: List[String] =
     collectThisProfileStatistics :: super.collectProfilingStatistics
 
   def collectThisProfileStatistics:String =
-    padToLength("" + a,31) + " " +
-      padToLength("" + nbCalls,6) + " " +
-      padToLength("" + nbFound,6) + " " +
-      padToLength("" + totalGain.toInt,8) + " " +
-      padToLength("" + totalTimeSpent,12) + " " +
-      padToLength("" + gainPerCall,8) + " " +
-      padToLength("" + callDuration,12)+ " " +
-      padToLength("" + slope,11)+ " " +
-      padToLength("" + avgTimeSpendNoMove,13)+ " " +
-      padToLength("" + avgTimeSpendMove,12)+ " " +
+    padToLength("" + a,31L) + " " +
+      padToLength("" + nbCalls,6L) + " " +
+      padToLength("" + nbFound,6L) + " " +
+      padToLength("" + totalGain.toInt,8L) + " " +
+      padToLength("" + totalTimeSpent,12L) + " " +
+      padToLength("" + gainPerCall,8L) + " " +
+      padToLength("" + callDuration,12L)+ " " +
+      padToLength("" + slope,11L)+ " " +
+      padToLength("" + avgTimeSpendNoMove,13L)+ " " +
+      padToLength("" + avgTimeSpendMove,12L)+ " " +
       totalTimeSpentNoMoveFound
 
-  private def padToLength(s: String, l: Int) = {
-    val extended = s + nStrings(l+1, " ")
-    val nextchar = extended.substring(l+1, l+1)
+  private def padToLength(s: String, l: Long) = {
+    val extended = s + nStrings(l+1L, " ")
+    val nextchar = extended.substring(l+1L, l+1L)
     if(nextchar equals " "){
-      extended.substring(0, l-1) + "§"
+      extended.substring(0L, l-1L) + "§"
     }else{
-      extended.substring(0, l)
+      extended.substring(0L, l)
     }
   }
-  private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
+  private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
 
   //  override def toString: String = "Statistics(" + a + " nbCalls:" + nbCalls + " nbFound:" + nbFound + " totalGain:" + totalGain + " totalTimeSpent " + totalTimeSpent + " ms timeSpendWithMove:" + totalTimeSpentMoveFound + " ms totalTimeSpentNoMoveFound " + totalTimeSpentNoMoveFound + " ms)"
   override def toString: String = "Profile(" + a + ")"
 
-  def slopeOrZero:Int = if(totalTimeSpent == 0) 0 else ((100 * totalGain) / totalTimeSpent).toInt
+  def slopeOrZero:Long = if(totalTimeSpent == 0L) 0L else ((100L * totalGain) / totalTimeSpent).toInt
 
-  def slopeForCombinators(defaultIfNoCall:Int = Int.MaxValue):Int =  if(totalTimeSpent == 0) defaultIfNoCall else ((1000 * totalGain) / totalTimeSpent).toInt
+  def slopeForCombinators(defaultIfNoCall:Long = Long.MaxValue):Long =  if(totalTimeSpent == 0L) defaultIfNoCall else ((1000L * totalGain) / totalTimeSpent).toInt
 }
 
 object Profile{
-  private def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
-  private def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
-  def statisticsHeader: String = padToLength("Neighborhood",30) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
+  private def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
+  private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
+  def statisticsHeader: String = padToLength("Neighborhood",30L) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
   def selectedStatisticInfo(i:Iterable[Profile]) = {
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
@@ -278,8 +278,8 @@ object Profile{
 
 
 case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean) =
-    a.getMove(obj, initialObj:Int, acceptanceCriteria)
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean) =
+    a.getMove(obj, initialObj:Long, acceptanceCriteria)
 
   //this resets the internal state of the move combinators
   override def reset() {}
@@ -290,11 +290,11 @@ case class NoReset(a: Neighborhood) extends NeighborhoodCombinator(a) {
  * @author renaud.delandtsheer@cetic.be
  */
 class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
-  override def getMove(obj: Objective, initialObj:Int, acceptanceCriteria: (Int, Int) => Boolean): SearchResult = {
-    a.getMove(obj, initialObj:Int, acceptanceCriteria) match {
+  override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    a.getMove(obj, initialObj:Long, acceptanceCriteria) match {
       case NoMoveFound =>
         a.reset()
-        a.getMove(obj, initialObj:Int, acceptanceCriteria)
+        a.getMove(obj, initialObj:Long, acceptanceCriteria)
       case m: MoveFound => m
     }
   }

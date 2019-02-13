@@ -20,7 +20,7 @@
 
 
 package oscar.examples.cbls.old
-
+/*
 import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.ConstraintSystem
 import oscar.cbls.lib.constraint.AllDiff
@@ -158,3 +158,4 @@ object SimpleSudoku extends LinearSelectorClass with StopWatch {
   }
   
 }
+*/

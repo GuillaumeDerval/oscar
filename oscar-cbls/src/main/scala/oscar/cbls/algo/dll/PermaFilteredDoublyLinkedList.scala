@@ -71,7 +71,7 @@ class DelayedPermaFilter[T, F <: AnyRef](mFilter:(T,()=>Unit, ()=> Boolean) => U
 }
 
 /**this is a mutable data structure that is able to represent sets through doubly-lined lists, with insert
-  * and delete in O(1) through reference
+  * and delete in O(1L) through reference
   * and to update in parallel another set that is a filter of the first one through a specified function
   * the filter can be specified anytime and filtering can be cascaded, but a PermaFilteresDLL can have only one filter
   *
@@ -97,7 +97,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   private var permaFilter:AbstractPermaFilter[T] = null
 
   /**returns the size of the PermaFilteredDLL*/
-  override def size = msize
+  override def size: Int = msize
 
   private var msize:Int = 0
 
@@ -136,7 +136,7 @@ class PermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
     elemkey.elem
   }
 
-  override def isEmpty:Boolean = size == 0
+  override def isEmpty:Boolean = size == 0L
 
   override def iterator = new PFDLLIterator[T](phantom, phantom)
 

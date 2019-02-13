@@ -77,7 +77,7 @@ trait Constraint{
 
   /**facility to check that the constraint is enforced
     * */
-  final def isTrue: Boolean = (violation.value == 0)
+  final def isTrue: Boolean = (violation.value == 0L)
 
   /**the variables that are constrained by the constraint.
    * This should be read only. If you want to declare more constrained variables,

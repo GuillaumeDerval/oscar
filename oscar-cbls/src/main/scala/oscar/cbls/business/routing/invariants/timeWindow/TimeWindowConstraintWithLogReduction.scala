@@ -23,9 +23,9 @@ object TimeWindowConstraintWithLogReduction {
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earliestArrivalTime: Array[Int],
-            latestLeavingTime: Array[Int],
-            travelTimeMatrix: Array[Array[Int]],
+            earliestArrivalTime: Array[Long],
+            latestLeavingTime: Array[Long],
+            travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
     new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
@@ -35,6 +35,11 @@ object TimeWindowConstraintWithLogReduction {
       latestLeavingTime,
       travelTimeMatrix, violations)
   }
+
+  //TODO: generate the violation variable in the apply method
+  //TODO: avoid duplicate apply like that; just use earlyLine,duration,deadline for all tasks.
+  //TODO: violation variables should be a property of the invariant, defined wit ha val, so it can be accesed by the user.
+  //TODO: the apply should return the invariant itself.
 
   /**
     * This method instantiate a TimeWindow constraint given the following input.
@@ -51,10 +56,10 @@ object TimeWindowConstraintWithLogReduction {
   def apply(routes: ChangingSeqValue,
             n: Int,
             v: Int,
-            earliestArrivalTime: Array[Int],
-            latestLeavingTime: Array[Int],
-            taskDurations: Array[Int],
-            travelTimeMatrix: Array[Array[Int]],
+            earliestArrivalTime: Array[Long],
+            latestLeavingTime: Array[Long],
+            taskDurations: Array[Long],
+            travelTimeMatrix: Array[Array[Long]],
             violations: Array[CBLSIntVar]): TimeWindowConstraintWithLogReduction ={
 
     new TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue, n, v,
@@ -69,11 +74,11 @@ object TimeWindowConstraintWithLogReduction {
 class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                            n: Int,
                                            v: Int,
-                                           earliestArrivalTime: Array[Int],
-                                           latestArrivalTime: Array[Int],
-                                           earliestLeavingTime: Array[Int],
-                                           latestLeavingTime: Array[Int],
-                                           travelTimeMatrix: Array[Array[Int]],
+                                           earliestArrivalTime: Array[Long],
+                                           latestArrivalTime: Array[Long],
+                                           earliestLeavingTime: Array[Long],
+                                           latestLeavingTime: Array[Long],
+                                           travelTimeMatrix: Array[Array[Long]],
                                            violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
@@ -83,8 +88,8 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
         latestArrivalTime(node),
         earliestLeavingTime(node),node,node))
 
-  private def computeLeavingTime(previousLeavingTime: Int, fromNode: Int, nextTransferFunction: TransferFunction): Int ={
-    if(nextTransferFunction.isEmpty) return -1
+  private def computeLeavingTime(previousLeavingTime: Long, fromNode: Long, nextTransferFunction: TransferFunction): Long ={
+    if(nextTransferFunction.isEmpty) return -1L
     val toNode = nextTransferFunction.from
     val travelDuration = travelTimeMatrix(fromNode)(toNode)
     nextTransferFunction(previousLeavingTime + travelDuration)
@@ -97,7 +102,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param m The distance between the two TransferFunction
     * @return The composed TransferFunction or an EmptyTransferFunction
     */
-  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Int): TransferFunction ={
+  private def composeFunction (f1: TransferFunction, f2: TransferFunction, m: Long): TransferFunction ={
     if(f1.isEmpty)
       return f1
     else if(f2.isEmpty)
@@ -105,8 +110,8 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
 
     val earliestArrivalTimeAt2 = f1.el + m
     val latestArrivalTimeAt2 =
-      if(f1.la + f1.el - f1.ea + m < 0)
-        Int.MaxValue
+      if(f1.la + f1.el - f1.ea + m < 0L)
+        Long.MaxValue
       else f1.la + f1.el - f1.ea + m
 
     val earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = earliestArrivalTimeAt2 <= f2.ea
@@ -120,8 +125,8 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
         latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
         case (true,true,true,true) =>
-          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2 is lower than earliest starting time at 2
-        // so it doesn't matter when you arrive at 1 the resulting leaving time at 2 will be l2
+          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2L is lower than earliest starting time at 2L
+        // so it doesn't matter when you arrive at 1L the resulting leaving time at 2L will be l2
         // => e3 == d1 (the formula says if (t <= e) => l
         case (true,true,false,true) =>
           (f2.ea - f1.el - m + f1.ea, f1.la, f2.el)
@@ -132,7 +137,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
         case (false,true,false,false) =>
           (f1.ea, f2.la - f1.el - m + f1.ea, f1.el + f2.el - f2.ea + m)
         case (false,false,false,false) =>
-          (1, -1, -1)
+          (1L, -1L, -1L)
         case _ =>
           throw new Error("Unhandled case : " + (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
             earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
@@ -156,7 +161,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
   override def composeSteps(firstStep: TransferFunction, secondStep: TransferFunction): TransferFunction = {
     val firstStepEndsAt = firstStep.to
     val secondStepStartsAt = secondStep.from
-    if(firstStepEndsAt == -1 || secondStepStartsAt == -1) EmptyTransferFunction
+    if(firstStepEndsAt == -1L || secondStepStartsAt == -1L) EmptyTransferFunction
     else if(firstStepEndsAt == secondStepStartsAt)
       DefinedTransferFunction(firstStep.ea,firstStep.la,secondStep.el,firstStep.from,secondStep.to)
     else {
@@ -173,14 +178,14 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     *                 The route of the vehicle is equal to the concatenation of all given segments in the order thy appear in this list
     * @return the value associated with the vehicle. This value should only be computed based on the provided segments
     */
-  override def computeVehicleValueComposed(vehicle: Int, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
+  override def computeVehicleValueComposed(vehicle: Long, segments: QList[LogReducedSegment[TransferFunction]]): Boolean = {
 
-    def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Int, lastNode: Int): Int ={
+    def composeTransferFunctions(transferFunctions: QList[TransferFunction], previousLeavingTime: Long, lastNode: Long): Long ={
       val currentTransferFunction = transferFunctions.head
-      if(currentTransferFunction.isEmpty) -1
+      if(currentTransferFunction.isEmpty) -1L
       else {
         val newLeavingTime = computeLeavingTime(previousLeavingTime, lastNode, currentTransferFunction)
-        if (transferFunctions.tail == null || newLeavingTime < 0)
+        if (transferFunctions.tail == null || newLeavingTime < 0L)
           newLeavingTime
         else
           composeTransferFunctions(transferFunctions.tail, newLeavingTime, currentTransferFunction.to)
@@ -188,11 +193,11 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     }
 
     def composeLogReduceSegments(logReducedSegments: QList[LogReducedSegment[TransferFunction]],
-                                 lastNode: Int = vehicle,
-                                 previousLeavingTime: Int = 0): Int ={
+                                 lastNode: Long = vehicle,
+                                 previousLeavingTime: Long = 0L): Long ={
       if(logReducedSegments == null) previousLeavingTime
       else {
-        val (newLastNode, newLeavingTime): (Int, Int) = logReducedSegments.head match {
+        val (newLastNode, newLeavingTime): (Long, Long) = logReducedSegments.head match {
           case s@LogReducedPreComputedSubSequence(_, endNode, steps) =>
             (endNode, composeTransferFunctions(steps, previousLeavingTime, lastNode))
 
@@ -202,13 +207,13 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
           case s@LogReducedNewNode(node, transferFunctionOfNode) =>
             (node, computeLeavingTime(previousLeavingTime, lastNode, transferFunctionOfNode))
         }
-        if (newLeavingTime >= 0)
+        if (newLeavingTime >= 0L)
           composeLogReduceSegments(logReducedSegments.tail, newLastNode, newLeavingTime)
         else
           newLeavingTime
       }
     }
-    composeLogReduceSegments(segments) < 0
+    composeLogReduceSegments(segments) < 0L
   }
 
   /**
@@ -219,8 +224,8 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Boolean): Unit = {
-    if(value) violations(vehicle) := 1 else violations(vehicle) := 0
+  override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
   }
 
   /**
@@ -230,7 +235,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param routes  the sequence representing the route of all vehicle
     * @return the value of the constraint for the given vehicle
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Boolean = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Boolean = {
     var arrivalTimeAtFromNode = earliestArrivalTime(vehicle)
     var leaveTimeAtFromNode = earliestLeavingTime(vehicle)
     var fromNode = vehicle
@@ -268,7 +273,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     *
     * @return the type T associated with the node "node"
     */
-  override def nodeValue(node: Int): TransferFunction = transferFunctionOfNode(node)
+  override def nodeValue(node: Long): TransferFunction = transferFunctionOfNode(node)
 
   /**
     * this one is similar to the nodeValue except that it only is applied on vehicle,
@@ -277,7 +282,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param vehicle
     * @return
     */
-  override def endNodeValue(vehicle: Int): TransferFunction = transferFunctionOfNode(vehicle)
+  override def endNodeValue(vehicle: Long): TransferFunction = transferFunctionOfNode(vehicle)
 }
 
 

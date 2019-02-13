@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-
+/*
 import oscar.cbls._
 import oscar.cbls.business.routing._
 
@@ -185,3 +185,4 @@ object SimpleVRPWithMaxDetours extends App{
 
   search.profilingStatistics
 }
+*/

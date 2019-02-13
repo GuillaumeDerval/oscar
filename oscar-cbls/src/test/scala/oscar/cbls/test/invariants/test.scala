@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 package oscar.cbls.test.invariants
-
+/*
 import oscar.cbls._
 import oscar.cbls.core.computation.Event
 import oscar.cbls.lib.invariant.minmax._
@@ -31,7 +31,7 @@ import oscar.cbls.lib.search.LinearSelectors
 import scala.collection.immutable.SortedSet
 
 
-object Test extends LinearSelectors {
+object test extends LinearSelectors {
 
   def main(args: Array[String]) {
 
@@ -87,3 +87,4 @@ object Test extends LinearSelectors {
 
   }
 }
+*/

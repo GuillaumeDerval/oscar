@@ -25,8 +25,8 @@ import scala.collection.immutable.SortedSet
 object RouteSuccessorAndPredecessors{
   def apply(routes:ChangingSeqValue,
             v:Int,
-            defaultWhenNotInSequence:Int):(Array[CBLSIntVar],Array[CBLSIntVar]) = {
-    val n = routes.maxValue + 1
+            defaultWhenNotInSequence:Long):(Array[CBLSIntVar],Array[CBLSIntVar]) = {
+    val n = routes.maxValue + 1L
     val model = routes.model
     val successorVars = Array.tabulate(n)(node =>  CBLSIntVar(model,defaultWhenNotInSequence,name="successor of node" + node))
     val predecessorVars = Array.tabulate(n)(node =>  CBLSIntVar(model,defaultWhenNotInSequence,name="predecessor of node" + node))
@@ -38,9 +38,9 @@ object RouteSuccessorAndPredecessors{
 }
 
 /**
- * This array will maintain successorValues and predecessorValues to be the successor and predecessors of nodes in the route
- * it comes handy to specify constraints or objectives. But it really slows down your model
- * @param routes a sequence representing the route, according to the routing convention
+ * This array will maintain successorValues and successorValues to be the successor and predecessors of nodes in the route
+ * it comes handy to spcify constraints or objectives. But it really slows down your model
+ * @param routes a sequece representing the route, according to the routing convention
  * @param v the number of vehicles
  * @param successorValues an array of CBLSIntVar that are maintained to map node to the next reached node, according to the sequence
  * @param predecessorValues an array of CBLSIntVar that are maintained to map node to the prev reached node, according to the sequence
@@ -50,10 +50,10 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
                      v:Int,
                      successorValues:Array[CBLSIntVar],
                      predecessorValues:Array[CBLSIntVar],
-                     defaultWhenNotInSequence:Int)
+                     defaultWhenNotInSequence:Long)
   extends Invariant() with SeqNotificationTarget {
 
-  val n = routes.maxValue + 1
+  val n = routes.maxValue + 1L
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
   for(i <- successorValues) i.setDefiningInvariant(this)
@@ -61,7 +61,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
 
   computeAllFromScratch(routes.value)
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
 
     val startValuesOfImpactedZone = computeStartValuesOfImpactedZone(changes:SeqUpdate)
     startValuesOfImpactedZone match{
@@ -83,9 +83,9 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
    * @param changes
    * @return the set of values that require updating for next and prev
    */
-  def computeStartValuesOfImpactedZone(changes:SeqUpdate):Option[SortedSet[Int]] = {
+  def computeStartValuesOfImpactedZone(changes:SeqUpdate):Option[SortedSet[Long]] = {
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         computeStartValuesOfImpactedZone(prev) match{
           case None => None
           case Some(startsOfImpactedZone) =>
@@ -117,7 +117,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
 
       case SeqUpdateLastNotified(value) =>
         require (value quickEquals routes.value)
-        Some(SortedSet.empty[Int]) //we are starting from the previous value
+        Some(SortedSet.empty[Long]) //we are starting from the previous value
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
       case SeqUpdateDefineCheckpoint(prev:SeqUpdate,_,_) =>
@@ -130,16 +130,16 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   def computeAllFromScratch(seq:IntSequence){
     successorValues.foreach(node => node := defaultWhenNotInSequence)
     predecessorValues.foreach(node => node := defaultWhenNotInSequence)
-    var explorer = seq.explorerAtPosition(0).head
+    var explorer = seq.explorerAtPosition(0L).head
     while(explorer.next match{
       case None =>
-        successorValues(explorer.value) := v-1
-        predecessorValues(v-1) := explorer.value
+        successorValues(explorer.value) := v-1L
+        predecessorValues(v-1L) := explorer.value
         false
       case Some(next) =>
         if(next.value < v){
-          successorValues(explorer.value) := next.value - 1
-          predecessorValues(next.value - 1) := explorer.value
+          successorValues(explorer.value) := next.value - 1L
+          predecessorValues(next.value - 1L) := explorer.value
         }else{
           successorValues(explorer.value) := next.value
           predecessorValues(next.value) := explorer.value
@@ -149,7 +149,7 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
     }){}
   }
 
-  def updateStartFrom(startValue:Int,startExplorerOpt:Option[IntSequenceExplorer],seq:IntSequence){
+  def updateStartFrom(startValue:Long,startExplorerOpt:Option[IntSequenceExplorer],seq:IntSequence){
     startExplorerOpt match{
       case None =>
         successorValues(startValue) := defaultWhenNotInSequence
@@ -158,35 +158,35 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
         var explorer = startExplorer
         while(explorer.next match{
           case None =>
-            successorValues(explorer.value) := v-1
-            predecessorValues(v-1) := explorer.value
+            successorValues(explorer.value) := v-1L
+            predecessorValues(v-1L) := explorer.value
             false
           case Some(next) =>
             val newValueForSuccValue =
-              if(next.value < v) next.value - 1
+              if(next.value < v) next.value - 1L
               else next.value
             if(successorValues(explorer.value).newValue != newValueForSuccValue){
               successorValues(explorer.value) := newValueForSuccValue
               predecessorValues(newValueForSuccValue) := explorer.value
               explorer = next
               true
-            } else false
+            }else false
         }){}
     }
   }
 
-  def computeSuccessorsFromScratchNoAffect(seq:IntSequence):Array[Int] = {
+  def computeSuccessorsFromScratchNoAffect(seq:IntSequence):Array[Long] = {
     val successorValues = Array.fill(n)(defaultWhenNotInSequence)
 
-    var explorer = seq.explorerAtPosition(0).head
+    var explorer = seq.explorerAtPosition(0L).head
     while(explorer.next match{
       case None =>
-        successorValues(explorer.value) = v-1
+        successorValues(explorer.value) = v-1L
         false
       case Some(next) =>
         if(next.value < v){
-          successorValues(explorer.value) = next.value - 1
-        } else {
+          successorValues(explorer.value) = next.value - 1L
+        }else{
           successorValues(explorer.value) = next.value
         }
         explorer = next
@@ -198,14 +198,14 @@ class RouteSuccessorAndPredecessors(routes:ChangingSeqValue,
   override def checkInternals(c : Checker){
     require(routes.value quickEquals routes.newValue)
     val fromScratch = computeSuccessorsFromScratchNoAffect(routes.newValue)
-    for(node <- 0 until n){
+    for(node <- 0L until n){
       c.check(successorValues(node).newValue == fromScratch(node),
         Some("error on next for node " + node + ": " + successorValues(node).newValue + " should== " + fromScratch(node)))
 
       if(fromScratch(node)== defaultWhenNotInSequence){
         c.check(predecessorValues(node).newValue == defaultWhenNotInSequence,
           Some("error on predecessor for node " + node + " it is not routed, but got " + predecessorValues(node).newValue))
-      } else {
+      }else {
         c.check(predecessorValues(fromScratch(node)).newValue == node,
           Some("error on predecessor for node " + node + " successor from scratch:" + fromScratch(node) + " predecessor of this is: " + predecessorValues(fromScratch(node)).newValue + "seq:" + routes.value))
       }
