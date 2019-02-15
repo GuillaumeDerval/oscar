@@ -36,7 +36,7 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
     require(0 <= usedCapacity)
     require(usedCapacity <= res.capacity)
     /////
-    resourceUsages(act.index)(res.index) = Some(ResourceUsage(rm.index, usedCapacity))
+    resourceUsages(act.index)(res.index) = Some(ResourceUsage(res.index, rm.index, usedCapacity))
     activityResources(act.index) += res.index
   }
 
@@ -89,7 +89,8 @@ class ActivityResourceUsages(numActivities: Int, numResources: Int) {
 /**
   * Data of a resource usage
   *
+  * @param indexRes: the index of the resource
   * @param indexRM the index of the running mode
   * @param capacity the used capacity
   */
-case class ResourceUsage(indexRM: Int, capacity: Int)
+case class ResourceUsage(indexRes: Int, indexRM: Int, capacity: Int)

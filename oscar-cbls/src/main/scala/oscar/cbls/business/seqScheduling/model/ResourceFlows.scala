@@ -183,7 +183,6 @@ class ResourceFlowState(val resourceIndex: Int, initialModeInd: Int, maxCapacity
   // Last activity that used this resource
   var lastActivityIndex: Int = -1
   // Forward flows after last activity that used this resource
-  //var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](-_.endTime, maxCapacity)
   var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](_.endTime, maxCapacity)
   forwardFlows.insert(SourceFlow(maxCapacity))
   // Running mode of last activity that used this resource

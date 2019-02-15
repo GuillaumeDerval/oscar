@@ -72,7 +72,7 @@ class Precedences(numActivities: Int) {
     def consistentSeq(postfix: List[Int], revPrefix: List[Int]): Boolean = postfix match {
       case Nil => true
       case act::acts =>
-        val notPrecPref = !revPrefix.exists(descendants(_).contains(act))
+        val notPrecPref = !revPrefix.exists(descendants(act).contains(_))
         if (notPrecPref)
           consistentSeq(acts, act::revPrefix)
         else
