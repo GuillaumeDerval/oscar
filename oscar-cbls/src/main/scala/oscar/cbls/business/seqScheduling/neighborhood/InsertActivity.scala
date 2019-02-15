@@ -1,19 +1,18 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
-import oscar.cbls.{IntValue, Objective}
 import oscar.cbls.algo.seq.IntSequenceExplorer
 import oscar.cbls.business.seqScheduling.model.SchedulingProblem
-import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-class RemoveActivity(schP: SchedulingProblem,
-                     neighborhoodName: String = "RemoveActivity",
+class InsertActivity(schP: SchedulingProblem,
+                     neighborhoodName: String = "InsertActivity",
+                     activityToInsert:() => Iterable[Int],
+
                      selectActivityBehavior:LoopBehavior = First(),
                      activitiesToRemove: Option[() => Iterable[Int]] = None)
-  extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
+  extends EasyNeighborhoodMultiLevel[InsertActivityMove](neighborhoodName) {
 
   var currentExplorer:IntSequenceExplorer = null
-  
   /**
     * This is the method you must implement and that performs the search of your neighborhood.
     * every time you explore a neighbor, you must perform the calls to notifyMoveExplored or moveRequested(newObj) && submitFoundMove(myMove)){
@@ -49,23 +48,24 @@ class RemoveActivity(schP: SchedulingProblem,
     schP.activitiesPriorList.releaseTopCheckpoint()
   }
 
-  override def instantiateCurrentMove(newObj: Int): RemoveActivityMove =
-    RemoveActivityMove(schP,
+  override def instantiateCurrentMove(newObj: Int): InsertActivityMove =
+    InsertActivityMove(schP,
       currentExplorer.position,
       currentExplorer.value,
       this,
       neighborhoodName,
       newObj)
 
+
   def performRemove(): Unit = {
     schP.activitiesPriorList.remove(currentExplorer.position)
   }
 }
 
-case class RemoveActivityMove(schP: SchedulingProblem,
+case class InsertActivityMove(schP: SchedulingProblem,
                               activityPosition:Int,
                               removedActivity:Int,
-                              override val neighborhood: RemoveActivity,
+                              override val neighborhood: InsertActivity,
                               override val neighborhoodName: String,
                               override val objAfter: Int)
   extends SchedulingMove(schP, neighborhood, neighborhoodName, objAfter) {
@@ -78,6 +78,6 @@ case class RemoveActivityMove(schP: SchedulingProblem,
   }
 
   override def toString: String =
-    neighborhoodName + "::" + "RemoveActivityMove(activity:" + removedActivity + "position:" + activityPosition + objToString + ")"
+    neighborhoodName + "::" + "InsertActivityMove(activity:" + removedActivity + "position:" + activityPosition + objToString + ")"
 }
 
