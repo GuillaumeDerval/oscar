@@ -540,7 +540,8 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Int.MaxValue // initialObj //because we do not want "no move" to be considered as an actual move.
+    bestNewObj = Long.MaxValue // initialObj //because we do not want "no move" to be considered as an actual move.
+
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")

@@ -40,7 +40,7 @@ object Restart{
  *                    by default, it is the constant function returning 100L
  * @param base the base for the exponent calculation. default is 2L
  */
-class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100L, base: Float = 2L) extends NeighborhoodCombinator(a) {
+class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: Float = 2) extends NeighborhoodCombinator(a) {
 
   var moveCount = 0L
   var temperatureValue: Float = temperature(moveCount)
@@ -52,14 +52,28 @@ class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100L, base: 
 
   def acceptation(oldObj: Long, newObj: Long): Boolean = {
     val gain = oldObj - newObj
-    if (gain > 0L) return true
-    // metropolis criterion
-    math.random < math.pow(base, -gain / temperatureValue)
+    if (gain > 0L){
+      true
+    } else {
+      // metropolis criterion
+
+      val relativeIncrease = - gain.toFloat / oldObj.toFloat
+
+      println("relativeIncrease: " + relativeIncrease)
+      println("temp:" + temperatureValue)
+
+      val toReturn = math.random < math.pow(base, - relativeIncrease / temperatureValue)
+
+      println("metropolis decision: " + toReturn)
+
+      toReturn
+    }
   }
 
   def notifyMoveTaken() {
     moveCount += 1L
     temperatureValue = temperature(moveCount)
+
   }
 
   //this resets the internal state of the move combinators

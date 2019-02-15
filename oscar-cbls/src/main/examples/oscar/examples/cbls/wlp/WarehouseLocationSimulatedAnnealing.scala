@@ -51,14 +51,15 @@ object WarehouseLocationSimulatedAnnealing extends App{
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    MinConstArray(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
 
-  val neighborhoodSA = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse")
-    metropolis() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
+  //TODO: this does not work at all; only iterates over the warehouses; no search, just like accept all.
+  val neighborhoodSA = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", hotRestart = true)
+    metropolis() maxMoves W*10 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
 
   neighborhoodSA.verbose = 2
 
