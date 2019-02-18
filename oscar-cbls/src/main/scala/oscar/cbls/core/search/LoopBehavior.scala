@@ -17,7 +17,8 @@
 
 package oscar.cbls.core.search
 
-import scala.language.{reflectiveCalls}
+import scala.language.reflectiveCalls
+import scala.util.Random
 
 object LoopBehavior{
   def first(maxNeighbors:() => Long = () => Long.MaxValue) = First(maxNeighbors)
@@ -44,13 +45,15 @@ trait BoundedIterable[T] extends Iterable[T]{
 //TODO: randomized
 //TODO: best, cap after xxx sucessive not better neighbors
 
-case class First(maxNeighbors:() => Long = () => Long.MaxValue) extends LoopBehavior(){
+case class First(maxNeighbors:() => Long = () => Long.MaxValue, randomized:Boolean = false) extends LoopBehavior(){
   override def toIterable[T](baseIterable : Iterable[T]) : (BoundedIterable[T],()=>Unit) = {
     val iterable = new BoundedIterable[T]{
       var foundMove:Boolean = false
       var remainingNeighbors = maxNeighbors()
       override def iterator : BoundedIterator[T] = new BoundedIterator[T]{
-        val baseIterator = baseIterable.iterator
+        val baseIterator = if(randomized){
+          Random.shuffle(baseIterable.toList).iterator
+        } else baseIterable.iterator
         override def hasNext : Boolean = baseIterator.hasNext && !foundMove && remainingNeighbors>0L
         override def next() : T = {remainingNeighbors -= 1L; baseIterator.next}
         override def hasUnboundedNext() : Boolean = baseIterator.hasNext

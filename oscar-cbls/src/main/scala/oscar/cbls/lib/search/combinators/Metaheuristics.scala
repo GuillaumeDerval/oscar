@@ -44,6 +44,7 @@ class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: F
 
   var moveCount = 0L
   var temperatureValue: Float = temperature(moveCount)
+
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
     a.getMove(obj, initialObj:Long, acceptation) match {
       case NoMoveFound => NoMoveFound
@@ -59,12 +60,12 @@ class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: F
 
       val relativeIncrease = - gain.toFloat / oldObj.toFloat
 
-      println("relativeIncrease: " + relativeIncrease)
-      println("temp:" + temperatureValue)
+      //println("relativeIncrease: " + relativeIncrease)
+      //println("temp:" + temperatureValue)
 
       val toReturn = math.random < math.pow(base, - relativeIncrease / temperatureValue)
 
-      println("metropolis decision: " + toReturn)
+      //println("metropolis decision: " + toReturn)
 
       toReturn
     }
@@ -73,7 +74,6 @@ class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: F
   def notifyMoveTaken() {
     moveCount += 1L
     temperatureValue = temperature(moveCount)
-
   }
 
   //this resets the internal state of the move combinators

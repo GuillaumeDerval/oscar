@@ -16,7 +16,7 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.core.search.Best
+import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
 import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
@@ -33,7 +33,7 @@ import scala.language.postfixOps
 object WarehouseLocationSimulatedAnnealing extends App{
 
   //the number of warehouses
-  val W:Int = 15
+  val W:Int = 150
 
   //the number of delivery points
   val D:Int = 150
@@ -58,10 +58,14 @@ object WarehouseLocationSimulatedAnnealing extends App{
   m.close()
 
   //TODO: this does not work at all; only iterates over the warehouses; no search, just like accept all.
-  val neighborhoodSA = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouse", hotRestart = true)
-    metropolis() maxMoves W*10 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
+  val neighborhoodSA = (AssignNeighborhood(
+    warehouseOpenArray,
+    "SwitchWarehouse",
+    hotRestart = false,
+    selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
+    metropolis() maxMoves W*50 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
 
-  neighborhoodSA.verbose = 2
+  neighborhoodSA.verbose = 1
 
   //all moves are accepted because the neighborhood returns the best found move, and tabu might degrade obj.
   neighborhoodSA.doAllMoves(obj=obj)
