@@ -138,7 +138,7 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
     val width = maxValue - minValue
 
     if(width < dividingRatio) {
-      val localExhaustiveSearch = new Exhaustive(step = 1L, skipInitial = true,maxIt = Long.MaxValue)
+      val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true,maxIt = Long.MaxValue)
       localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
     }else{
       val step = width/dividingRatio
@@ -159,9 +159,9 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
 
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
-    println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
+    //println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
     val tries:List[(Long,Long)] = List((startPos,startObj),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
-    println("found: " + tries)
+    //println("found: " + tries)
     tries.minBy(_._2)
   }
 
