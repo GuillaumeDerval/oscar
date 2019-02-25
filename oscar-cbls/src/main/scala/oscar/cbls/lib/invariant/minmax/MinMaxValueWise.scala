@@ -7,8 +7,11 @@ import oscar.cbls.core._
 import scala.collection.immutable.SortedSet
 
 /**
- *
- * @param constArray
+ * This invariant maintains the minimal value in constArray,
+  * considering only the indices included in condSet.
+  * default if condSet is empty
+  *
+ * @param constArray an array of contant values
  * @param condSet
  * @param default
  * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.

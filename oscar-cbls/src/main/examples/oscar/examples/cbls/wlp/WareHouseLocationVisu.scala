@@ -59,7 +59,6 @@ object WareHouseLocationVisu extends App with StopWatch{
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
 
-
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
