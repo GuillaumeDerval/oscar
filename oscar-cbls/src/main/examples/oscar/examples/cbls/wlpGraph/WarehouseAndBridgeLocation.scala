@@ -182,16 +182,13 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   println("\t" + selectedDistances.mkString("\n\t"))
 
-  val switchCombined = Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined"))
-
   def getFactorApartBridges(w1:Int,w2:Int,factor:Int):Iterable[Long] = {
     val nodeW1 = warehouseToNode(w1)
     val nodeW2 = warehouseToNode(w2)
 
     val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.nodeId)(nodeW2.nodeId)
 
-    val conditions = 0L until nbConditionalEdges
-    conditions.filter(c => {
+    (0L until nbConditionalEdges).filter(c => {
       val conditionalEdge = graph.conditionToConditionalEdges(c)
       val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW1.nodeId)
       val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW2.nodeId)
@@ -207,8 +204,12 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   println("start warehousesPairToTwiceApartBridges")
   //we only fill half of the matrix; it is symmetric anyway, so just use the upper part
-  val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] =
-    Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => (if(w1 > w2) null else (getFactorApartBridges(w1,w2,factorForFastCombined)))))
+  //Also we use a for below to enable parallelism, since this is brutal computation
+  val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] = Array.fill(W)(null)
+
+  for(w1 <- (0 until W).par){
+    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => (if(w1 > w2) null else (getFactorApartBridges(w1,w2,factorForFastCombined))))
+  }
   println("end warehousesPairToTwiceApartBridges")
 
   val neighborhood =(
@@ -218,14 +219,14 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
         Profile(SwapsNeighborhood(edgeConditionArray, "SwapConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile((swapsK(20) andThen switchCombined) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(swapsK(20)
           dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
           guard(() => openWarehouses.value.size >= 5)
           name "fastCombined"),
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 2, obj)
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 4, obj)
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
@@ -259,8 +260,6 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     extraPath = selectedDistances.map(_.getPath))
 
   println(neighborhood.profilingStatistics)
-
-  println(switchCombined.profilingStatistics)
 
   println(openWarehouses)
   println(openConditions)
