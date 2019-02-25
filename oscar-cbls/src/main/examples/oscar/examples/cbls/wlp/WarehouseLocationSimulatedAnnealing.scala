@@ -16,8 +16,9 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.core.search.Best
+import oscar.cbls.core.search.{Best, First}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
+import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
 
@@ -29,15 +30,15 @@ import scala.language.postfixOps
   * additional behaviors. Here, we restrict a neighborhood to a specific set of variables that not tabu
   * this set of variables is maintained through invariants
   */
-object WarehouseLocationTabu extends App{
+object WarehouseLocationSimulatedAnnealing extends App{
 
   //the number of warehouses
-  val W:Int = 50
+  val W:Int = 150
 
   //the number of delivery points
-  val D:Int = 600
+  val D:Int = 150
 
-  println("WarehouseLocationTabu(W:" + W + ", D:" + D + ")")
+  println("WarehouseLocationSimulatedAnnealing(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -54,42 +55,20 @@ object WarehouseLocationTabu extends App{
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
-  // we handle the tabu through invariants.
-  // they are completely dissociated from the rest of the model in this case.
-  val TabuArray = Array.tabulate(W)(w => CBLSIntVar(m,0))
-  val It = CBLSIntVar(m)
-  val nonTabuWarehouses = SelectLESetQueue(TabuArray,It).setName("non tabu warehouses")
-
   m.close()
 
-  //this composite neighborhood includes:
-  // *the search part restricted to non tabu warehouses
-  // *the update of the tabu and iteration count
-  // *the stop criterion based on maxMoves since last improvement over obj
-  // *the protection of the objectiveFunction
-  val tabuTenure = W/5
+  //TODO: this does not work at all; only iterates over the warehouses; no search, just like accept all.
+  val neighborhoodSA = (AssignNeighborhood(
+    warehouseOpenArray,
+    "SwitchWarehouse",
+    hotRestart = false,
+    selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
+    metropolis() maxMoves W*50 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
 
-  val switchWithTabuNeighborhood = (
-    AssignNeighborhood(
-      warehouseOpenArray,
-      "SwitchWarehouseTabu",
-      searchZone = nonTabuWarehouses, //select non tabu warehouses only
-      selectIndiceBehavior = Best(),
-      hotRestart = false) //we do not need hot restart since looking for best
-    afterMoveOnMove((a:AssignMove) => {
-      //update the tabu mechanics
-    TabuArray(a.id) := It.value + tabuTenure
-    It :+= 1
-  })
-    acceptAll()
-    maxMoves W withoutImprovementOver obj
-    saveBestAndRestoreOnExhaust obj
-    showObjectiveFunction obj)
-
-  switchWithTabuNeighborhood.verbose = 2
+  neighborhoodSA.verbose = 1
 
   //all moves are accepted because the neighborhood returns the best found move, and tabu might degrade obj.
-  switchWithTabuNeighborhood.doAllMoves(obj=obj)
+  neighborhoodSA.doAllMoves(obj=obj)
 
   println(openWarehouses)
 }

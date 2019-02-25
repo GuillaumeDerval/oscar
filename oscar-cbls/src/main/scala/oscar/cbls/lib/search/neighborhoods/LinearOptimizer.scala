@@ -98,16 +98,21 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
     var bestX = startPos
     var bestF = startObj
 
-    for(value <- minValue to maxValue by step if it > 0L && (!skipInitial || value != startPos)){
-      it = it - 1L
+    //this is a bit dirty, but ranges do not work when there are more than MaxInt elements
+    var value = minValue
+    while(value <= maxValue){
+      if(it > 0L && (!skipInitial || value != startPos)){
+        val newF = obj(value)
 
-      val newF = obj(value)
-
-      if(newF < bestF){
-        bestF = newF
-        bestX = value
+        if(newF < bestF){
+          bestF = newF
+          bestX = value
+        }
       }
+      it = it - 1L
+      value += step
     }
+
     (bestX,bestF)
   }
 
