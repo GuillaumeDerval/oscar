@@ -124,17 +124,18 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
           require(factor2 > 0)
 
           def evaluate(delta:Long): Long ={
+            //println("Delta :" + delta)
             this.delta = delta
-            firstVar := oldValOfFirstVar + (delta * factor1)
-            secondVar := oldValOfSecondVar - (delta * factor2)
+            firstVar := oldValOfFirstVar + delta
+            secondVar := oldValOfSecondVar - (delta * factor2 / factor1)
             val newObj = obj.value
             firstVar := oldValOfFirstVar
             secondVar := oldValOfSecondVar
             newObj
           }
 
-          val minValueForDelta = (oldValOfFirstVar - firstVar.min)/factor1 max (secondVar.max - oldValOfSecondVar)/factor2
-          val maxValueForDelta = (firstVar.max - oldValOfFirstVar)/factor1 min (oldValOfSecondVar - secondVar.min)/factor2
+          val minValueForDelta = (firstVar.min - oldValOfFirstVar) max (oldValOfSecondVar - secondVar.max) * factor1 /factor2
+          val maxValueForDelta = (firstVar.max - oldValOfFirstVar) min (oldValOfSecondVar - secondVar.min) * factor1 /factor2
 
           val (bestDelta,objForDelta) = iterationOnDelta.search(0L, initialObj, minValueForDelta, maxValueForDelta, evaluate)
 
@@ -150,8 +151,12 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
 
     firstVarIndice = firstVarIndice + 1L
     secondVarIndice = -1L
-    require(firstVar.newValue == oldValOfFirstVar)
-    require(secondVar.newValue == oldValOfSecondVar)
+    if (firstVar != null) {
+      require(firstVar.newValue == oldValOfFirstVar)
+    }
+    if (secondVar != null) {
+      require(secondVar.newValue == oldValOfSecondVar)
+    }
     firstVar = null
     secondVar = null
   }
@@ -185,8 +190,8 @@ case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndi
                         override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
-  val newValOfFirstVar = oldValOfFirstVar + (delta * factor1)
-  val newValOfSecondVar = oldValOfSecondVar - (delta * factor2)
+  val newValOfFirstVar = oldValOfFirstVar + delta
+  val newValOfSecondVar = oldValOfSecondVar - (delta * factor2) / factor1
 
   override def commit() {
     firstVar := newValOfFirstVar
