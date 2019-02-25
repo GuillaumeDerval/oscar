@@ -1,4 +1,4 @@
-package oscar.cbls.test.invariants
+package oscar.cbls.test.unit
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -19,38 +19,35 @@ import org.scalacheck.Gen
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
-import oscar.cbls.algo.graph.FloydWarshall
 import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
 import oscar.cbls.business.routing.invariants._
+import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
-import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
-import oscar.cbls.lib.invariant.graph.{DistanceInConditionalGraph, VoronoiZones}
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
-import oscar.cbls.test.algo.graph.RandomGraphGenerator
 import oscar.cbls.test.invariants.bench._
 
 import scala.collection.immutable.SortedMap
 
 /**
-  * @author yoann.guyot@cetic.be
-  */
+ * @author yoann.guyot@cetic.be
+ */
 class InvariantTests extends FunSuite with Checkers {
 
 
   {
-    var assertActivated = false
-    assert({assertActivated = true; true})
-    if(!assertActivated)
-      println("You are executing tests with asserts deactivated, you should activate them for a more thorough test")
+  var assertActivated = false
+  assert({assertActivated = true; true})
+  if(!assertActivated)
+    println("You are executing tests with asserts deactivated, you should activate them for a more thorough test")
   }
 
   val verbose = 0
 
-  test("Disjunctive maintains the overlap between tasks on unary resoruce.") {
+  test("Disjunctive maintains the overlap between tasks on unary resource.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     Disjunctive(bench.genIntVarsArray(),bench.genIntVarsArray())
@@ -64,7 +61,6 @@ class InvariantTests extends FunSuite with Checkers {
     oscar.cbls.lib.invariant.set.BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
     bench.run()
   }
-
 
   test("LE maintains the violation of a lesser or equal test.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
@@ -112,15 +108,6 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
     AllDiff(bench.genIntVarsArray(10, -10 to 10))
-    bench.run()
-  }
-
-  test("Percentile") {
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
-      Random(), RandomDiff()))
-    new NthSmallest(bench.genIntVarsArray(10, -10 to 10),3,true)
-    new NthSmallest(bench.genIntVarsArray(10, -10 to 10),4,false)
-
     bench.run()
   }
 
@@ -228,7 +215,7 @@ class InvariantTests extends FunSuite with Checkers {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
 
     makeDenseCount(bench.genIntVarsArray(10, 0 to 19))
-
+    
     bench.run()
   }
 
@@ -255,8 +242,8 @@ class InvariantTests extends FunSuite with Checkers {
   //ignore("SelectLESetQueue") {
   // the forbidden value chenges are not forbidden in this test, so it fails
   //  //le pivot ne peut qu'augmenter
-  //une valeur en dessous du pivot ne peut que prendre une valeur dépassant toutes les autres valeurs
-  //les valeurs au dessus du pivot ne peuvent pas changer
+    //une valeur en dessous du pivot ne peut que prendre une valeur dépassant toutes les autres valeurs
+    //les valeurs au dessus du pivot ne peuvent pas changer
   //  val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
   //  new SelectLESetQueue(bench.genIntVarsArray(5, 0 to 5), bench.genIntVar(3 to 10, false)).toIntSetVar
   //  bench.run
@@ -298,19 +285,19 @@ class InvariantTests extends FunSuite with Checkers {
     MinLin(bench.genSortedIntVars(6, 0 to 10))
     bench.run()
   }
-  /*
-    test("Min") {
-      val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-      new Min(bench.genSortedIntVars(5, -10 to 10))
-      bench.run()
-    }
-
-    test("Max") {
-      val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-      new Max(bench.genSortedIntVars(5, -10 to 10))
-      bench.run()
-    }
-  */
+/*
+  test("Min") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new Min(bench.genSortedIntVars(5, -10 to 10))
+    bench.run()
+  }
+  
+  test("Max") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new Max(bench.genSortedIntVars(5, -10 to 10))
+    bench.run()
+  }
+*/
   test("Min2") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Min2(bench.genIntVar(-10 to 10), bench.genIntVar(-10 to 10))
@@ -337,7 +324,7 @@ class InvariantTests extends FunSuite with Checkers {
 
   def randomArray(size:Int,values:Range):Array[Long] = {
     def randomValue(r:Range):Int = {
-      r.start + (r.length * scala.math.random).toLong
+      r.start + (r.length * scala.math.random).toInt
     }
     Array.tabulate(size)(_ => randomValue(values))
   }
@@ -379,6 +366,7 @@ class InvariantTests extends FunSuite with Checkers {
       bench.genIntVarsArray(10, 0 to 100),
       bench.genIntSetVar(5, 0 to 9))
     bench.run()
+
   }
 
   test("ProdElements maintains the product of variables of which indices are in the given set.") {
@@ -456,21 +444,21 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  /* test("RoundUpCustom") {
-     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-     new RoundUpCustom(
-       bench.genIntVar(0 to 10),
-       bench.genIntVar(1 to 10),
-       InvGen.randomTuples(10, 0 to 10).map(ab => (ab._1,ab._1 + ab._2)))
-     bench.run()
-   }*/
+ /* test("RoundUpCustom") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new RoundUpCustom(
+      bench.genIntVar(0 to 10),
+      bench.genIntVar(1 to 10),
+      InvGen.randomTuples(10, 0 to 10).map(ab => (ab._1,ab._1 + ab._2)))
+    bench.run()
+  }*/
 
   test("Union maintains the union of two sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     Union(bench.genIntSetVar(), bench.genIntSetVar())
     bench.run()
   }
-
+  
   test("UnionAll maintains the union of a set of sets.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     UnionAll(bench.genIntSetVars())
@@ -534,8 +522,8 @@ class InvariantTests extends FunSuite with Checkers {
   }
 
   /**
-    * Won't pass when the product products an overflow.
-    */
+   * Won't pass when the product products an overflow.
+   */
   test("SetProd maintains the product of variables") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     SetProd(bench.genIntSetVar(10, -3 to 3))
@@ -543,12 +531,12 @@ class InvariantTests extends FunSuite with Checkers {
   }
 
 
-  /*  test("IdentityInt maintains the identity of an integer).") {
-      val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-      new IdentityInt(bench.genIntVar(-100 to 100))
-      bench.run()
-    }
-  */
+/*  test("IdentityInt maintains the identity of an integer).") {
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    new IdentityInt(bench.genIntVar(-100 to 100))
+    bench.run()
+  }
+*/
 
   /*
   test("IdentityIntSet maintains the identity of a set of integers).") {
@@ -614,7 +602,7 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  test ("OccurenceOf maintains the number of occurrence's of a certain value in a sequence"){
+  test ("OccurenceOf maintains the occurence of a certain value"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar()
     OccurrencesOf(seqVar,Gen.choose(0, 100).sample.get)
@@ -665,14 +653,14 @@ class InvariantTests extends FunSuite with Checkers {
     NodesOfVehicle(route,v)
     bench.run()
   }
-
+/*
   test("Constant routing distance - global distance - symmetric"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
     val n = 100
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,false,distanceMatrix,true)
+    ConstantRoutingDistance(route,n,v,false,distanceMatrix,true)
     bench.run()
   }
 
@@ -682,9 +670,9 @@ class InvariantTests extends FunSuite with Checkers {
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,true,distanceMatrix,true)
+    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
     bench.run()
-  }
+  }*/
 
   test("NodeVehicleRestrictions"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
@@ -749,7 +737,7 @@ class InvariantTests extends FunSuite with Checkers {
     def op(n1:Long,n2:Long,c:Long): Long= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
-        case 1 => 0L max c - matrix(longToInt(n1))(longToInt(n2))
+        case 1 => 0L max c - matrix(n1)(n2)
         case 2 => c * matrix(n1)(n2)
         case 3 => c % matrix(n1)(n2)
       }
@@ -767,7 +755,7 @@ class InvariantTests extends FunSuite with Checkers {
       maxContent = Int.MaxValue - 2
     )
 
-    bench.run()
+      bench.run()
   }
 
   test("GenericCumulativeIntegerDimensionOnVehicleWithVar"){
@@ -801,7 +789,7 @@ class InvariantTests extends FunSuite with Checkers {
     }
 
     val oper = genOperation(n)
-    def op(n1:Long,n2:Long,c:Long): Long= {
+    def op(n1:Long,n2:Long,c:Long): Int= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
         case 1 => 0L max c - matrix(n1)(n2)
@@ -851,7 +839,7 @@ class InvariantTests extends FunSuite with Checkers {
     }
 
     val oper = genOperation(n)
-    def op(n1:Long,n2:Long,c:Long): Long= {
+    def op(n1:Long,n2:Long,c:Long): Int= {
       oper(n1)(n2) match {
         case 0 => c + matrix(n1)(n2)
         case 1 => 0L max c - matrix(n1)(n2)
@@ -876,73 +864,14 @@ class InvariantTests extends FunSuite with Checkers {
 
   // ---- checkpoint Tests ---- //
 
-  test("Star exploration"){
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
-    val n = 100
-    val v = 4
-    val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
-    val distanceMatrix = RoutingMatrixGenerator(n)._1
-    RouteLength(route,n,v,true,distanceMatrix,true)
-    bench.run()
-  }
-
-  test("distance in conditional graph"){
-
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-
-    val nbNodes = 100
-    val  nbConditionalEdges = 50
-    val nbNonConditionalEdges = 50
-    val nbTarget = 10
-
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges)
-
-    val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
-      nbConditionalEdges,
-      nbNonConditionalEdges,
-      mapSide = 1000)
-    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
-    val distancesArray = Array.tabulate(nbTarget)(
-      targetID => new DistanceInConditionalGraph(graph,
-        from = nbTarget,
-        to = targetID,
-        openConditions = openConditions,
-        distanceIfNotConnected = Long.MaxValue)
-      (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b)))
-
-    bench.run()
-  }
-
-
-  test("Voronoi Zones in conditional graph"){
-
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
-
-    val nbNodes = 50
-    val nbConditionalEdges = 50
-    val nbNonConditionalEdges = 50
-    val nbTarget = 10
-
-    val nbCentroids = 10L
-
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges)
-    val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbCentroids)
-
-
-    val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
-      nbConditionalEdges,
-      nbNonConditionalEdges,
-      mapSide = 1000)
-
-    VoronoiZones(graph,
-      graphDiameterOverApprox = Long.MaxValue-1,
-      openConditions,
-      centroids:SetValue,
-      trackedNodes = nbCentroids until nbNodes,
-      openConditions.model,
-      defaultDistanceForUnreachableNodes = Long.MaxValue)
-
-    bench.run()
-  }
+//  test("Star exploration"){
+//    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
+//    val n = 100
+//    val v = 4
+//    val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
+//    val distanceMatrix = RoutingMatrixGenerator(n)._1
+//    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
+//    bench.run()
+//  }
 }
 

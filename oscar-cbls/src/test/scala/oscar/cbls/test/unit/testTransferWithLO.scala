@@ -1,8 +1,8 @@
-package oscar.cbls.test.search
+package oscar.cbls.test.unit
 
 import org.scalatest._
 import oscar.cbls._
-import oscar.cbls.core.computation.{CBLSIntConst, CBLSIntVar, DomainRange, FullRange}
+import oscar.cbls.core.computation.{CBLSIntVar, DomainRange}
 import oscar.cbls.lib.search.neighborhoods.{NarrowingExhaustive, TransferNeighborhood}
 
 class testTransferWithLO extends FlatSpec {
@@ -23,7 +23,7 @@ class testTransferWithLO extends FlatSpec {
 
   s.close()
 
-  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100))
+  val search = TransferNeighborhood(Array(var1,var2),searchZoneForDelta = () => (_,_) => (_,_) => new NarrowingExhaustive(100,101))
 
   search.doAllMoves(obj = obj)
 
