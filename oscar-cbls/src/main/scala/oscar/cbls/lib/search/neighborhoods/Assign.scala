@@ -158,7 +158,7 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
                               domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
-                              domainExplorer:LinearOptimizer,
+                              domainExplorer: () => (Long,Long) => LinearOptimizer,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
@@ -183,6 +183,8 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
       case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(iterationSchemeOnZone, (index : Long) => (s(index),vars(index).value))
     }
 
+    val searchZoneForVar = domainExplorer()
+
     //iterating over the variables to consider
     val (indicesIterator,notifyFound1) = selectIndiceBehavior.toIterator(iterationSchemeOnSymmetryFreeZone)
     while(indicesIterator.hasNext){
@@ -197,12 +199,14 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
         case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
       }
 
+      val searchZoneForThisVar = searchZoneForVar(currentIndice,oldVal)
+
       def eval(value:Long):Long = {
         this.newVal = value
         obj.assignVal(currentVar,value)
       }
 
-      val (newVal,bestObj) = domainExplorer.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
+      val (newVal,bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
       this.newVal = newVal
 
       if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
