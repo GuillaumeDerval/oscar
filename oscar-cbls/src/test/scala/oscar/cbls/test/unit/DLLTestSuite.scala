@@ -30,8 +30,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
         dll.enqueue(i)
       }
 
-      dll.iterator.zip(intList.iterator).forall(x => x._1 == x._2) &&
-        (dll.iterator.length == intList.iterator.length)
+      intList should be (dll.iterator.toList)
     })
   }
 
@@ -45,15 +44,11 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
         dll.addElem(i)
       }
 
-      val revList = intList.reverse
-
-      dll.iterator.zip(revList.iterator).forall(x => x._1 == x._2) &&
-        (dll.iterator.length == revList.iterator.length)
+      dll.iterator.toList should be (intList.reverseIterator.toList)
     })
   }
 
   test("DropAll sets the size to 0 and sets isEmpty"){
-
     forAll((intList: List[Int]) => {
 
       val dll = new DoublyLinkedList[Int]()
@@ -67,6 +62,23 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     })
   }
 
+  test("foreach iterates on all elements"){
+    forAll((intList: List[Int]) => {
+
+      val dll = new DoublyLinkedList[Int]()
+
+      for(i <- intList){
+        dll.addElem(i)
+      }
+
+      var i = 0
+      dll.foreach(elem => {
+        intList.contains(elem)
+
+      })
+    })
+  }
+
   test("addElem, dequeue and enqueue keep the correct size (batch)"){
 
     var helper = new CRUDHelpers[Int]()
@@ -74,11 +86,54 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     var size = 0
 
     for(i <- 1 to 100){
+      // Select a random element from the function list
       val a = helper.operationList(Random.nextInt(helper.operationList.size))
+
+      // Apply the function and update the expected size
       size = a(dll,i,size)
     }
 
     size should be (dll.size)
+  }
+
+  test("Delete one DLLStorageElement removes the item"){
+    val dll = new DoublyLinkedList[Int]()
+
+    val storageElem = dll.enqueue(1)
+    dll.enqueue(2)
+    dll.enqueue(3)
+    val storageElem3 = dll.enqueue(4)
+    val storageElem2 = dll.enqueue(5)
+    dll.enqueue(6)
+
+    storageElem.delete()
+    dll.size should be(5)
+  }
+
+  test("Delete several DLLStorageElement removes the items"){
+    val dll = new DoublyLinkedList[Int]()
+
+    val storageElem = dll.enqueue(1)
+    dll.enqueue(2)
+    dll.enqueue(3)
+    val storageElem3 = dll.enqueue(4)
+    val storageElem2 = dll.enqueue(5)
+    dll.enqueue(6)
+
+    storageElem.delete()
+    storageElem2.delete()
+    storageElem3.delete()
+
+    dll.size should be(3)
+  }
+
+  test("Delete several time the same element should fail"){
+    val dll = new DoublyLinkedList[Int]()
+
+    val storageElem = dll.enqueue(1)
+    storageElem.delete()
+
+    an [Error] should be thrownBy storageElem.delete()
   }
 
   class CRUDHelpers[A]{

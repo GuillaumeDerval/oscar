@@ -58,6 +58,7 @@ class InvariantTests extends FunSuite with Checkers {
   test("BelongsTo maintains the violation of a membership.") {
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(),
       Random(), RandomDiff()))
+
     oscar.cbls.lib.invariant.set.BelongsTo(bench.genIntVar(0 to 10), bench.genIntSetVar(5, 0 to 10))
     bench.run()
   }
@@ -653,14 +654,14 @@ class InvariantTests extends FunSuite with Checkers {
     NodesOfVehicle(route,v)
     bench.run()
   }
-/*
+
   test("Constant routing distance - global distance - symmetric"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
     val n = 100
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    ConstantRoutingDistance(route,n,v,false,distanceMatrix,true)
+    RouteLength(route,n,v,false,distanceMatrix,true)
     bench.run()
   }
 
@@ -670,9 +671,9 @@ class InvariantTests extends FunSuite with Checkers {
     val v = 5
     val route = bench.genRouteOfNodes(n-1,v)
     val distanceMatrix = RoutingMatrixGenerator(n)._1
-    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
+    RouteLength(route,n,v,true,distanceMatrix,true)
     bench.run()
-  }*/
+  }
 
   test("NodeVehicleRestrictions"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
@@ -864,14 +865,15 @@ class InvariantTests extends FunSuite with Checkers {
 
   // ---- checkpoint Tests ---- //
 
-//  test("Star exploration"){
-//    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
-//    val n = 100
-//    val v = 4
-//    val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
-//    val distanceMatrix = RoutingMatrixGenerator(n)._1
-//    ConstantRoutingDistance(route,n,v,true,distanceMatrix,true)
-//    bench.run()
-//  }
+  test("Star exploration"){
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), Shuffle(), MultipleMove()))
+    val n = 100
+    val v = 4
+    val route = bench.genRouteOfNodesForCheckPoint(n-1,v)
+    val distanceMatrix = RoutingMatrixGenerator(n)._1
+    RouteLength(route,n,v,true,distanceMatrix,true)
+    bench.run()
+  }
+
 }
 

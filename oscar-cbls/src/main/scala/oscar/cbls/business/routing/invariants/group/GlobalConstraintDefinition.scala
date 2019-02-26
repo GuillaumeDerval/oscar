@@ -119,7 +119,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
   }
 
   def restoreValueAtCheckpoint(checkpoint : IntSequence,checkpointLevel:Long): Unit ={
- //   println("Roll Back - Actual Chkpnt Lvl : " + currentCheckpointLevel + " Chkpnt to restore : " + checkpointLevel)
+    //   println("Roll Back - Actual Chkpnt Lvl : " + currentCheckpointLevel + " Chkpnt to restore : " + checkpointLevel)
     if (checkpointLevel != currentCheckpointLevel){
       restoreListValues(currentCheckpointHowToRollBack)
       val (bij,search,rb) = checkpointStack.rollBackAndOutputValue(checkpoint,checkpointLevel)
@@ -133,9 +133,9 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
     currentCheckpointLevel = checkpointLevel
     currentCheckpointRoute = checkpoint
     currentCheckpointHowToRollBack = Nil
- //   println("New Checkpoint Level : " + checkpointLevel)
- //   println("Route After Checkpoint : ")
- //   println(currentCheckpointRoute)
+    //   println("New Checkpoint Level : " + checkpointLevel)
+    //   println("Route After Checkpoint : ")
+    //   println(currentCheckpointRoute)
   }
 
   /** This method convert the computation steps received from the sequence into the segemnt type
@@ -152,35 +152,35 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
     //println("Actual route : " + routes)
     //println("Previous route : " + prevRoutes)
     val toReturn =
-      computationSteps.flatMap(step => {
-        step match {
-          case FetchFromPreCompute(startNodePosition, endNodePosition, rev) =>
-  //          val realStartNodePosition = bijection(startNodePosition)
-  //          val realEndNodePosition = bijection(endNodePosition)
-  //          println("Start Node position : " + startNodePosition + " - Node at startNodePosition : " + prevRoutes.valueAtPosition(startNodePosition).get + " -- RealStartNodePosition : " + realStartNodePosition + " - Node atRealStartNodePOsitiono : " + prevRoutes.valueAtPosition(realStartNodePosition).get)
-  //          println("End Node position : " + endNodePosition + " - Node at endNodePosition : " + prevRoutes.valueAtPosition(endNodePosition).get + " -- RealEndNodePosition : " + realEndNodePosition + " - Node atRealEndNodePOsitiono : " + prevRoutes.valueAtPosition(realEndNodePosition).get)
-            //TODO: improve this; valueAtPosition is where most of the time is wasted.
-            val startNode = prevRoutes.valueAtPosition(startNodePosition).get
-            val endNode = prevRoutes.valueAtPosition(endNodePosition).get
-            //println("NextEndNode : " + explorer.get.value)
-            if (!rev) {
-              Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
-            } else {
-              Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode),endNode,preComputedValues(endNode)))
-            }
-          case FromScratch(fromNode,toNode,topOfStack) =>
-            var newNodeList:List[NewNode[T]] = Nil
-            for (nodePos <- fromNode to toNode) {
-              val node = (
-                if (topOfStack)
-                  routes.valueAtPosition(nodePos).get
-                else
-                  prevRoutes.valueAtPosition(nodePos).get)
-              newNodeList = NewNode[T](node)::newNodeList
-            }
-            newNodeList.reverse
-        }
-      })
+    computationSteps.flatMap(step => {
+      step match {
+        case FetchFromPreCompute(startNodePosition, endNodePosition, rev) =>
+          //          val realStartNodePosition = bijection(startNodePosition)
+          //          val realEndNodePosition = bijection(endNodePosition)
+          //          println("Start Node position : " + startNodePosition + " - Node at startNodePosition : " + prevRoutes.valueAtPosition(startNodePosition).get + " -- RealStartNodePosition : " + realStartNodePosition + " - Node atRealStartNodePOsitiono : " + prevRoutes.valueAtPosition(realStartNodePosition).get)
+          //          println("End Node position : " + endNodePosition + " - Node at endNodePosition : " + prevRoutes.valueAtPosition(endNodePosition).get + " -- RealEndNodePosition : " + realEndNodePosition + " - Node atRealEndNodePOsitiono : " + prevRoutes.valueAtPosition(realEndNodePosition).get)
+          //TODO: improve this; valueAtPosition is where most of the time is wasted.
+          val startNode = prevRoutes.valueAtPosition(startNodePosition).get
+          val endNode = prevRoutes.valueAtPosition(endNodePosition).get
+          //println("NextEndNode : " + explorer.get.value)
+          if (!rev) {
+            Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
+          } else {
+            Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode),endNode,preComputedValues(endNode)))
+          }
+        case FromScratch(fromNode,toNode,topOfStack) =>
+          var newNodeList:List[NewNode[T]] = Nil
+          for (nodePos <- fromNode to toNode) {
+            val node = (
+              if (topOfStack)
+                routes.valueAtPosition(nodePos).get
+              else
+                prevRoutes.valueAtPosition(nodePos).get)
+            newNodeList = NewNode[T](node)::newNodeList
+          }
+          newNodeList.reverse
+      }
+    })
     toReturn
   }
 
@@ -240,7 +240,7 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
           if (checkpoint0Defined && checkpointLevel != 0L)
             bijForPreCompute.commitStackedUpdatesToConcrete()
           else
-          ConcreteFunctionForPreCompute(s.newValue)
+            ConcreteFunctionForPreCompute(s.newValue)
 
         vehicleSearcher = vehicleSearcher.regularize
 
@@ -410,8 +410,8 @@ abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @spec
 class UpdatedValues()
 
 class ModifiedValues[@specialized(Long) U](val vehicle : Long,
-                        val value : U,
-                        val hasChangedSinceCheckpoint0 : Boolean){
+                                           val value : U,
+                                           val hasChangedSinceCheckpoint0 : Boolean){
   override def toString: String = {
     "ModifiedValues(" + vehicle + "," + value + "," + hasChangedSinceCheckpoint0 + ")"
   }
@@ -429,9 +429,9 @@ trait Segment[@specialized T]{}
   * @tparam T the type of precomputation
   */
 case class PreComputedSubSequence[@specialized T](startNode:Long,
-                                                      startNodeValue:T,
-                                                      endNode:Long,
-                                                      endNodeValue:T) extends Segment[T]{
+                                                  startNodeValue:T,
+                                                  endNode:Long,
+                                                  endNodeValue:T) extends Segment[T]{
   override def toString: String = {
     "PreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }
@@ -448,9 +448,9 @@ case class PreComputedSubSequence[@specialized T](startNode:Long,
   * @tparam T the type of precomputation
   */
 case class FlippedPreComputedSubSequence[@specialized T](startNode:Long,
-                                                             startNodeValue:T,
-                                                             endNode:Long,
-                                                             endNodeValue:T) extends Segment[T]{
+                                                         startNodeValue:T,
+                                                         endNode:Long,
+                                                         endNodeValue:T) extends Segment[T]{
   override def toString: String = {
     "FlippedPreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
   }

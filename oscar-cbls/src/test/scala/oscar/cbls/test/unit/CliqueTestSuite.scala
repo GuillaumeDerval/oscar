@@ -6,6 +6,8 @@ import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.clique.Clique
 import oscar.cbls.algo.magicArray.MagicBoolArray
 
+import scala.util.Random
+
 class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
 
   //First test with madeup results
@@ -23,24 +25,53 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
 
     // This clique should be (3,6,4,5)
     val maxclique = cliques.filter(set => set.size == 4).head
-    List(3L,6,4,5).forall(maxclique.contains)
+    List(3L,6,4,5).forall(maxclique.contains) should be (true)
   }
 
-  val nbNodes = for (n <- Gen.choose(0, 100)) yield n
-  val nodeList = Gen.listOf()
+  test("Empty graph of N nodes has N cliques each of size 1"){
+    val nbNodes = 10
+    val adjacencyList:List[(Long,Long)] = List()
+
+    val cliques = Clique.bronKerbosch2(nbNodes,(a,b) => false)
+
+    // Should be only N cliques of size 1
+    cliques.count(set => set.size == 1) should be (nbNodes)
+
+    // All cliques should be size 1
+    cliques.forall(c => c.size == 1) should be (true)
+  }
 
 
-  test("Reported clique is strongly connected"){
-    forAll(nodeList){list => {
+  test("Reported cliques are strongly connected"){
+    forAll(graphGen){gen => {
 
-      val array = MagicBoolArray(list.size, initVal = true)
-      for ((elem,i) <- list.view.zipWithIndex) {
-        array.update(i,elem == 1)
-      }
+      val graph = gen._2
+      val nbNodes = gen._1
 
-      for ((elem,i) <- list.view.zipWithIndex) {
-        array(i) should be (elem == 1)
+      val adjacencyDico = graph ++ graph.map{case (a,b) => (b,a)}
+      def isNeighbor(a:Long,b:Long) = adjacencyDico.contains((a,b))
+
+      val cliques = Clique.bronKerbosch2(nbNodes,isNeighbor:(Long,Long)=>Boolean)
+
+      for(clique <- cliques){
+        // All vertexes of the clique are neighbor with eachother (or are equal to themselves)
+        clique.forall(v1 => clique.forall(v2 => isNeighbor(v1,v2) || v2 == v1)) should be (true)
       }
     }}
   }
+
+  val graphGen = for {
+    v <- Gen.choose(0, 20)
+    p <- Gen.choose(80,90)
+  } yield (v,Array.tabulate(v)(item => {
+    Array.tabulate(v-1)(item2 => {
+      if(Random.nextDouble() < p.toFloat/100 && item != item2)
+        if(item > item2)
+          (item2: Long,item : Long)
+        else
+          (item2: Long,item : Long)
+      else
+        null
+    })
+  }).flatMap(_.toList).filter(t => t != null).distinct)
 }

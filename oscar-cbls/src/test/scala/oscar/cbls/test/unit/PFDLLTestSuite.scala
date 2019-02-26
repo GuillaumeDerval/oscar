@@ -30,6 +30,22 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
     }}
   }
 
+  test("isEmpty returns true after deleting all elements"){
+    forAll (Gen.listOf(customGen)) {objList => {
+      val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
+      val filteredList = dll.permaFilter(obj => obj.int % 2 == 0)
+      var storageElemList = List[DPFDLLStorageElement[CustomObject]]()
+
+      objList.foreach(obj => {
+        storageElemList = storageElemList ::: List(dll.addElem(obj))
+      })
+
+      storageElemList.foreach(elem => elem.delete())
+
+      dll.isEmpty should be (true)
+    }}
+  }
+
   test("DelayedFilters keeps unfiltered until injector is called"){
     forAll (Gen.listOf(customGen)) {objList => {
       val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
@@ -85,7 +101,6 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
       })
 
       callbackList.foreach(c => c())
-
       validList.forall(x => x()) should be (true)
     }}
   }
@@ -119,8 +134,65 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
           }
         }
       }
-      println(list.size + " - " + size)
+
       size should be(dll.size)
+    }}
+  }
+
+  test("foreach returns the expected list"){
+    forAll (Gen.listOf(customGen)) {objList => {
+
+      val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
+      var size = 0
+      var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
+
+
+      // Append the element at the head, since dll.addElem adds at the head
+      for (i <- objList) {
+        listPFDElem = List(dll.addElem(i)) ::: listPFDElem
+      }
+
+      var i = 0
+      dll.foreach(obj =>{
+
+        listPFDElem(i).elem should equal (obj)
+        obj should equal(objList(objList.size - i - 1)) // Iterate on the list in reverse (because addElem)
+        i += 1
+      })
+    }}
+  }
+
+  test("iterator returns the expected list"){
+    forAll (Gen.listOf(customGen)) {objList => {
+
+      val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
+      var size = 0
+      var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
+
+      for (i <- objList) {
+        listPFDElem = List(dll.addElem(i)) ::: listPFDElem
+      }
+
+      dll.iterator.toList should be (listPFDElem.map(o => o.elem))
+    }}
+  }
+
+  test("MapToList returns the expected list"){
+    forAll (Gen.listOf(customGen)) {objList => {
+
+      val dll = new DelayedPermaFilteredDoublyLinkedList[CustomObject]()
+      var size = 0
+      var listPFDElem = List[DPFDLLStorageElement[CustomObject]]()
+
+      for (i <- objList) {
+        listPFDElem =  listPFDElem ::: List(dll.addElem(i))
+      }
+
+      var i = 0
+      dll.mapToList(e => e).foreach(e => {
+        listPFDElem(i).elem should equal(e)
+        i += 1
+      })
     }}
   }
 }

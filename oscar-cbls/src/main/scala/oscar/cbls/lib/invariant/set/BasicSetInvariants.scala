@@ -573,7 +573,7 @@ case class TakeAnyToSet(from: SetValue)
  * @author renaud.delandtsheer@cetic.be
  */
 case class BelongsTo(v: IntValue, set: SetValue)
-  extends IntInvariant(0L,Domain(0L , 1L))
+  extends IntInvariant(if (set.value.contains(v.value)) 1L else 0L,Domain(0L , 1L))
   with IntNotificationTarget
   with SetNotificationTarget{
 

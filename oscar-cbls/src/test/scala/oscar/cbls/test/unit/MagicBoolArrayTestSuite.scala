@@ -10,14 +10,14 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   test("all_(true) sets the whole array to the new value"){
     val array = MagicBoolArray(10,initVal = false)
 
-    array.all_= (true)
+    array.all_=(true)
     array.indicesAtTrue.size should be (10)
   }
 
   test("all_(false) sets the whole array to the new value"){
     val array = MagicBoolArray(10,initVal = false)
 
-    array.all_= (false)
+    array.all_=(false)
     array.indicesAtTrue.size should be (0)
   }
 
@@ -42,17 +42,23 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     }}
   }
 
-  // Expensive test : can take up to 20s if ran with coverage
-  test(".all_ after threshold has expected  size and content"){
+  test(".all_ after threshold has expected  size and content (false to true)"){
+
+    val array = MagicBoolArray(10, initVal = false)
+
+    array.global = Long.MaxValue-10L
+
+    array.all= true
+    array.indicesAtTrue.size should be (10)
+  }
+
+  test(".all_ after threshold has expected  size and content (true to false)"){
+
     val array = MagicBoolArray(10, initVal = true)
 
-    var count = 0
+    array.global = Long.MaxValue-10L
 
-    while(count < Int.MaxValue - 5){
-      array.all_=(false)
-      count += 1
-    }
-
+    array.all_=(false)
     array.indicesAtTrue.size should be (0)
   }
 }
