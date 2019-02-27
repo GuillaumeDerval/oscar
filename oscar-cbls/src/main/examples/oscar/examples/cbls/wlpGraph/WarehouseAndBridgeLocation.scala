@@ -17,6 +17,8 @@
 
 package oscar.examples.cbls.wlpGraph
 
+import java.awt.Color
+
 import oscar.cbls._
 import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node, NodeWithIntegerCoordinates}
 import oscar.cbls.algo.quick.QList
@@ -28,7 +30,7 @@ import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.graph.GraphViewer
+import oscar.cbls.visual.graph.{GraphViewer, InteractiveGraphViewer}
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
 import scala.collection.immutable.SortedMap
@@ -112,7 +114,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
 
   val costOfBridgesPerBridge = 7
-  
+
 
   val selectedDistances = Array.tabulate(20)(w =>
     new DistanceInConditionalGraph(graph,0,w,openConditions,10000)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_)))
@@ -125,10 +127,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
-  val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
+  val visual2 = new InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
-  SingleFrameWindow.show(visual,title = "Warehouse and bridge location")
+  SingleFrameWindow.showFrame(visual2,title = "Warehouse and bridge location", 1025, 1105)
 
   var bestDisplayedObj = Int.MaxValue
 
@@ -229,19 +231,20 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       //TODO: proposer aussi maxResstart!
       //TODO: vérifier quon restart bien du best so far.
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 10, obj, restartFromBest = false)
-    exhaust        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+      //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
+      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
 
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
 
-      visual.redraw(
+      visual2.updateAndRedraw(
         openConditions.value,
         openWarehouses.value,
         trackedNodeToDistanceAndCentroid.mapValues({ case (v1, v2) => v2.value}),
-        hideClosedEdges = false,
+        /*hideClosedEdges = false,
         hideRegularEdges = false,
-        hideOpenEdges = false,
+        hideOpenEdges = false,*/
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
         selectedDistances.map(_.getPath)
       )
@@ -253,14 +256,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual.redraw(
+  visual2.updateAndRedraw(
     openConditions.value,
     openWarehouses.value,
     trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.value}),
-    hideClosedEdges = true,
     emphasizeEdges = vor.spanningTree(deliveryNodeList),
+    /*
+    hideClosedEdges = true,
     hideRegularEdges = true,
-    hideOpenEdges=false,
+    hideOpenEdges=false,*/
     extraPath = selectedDistances.map(_.getPath))
 
   println(neighborhood.profilingStatistics)

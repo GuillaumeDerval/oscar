@@ -120,8 +120,6 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  //TODO: this invariant would divide its runtime by two in case of global checkpointing
-
   registerStaticAndDynamicDependency(openConditions)
   registerStaticAndDynamicDependency(centroids)
 
