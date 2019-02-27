@@ -88,6 +88,23 @@ class VoronoiZones(graph:ConditionalGraph,
   //this condition is needed because we use the distance to unmark the voronoi zones whe na conditional edge is closed
   require(graph.conditionToConditionalEdges.forall(_.length >0),"all conditional edges should have length >0")
 
+
+  registerStaticAndDynamicDependency(openConditions)
+  registerStaticAndDynamicDependency(centroids)
+
+  finishInitialization()
+
+  private val trackedNodeToDistanceAndCentroid: Array[OutputLabeling] =
+    Array.tabulate(graph.nbNodes)(nodeID =>
+      trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
+        case None => null
+        case Some((distanceVar, centroidVar)) =>
+          distanceVar.setDefiningInvariant(this)
+          centroidVar.setDefiningInvariant(this)
+          OutputLabeling(distance=distanceVar,centroid = centroidVar)
+      })
+
+
   case class OutputLabeling(distance:CBLSIntVar,
                             centroid:CBLSIntVar){
 
@@ -120,20 +137,6 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  registerStaticAndDynamicDependency(openConditions)
-  registerStaticAndDynamicDependency(centroids)
-
-  finishInitialization()
-
-  private val trackedNodeToDistanceAndCentroid: Array[OutputLabeling] =
-    Array.tabulate(graph.nbNodes)(nodeID =>
-      trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
-        case None => null
-        case Some((distanceVar, centroidVar)) =>
-          distanceVar.setDefiningInvariant(this)
-          centroidVar.setDefiningInvariant(this)
-          OutputLabeling(distance=distanceVar,centroid = centroidVar)
-      })
 
   private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
 

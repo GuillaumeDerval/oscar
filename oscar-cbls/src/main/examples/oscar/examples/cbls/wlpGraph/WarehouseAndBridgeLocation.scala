@@ -20,7 +20,7 @@ package oscar.examples.cbls.wlpGraph
 import java.awt.Color
 
 import oscar.cbls._
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node, NodeWithIntegerCoordinates}
+import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.graph._
@@ -121,7 +121,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val totalDistanceToWs = sum(selectedDistances)
   val x = Cardinality(openConditions)
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfBridgesPerBridge) + totalDistanceToWs)
+
+  val smallestCentroïd = minSet(openWarehouses,-1)
+  val biggestCentroïd = maxSet(openWarehouses,-1)
+  val distanceMinMax = new DistanceInConditionalGraphVariableNodes(graph,
+    from = smallestCentroïd,
+    to = biggestCentroïd,
+    openConditions,Int.MaxValue)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_))
+
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfBridgesPerBridge) + totalDistanceToWs)// + distanceMinMax)
 
   m.close()
 
@@ -132,7 +140,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   SingleFrameWindow.showFrame(visual2,title = "Warehouse and bridge location", 1025, 1105)
 
-  var bestDisplayedObj = Int.MaxValue
+  var bestDisplayedObj:Long = Int.MaxValue
 
   //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
@@ -210,7 +218,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] = Array.fill(W)(null)
 
   for(w1 <- (0 until W).par){
-    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => (if(w1 > w2) null else (getFactorApartBridges(w1,w2,factorForFastCombined))))
+    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => if(w1 > w2) null else getFactorApartBridges(w1,w2,factorForFastCombined))
   }
   println("end warehousesPairToTwiceApartBridges")
 
@@ -241,12 +249,13 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       visual2.updateAndRedraw(
         openConditions.value,
         openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({ case (v1, v2) => v2.value}),
+        trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.value}),
         /*hideClosedEdges = false,
         hideRegularEdges = false,
         hideOpenEdges = false,*/
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        selectedDistances.map(_.getPath)
+        distanceMinMax.getPath ::selectedDistances.map(_.getPath).toList
+        //
       )
 
       lastDisplay = this.getWatch
@@ -260,12 +269,12 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     openConditions.value,
     openWarehouses.value,
     trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.value}),
-    emphasizeEdges = vor.spanningTree(deliveryNodeList),
+    emphasizeEdges = QList.append(distanceMinMax.getPath match{case d:Distance => d.path.get; case _ => None},vor.spanningTree(deliveryNodeList)),
     /*
     hideClosedEdges = true,
     hideRegularEdges = true,
     hideOpenEdges=false,*/
-    extraPath = selectedDistances.map(_.getPath))
+    extraPath = distanceMinMax.getPath ::selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 

@@ -73,8 +73,8 @@ class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                       extraPath:Iterable[RevisableDistance]): Unit ={
     this.openConditions = openConditions
     this.centroids =centroids
-    this.nodeToCentroid =nodeToCentroid
-    this.emphasizeEdges =emphasizeEdges
+    this.nodeToCentroid = nodeToCentroid
+    this.emphasizeEdges = emphasizeEdges
     this.extraPath =extraPath
     redraw()
   }

@@ -60,11 +60,11 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = f
     }
   }
 
-  def saveCurrentIfBest(objToSave:Int) {
-    if(objToSave < myBestObj) saveCurrent(objToSave:Int)
+  def saveCurrentIfBest(objToSave:Long) {
+    if(objToSave < myBestObj) saveCurrent(objToSave)
   }
 
-  def saveCurrent(objToSave:Int){
+  def saveCurrent(objToSave:Long){
     best = s.solution(true)
     myBestObj = objToSave
   }
