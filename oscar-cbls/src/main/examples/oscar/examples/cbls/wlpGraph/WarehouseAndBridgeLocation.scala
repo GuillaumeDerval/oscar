@@ -128,7 +128,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
-  SingleFrameWindow.show(visual,title = "Warehouse and new road location")
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location")
 
   var bestDisplayedObj = Int.MaxValue
 
@@ -219,14 +219,18 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
         Profile(SwapsNeighborhood(edgeConditionArray, "SwapConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
         Profile(swapsK(20)
           dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
           guard(() => openWarehouses.value.size >= 5)
           name "fastCombined"),
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 4, obj)
+
+      //TODO: proposer aussi maxResstart!
+      //TODO: vérifier quon restart bien du best so far.
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 10, obj, restartFromBest = false)
+    exhaust        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value

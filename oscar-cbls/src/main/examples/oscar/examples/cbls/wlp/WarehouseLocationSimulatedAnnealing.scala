@@ -63,9 +63,12 @@ object WarehouseLocationSimulatedAnnealing extends App{
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
-    metropolis() maxMoves W*50 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
+    metropolis()
+    maxMoves W*50 withoutImprovementOver obj
+    saveBestAndRestoreOnExhaust  obj
+    showObjectiveFunction obj)
 
-  neighborhoodSA.verbose = 1
+  neighborhoodSA.verbose = 2
 
   //all moves are accepted because the neighborhood returns the best found move, and tabu might degrade obj.
   neighborhoodSA.doAllMoves(obj=obj)

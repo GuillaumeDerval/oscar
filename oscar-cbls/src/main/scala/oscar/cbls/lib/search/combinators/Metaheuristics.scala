@@ -20,13 +20,91 @@ object Restart{
    * @param maxRestartWithoutImprovement the stop criterion of the restarting
    * @param obj the objective function
    */
-  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) = {
-    (n orElse (randomizationNeighborhood
+  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean=false) = {
+    ((if(restartFromBest) n saveBestOnExhaustAndRestoreOnExhaust obj else n) orElse (randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeignMeasuredBeforeNeighborhoodExploration)
       ) saveBestAndRestoreOnExhaust obj
   }
 }
+/*
+class Restart(n:Neighborhood,
+              randomizationNeighborhood:Neighborhood,
+              maxConsecutiveRestartWithoutImprovement:Long,
+              maxRestart:Int,
+              obj:Objective)
+  extends NeighborhoodCombinator(n){
 
+  val nAndBest = n saveBest obj
+
+  var remainingRestarts = maxRestart
+  var remainingConsecutiveRestartsWithoutImprovement = maxConsecutiveRestartWithoutImprovement
+
+  var exhausted:Boolean = false
+
+  var doRestart:Boolean= false
+
+  override def reset(): Unit = {
+    remainingRestarts = maxRestart
+    remainingConsecutiveRestartsWithoutImprovement = maxConsecutiveRestartWithoutImprovement
+    exhausted = false
+    super.reset()
+  }
+
+  override def getMove(obj: Objective,
+                       initialObj: Long,
+                       acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    if(exhausted) return NoMoveFound
+
+    if(doRestart){
+
+    }
+    nAndBest.getMove(obj,initialObj,acceptanceCriterion) match{
+      case f:MoveFound => f
+      case NoMoveFound =>
+        if(initialObj < nAndBest.bestObj){
+          // found a new best :)
+          nAndBest.saveCurrentIfBest(initialObj)
+          remainingRestarts -= 1
+          remainingConsecutiveRestartsWithoutImprovement -= maxConsecutiveRestartWithoutImprovement
+
+          if(remainingRestarts >=0 && remainingConsecutiveRestartsWithoutImprovement >=0){
+            //we restart
+
+            doRestart = true
+
+            nAndBest.getBestSolutionToRestore match{
+              case Some((solution,bestObj)) if bestObj < initialObj =>
+                MoveFound(LoadSolutionMove(solution,bestObj))
+              case None =>
+                NoMoveFound
+            }
+
+            MoveFound()
+            n.reset()
+
+          }else{
+            exhausted = true
+            nAndBest.getBestSolutionToRestore match{
+              case Some((solution,bestObj)) if bestObj < initialObj =>
+                MoveFound(LoadSolutionMove(solution,bestObj))
+              case None =>
+                NoMoveFound
+            }
+
+          }
+        }else{
+          //did not find new best :(
+          nAndBest.restoreBest()
+          remainingRestarts -= 1
+          remainingConsecutiveRestartsWithoutImprovement -= 1
+        }
+
+
+    }
+  }
+}
+*/
 
 /**
  * this combinator injects a metropolis acceptation function.
