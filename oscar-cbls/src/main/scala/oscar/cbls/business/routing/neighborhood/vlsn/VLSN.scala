@@ -262,6 +262,7 @@ class VLSN(v:Int,
                            unroutedNodesToInsert: SortedSet[Long],
                            cachedExplorations: Option[CachedExplorations]): Option[DataForVLSNRestart] = {
 
+    //TODO: this is the time consuming part of the VLSN; a smart approach would really help here.
     //first, explore the atomic moves, and build VLSN graph
     val (vlsnGraph,directEdges) = buildGraph(vehicleToRoutedNodesToMove,
       unroutedNodesToInsert,

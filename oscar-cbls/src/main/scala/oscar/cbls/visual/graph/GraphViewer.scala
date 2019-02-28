@@ -13,7 +13,7 @@ import oscar.visual.{VisualDrawing, VisualToolBar}
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.swing.Color
 
-
+/*
 class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                              centroidColor:SortedMap[Int,Color],
                              colorForUnreachableNodes:Color  = Color.black,
@@ -34,6 +34,7 @@ class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     colorForEmphasizedEdges2)
 
   val toolbar = new VisualToolBar()
+  toolbar.setFloatable(false)
   toolbar.addButton("toggleClosedEdges",toggleClosedEdges)
   toolbar.addButton("toggleRegularEdges",toggleRegularEdges)
   toolbar.addButton("toggleOpenEdges",toggleOpenEdges)
@@ -45,16 +46,13 @@ class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
   def toggleClosedEdges(): Unit ={
     hideClosedEdges = !hideClosedEdges
-    redraw()
   }
 
   def toggleRegularEdges(): Unit ={
     hideRegularEdges = !hideRegularEdges
-    redraw()
   }
   def toggleOpenEdges(): Unit ={
     hideOpenEdges = !hideOpenEdges
-    redraw()
   }
 
   var hideClosedEdges:Boolean = false
@@ -91,6 +89,8 @@ class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       extraPath)
   }
 }
+
+*/
 class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                   centroidColor:SortedMap[Int,Color],
                   colorForUnreachableNodes:Color  = Color.black,

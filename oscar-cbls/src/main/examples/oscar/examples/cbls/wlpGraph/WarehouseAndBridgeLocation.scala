@@ -17,8 +17,6 @@
 
 package oscar.examples.cbls.wlpGraph
 
-import java.awt.Color
-
 import oscar.cbls._
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
@@ -30,7 +28,7 @@ import oscar.cbls.lib.invariant.set.Cardinality
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Mu, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.graph.{GraphViewer, InteractiveGraphViewer}
+import oscar.cbls.visual.graph.GraphViewer
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 
 import scala.collection.immutable.SortedMap
@@ -51,7 +49,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   //nb non conditional edges
   val nbNonConditionalEdges =  (W+D)*5
 
-  val displayDelay = 100
+  val displayDelay = 1000
 
   println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
   //the cost per delivery point if no location is open
@@ -135,10 +133,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
-  val visual2 = new InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
+  val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
-  SingleFrameWindow.showFrame(visual2,title = "Warehouse and bridge location", 1025, 1105)
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
 
   var bestDisplayedObj:Long = Int.MaxValue
 
@@ -238,7 +236,9 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
       //TODO: proposer aussi maxResstart!
       //TODO: vérifier quon restart bien du best so far.
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5), 10, obj, restartFromBest = false)
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
+//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize2"), 2, obj, restartFromBest = true)
+
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
       exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
 
@@ -246,16 +246,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
 
-      visual2.updateAndRedraw(
+      visual.redraw(
         openConditions.value,
         openWarehouses.value,
         trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.value}),
-        /*hideClosedEdges = false,
-        hideRegularEdges = false,
-        hideOpenEdges = false,*/
+        hideClosedEdges = false,
+        hideRegularEdges = true,
+        hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        distanceMinMax.getPath ::selectedDistances.map(_.getPath).toList
-        //
+        distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList
       )
 
       lastDisplay = this.getWatch
@@ -265,16 +264,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   neighborhood.doAllMoves(obj=obj)
 
-  visual2.updateAndRedraw(
+  visual.redraw(
     openConditions.value,
     openWarehouses.value,
     trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.value}),
-    emphasizeEdges = QList.append(distanceMinMax.getPath match{case d:Distance => d.path.get; case _ => None},vor.spanningTree(deliveryNodeList)),
-    /*
+    emphasizeEdges = vor.spanningTree(deliveryNodeList),
     hideClosedEdges = true,
-    hideRegularEdges = true,
-    hideOpenEdges=false,*/
-    extraPath = distanceMinMax.getPath ::selectedDistances.map(_.getPath).toList)
+    hideRegularEdges = false,
+    hideOpenEdges=false,
+    extraPath = distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 
