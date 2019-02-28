@@ -667,7 +667,7 @@ class NeighborhoodOps(n:Neighborhood){
     * @param base the base for the exponent calculation. default is 2L
     */
   def metropolis(iterationToTemperature: Long => Float = (it: Long) => 10.toFloat / (it + 1), base: Float = 2) = new Metropolis(n, iterationToTemperature, base)
-  
+
   /**
     * sets a timeout for a search procedure.
     * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
