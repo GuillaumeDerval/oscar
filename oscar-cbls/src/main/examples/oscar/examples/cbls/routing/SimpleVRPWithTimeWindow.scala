@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-/*
+
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
@@ -23,7 +23,7 @@ object SimpleVRPWithTimeWindow extends App{
   val myVRP =  new VRP(m,n,v)
 
   // Distance
-  val totalRouteLength = constantRoutingDistance(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
   //Chains
   val precedenceRoute = myVRP.routes.createClone()
@@ -57,26 +57,26 @@ object SimpleVRPWithTimeWindow extends App{
   val relevantPredecessorsOfNodes = TimeWindowHelper.relevantPredecessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
   val relevantSuccessorsOfNodes = TimeWindowHelper.relevantSuccessorsOfNodes(myVRP, timeWindowExtension, travelDurationMatrix)
 
-  def postFilter(node:Int): (Int) => Boolean = {
-    (neighbor: Int) => {
+  def postFilter(node:Long): (Long) => Boolean = {
+    (neighbor: Long) => {
       val successor = myVRP.nextNodeOf(neighbor)
       myVRP.isRouted(neighbor) &&
         (successor.isEmpty || relevantSuccessorsOfNodes(node).contains(successor.get))
     }
   }
 
-  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes))
+  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes)(_))
 
   // MOVING
 
 
   val nextMoveGenerator = {
-    (exploredMoves:List[OnePointMoveMove], t:Option[List[Int]]) => {
-      val chainTail: List[Int] = t match {
+    (exploredMoves:List[OnePointMoveMove], t:Option[List[Long]]) => {
+      val chainTail: List[Long] = t match {
         case None =>
           val movedNode = exploredMoves.head.movedPoint
           chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(movedNode))
-        case Some(tail: List[Int]) => tail
+        case Some(tail: List[Long]) => tail
       }
 
       chainTail match {
@@ -92,9 +92,9 @@ object SimpleVRPWithTimeWindow extends App{
 
   val firstNodeOfChainMove = onePointMove(
     () => myVRP.routed.value.filter(chainsExtension.isHead),
-    ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance,postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
+    ()=> myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_),postFilter), myVRP,neighborhoodName = "MoveHeadOfChain")
 
-  def lastNodeOfChainMove(lastNode:Int) = onePointMove(
+  def lastNodeOfChainMove(lastNode:Long) = onePointMove(
     () => List(lastNode),
     ()=> myVRP.kFirst(v*2,
       ChainsHelper.relevantNeighborsForLastNodeAfterHead(
@@ -108,22 +108,22 @@ object SimpleVRPWithTimeWindow extends App{
   val oneChainMove = {
     profile(dynAndThen(firstNodeOfChainMove,
       (moveMove: OnePointMoveMove) => {
-        mu[OnePointMoveMove, Option[List[Int]]](
+        mu[OnePointMoveMove, Option[List[Long]]](
           lastNodeOfChainMove(chainsExtension.lastNodeInChainOfNode(moveMove.movedPoint)),
           nextMoveGenerator,
           None,
-          Int.MaxValue,
+          Long.MaxValue,
           false)
       })name "OneChainMove")
   }
 
-  def onePtMove(k:Int) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance,postFilter), myVRP))
+  def onePtMove(k:Long) = profile(onePointMove(myVRP.routed, () => myVRP.kFirst(k,closestRelevantPredecessorsByDistance(_),postFilter), myVRP))
 
-  def segExchangeOnSegments(k: Int) = profile(
+  def segExchangeOnSegments(k: Long) = profile(
     segmentExchangeOnSegments(myVRP,
-      () => Array.tabulate(v)(vehicle => vehicle -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
-      ()=> closestRelevantPredecessorsByDistance,
-      () => 0 until v,
+      () => Array.tabulate(v)(vehicle => intToLong(vehicle) -> ChainsHelper.computeCompleteSegments(myVRP,vehicle,chainsExtension)).toMap,
+      ()=> closestRelevantPredecessorsByDistance(_),
+      () => 0L until v,
       selectFirstSegmentBehavior = Best(),
       selectSecondSegmentBehavior = Best(),
       selectFirstVehicleBehavior = Best(),
@@ -133,12 +133,12 @@ object SimpleVRPWithTimeWindow extends App{
   // INSERTING
 
   val nextInsertGenerator = {
-    (exploredMoves:List[InsertPointMove], t:Option[List[Int]]) => {
-      val chainTail: List[Int] = t match {
+    (exploredMoves:List[InsertPointMove], t:Option[List[Long]]) => {
+      val chainTail: List[Long] = t match {
         case None =>
           val insertedNode = exploredMoves.head.insertedPoint
           chainsExtension.nextNodesInChain(chainsExtension.firstNodeInChainOfNode(insertedNode))
-        case Some(tail: List[Int]) => tail
+        case Some(tail: List[Long]) => tail
       }
 
       chainTail match {
@@ -153,10 +153,10 @@ object SimpleVRPWithTimeWindow extends App{
   }
 
   val firstNodeOfChainInsertion = insertPointUnroutedFirst(() => myVRP.unrouted.value.filter(chainsExtension.isHead),()=> {
-    myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance, postFilter)
+    myVRP.kFirst(v*2,closestRelevantPredecessorsByDistance(_), postFilter)
   }, myVRP,neighborhoodName = "InsertUF")
 
-  def lastNodeOfChainInsertion(lastNode:Int) = insertPointUnroutedFirst(
+  def lastNodeOfChainInsertion(lastNode:Long) = insertPointUnroutedFirst(
     () => List(lastNode),
     ()=> myVRP.kFirst(
       v*2,
@@ -171,11 +171,11 @@ object SimpleVRPWithTimeWindow extends App{
   val oneChainInsert = {
     profile(dynAndThen(firstNodeOfChainInsertion,
       (insertMove: InsertPointMove) => {
-        mu[InsertPointMove,Option[List[Int]]](
+        mu[InsertPointMove,Option[List[Long]]](
           lastNodeOfChainInsertion(chainsExtension.lastNodeInChainOfNode(insertMove.insertedPoint)),
           nextInsertGenerator,
           None,
-          Int.MaxValue,
+          Long.MaxValue,
           false)
       })name "OneChainInsert")
 
@@ -188,7 +188,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 1
+  search.verbose = 4
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 
@@ -199,4 +199,3 @@ object SimpleVRPWithTimeWindow extends App{
 
   println(search.profilingStatistics)
 }
-*/

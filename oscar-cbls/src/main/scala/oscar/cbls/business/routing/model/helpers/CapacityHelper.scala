@@ -22,7 +22,7 @@ object CapacityHelper{
     * @param capacityInvariant A ForwardCumulativeConstraintOnVehicle representing the content invariant
     * @return a method (Long,Long,Array[Long]) => Boolean
     */
-  def enoughSpaceAfterNeighbor(n:Int, capacityInvariant: ForwardCumulativeConstraintOnVehicle): (Long,Long,Array[Long]) => Boolean ={
+  def enoughSpaceAfterNeighbor(n:Long, capacityInvariant: ForwardCumulativeConstraintOnVehicle): (Long,Long,Array[Long]) => Boolean ={
     val freeSpaceAtNodeNow = capacityInvariant.freeSpaceAtNodes
     (node: Long, neighbor: Long, contentsFlow: Array[Long]) => freeSpaceAtNodeNow(neighbor) >= contentsFlow(node)
   }
