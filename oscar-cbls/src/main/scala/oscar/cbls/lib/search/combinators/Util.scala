@@ -299,3 +299,28 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
     }
   }
 }
+
+
+/**
+  * sets a timeout for a search procedure.
+  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+  * this combinator will therefore just prevent any new exploration past the end of the timeout.
+  * @param a a neighborhood
+  * @param maxDuration the maximal duration, in milliseconds
+  */
+class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a) {
+  private var deadline: Long = -1
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    if (deadline == -1) {
+      deadline = System.currentTimeMillis() + maxDuration
+    }
+
+    if (System.currentTimeMillis() >= deadline) {
+      if(printExploredNeighborhoods) println("Timeout reached")
+      NoMoveFound
+    } else {
+      a.getMove(obj, initialObj: Long, acceptanceCriteria)
+    }
+  }
+}
