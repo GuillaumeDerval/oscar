@@ -27,14 +27,14 @@ import oscar.cbls.{CBLSIntVar, Domain, SetValue}
 import scala.collection.immutable.{SortedMap, SortedSet}
 
 
-object VoronoiZones{
+object KDegreeVoronoiZones{
   def apply(graph:ConditionalGraph,
             graphDiameterOverApprox:Long,
             openConditions:SetValue,
             centroids:SetValue,
             trackedNodes:Iterable[Long],
             m:Store,
-            defaultDistanceForUnreachableNodes:Long):VoronoiZones = {
+            defaultDistanceForUnreachableNodes:Long):KDegreeVoronoiZones = {
 
     val trackedNodeToDistanceAndCentroid = SortedMap.empty[Long,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
       nodeID -> (
@@ -42,14 +42,14 @@ object VoronoiZones{
         CBLSIntVar(m, 0, Domain(-1L , centroids.max), "closestCentroidToNode" + nodeID))
     )
 
-    new VoronoiZones(graph,
+    new KDegreeVoronoiZones(graph,
       openConditions,
       centroids,
       trackedNodeToDistanceAndCentroid,
       defaultDistanceForUnreachableNodes:Long)
   }
 
-  def orphanNodes(v:VoronoiZones):ChangingSetValue = {
+  def orphanNodes(v:KDegreeVoronoiZones):ChangingSetValue = {
     //TODO: embed this into the VoronoiVone invariant to have better runtime?
     val idToNodeAndCentroid:Array[(Int,IntValue)] = v.trackedNodeToDistanceAndCentroidMap.toList.map({case (id,(_,centroid)) => (cbls.longToInt(id),centroid)}).toArray
 
@@ -74,10 +74,12 @@ object VoronoiZones{
   *                                            and the centroid
   *
   */
-class VoronoiZones(graph:ConditionalGraph,
+class KDegreeVoronoiZones(graph:ConditionalGraph,
                    openConditions:SetValue,
                    centroids:SetValue,
-                   val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,(CBLSIntVar,CBLSIntVar)],
+                         //TODO:comment représenter la solution en fait?
+                         //(setVar,array[IntVar]) ou Array((IntVar,IntVar))
+                   val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,(CBLSSetVar,Array[CBLSIntVar])], //the k nearest, and the distance t centroids (only the k nearest are correct at all)
                    defaultDistanceForUnreachableNodes:Long,
                    maxDistanceToCentroid:Long = Long.MaxValue)
   extends Invariant with SetNotificationTarget {
@@ -103,7 +105,6 @@ class VoronoiZones(graph:ConditionalGraph,
           centroidVar.setDefiningInvariant(this)
           OutputLabeling(distance=distanceVar,centroid = centroidVar)
       })
-
 
   case class OutputLabeling(distance:CBLSIntVar,
                             centroid:CBLSIntVar){
