@@ -10,7 +10,7 @@ class ImmutableArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
 
   test("Updating random elements keeps expected array"){
     forAll((referenceArray: Array[Int]) => {
-      if(referenceArray.size != 0){
+      whenever(referenceArray.nonEmpty){
         var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
         val n = referenceArray.length
 

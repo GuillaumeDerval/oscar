@@ -10,14 +10,14 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   test("all_(true) sets the whole array to the new value"){
     val array = MagicBoolArray(10,initVal = false)
 
-    array.all_=(true)
+    array.all = true
     array.indicesAtTrue.size should be (10)
   }
 
   test("all_(false) sets the whole array to the new value"){
     val array = MagicBoolArray(10,initVal = false)
 
-    array.all_=(false)
+    array.all = false
     array.indicesAtTrue.size should be (0)
   }
 
@@ -48,7 +48,7 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
 
     array.global = Long.MaxValue-10L
 
-    array.all= true
+    array.all = true
     array.indicesAtTrue.size should be (10)
   }
 
@@ -58,7 +58,7 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
 
     array.global = Long.MaxValue-10L
 
-    array.all_=(false)
+    array.all = false
     array.indicesAtTrue.size should be (0)
   }
 }
