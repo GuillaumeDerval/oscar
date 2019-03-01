@@ -13,10 +13,13 @@ class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objecti
 
   private val startinAt = getWatch
   private var best = Long.MaxValue
+  panel.setMouseWheelEnabled(true)
+  panel.setMouseZoomable(true)
+  panel.setHorizontalAxisTrace(true)
+  panel.setVerticalAxisTrace(true)
 
   def createChart =
-    ChartFactory.createXYLineChart(title,"Time (s)","Objective function value",xyDataset,PlotOrientation.VERTICAL,true,false, false);
-
+    ChartFactory.createXYLineChart(title,"Time (s)","Objective function value",xyDataset,PlotOrientation.VERTICAL,true,true, false);
   def drawFunction(value: Long) ={
     if(value < best) best = value
     val at = (getWatch - startinAt).toDouble/1000
@@ -34,13 +37,10 @@ class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objecti
       resExp = resExp * 10
     }
     resExp = resExp/10
-    println(resExp)
     var res = resExp
     while(value/res > 1){
       res += resExp
     }
-    println(value)
-    println(res)
     res
   }
 }
