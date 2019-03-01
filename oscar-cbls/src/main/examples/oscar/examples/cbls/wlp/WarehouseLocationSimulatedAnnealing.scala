@@ -56,14 +56,16 @@ object WarehouseLocationSimulatedAnnealing extends App{
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
   m.close()
-
-  //TODO: this does not work at all; only iterates over the warehouses; no search, just like accept all.
+  
   val neighborhoodSA = (AssignNeighborhood(
     warehouseOpenArray,
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
-    metropolis() maxMoves W*50 withoutImprovementOver obj saveBestAndRestoreOnExhaust  obj showObjectiveFunction obj)
+    metropolis(iterationToTemperature = (it: Long) => 5.toFloat / (it + 1), base = 10)
+    maxMoves W*50 withoutImprovementOver obj
+    saveBestAndRestoreOnExhaust obj
+    showObjectiveFunction obj)
 
   neighborhoodSA.verbose = 1
 

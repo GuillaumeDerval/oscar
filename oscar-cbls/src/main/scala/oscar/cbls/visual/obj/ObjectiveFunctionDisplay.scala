@@ -19,7 +19,8 @@ class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objecti
   panel.setVerticalAxisTrace(true)
 
   def createChart =
-    ChartFactory.createXYLineChart(title,"Time (s)","Objective function value",xyDataset,PlotOrientation.VERTICAL,true,true, false);
+    ChartFactory.createXYLineChart(title,"Time (s)","Objective function value",xyDataset,PlotOrientation.VERTICAL,true,false, false);
+
   def drawFunction(value: Long) ={
     if(value < best) best = value
     val at = (getWatch - startinAt).toDouble/1000
