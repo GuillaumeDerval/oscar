@@ -677,4 +677,20 @@ class NeighborhoodOps(n:Neighborhood){
     */
   def timeout(maxDuration:Long) = new Timeout(n, maxDuration:Long)
 
+  /**
+    * This combinator will interrupt the search when it becomes too flat.
+    * use it to cut the tail of long, undesired searches
+    * it works by time period.
+    * at the end of every time period, as set by timePeriodInMilliSecond,
+    * it will compute the relative improvement of obj of this latest time period over hte best so far
+    * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
+    *
+    * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
+    * it will not be interrupted during its exploration.
+    * this combinator only decides if a new neighborhood exploration is to be started
+    *
+    * @param timePeriodInMilliSecond defines teh time period for the cut
+    * @param minRelativeImprovementByCut the relative improvement over obj
+    */
+  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double) = new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut)
 }

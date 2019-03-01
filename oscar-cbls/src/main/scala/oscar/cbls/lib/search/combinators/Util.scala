@@ -324,3 +324,80 @@ class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a
     }
   }
 }
+
+/**
+  * This combinator will interrupt the search when it becomes too flat.
+  * use it to cut the tail of long, undesired searches
+  * it works by time period.
+  * at the end of every time period, as set by timePeriodInMilliSecond,
+  * it will compute the relative improvement of obj of this latest time period over hte best so far
+  * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
+  *
+  * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
+  * it will not be interrupted during its exploration.
+  * this combinator only decides if a new neighborhood exploration is to be started
+  *
+  * @param a the base neighborhood
+  * @param timePeriodInMilliSecond defines teh time period for the cut
+  * @param minRelativeImprovementByCut the relative improvement over obj
+  */
+class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double)
+  extends NeighborhoodCombinator(a){
+
+  var bestSoFarAtPreviousCut:Long = -1
+  var bestSoFar:Long = Long.MaxValue
+  var nextCutTime:Long = -1
+
+  var stopped:Boolean = false
+
+  override def reset(): Unit = {
+    bestSoFarAtPreviousCut = -1
+    bestSoFar = Long.MaxValue
+    nextCutTime = -1
+    stopped = false
+
+    super.reset()
+  }
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    if(stopped) return NoMoveFound
+
+    val currentTime = System.currentTimeMillis()
+
+    if(nextCutTime == -1){
+      //the combinator has just been reset, so we just reinitialize it.
+      nextCutTime = currentTime + timePeriodInMilliSecond
+      bestSoFar = initialObj
+      bestSoFarAtPreviousCut = initialObj
+      println("initialize cut")
+    }else if(nextCutTime < currentTime){
+      //need to check for a cut
+      val relativeImprovementSincePreviousCut = (bestSoFar - bestSoFarAtPreviousCut).toDouble / bestSoFar.toDouble
+
+      if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
+        //we have to stop it
+        println("check for cut, cut")
+        stopped = true
+        return NoMoveFound
+      }else{
+        println("check for cut, no cut")
+        //we can carry on
+        nextCutTime = currentTime + timePeriodInMilliSecond
+        bestSoFar = bestSoFar min bestSoFarAtPreviousCut
+        bestSoFarAtPreviousCut = bestSoFar
+      }
+    }
+
+    a.getMove(obj,initialObj,acceptanceCriterion) match{
+      case NoMoveFound => NoMoveFound
+      case f:MoveFound =>
+        println("update best in cut")
+        bestSoFar = bestSoFar min f.objAfter
+        f
+    }
+  }
+}
+
+
+
