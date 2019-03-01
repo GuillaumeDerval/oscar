@@ -327,7 +327,7 @@ class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a
   * @param timePeriodInMilliSecond defines teh time period for the cut
   * @param minRelativeImprovementByCut the relative improvement over obj
   */
-class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double)
+class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long)
   extends NeighborhoodCombinator(a){
 
   var bestSoFarAtPreviousCut:Long = -1
@@ -353,21 +353,21 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 
     if(nextCutTime == -1){
       //the combinator has just been reset, so we just reinitialize it.
-      nextCutTime = currentTime + timePeriodInMilliSecond
+      nextCutTime = currentTime + (timePeriodInMilliSecond max minTimeBeforeFirstCutInMilliSecond)
       bestSoFar = initialObj
       bestSoFarAtPreviousCut = initialObj
-      println("initialize cut")
+      //println("initialize cut")
     }else if(nextCutTime < currentTime){
       //need to check for a cut
-      val relativeImprovementSincePreviousCut = (bestSoFar - bestSoFarAtPreviousCut).toDouble / bestSoFar.toDouble
+      val relativeImprovementSincePreviousCut = (bestSoFarAtPreviousCut - bestSoFar).toDouble / bestSoFar.toDouble
 
       if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
         //we have to stop it
-        println("check for cut, cut")
+        //println("check for cut, cut")
         stopped = true
         return NoMoveFound
       }else{
-        println("check for cut, no cut")
+        //println("check for cut, no cut")
         //we can carry on
         nextCutTime = currentTime + timePeriodInMilliSecond
         bestSoFar = bestSoFar min bestSoFarAtPreviousCut
@@ -378,7 +378,7 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound => NoMoveFound
       case f:MoveFound =>
-        println("update best in cut")
+//        println("update best in cut")
         bestSoFar = bestSoFar min f.objAfter
         f
     }

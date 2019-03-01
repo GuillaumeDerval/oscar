@@ -51,7 +51,8 @@ object WarehouseLocationSimulatedAnnealing extends App{
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse)
+      .setName("distance_for_delivery_" + d))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -62,8 +63,10 @@ object WarehouseLocationSimulatedAnnealing extends App{
     "SwitchWarehouse",
     hotRestart = false,
     selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
-    metropolis(iterationToTemperature = (it: Long) => 5.toFloat / (it + 1), base = 10)
-    maxMoves W*50 withoutImprovementOver obj
+    metropolis(iterationToTemperature = (it: Long) => 10.toFloat / (it + 1), base = 2)
+    //the two stop criterion herebelow can be used, although they are useless for this small size example.
+//    maxMoves W*50 withoutImprovementOver obj
+    cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.0001,minTimeBeforeFirstCutInMilliSecond=500)
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
 

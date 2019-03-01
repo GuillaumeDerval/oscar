@@ -687,5 +687,5 @@ class NeighborhoodOps(n:Neighborhood){
     * @param timePeriodInMilliSecond defines teh time period for the cut
     * @param minRelativeImprovementByCut the relative improvement over obj
     */
-  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double) = new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut)
+  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) = new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
 }
