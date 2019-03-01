@@ -191,7 +191,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     val search = insertPoint(best)
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
-    println(myVRP)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
     (obj.value, duration)
@@ -202,7 +201,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     val search = insertPoint(best) exhaust onePtMove(best)
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
-    println(myVRP)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
     (obj.value, duration)
@@ -213,7 +211,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     val search = insertPoint(best) exhaust threeOptMove(best)
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
-    println(myVRP)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
     (obj.value, duration)

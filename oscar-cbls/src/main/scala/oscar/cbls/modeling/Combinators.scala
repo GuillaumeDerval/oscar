@@ -556,19 +556,14 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-    * This combinator create a frame that draw the evolution curve of the objective function.
-    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-    * increase the number of value displayed.
-    *
-    * @param obj the objective function
-    * @param stopWatch the StopWatch attached to the Test
-    * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
-    * @author fabian.germeau@student.vinci.be
-    */
-  def showObjectiveFunction(obj: Objective,
-                            stopWatch: StopWatch = new StopWatch {startWatch()},
-                            withZoom:Boolean = false
-                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom)
+   * This combinator create a frame that draw the evolution curve of the objective function.
+   * The drawn curve possess a scrollbar on the right that allow the user to decrease or
+   * increase the number of value displayed.
+   *
+   * @param obj the objective function
+   * @author fabian.germeau@student.vinci.be
+   */
+  def showObjectiveFunction(obj: Objective) = new ShowObjectiveFunction(n,obj)
 
   /**
     * this combinator attaches a custom code to a given neighborhood.

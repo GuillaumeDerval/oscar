@@ -144,7 +144,8 @@ class VRPMaxDemo(n:Long, v:Long, maxPivotPerValuePercent:Long, verbose:Long, dis
 
   def segExchange(k:Long) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter), () => myVRP.vehicles)
 
-  val search = (bestSlopeFirst(List(
+  val search = (
+    bestSlopeFirst(List(
     routeUnroutedPoint,
     routeUnroutedPoint2,
     vlsn1pt,
