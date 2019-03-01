@@ -661,7 +661,7 @@ class NeighborhoodOps(n:Neighborhood){
     *                    By default, the temperature is 100L/the number of steps
     * @param base the base for the exponent calculation. default is 2L
     */
-  def metropolis(iterationToTemperature: Long => Float = (it: Long) => 10.toFloat / (it + 1), base: Float = 2) = new Metropolis(n, iterationToTemperature, base)
+  def metropolis(iterationToTemperature: Long => Float = (it: Long) => 5.toFloat / (it + 1), base: Float = 2) = new Metropolis(n, iterationToTemperature, base)
 
   /**
     * sets a timeout for a search procedure.

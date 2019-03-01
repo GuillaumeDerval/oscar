@@ -34,13 +34,13 @@ class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objecti
       resExp = resExp * 10
     }
     resExp = resExp/10
-    println(resExp)
+   // println(resExp)
     var res = resExp
     while(value/res > 1){
       res += resExp
     }
-    println(value)
-    println(res)
+    //println(value)
+    //println(res)
     res
   }
 }

@@ -133,7 +133,7 @@ object WareHouseLocationVisu extends App with StopWatch{
       if(this.getWatch > lastDisplay + displayDelay) {
         visual.redraw(openWarehouses.value)
         lastDisplay = this.getWatch}
-    })
+    }) showObjectiveFunction(obj)
 
   neighborhood.verbose = 2
 
