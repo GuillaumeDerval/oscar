@@ -1,5 +1,5 @@
 package oscar.examples.cbls.routing
-/*
+
 import oscar.cbls._
 import oscar.cbls.algo.seq._
 import oscar.cbls.business.routing._
@@ -9,7 +9,7 @@ import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.LE
 
-class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle : Array[CBLSIntVar]) extends GlobalConstraintDefinition[Option[Int],Int](routes,v){
+class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Long,nbNodesPerVehicle : Array[CBLSIntVar]) extends GlobalConstraintDefinition[Option[Long],Long](routes,v){
 
 
 
@@ -27,7 +27,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     *                     that you have just set through the method setNodeValue.
     *                     also, you should only query the value of node in the route of vehicle "vehicle"
     */
-  override def performPreCompute(vehicle: Int, routes: IntSequence, preComputedVals: Array[Option[Int]]): Unit = {
+  override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[Option[Long]]): Unit = {
     var nbNode = 0
     var continue = true
     var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
@@ -58,7 +58,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     *                  because it already contains the pre-computed values at the extremity of each segment
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Int, segments: List[Segment[Option[Int]]], routes: IntSequence, PreComputedVals: Array[Option[Int]]): Int = {
+  override def computeVehicleValue(vehicle: Long, segments: List[Segment[Option[Long]]], routes: IntSequence, PreComputedVals: Array[Option[Long]]): Long = {
     val tmp = segments.map(
       _ match {
       case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
@@ -82,12 +82,12 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     * @param vehicle the vehicle number
     * @param value   the value of the vehicle
     */
-  override def assignVehicleValue(vehicle: Int, value: Int): Unit = {
+  override def assignVehicleValue(vehicle: Long, value: Long): Unit = {
     nbNodesPerVehicle(vehicle) := value
   }
 
 
-  def countVehicleNode(vehicle : Int,vExplorer : Option[IntSequenceExplorer]) : Int = {
+  def countVehicleNode(vehicle : Long,vExplorer : Option[IntSequenceExplorer]) : Long = {
     vExplorer match {
       case None => 0
       case Some(elem) =>
@@ -101,7 +101,7 @@ class NbNodeGlobalConstraint(routes:ChangingSeqValue,v : Int,nbNodesPerVehicle :
     * @param routes
     * @return
     */
-  override def computeVehicleValueFromScratch(vehicle: Int, routes: IntSequence): Int = {
+  override def computeVehicleValueFromScratch(vehicle: Long, routes: IntSequence): Long = {
     1 + countVehicleNode(vehicle,routes.explorerAtAnyOccurrence(vehicle).get.next)
   }
 
@@ -124,7 +124,7 @@ object VRPTestingGlobalConstraint extends App {
 
 
 
-  val routeLengthPerVehicle = constantRoutingDistance(problem.routes,nbNode,nbVehicle,perVehicle = true,symetricDistanceMatrix,false,false,false)
+  val routeLengthPerVehicle = routeLength(problem.routes,nbNode,nbVehicle,perVehicle = true,symetricDistanceMatrix,false,false,false)
 
   val totalRouteLength = sum(routeLengthPerVehicle)
 
@@ -148,19 +148,19 @@ object VRPTestingGlobalConstraint extends App {
 
   model.close()
 
-  val closestRelevantNeighbors = Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,_ => problem.nodes))
+  val closestRelevantNeighbors = Array.tabulate(nbNode)(DistanceHelper.lazyClosestPredecessorsOfNode(symetricDistanceMatrix,_ => problem.nodes)(_))
 
 
   def routeUnroutedPoint =
     profile(insertPointUnroutedFirst(problem.unrouted,
-      () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      () => problem.kFirst(10,closestRelevantNeighbors(_),_ => node => problem.isRouted(node)),
       problem,
       selectInsertionPointBehavior = Best(),
       neighborhoodName = "InsertUR 1"))
 
   val routeUnroutedPointLarger =
     profile(insertPointUnroutedFirst(problem.unrouted,
-      () => problem.kFirst(100,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      () => problem.kFirst(100,closestRelevantNeighbors(_),_ => node => problem.isRouted(node)),
       problem,
       selectInsertionPointBehavior = Best(),
       neighborhoodName = "InsertURLarger 1"))
@@ -175,17 +175,17 @@ object VRPTestingGlobalConstraint extends App {
 
   def onePtMove =
     onePointMove(problem.routed,
-      () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      () => problem.kFirst(10,closestRelevantNeighbors(_),_ => node => problem.isRouted(node)),
       problem)
 
   val twoOpt =
     profile(TwoOpt(problem.routed,
-      () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      () => problem.kFirst(10,closestRelevantNeighbors(_),_ => node => problem.isRouted(node)),
       problem))
 
   def threeOpt =
     ThreeOpt(problem.routed,
-      () => problem.kFirst(10,closestRelevantNeighbors,_ => node => problem.isRouted(node)),
+      () => problem.kFirst(10,closestRelevantNeighbors(_),_ => node => problem.isRouted(node)),
       problem)
 
   val search =
@@ -204,4 +204,3 @@ object VRPTestingGlobalConstraint extends App {
   println(search.profilingStatistics)
 
 }
-*/
