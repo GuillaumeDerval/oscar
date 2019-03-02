@@ -62,11 +62,11 @@ object WarehouseLocationSimulatedAnnealing extends App{
     warehouseOpenArray,
     "SwitchWarehouse",
     hotRestart = false,
-    selectIndiceBehavior = First(randomized = true)) //this one randomizes the iteration scheme on the warehouses.
-    metropolis(iterationToTemperature = (it: Long) => 10.toFloat / (it + 1), base = 2)
-    //the two stop criterion herebelow can be used, although they are useless for this small size example.
-//    maxMoves W*50 withoutImprovementOver obj
-    cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.0001,minTimeBeforeFirstCutInMilliSecond=500)
+    selectIndiceBehavior = First(randomized = true))
+    cauchyAnnealing(initialTemperature = 10, base = 2)
+    //the two stop criterion here below can be used, although they are useless for small size example.
+    //maxMoves W*50 withoutImprovementOver obj
+    //cutTail(timePeriodInMilliSecond = 500,minRelativeImprovementByCut = 0.0001,minTimeBeforeFirstCutInMilliSecond=500)
     saveBestAndRestoreOnExhaust obj
     showObjectiveFunction obj)
 

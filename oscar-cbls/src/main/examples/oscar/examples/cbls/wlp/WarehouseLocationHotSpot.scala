@@ -17,8 +17,11 @@ package oscar.examples.cbls.wlp
 
 import oscar.cbls._
 import oscar.cbls.algo.hotSpot.HotSpotManager
+import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.core.search.Move
-import oscar.cbls.lib.search.neighborhoods.{AssignMove, SwapMove}
+import oscar.cbls.lib.search.combinators.Profile
+import oscar.cbls.lib.search.neighborhoods.{AssignMove, SwapMove, SwapsNeighborhood}
+import oscar.examples.cbls.wlp.WareHouseLocationVisu.{kNearestClosedWarehouses, openWarehouses, warehouseOpenArray}
 
 import scala.language.postfixOps
 
@@ -40,7 +43,8 @@ object WarehouseLocationHotSpot extends App{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse,distanceCost) = WarehouseLocationGenerator.apply(W,D,0,100,3)
+  val (costForOpeningWarehouse,distanceCost,_,_,warehouseToWarehouseDistances) =
+    WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
   val m = Store()
 
@@ -54,34 +58,56 @@ object WarehouseLocationHotSpot extends App{
 
   m.close()
 
+  //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
+  val closestWarehouses = Array.tabulate(W)(warehouse =>
+    KSmallest.lazySort(
+      Array.tabulate(W)(warehouse => warehouse),
+      otherwarehouse => warehouseToWarehouseDistances(warehouse)(otherwarehouse)
+    ))
+
+  //this procedure returns the k closest closed warehouses
+  def kNearestClosedWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue == 0)
+  //this procedure returns the k closest open warehouses
+  def kNearestOpenWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse), filter = (otherWarehouse) => warehouseOpenArray(otherWarehouse).newValue != 0)
+  def kNearestdWarehouses(warehouse:Int,k:Int) = KSmallest.kFirst(k, closestWarehouses(warehouse))
+
 
   val hotSpotManager = new HotSpotManager(W-1)
   hotSpotManager.enqueueAll()
 
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehoueseTocConsider,
+    searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
+    name = "Swap" + k + "Nearest",
+    symmetryCanBeBrokenOnIndices = false)
+
   val neighborhood =(
     bestSlopeFirst(
       List(
-        assignNeighborhood(warehouseOpenArray, "SwitchWarehouse"),
-        swapsNeighborhood(warehouseOpenArray, "SwapWarehouses"),
-
-        assignNeighborhood(
+        Profile(assignNeighborhood(warehouseOpenArray, "SwitchWarehouse")),
+        Profile(swapsNeighborhood(warehouseOpenArray, "SwapWarehouses")),
+        Profile(swapsK(20)),
+        Profile(assignNeighborhood(
           warehouseOpenArray,
           searchZone = {val hotSpotForSwitch = hotSpotManager.newExplorer; () => hotSpotForSwitch},
           hotRestart = false,
-          name = "HotSwitch") //cannot replace the simple Switch
+          name = "HotSwitch")) //cannot replace the simple Switch
 
       ),refresh = W/10)
       onExhaustRestartAfter(randomizeNeighborhood(warehouseOpenArray, () => W/10), 2, obj)
       afterMoveOnMove {
         case a:AssignMove =>
-          hotSpotManager.enqueue(a.id) //since we are using it for switch, we do not care.
+          //hotSpotManager.enqueue(a.id) //since we are using it for switch, we do not care.
           //Actually, we should enqueue the k-nearest warehouses of this one
+          for(w <-kNearestdWarehouses(a.id,k=5)) hotSpotManager.enqueue(w)
         case s:SwapMove =>
           //Actually, we should enqueue the k-nearest warehouses of these to ones
-          hotSpotManager.enqueue(s.idI)
-          hotSpotManager.enqueue(s.idJ)
+          //hotSpotManager.enqueue(s.idI)
+          //hotSpotManager.enqueue(s.idJ)
+          for(w <-kNearestdWarehouses(s.idI,k=5)) hotSpotManager.enqueue(w)
+          for(w <-kNearestdWarehouses(s.idJ,k=5)) hotSpotManager.enqueue(w)
         case _ =>
-          hotSpotManager.enqueueAll() //this is a bit overkil..
+          hotSpotManager.enqueueAll() //this is a bit overkill..
       })
 
   neighborhood.verbose = 1
@@ -89,5 +115,5 @@ object WarehouseLocationHotSpot extends App{
   neighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)
-
+println(neighborhood.profilingStatistics)
 }

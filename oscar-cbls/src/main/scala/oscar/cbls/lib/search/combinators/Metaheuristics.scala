@@ -34,16 +34,16 @@ object Restart{
  * accept if math.random(0.0; 1.0) < base exponent (-gain / temperatureValue)
  *
  * @param a the original neighborhood
- * @param temperature a function that inputs the number of moves of a that have been actually taken,
+ * @param iterationToTemperature a function that inputs the number of moves of a that have been actually taken,
  *                    and outputs a temperature, for use in the criterion
  *                    the number of steps is reset to zero when the combinator is reset
  *                    by default, it is the constant function returning 100L
  * @param base the base for the exponent calculation. default is 2L
  */
-class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: Float = 2) extends NeighborhoodCombinator(a) {
+class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 100, base: Double = 2) extends NeighborhoodCombinator(a) {
 
   var moveCount = 0L
-  var temperatureValue: Float = temperature(moveCount)
+  var temperatureValue: Double = iterationToTemperature(moveCount)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult =
     a.getMove(obj, initialObj:Long, acceptation) match {
@@ -73,14 +73,14 @@ class Metropolis(a: Neighborhood, temperature: Long => Float = _ => 100, base: F
 
   def notifyMoveTaken() {
     moveCount += 1L
-    temperatureValue = temperature(moveCount)
+    temperatureValue = iterationToTemperature(moveCount)
   }
 
   //this resets the internal state of the move combinators
   override def reset() {
     super.reset()
     moveCount = 0L
-    temperatureValue = temperature(moveCount)
+    temperatureValue = iterationToTemperature(moveCount)
   }
 }
 

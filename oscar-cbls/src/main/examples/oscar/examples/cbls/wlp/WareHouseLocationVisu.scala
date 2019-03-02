@@ -44,7 +44,8 @@ object WareHouseLocationVisu extends App with StopWatch{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
+  val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) =
+    WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
     val costForOpeningWarehouse =  Array.fill[Long](W)(1000)
 

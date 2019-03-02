@@ -661,7 +661,19 @@ class NeighborhoodOps(n:Neighborhood){
     *                    By default, the temperature is 100L/the number of steps
     * @param base the base for the exponent calculation. default is 2L
     */
-  def metropolis(iterationToTemperature: Long => Float = (it: Long) => 5.toFloat / (it + 1), base: Float = 2) = new Metropolis(n, iterationToTemperature, base)
+  def metropolis(iterationToTemperature: Long => Double = (it: Long) => 5.toDouble / (it + 1), base: Double = 2) = new Metropolis(n, iterationToTemperature, base)
+
+  //Cauchy annealing: T = T_0/k,
+  def cauchyAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / (it + 1), base)
+
+  //Boltzmann annealing, where T = T_0/ln k
+  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it + 1), base)
+
+  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
+
+
+
+
 
   /**
     * sets a timeout for a search procedure.
@@ -687,5 +699,6 @@ class NeighborhoodOps(n:Neighborhood){
     * @param timePeriodInMilliSecond defines teh time period for the cut
     * @param minRelativeImprovementByCut the relative improvement over obj
     */
-  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) = new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
+  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) =
+    new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
 }
