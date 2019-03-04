@@ -21,13 +21,12 @@ object Restart{
     * @param maxRestartWithoutImprovement the stop criterion of the restarting
     * @param obj the objective function
     */
-  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) = {
-    (n orElse (randomizationNeighborhood
+  def apply(n:Neighborhood,randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean=false) = {
+    ((if(restartFromBest) n saveBestOnExhaustAndRestoreOnExhaust obj else n) orElse (randomizationNeighborhood
       maxMoves maxRestartWithoutImprovement withoutImprovementOver obj improvementBeignMeasuredBeforeNeighborhoodExploration)
       ) saveBestAndRestoreOnExhaust obj
   }
 }
-
 
 /**
   * this combinator injects a metropolis acceptation function.

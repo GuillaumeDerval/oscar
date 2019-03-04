@@ -42,6 +42,17 @@ class QList[@specialized T](val head:T, val tail:QList[T] = null){
 
 object QList{
 
+  def append[T](l:Iterable[T],q:QList[T]):QList[T] = {
+    val it = l.toIterator
+
+    var toReturn = q
+    while(it.hasNext){
+      toReturn = QList(it.next,toReturn)
+    }
+    toReturn
+  }
+
+
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
 
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)

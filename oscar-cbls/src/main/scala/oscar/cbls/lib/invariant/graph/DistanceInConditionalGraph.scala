@@ -32,7 +32,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
                                   (a:Int,b:Int) =>{
                                     underApproxDistanceMatrix(a)(b)
                                   }})
-  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to),distanceIfNotConnected))
+  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to) match{ case Long.MaxValue => distanceIfNotConnected case x => x} ,distanceIfNotConnected))
     with VaryingDependencies
     with SetNotificationTarget {
 

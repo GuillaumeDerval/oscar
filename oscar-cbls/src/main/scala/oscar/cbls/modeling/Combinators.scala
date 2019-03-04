@@ -395,8 +395,8 @@ class NeighborhoodOps(n:Neighborhood){
     * @param maxRestartWithoutImprovement the stop criterion of the restarting
     * @param obj the objective function
     */
-  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective) = {
-    Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj)
+  def onExhaustRestartAfter(randomizationNeighborhood:Neighborhood, maxRestartWithoutImprovement:Long, obj:Objective, restartFromBest:Boolean = false) = {
+    Restart(n,randomizationNeighborhood,maxRestartWithoutImprovement,obj,restartFromBest)
   }
 
 
@@ -592,6 +592,16 @@ class NeighborhoodOps(n:Neighborhood){
     * @param obj
     */
   def saveBestAndRestoreOnExhaust(obj: Objective) = new SaveBest(n, obj) restoreBestOnExhaust
+
+  /**
+    * saves the model for the best (smallest) value of obj
+    * and restores it when the neighborhood is exhausted.
+    * to restore it, it will return a move that loads the best solution.
+    * this one also saves the solution on exhaust, so it can be used within some metaheuristics
+    * @param obj
+    */
+  def saveBestOnExhaustAndRestoreOnExhaust(obj: Objective) = new SaveBest(n, obj, alsoSaveOnExhaust = true) restoreBestOnExhaust
+
 
   /**
     * retries the move before concluding to noMove can be found
