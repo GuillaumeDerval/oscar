@@ -251,7 +251,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
   def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,closestRelevantNeighborsByDistance(_),routedPostFilter), () => myVRP.vehicles)
 
   val graphical = display(myVRP,
-    nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)).toList,
+    nodesPositions.map(np => (np._1.toDouble,np._2.toDouble)),
     sizeOfMap = Some(mapSide),
     refreshRate = displayDelay,
     title = "VRPMaxDemoVLSN(n=" + n + " v=" + v + ")")

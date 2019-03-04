@@ -98,7 +98,7 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
     var bestX = startPos
     var bestF = startObj
 
-    //this is a bit dirty, but ranges do not work when there are more than MaxInt elements in it
+    //this is a bit dirty, but ranges do not work when there are more than MaxInt elements
     var value = minValue
     while(value <= maxValue){
       if(it > 0L && (!skipInitial || value != startPos)){
@@ -135,7 +135,7 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
 }
 
 
-class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends LinearOptimizer{
+class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + " minStep:" + minStep + ")"
 
@@ -143,7 +143,7 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
     val width = maxValue - minValue
 
     if(width < dividingRatio) {
-      val localExhaustiveSearch = new Exhaustive(step = 1L, skipInitial = true,maxIt = Long.MaxValue)
+      val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true,maxIt = Long.MaxValue)
       localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
     }else{
       val step = width/dividingRatio
@@ -154,8 +154,14 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
       }else {
         val localExhaustiveSearch = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
         val (newVal, newObj) = localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
-
-        this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
+        if (isLazy) {
+          if (newObj <= startObj)
+            this.search(newVal : Long, newObj,minValue max (newVal - step),maxValue min (newVal + step),  obj: Long => Long)
+          else
+            (newVal,newObj)
+        }
+        else
+           this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
       }
     }
   }
@@ -164,9 +170,9 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
 
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
-    println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
+    //println("TryExtremes.search(startPos:" + startPos + " startObj:" + startObj +  " minValue:" + minValue + " maxValue:" + maxValue + ")")
     val tries:List[(Long,Long)] = List((startPos,startObj),(minValue,obj(minValue)),(maxValue,obj(maxValue)))
-    println("found: " + tries)
+    //println("found: " + tries)
     tries.minBy(_._2)
   }
 

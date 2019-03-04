@@ -540,8 +540,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Long.MaxValue
-
+    bestNewObj = Long.MaxValue //initialObj //because we do not want "no move" to be considered as an actual move.
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")
@@ -581,7 +580,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
 
     val myPrintExploredNeighbors = printExploredNeighbors
 
-    if (newObj < bestNewObj && acceptanceCriterion(oldObj, newObj)) {
+    if (/*newObj < bestNewObj && */ acceptanceCriterion(oldObj, newObj)) {
       bestNewObj = newObj
       toReturnMove = instantiateCurrentMove(newObj)
       if (myPrintExploredNeighbors) {
