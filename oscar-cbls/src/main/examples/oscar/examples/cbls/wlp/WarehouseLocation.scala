@@ -41,7 +41,7 @@ object WarehouseLocation extends App{
   val openWarehouses = filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    minConstArrayLazy(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
+    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse))
 
   val obj = Objective(sum(distanceToNearestOpenWarehouseLazy) + sum(costForOpeningWarehouse, openWarehouses))
 

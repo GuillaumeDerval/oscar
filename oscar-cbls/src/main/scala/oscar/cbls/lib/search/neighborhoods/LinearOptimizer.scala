@@ -135,7 +135,7 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
 }
 
 
-class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends LinearOptimizer{
+class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false)  extends LinearOptimizer{
 
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + " minStep:" + minStep + ")"
 
@@ -154,8 +154,14 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1)  extends Linear
       }else {
         val localExhaustiveSearch = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
         val (newVal, newObj) = localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
-
-        this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
+        if (isLazy) {
+          if (newObj <= startObj)
+            this.search(newVal : Long, newObj,minValue max (newVal - step),maxValue min (newVal + step),  obj: Long => Long)
+          else
+            (newVal,newObj)
+        }
+        else
+           this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
       }
     }
   }

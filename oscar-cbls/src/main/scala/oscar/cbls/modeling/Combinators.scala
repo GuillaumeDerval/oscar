@@ -556,19 +556,14 @@ class NeighborhoodOps(n:Neighborhood){
   def afterMoveOnMove(procOnMove: Move => Unit) = DoOnMove(n, procAfterMove = procOnMove)
 
   /**
-    * This combinator create a frame that draw the evolution curve of the objective function.
-    * The drawn curve possess a scrollbar on the right that allow the user to decrease or
-    * increase the number of value displayed.
-    *
-    * @param obj the objective function
-    * @param stopWatch the StopWatch attached to the Test
-    * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
-    * @author fabian.germeau@student.vinci.be
-    */
-  def showObjectiveFunction(obj: Objective,
-                            stopWatch: StopWatch = new StopWatch {startWatch()},
-                            withZoom:Boolean = false
-                           ) = new ShowObjectiveFunction(n,obj,stopWatch,withZoom)
+   * This combinator create a frame that draw the evolution curve of the objective function.
+   * The drawn curve possess a scrollbar on the right that allow the user to decrease or
+   * increase the number of value displayed.
+   *
+   * @param obj the objective function
+   * @author fabian.germeau@student.vinci.be
+   */
+  def showObjectiveFunction(obj: Objective) = new ShowObjectiveFunction(n,obj)
 
   /**
     * this combinator attaches a custom code to a given neighborhood.
@@ -666,8 +661,20 @@ class NeighborhoodOps(n:Neighborhood){
     *                    By default, the temperature is 100L/the number of steps
     * @param base the base for the exponent calculation. default is 2L
     */
-  def metropolis(iterationToTemperature: Long => Float = (it: Long) => 10.toFloat / (it + 1), base: Float = 2) = new Metropolis(n, iterationToTemperature, base)
-  
+  def metropolis(iterationToTemperature: Long => Double = (it: Long) => 5.toDouble / (it + 1), base: Double = 2) = new Metropolis(n, iterationToTemperature, base)
+
+  //Cauchy annealing: T = T_0/k,
+  def cauchyAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / (it + 1), base)
+
+  //Boltzmann annealing, where T = T_0/ln k
+  def boltzmannAnnealing(initialTemperature:Double, base: Double = 2) = new Metropolis(n, iterationToTemperature = (it: Long) => initialTemperature / math.log(it + 1), base)
+
+  //TODO: Adaptive Simulated Annealing: T = T_0 exp(-c k^1/D) wth re-annealing also permits adaptation to changing sensitivities in the multi-dimensional parameter-space.
+
+
+
+
+
   /**
     * sets a timeout for a search procedure.
     * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
@@ -677,4 +684,21 @@ class NeighborhoodOps(n:Neighborhood){
     */
   def timeout(maxDuration:Long) = new Timeout(n, maxDuration:Long)
 
+  /**
+    * This combinator will interrupt the search when it becomes too flat.
+    * use it to cut the tail of long, undesired searches
+    * it works by time period.
+    * at the end of every time period, as set by timePeriodInMilliSecond,
+    * it will compute the relative improvement of obj of this latest time period over hte best so far
+    * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
+    *
+    * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
+    * it will not be interrupted during its exploration.
+    * this combinator only decides if a new neighborhood exploration is to be started
+    *
+    * @param timePeriodInMilliSecond defines teh time period for the cut
+    * @param minRelativeImprovementByCut the relative improvement over obj
+    */
+  def cutTail(timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long = 0) =
+    new CutTail(n, timePeriodInMilliSecond,minRelativeImprovementByCut,minTimeBeforeFirstCutInMilliSecond)
 }

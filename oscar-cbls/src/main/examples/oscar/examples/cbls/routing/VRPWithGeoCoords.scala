@@ -96,7 +96,7 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
   // afterMove => after each move update the routing display
   val searchProcedure = bestSlopeFirst(
     List(routeUnroutedPoint, onePtMove(20),customTwoOpt)
-  ).afterMove(
+  ).showObjectiveFunction(obj).afterMove(
     routingDisplay.drawRoutes())
 
 
@@ -105,4 +105,6 @@ class VRPWithGeoCoords(n: Int, v: Int, minLat: Double, maxLat: Double, minLong: 
   searchProcedure.verbose = 1
   searchProcedure.doAllMoves(obj = obj)
   routingDisplay.drawRoutes(true)
+  println(myVRP)
+  println(obj)
 }

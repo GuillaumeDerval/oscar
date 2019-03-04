@@ -334,22 +334,15 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
           schedule()
         case 1 =>
           if (occupiedSpaceInBin2 == 0 && occupiedSpaceInBin1 - OldVal + NewVal <= capacity1) {
-            //println("Smart Bin 1")
             occupationBin1(index) += (NewVal - OldVal)
             occupiedSpaceInBin1 += (NewVal - OldVal)
             this :+= (NewVal - OldVal) * costs(index)._1
-            //println(occupationBin1.mkString(";"))
-            //println(occupationBin2.mkString(";"))
-            //println(occupiedSpaceInBin1)
-            //println(vars(index).value + "--" + vars(index).newValue)
-            //println(vars(index).toString + ":" + NewVal + "--" + OldVal)
             if (occupationBin1(index) == 0)
               binOfElement(index) = 0
           }
           else
             schedule()
         case 2 =>
-          //println("Smart Bin 2")
           this :+= (NewVal - OldVal) * costs(index)._2
           occupationBin2(index) += (NewVal - OldVal)
           occupiedSpaceInBin2 += (NewVal - OldVal)
@@ -357,7 +350,6 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
             binOfElement(index) = 0
         case 3 =>
           if (occupationBin2(index) + (NewVal - OldVal) >= 0) {
-            //println("Smart Bin 1 and 2")
             this :+= (NewVal - OldVal) * costs(index)._2
             occupationBin2(index) += (NewVal  - OldVal)
             occupiedSpaceInBin2 += (NewVal - OldVal)
@@ -405,16 +397,11 @@ case class CostOfPackInTwoBins(vars : Array[IntValue],costs : Array[(Long,Long)]
   }
 
   override def performInvariantPropagation(): Unit = {
-
     if (shallPropagate) {
       occupiedSpaceInBin1 = 0L
       occupiedSpaceInBin2 = 0L
-      //println("Not Smart")
-      //println(capacity1)
-      //println(elementSortedByHighestCost.mkString(";"))
+      val timeBeforeNotSmart = System.currentTimeMillis()
       this := processChanges(elementSortedByHighestCost)
-      //println(occupationBin1.mkString(";"))
-      //println(occupationBin2.mkString(";"))
     }
 
     shallPropagate = false
