@@ -363,11 +363,11 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 
       if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
         //we have to stop it
-        //println("check for cut, cut")
+        println("check for cut, cut")
         stopped = true
         return NoMoveFound
       }else{
-        //println("check for cut, no cut")
+        println("check for cut, no cut")
         //we can carry on
         nextCutTime = currentTime + timePeriodInMilliSecond
         bestSoFar = bestSoFar min bestSoFarAtPreviousCut

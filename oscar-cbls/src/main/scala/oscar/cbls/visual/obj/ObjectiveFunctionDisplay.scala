@@ -6,7 +6,8 @@ import oscar.visual.plot.Plot
 import oscar.cbls._
 import oscar.cbls.util.StopWatch
 
-class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objective function value", 2) with StopWatch {
+class ObjectiveFunctionDisplay(title: String)
+  extends Plot(title,"Time","Objective function value", 2) with StopWatch {
 
   xDom = 0 to 1
   yDom = 0 to 100
@@ -17,9 +18,11 @@ class ObjectiveFunctionDisplay(title: String) extends Plot(title,"Time","Objecti
   panel.setMouseZoomable(true)
   panel.setHorizontalAxisTrace(true)
   panel.setVerticalAxisTrace(true)
+  this.setDoubleBuffered(true)
+  panel.setDoubleBuffered(true)
 
   def createChart =
-    ChartFactory.createXYLineChart(title,"Time (s)","Objective function value",xyDataset,PlotOrientation.VERTICAL,true,false, false);
+    ChartFactory.createXYLineChart(null,null,null,xyDataset,PlotOrientation.VERTICAL,false,false, false);
 
   def drawFunction(value: Long) ={
     if(value < best) best = value
