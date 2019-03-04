@@ -1,12 +1,10 @@
 package oscar.cbls.lib.search.combinators
 
-import java.awt.{Dimension, Color}
-import javax.swing.JFrame
 
 import oscar.cbls._
 import oscar.cbls.core.search._
-import oscar.cbls.util.StopWatch
-import oscar.cbls.visual.FunctionGraphic.{AdjustMaxValue, Zoom, ObjFunctionGraphicContainer}
+import oscar.cbls.visual.SingleFrameWindow
+import oscar.cbls.visual.obj.ObjectiveFunctionDisplay
 
 trait UtilityCombinators{
   /**
@@ -30,22 +28,12 @@ trait UtilityCombinators{
  *
  * @param a a neighborhood
  * @param obj the objective function
- * @param stopWatch the StopWatch attached to the Test
- * @param withZoom if true the Zoom thread will be used in stead of the AdjustMaxValues trait
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatch, withZoom:Boolean) extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: Objective, title: String = "Objective function") extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
-  val objGraphic = if(withZoom) new ObjFunctionGraphicContainer(dimension = new Dimension(940L,500L)) with Zoom
-  else new ObjFunctionGraphicContainer(dimension = new Dimension(960L,540L)) with AdjustMaxValue
-
-  new Thread(objGraphic,"Graphic Thread").start()
-
-  val visualFrame = new JFrame()
-  visualFrame.setPreferredSize(new Dimension(960L,540L))
-  visualFrame.add(objGraphic)
-  visualFrame.pack()
-  visualFrame.setVisible(true)
+  val objGraphic = ObjectiveFunctionDisplay(title)
+  SingleFrameWindow.show(objGraphic,title)
 
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult ={
     a.getMove(obj, initialObj, acceptanceCriteria) match {
@@ -60,9 +48,7 @@ class ShowObjectiveFunction(a: Neighborhood, obj: Objective, stopWatch: StopWatc
     and then we write the curve
    */
   def notifyNewObjValue(m:Move): Unit ={
-    objGraphic.objCurveDatas.synchronized{
-      objGraphic.objCurveDatas = (obj.value,stopWatch.getWatch,m.neighborhoodName) :: objGraphic.objCurveDatas
-    }
+    objGraphic.drawFunction(obj.value)
   }
 }
 
@@ -299,3 +285,105 @@ class ResetOnExhausted(a: Neighborhood) extends NeighborhoodCombinator(a) {
     }
   }
 }
+
+
+/**
+  * sets a timeout for a search procedure.
+  * notice that hte timeout itself is a bit lax, because the combinator has no possibility to interrupt a neighborhood during its exploration.
+  * this combinator will therefore just prevent any new exploration past the end of the timeout.
+  * @param a a neighborhood
+  * @param maxDuration the maximal duration, in milliseconds
+  */
+class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a) {
+  private var deadline: Long = -1
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriteria: (Long, Long) => Boolean): SearchResult = {
+    if (deadline == -1) {
+      deadline = System.currentTimeMillis() + maxDuration
+    }
+
+    if (System.currentTimeMillis() >= deadline) {
+      if(printExploredNeighborhoods) println("Timeout reached")
+      NoMoveFound
+    } else {
+      a.getMove(obj, initialObj: Long, acceptanceCriteria)
+    }
+  }
+}
+
+/**
+  * This combinator will interrupt the search when it becomes too flat.
+  * use it to cut the tail of long, undesired searches
+  * it works by time period.
+  * at the end of every time period, as set by timePeriodInMilliSecond,
+  * it will compute the relative improvement of obj of this latest time period over hte best so far
+  * if the relative improvement is smaller than minRelativeImprovementByCut, it is considered too flat, and search is stopped
+  *
+  * NOTICE that if your base neighborhood has a search time that is bigger then the time period,
+  * it will not be interrupted during its exploration.
+  * this combinator only decides if a new neighborhood exploration is to be started
+  *
+  * @param a the base neighborhood
+  * @param timePeriodInMilliSecond defines teh time period for the cut
+  * @param minRelativeImprovementByCut the relative improvement over obj
+  */
+class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long)
+  extends NeighborhoodCombinator(a){
+
+  var bestSoFarAtPreviousCut:Long = -1
+  var bestSoFar:Long = Long.MaxValue
+  var nextCutTime:Long = -1
+
+  var stopped:Boolean = false
+
+  override def reset(): Unit = {
+    bestSoFarAtPreviousCut = -1
+    bestSoFar = Long.MaxValue
+    nextCutTime = -1
+    stopped = false
+
+    super.reset()
+  }
+
+  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+
+    if(stopped) return NoMoveFound
+
+    val currentTime = System.currentTimeMillis()
+
+    if(nextCutTime == -1){
+      //the combinator has just been reset, so we just reinitialize it.
+      nextCutTime = currentTime + (timePeriodInMilliSecond max minTimeBeforeFirstCutInMilliSecond)
+      bestSoFar = initialObj
+      bestSoFarAtPreviousCut = initialObj
+      //println("initialize cut")
+    }else if(nextCutTime < currentTime){
+      //need to check for a cut
+      val relativeImprovementSincePreviousCut = (bestSoFarAtPreviousCut - bestSoFar).toDouble / bestSoFar.toDouble
+
+      if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
+        //we have to stop it
+        //println("check for cut, cut")
+        stopped = true
+        return NoMoveFound
+      }else{
+        //println("check for cut, no cut")
+        //we can carry on
+        nextCutTime = currentTime + timePeriodInMilliSecond
+        bestSoFar = bestSoFar min bestSoFarAtPreviousCut
+        bestSoFarAtPreviousCut = bestSoFar
+      }
+    }
+
+    a.getMove(obj,initialObj,acceptanceCriterion) match{
+      case NoMoveFound => NoMoveFound
+      case f:MoveFound =>
+//        println("update best in cut")
+        bestSoFar = bestSoFar min f.objAfter
+        f
+    }
+  }
+}
+
+
+

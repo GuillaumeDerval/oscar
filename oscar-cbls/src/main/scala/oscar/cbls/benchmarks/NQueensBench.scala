@@ -109,8 +109,8 @@ object NQueensBench extends LinearSelectorClass(true) with StopWatch{
     c.post(AllDiff(queensRange.map(q => queens(q) + q)))
     c.post(AllDiff(queensRange.map(q => q - queens(q))))
 
-    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Long.MaxValue, "Tabu_queen" + q)).toArray
-    val it = CBLSIntVar(m,1, 0 to Long.MaxValue,"it")
+    val tabu = queensRange.map(q => CBLSIntVar(m, 0, 0 to Int.MaxValue, "Tabu_queen" + q)).toArray
+    val it = CBLSIntVar(m,1, 0 to Int.MaxValue,"it")
     val nonTabuQueens = SelectLESetQueue(tabu, it).setName("non tabu queens")
     val nonTabuMaxViolQueens = ArgMax(c.violations(queens), nonTabuQueens)
 

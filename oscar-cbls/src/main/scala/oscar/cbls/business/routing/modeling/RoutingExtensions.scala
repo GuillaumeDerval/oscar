@@ -2,6 +2,7 @@ package oscar.cbls.business.routing.modeling
 
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.model.extensions._
+import oscar.cbls.visual.routing.RoutingMapTypes
 
 import scala.collection.immutable.List
 
@@ -32,21 +33,19 @@ trait RoutingExtensions {
     *
     * @param vrp The basic vehicle routing problem
     * @param nodePositions A list of node's position. nodePosition(0L) represent the position of the first node
-    * @param displayOnRealMap true if you want to display on a real map
-    * @param selectRouteToDisplay true if you want a way to select the route to display (deprecated)
     * @param sizeOfMap The size of your map
     * @param refreshRate The refresh rate (be carefull if the refresh rate is to high you may have greate performance issues
+    * @param routingMapType The type of map you want to generate
     * @return A display object
     */
   def display(vrp: VRP,
-              nodePositions: List[(Double,Double)],
-              displayOnRealMap: Boolean = false,
-              selectRouteToDisplay: Boolean = false,
+              nodePositions: Array[(Double,Double)],
               sizeOfMap: Option[Long] = None,
               refreshRate: Long = 100L,
+              routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
               title:String = "VRP with OscaR.cbls"
              ) =
-    new Display(vrp,nodePositions,displayOnRealMap,selectRouteToDisplay,sizeOfMap,refreshRate, title)
+    new Display(vrp,nodePositions,sizeOfMap,refreshRate,routingMapType,title)
   type Display = oscar.cbls.business.routing.model.extensions.Display
 
 
