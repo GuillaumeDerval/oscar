@@ -821,8 +821,7 @@ class MovedIntSequence(val seq:IntSequence,
                        val startPositionIncluded:Int,
                        val endPositionIncluded:Int,
                        val moveAfterPosition:Int,
-                       val flip:Boolean)
-  extends StackedUpdateIntSequence{
+                       val flip:Boolean) extends StackedUpdateIntSequence{
 
   //TODO: provide a cache on the values at the boundary of the move
 
@@ -964,8 +963,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
 
 class InsertedIntSequence(seq:IntSequence,
                           val insertedValue:Long,
-                          val pos:Int)
-  extends StackedUpdateIntSequence {
+                          val pos:Int) extends StackedUpdateIntSequence {
   override val size : Int = seq.size + 1
 
   override def nbOccurrence(value : Long) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
@@ -1032,8 +1030,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
                                   val position:Int,
                                   explorerInOriginalSeq:Option[IntSequenceExplorer],
                                   atInsertedValue:Boolean,
-                                  originalExplorerIsAbove:Boolean)
-  extends IntSequenceExplorer {
+                                  originalExplorerIsAbove:Boolean) extends IntSequenceExplorer {
   override val value : Long = if(atInsertedValue) seq.insertedValue else explorerInOriginalSeq.head.value
 
   override def next : Option[IntSequenceExplorer] = {
@@ -1097,8 +1094,7 @@ class InsertedIntSequenceExplorer(seq:InsertedIntSequence,
 }
 
 class RemovedIntSequence(val seq:IntSequence,
-                         val positionOfDelete:Int)
-  extends StackedUpdateIntSequence{
+                         val positionOfDelete:Int) extends StackedUpdateIntSequence{
 
   val removedValue = seq.valueAtPosition(positionOfDelete).head
 
@@ -1160,8 +1156,7 @@ class RemovedIntSequence(val seq:IntSequence,
 
 class RemovedIntSequenceExplorer(seq:RemovedIntSequence,
                                  val position:Int,
-                                 explorerInOriginalSeq:IntSequenceExplorer)
-  extends IntSequenceExplorer{
+                                 explorerInOriginalSeq:IntSequenceExplorer) extends IntSequenceExplorer{
   override val value : Long = explorerInOriginalSeq.value
 
   override def prev : Option[IntSequenceExplorer] = {

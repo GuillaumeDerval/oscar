@@ -22,11 +22,7 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
 
   test("tree initialized with makeFromSorted has expected size and content"){
     forAll(sequentialTuplesList){ list =>
-
       val tree = RedBlackTreeMap.makeFromSorted(list)
-
-      val expl = tree.biggestPosition.get
-
 
       tree.size should be (list.size)
       tree.values should be (list.map(_._2))
@@ -154,11 +150,21 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     }
   }
 
+  test("updateAll applies delta to expected keys"){
+    forAll(nonSequentialTuplesList){list =>{
+      var tree = RedBlackTreeMap.makeFromSorted(list)
+
+      tree = tree.updateAll(2,value => value * 2)
+
+      tree.content should be (list.map(tuple => (tuple._1 + 2, tuple._2 * 2)))
+    }}
+  }
+
   implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny // Disables the shrink
 
   test("batch operations keep expected values"){
     forAll(nonSequentialTuplesList){list => {
-      whenever(list.nonEmpty){ // Non empty list & no negative key
+      whenever(list.nonEmpty){
 
         var parrallelMap = list.sortBy(_._1)
         var tree = RedBlackTreeMap.makeFromSortedArray(list.toArray)
@@ -208,17 +214,17 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     }}
   }
 
-  val operationGenerator = for (n <- Gen.choose(0,2)) yield n
-  val intGenerator = for (n <- Gen.choose(10, 1000)) yield n
+  def operationGenerator = for (n <- Gen.choose(0,2)) yield n
+  def intGenerator = for (n <- Gen.choose(10, 1000)) yield n
 
   // Generates a list of key-value tuples with incremental key (in order) and random values
-  val sequentialTuplesList =  for {
+  def sequentialTuplesList =  for {
     numElems <- Gen.choose(0, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
   } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Long,tuple._1 :Int))
 
   // Generates a list of key-value tuples with sparse unique keys (in order) and random values
-  val nonSequentialTuplesList =  for {
+  def nonSequentialTuplesList =  for {
     numElems <- Gen.choose(0, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
     keysList <- Gen.listOfN(numElems,intGenerator)
