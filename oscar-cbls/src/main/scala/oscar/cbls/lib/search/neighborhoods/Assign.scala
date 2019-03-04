@@ -206,8 +206,8 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
         obj.assignVal(currentVar,value)
       }
 
-      val (newVal,bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
-      this.newVal = newVal
+      val (newBestVal,bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
+      this.newVal = newBestVal
 
       if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
         notifyFound1()
