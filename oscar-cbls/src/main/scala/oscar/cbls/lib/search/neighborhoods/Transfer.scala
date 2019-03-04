@@ -166,7 +166,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     TransferMove(
       firstVar, oldValOfFirstVar, firstVarIndice,
       secondVar, oldValOfSecondVar, secondVarIndice,
-      factor1,factor2,delta:Long,
+      factor1, factor2, delta: Long,
       newObj, name)
 
   //this resets the internal state of the Neighborhood
