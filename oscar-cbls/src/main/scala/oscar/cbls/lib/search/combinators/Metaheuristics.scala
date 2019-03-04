@@ -95,13 +95,19 @@ class Metropolis(a: Neighborhood, iterationToTemperature: Long => Double = _ => 
   * @param additionalConstraint an additional constraint, considered as a weak constraint at startup, and gradually, as a strong constraint.
   * @maxValueForObj the maximal value for the objective function and for the constraint (do not exceed MaxInt)
   */
-class GeneralizedLocalSsearch(a: Neighborhood, additionalConstraint:Objective, maxValueForObj:Int, switchToStrongAsap:Boolean) extends NeighborhoodCombinator(a) {
+class GeneralizedLocalSearch(a: Neighborhood,
+                             additionalConstraint:Objective,
+                             iterationToWeigth:Int => Int,
+                             switchToStrongAsap:Boolean) extends NeighborhoodCombinator(a) {
 
-  var currentWeightOfObj:Int = maxValueForObj
+  var it:Int = 0
+  val maxValueForWeighting:Int = iterationToWeigth(0)
+  var currentWeightOfObj:Int = maxValueForWeighting
+
   val store = additionalConstraint.model
-  
+
   override def reset(): Unit = {
-    currentWeightOfObj = maxValueForObj
+    currentWeightOfObj = iterationToWeigth(0)
     super.reset()
   }
 
@@ -109,13 +115,6 @@ class GeneralizedLocalSsearch(a: Neighborhood, additionalConstraint:Objective, m
 
     if(currentWeightOfObj > 0) {
       //it is still a soft constraint
-
-      def evaluate(): Long = {
-        val objValue = obj.value
-        if(objValue == Long.MaxValue) objValue
-        else (maxValueForObj * additionalConstraint.value) + (currentWeightOfObj * objValue)
-      }
-
 
       val initValueOFConstaint = additionalConstraint.value
       if(switchToStrongAsap && initValueOFConstaint == 0){
@@ -126,8 +125,13 @@ class GeneralizedLocalSsearch(a: Neighborhood, additionalConstraint:Objective, m
       }
 
       a.getMove(
-        new FunctionObjective(evaluate, store),
-        (maxValueForObj * initValueOFConstaint) + (currentWeightOfObj * initialObj),
+        new FunctionObjective(() => {
+          val objValue = obj.value
+          if(objValue == Long.MaxValue) objValue
+          else (maxValueForWeighting * additionalConstraint.value) + (currentWeightOfObj * objValue)
+        }, store),
+
+        (maxValueForWeighting * initValueOFConstaint) + (currentWeightOfObj * initialObj),
         acceptanceCriterion) match {
         case NoMoveFound =>
           //it's time to change the weighting
@@ -137,11 +141,19 @@ class GeneralizedLocalSsearch(a: Neighborhood, additionalConstraint:Objective, m
             this.getMove(obj, initialObj, acceptanceCriterion)
           } else {
             currentWeightOfObj = currentWeightOfObj / 2
+
+            it += 100
+            currentWeightOfObj = iterationToWeigth(it)
+
             this.getMove(obj, initialObj, acceptanceCriterion)
           }
         case m: MoveFound =>
-          //when do we change the weighting?
-          currentWeightOfObj = 1 max (currentWeightOfObj-1)
+          //a move was found,
+          //we decrease the weighting anyway, s othe next iteration will be more directed towards target
+
+          it += 1
+          currentWeightOfObj = iterationToWeigth(it)
+
           MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
       }
     }else if(currentWeightOfObj == 0){

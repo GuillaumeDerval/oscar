@@ -1,10 +1,13 @@
 package oscar.cbls.visual.obj
 
-import org.jfree.chart.plot.PlotOrientation
+import java.awt.Color
+
 import org.jfree.chart.ChartFactory
-import oscar.visual.plot.Plot
+import org.jfree.chart.plot.PlotOrientation
+import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer
 import oscar.cbls._
 import oscar.cbls.util.StopWatch
+import oscar.visual.plot.Plot
 
 class ObjectiveFunctionDisplay(title: String)
   extends Plot(title,"Time","Objective function value", 2) with StopWatch {
@@ -18,21 +21,43 @@ class ObjectiveFunctionDisplay(title: String)
   panel.setMouseZoomable(true)
   panel.setHorizontalAxisTrace(true)
   panel.setVerticalAxisTrace(true)
+
+  val r1 = new XYLineAndShapeRenderer
+  r1.setSeriesPaint(1, Color.GREEN)
+  r1.setSeriesPaint(0, Color.RED)
+  r1.setSeriesShapesVisible(0, false)
+  r1.setSeriesShapesVisible(1, false)
+
+  plot.setRenderer(r1)
+
   this.setDoubleBuffered(true)
   panel.setDoubleBuffered(true)
 
   def createChart =
-    ChartFactory.createXYLineChart(null,null,null,xyDataset,PlotOrientation.VERTICAL,false,false, false);
+    ChartFactory.createXYLineChart(
+      null,
+      null,
+      null,
+      xyDataset,PlotOrientation.VERTICAL,
+      false,
+      false,
+      false)
 
   def drawFunction(value: Long) ={
-    if(value < best) best = value
+
     val at = (getWatch - startinAt).toDouble/1000
     if(yDom.getUpperBound < value.toDouble)
       yDom = Range.inclusive(0L,upper(value))
     if(xDom.getUpperBound < at)
       xDom = Range.inclusive(0L,upper(at))
-    addPoint(at,value.toDouble)
-    addPoint(at,best.toDouble,1)
+
+    addPoint(at,value.toDouble,0)
+
+    if(value <= best) {
+      best = value
+    }
+    addPoint(at, best.toDouble, 1)
+
   }
 
   private def upper(value: Double): Long ={
