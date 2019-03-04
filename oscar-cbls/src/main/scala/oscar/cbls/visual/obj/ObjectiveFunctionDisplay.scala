@@ -46,6 +46,8 @@ class ObjectiveFunctionDisplay(title: String)
   def drawFunction(value: Long) ={
 
     val at = (getWatch - startinAt).toDouble/1000
+
+    //TODO: this is a bit slow isnt'it?
     if(yDom.getUpperBound < value.toDouble)
       yDom = Range.inclusive(0L,upper(value))
     if(xDom.getUpperBound < at)

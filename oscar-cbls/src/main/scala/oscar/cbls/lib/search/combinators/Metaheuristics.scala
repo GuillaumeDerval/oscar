@@ -1,7 +1,6 @@
 package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
-import oscar.cbls.core.computation.Store
 import oscar.cbls.core.objective.{CascadingObjective, FunctionObjective, Objective}
 import oscar.cbls.core.search._
 
