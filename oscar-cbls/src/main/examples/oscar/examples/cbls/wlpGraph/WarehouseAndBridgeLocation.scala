@@ -258,7 +258,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       )
 
       lastDisplay = this.getWatch
-    })
+    }) showObjectiveFunction(obj)
 
   neighborhood.verbose = 1
 
