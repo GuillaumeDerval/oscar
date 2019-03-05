@@ -13,6 +13,7 @@
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+/*
 package oscar.cbls.lib.invariant.graph
 
 import oscar.cbls
@@ -500,3 +501,4 @@ class KDegreeVoronoiZones(graph:ConditionalGraph,
   }
 }
 
+*/

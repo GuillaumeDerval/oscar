@@ -254,7 +254,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         hideRegularEdges = true,
         hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList
+        List(distanceMinMax.getPath) // :: selectedDistances.map(_.getPath).toList
       )
 
       lastDisplay = this.getWatch
@@ -272,7 +272,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     hideClosedEdges = true,
     hideRegularEdges = false,
     hideOpenEdges=false,
-    extraPath = distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList)
+    extraPath = List(distanceMinMax.getPath)) // :: selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 
