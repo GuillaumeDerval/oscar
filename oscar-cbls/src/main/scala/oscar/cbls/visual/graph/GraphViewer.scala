@@ -1,17 +1,96 @@
 package oscar.cbls.visual.graph
 
-import java.awt.Color
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
+import java.awt.{BorderLayout, Color}
 
+import javax.swing.JFrame
 import oscar.cbls
 import oscar.cbls.algo.graph._
-import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualCircle, VisualLine, VisualRectangle, VisualShape}
+import oscar.visual.{VisualDrawing, VisualToolBar}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 import scala.swing.Color
 
+/*
+class InteractiveGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
+                             centroidColor:SortedMap[Int,Color],
+                             colorForUnreachableNodes:Color  = Color.black,
+                             colorForPermanentEdges:Color =Color.black,
+                             colorForOpenEdges:Color = Color.green,
+                             colorForClosedEdges:Color = Color.red,
+                             colorForEmphasizedEdges:Color = Color.blue,
+                             colorForEmphasizedEdges2:Color = Color.orange)
+  extends JFrame(){
+
+  val graphDrawing = new GraphViewer(graph,
+    centroidColor,
+    colorForUnreachableNodes,
+    colorForPermanentEdges,
+    colorForOpenEdges,
+    colorForClosedEdges,
+    colorForEmphasizedEdges,
+    colorForEmphasizedEdges2)
+
+  val toolbar = new VisualToolBar()
+  toolbar.setFloatable(false)
+  toolbar.addButton("toggleClosedEdges",toggleClosedEdges)
+  toolbar.addButton("toggleRegularEdges",toggleRegularEdges)
+  toolbar.addButton("toggleOpenEdges",toggleOpenEdges)
+  this.add(toolbar, BorderLayout.NORTH)
+  this.add(graphDrawing)
+
+  graphDrawing.setPreferredSize(new java.awt.Dimension(1000,1000))
+  this.pack()
+
+  def toggleClosedEdges(): Unit ={
+    hideClosedEdges = !hideClosedEdges
+  }
+
+  def toggleRegularEdges(): Unit ={
+    hideRegularEdges = !hideRegularEdges
+  }
+  def toggleOpenEdges(): Unit ={
+    hideOpenEdges = !hideOpenEdges
+  }
+
+  var hideClosedEdges:Boolean = false
+  var hideRegularEdges:Boolean = false
+  var hideOpenEdges:Boolean=false
+  var openConditions:SortedSet[Long] = SortedSet.empty
+  var centroids:SortedSet[Long] = SortedSet.empty
+  var nodeToCentroid:SortedMap[Long,Long] = SortedMap.empty
+  var emphasizeEdges:Iterable[Edge] = None
+  var extraPath:Iterable[RevisableDistance] = None
+
+  def updateAndRedraw(openConditions:SortedSet[Long],
+                      centroids:SortedSet[Long],
+                      nodeToCentroid:SortedMap[Long,Long],
+                      emphasizeEdges:Iterable[Edge] = List.empty,
+                      extraPath:Iterable[RevisableDistance]): Unit ={
+    this.openConditions = openConditions
+    this.centroids =centroids
+    this.nodeToCentroid = nodeToCentroid
+    this.emphasizeEdges = emphasizeEdges
+    this.extraPath =extraPath
+    redraw()
+  }
+
+  private def redraw(): Unit ={
+    graphDrawing.redraw(
+      openConditions = openConditions,
+      centroids = centroids,
+      nodeToCentroid = nodeToCentroid,
+      hideClosedEdges = hideClosedEdges,
+      hideRegularEdges,
+      hideOpenEdges,
+      emphasizeEdges,
+      extraPath)
+  }
+}
+
+*/
 class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
                   centroidColor:SortedMap[Int,Color],
                   colorForUnreachableNodes:Color  = Color.black,
@@ -205,7 +284,7 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
           }
 
           for(closedEdge <-unlockingConditions.map(graph.conditionToConditionalEdges)){
-              drawEdge(closedEdge: Edge, 5)
+            drawEdge(closedEdge: Edge, 5)
           }
         }
       case NeverConnected(

@@ -2,6 +2,7 @@ package oscar.cbls.algo.hotSpot
 
 import oscar.cbls.algo.quick.QList
 
+@deprecated("not tested yet","")
 class HotSpotManager(maxValue:Int) {
 
   var explorers:List[HotSpotExplorer] = List.empty
@@ -21,7 +22,7 @@ class HotSpotManager(maxValue:Int) {
   }
 }
 
-
+@deprecated("not tested yet","")
 class HotSpotExplorer(maxValue:Int) extends Iterable[Long] {
 
   override def iterator: Iterator[Long] = new HotSpotExplorerIterator(this)

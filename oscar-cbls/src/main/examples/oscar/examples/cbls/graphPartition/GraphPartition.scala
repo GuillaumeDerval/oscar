@@ -53,6 +53,8 @@ object GraphPartition extends CBLSModel with App {
   //val nodeToViolationMinusDegree = Array.tabulate[IntValue](nbNodes)(node => new Int2Int(nodeToViolation(node),v => v - degree(node)))
   //val swappableNodes = filter(nodeToViolationMinusDegree, _ > 0)
 
+  //TODO: use GeneralizedLocalSearch here.
+
   c.close()
 
   val obj = Objective(c.violation)

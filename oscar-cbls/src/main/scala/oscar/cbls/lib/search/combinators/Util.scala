@@ -30,7 +30,7 @@ trait UtilityCombinators{
  * @param obj the objective function
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: Objective, title: String = "Objective function") extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: Objective, title: String = "Objective function vs. time[s]") extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
   val objGraphic = ObjectiveFunctionDisplay(title)
   SingleFrameWindow.show(objGraphic,title)
