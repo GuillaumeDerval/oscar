@@ -262,6 +262,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   neighborhood.verbose = 1
 
+  //wait(10000)
+  //println("start")
+  //wait(1000)
+
   neighborhood.doAllMoves(obj=obj)
 
   visual.redraw(
