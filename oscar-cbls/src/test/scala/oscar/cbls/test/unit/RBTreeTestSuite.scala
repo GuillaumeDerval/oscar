@@ -160,6 +160,30 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     }}
   }
 
+  test("updateDelta applies delta to expected keys"){
+    var tree = RedBlackTreeMap.empty[Int]
+
+    tree = tree.insert(1,1)
+    tree = tree.insert(2,2)
+    tree = tree.insert(8,8)
+    tree = tree.insert(3,3)
+    tree = tree.insert(6,6)
+    tree = tree.insert(5,5)
+    tree = tree.insert(7,7)
+    tree = tree.insert(4,4)
+    tree = tree.insert(9,9)
+    tree = tree.insert(14,14)
+    tree = tree.insert(18,18)
+    tree = tree.insert(22,22)
+
+    tree = tree.updateDelta(14,22,1, _ + 1)
+
+
+    tree.get(15).get should be (15)
+    tree.get(19).get should be (19)
+    tree.get(23).get should be (23)
+  }
+
   implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny // Disables the shrink
 
   test("batch operations keep expected values"){

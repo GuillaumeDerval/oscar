@@ -32,9 +32,8 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     forAll(boolList){list => {
 
       val array = MagicBoolArray(list.size, initVal = true)
-      for ((elem,i) <- list.view.zipWithIndex) {
-        array.update(i,elem == 1)
-      }
+
+      list.view.zipWithIndex.foreach{case(e,i) => array.update(i,e == 1)}
 
       for ((elem,i) <- list.view.zipWithIndex) {
         array(i) should be (elem == 1)

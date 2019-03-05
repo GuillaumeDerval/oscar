@@ -25,11 +25,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     forAll((intList: List[Int]) => {
 
       val dll = new DoublyLinkedList[Int]()
-
-      for(i <- intList){
-        dll.enqueue(i)
-      }
-
+      intList.foreach(e => dll.enqueue(e))
       intList should be (dll.iterator.toList)
     })
   }
@@ -39,11 +35,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     forAll((intList: List[Int]) => {
 
       val dll = new DoublyLinkedList[Int]()
-
-      for(i <- intList){
-        dll.addElem(i)
-      }
-
+      intList.foreach(e => dll.addElem(e))
       dll.iterator.toList should be (intList.reverseIterator.toList)
     })
   }
@@ -52,13 +44,11 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     forAll((intList: List[Int]) => {
 
       val dll = new DoublyLinkedList[Int]()
-
-      for(i <- intList){
-        dll.addElem(i)
-      }
-
+      intList.foreach(e => dll.enqueue(e))
       dll.dropAll()
-      dll.size == 0 && dll.isEmpty
+
+      dll.size should be (0)
+      dll.isEmpty should be (true)
     })
   }
 
@@ -66,15 +56,11 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     forAll((intList: List[Int]) => {
 
       val dll = new DoublyLinkedList[Int]()
-
-      for(i <- intList){
-        dll.addElem(i)
-      }
+      intList.foreach(e => dll.addElem(e))
 
       var i = 0
       dll.foreach(elem => {
-        intList.contains(elem)
-
+        intList should contain (elem)
       })
     })
   }
