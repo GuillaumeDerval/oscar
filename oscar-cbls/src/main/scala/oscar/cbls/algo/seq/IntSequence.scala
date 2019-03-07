@@ -187,6 +187,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   def positionOfFirstOccurrence(value : Long) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
+      case x if x.isEmpty => None
       case x => Some(x.min)
     }
   }
@@ -194,6 +195,7 @@ abstract class IntSequence(protected[cbls] val token: Token = Token()) {
   def positionOfLastOccurrence(value : Long) : Option[Int] = {
     positionsOfValue(value) match {
       case null => None
+      case x if x.isEmpty => None
       case x => Some(x.max)
     }
   }
