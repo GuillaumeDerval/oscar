@@ -28,6 +28,10 @@ case class NotConnected(from:Node,
 class RevisableAStar(graph:ConditionalGraph,
                      underApproximatingDistance:(Int,Int) => Long){
 
+  //TODO: speed up if we know, beside the under approximating distance, that the approximation is exact (ie: no conditional edge on the shortest path)
+  //then either the search can be stopped andthe distance is just added and returned
+  //or the path can be computed faster, given that we know the approximation is exact.
+
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
 
   def search(from:Node,

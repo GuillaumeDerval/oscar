@@ -74,8 +74,16 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val deliveryNodeList = QList.buildFromIterable(deliveryToNode).asInstanceOf[QList[Node]]
 
   println("start floyd")
-  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrix(graph, _ => true)
+  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
   println("end floyd")
+
+  /*
+  val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)
+  println("nbTrue: " + anyConditionalEdgeOnShortestPath.map(_.count(a => a)).sum)
+  println("nbNodes:" +graph.nbNodes)
+*/
+
+//  println(anyConditionalEdgeOnShortestPath.map(_.map(c => if(c) "T" else "F").mkString("")).mkString("\n"))
 
   //val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
   val warehouseToWarehouseDistances:Array[Array[Long]] =
@@ -88,7 +96,6 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val warehouseOpenArray = Array.tabulate(W)(l => CBLSIntVar(m, 0, 0 to 1, "warehouse_" + l + "_open"))
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
-
 
   val edgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "edgeCondition_" + c + "_open"))
 

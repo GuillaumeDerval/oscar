@@ -14,6 +14,20 @@ object FloydWarshall{
     m
   }
 
+  def buildDistanceMatrixAllConditionalEdgesSame(g:ConditionalGraph,allConditionsState:Boolean):Array[Array[Long]] = {
+    buildDistanceMatrix(g:ConditionalGraph,
+                            isConditionalEdgeOpen = _ => allConditionsState)
+
+  }
+
+  def anyConditionalEdgeOnShortestPath(g:ConditionalGraph,
+                                       distanceMatrixAllConditionalEdgesOpen:Array[Array[Long]]):Array[Array[Boolean]] = {
+    val n = g.nbNodes
+    val matrixAllClosed = buildDistanceMatrixAllConditionalEdgesSame(g,false)
+    Array.tabulate(n)(i => Array.tabulate(n)(j => distanceMatrixAllConditionalEdgesOpen(i)(j) != matrixAllClosed(i)(j)))
+  }
+
+
   def buildAdjacencyMatrix(g:ConditionalGraph,
                            isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
 

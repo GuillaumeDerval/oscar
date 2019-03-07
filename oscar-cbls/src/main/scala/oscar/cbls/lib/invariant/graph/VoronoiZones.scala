@@ -222,6 +222,7 @@ class VoronoiZones(graph:ConditionalGraph,
             case _ => ;
           }
         }
+        //TODO: did happen!
         throw new Error("should not happen")
       }
     }
