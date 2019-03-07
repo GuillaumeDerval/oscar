@@ -178,8 +178,8 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     maxDepth = width,
     intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
-    searchZone1 = openWarehoueseTocConsider,
+  def swapsK(k:Int, openWarehousesToConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+    searchZone1 = openWarehousesToConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
     symmetryCanBeBrokenOnIndices = false)
@@ -233,6 +233,8 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
           name "fastCombined"),
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
+
+      //cauchyAnnealing (10,2) cutTail (1000,0.0001,1000)
 
       //TODO: proposer aussi maxResstart!
       //TODO: vérifier quon restart bien du best so far.
