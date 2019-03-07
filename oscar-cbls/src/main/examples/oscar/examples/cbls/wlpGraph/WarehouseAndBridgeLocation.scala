@@ -241,12 +241,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
 
-      //cauchyAnnealing (10,2) cutTail (1000,0.0001,1000)
+      
+      //cauchyAnnealing (10,2) cutTail (10000,0.00001,1000) saveBestAndRestoreOnExhaust obj
 
-      //TODO: proposer aussi maxResstart!
-      //TODO: vérifier quon restart bien du best so far.
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
-//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize2"), 2, obj, restartFromBest = true)
 
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
       exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
