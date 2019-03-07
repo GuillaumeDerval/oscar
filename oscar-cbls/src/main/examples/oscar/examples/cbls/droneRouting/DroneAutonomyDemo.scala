@@ -43,7 +43,7 @@ object VRPAutonomyDemo extends App {
 
   val symmetricDistanceMatrix = Array.tabulate(n)({a =>
     Array.tabulate(n)({b =>
-      symmetricDistanceMatrix1(a min b)(a max b).toInt
+      symmetricDistanceMatrix1(a min b)(a max b)
     })})
 
   val droppedWeights = Array.tabulate(n)(dropPerNode => 50)
@@ -69,7 +69,7 @@ object VRPAutonomyDemo extends App {
   val model = new Store()
 
   val myVRP = new VRP(model,n,v)
-  val routeLengthPerVehicle = constantRoutingDistance(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true,true,false)
+  val routeLengthPerVehicle = routeLength(myVRP.routes,n,v,perVehicle = true,symmetricDistanceMatrix,true,true,false)
   val totalRouteLength = sum(routeLengthPerVehicle)
   val nodesPerVehicle = nodesOfVehicle(myVRP.routes,v)
 

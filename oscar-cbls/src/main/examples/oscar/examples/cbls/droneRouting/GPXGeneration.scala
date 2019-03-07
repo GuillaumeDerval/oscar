@@ -1,5 +1,6 @@
 package oscar.examples.cbls.routing.drone
 
+import oscar.cbls
 import oscar.cbls.algo.seq.IntSequence
 
 import scala.xml._
@@ -68,7 +69,7 @@ class GPXGeneration(v: Int,
   def extractRouteOfVehicle(vehicle: Int,
                             routes: IntSequence) : List[Int] = {
     //println("extractRouteOfVehicle("+vehicle + " route " + routes)
-    var reversedRoute = List[Int](vehicle)
+    var reversedRoute = List[Int](cbls.longToInt(vehicle))
     var explorer = routes.explorerAtAnyOccurrence(vehicle).head
     while(explorer.next match{
       case None =>
@@ -81,7 +82,7 @@ class GPXGeneration(v: Int,
           false
         }else{
           // we're still on the road to the vehicle vehicle
-          reversedRoute = next.value :: reversedRoute
+          reversedRoute = cbls.longToInt(next.value) :: reversedRoute
           explorer = next
           true
         }
