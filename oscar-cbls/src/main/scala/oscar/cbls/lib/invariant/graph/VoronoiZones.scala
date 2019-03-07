@@ -244,14 +244,17 @@ class VoronoiZones(graph:ConditionalGraph,
 
     if (v == centroids) {
       //println("change on centroids(addedValues:" + addedValues + " removedValues:" + removedValues)
+      //We ned to do the remove before the insert because
+      for (removed <- removedValues) {
+        loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(cbls.longToInt(removed)))
+      }
+
       for (added <- addedValues) {
         val addedInt = cbls.longToInt(added)
         labelNode(addedInt,VoronoiZone(graph.nodes(addedInt),0))
         loadOrCorrectNodeIDIntoHeap(addedInt)
       }
-      for (removed <- removedValues) {
-        loadExternalBoundaryIntoHeapMarkInnerZone(graph.nodes(cbls.longToInt(removed)))
-      }
+
     } else if (v == openConditions) {
       //opening or closing edges
       //println("changed open conditions(addedValues:" + addedValues + " removedValues:" + removedValues + " oldValue:" + oldValue + " newValue:" + newValue)
@@ -284,6 +287,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
   //we can only put node with an existing under-approximated distance to the target, this only needs
   // to be checked on the source node, actually
+  //TODO: this is buggy!! we can have a competition between two voronoi zones, tie breaks are on smaller voronoi zone indice.
   private val nodeIDHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
     nodeID => nodeLabeling(cbls.longToInt(nodeID)).asInstanceOf[VoronoiZone].distance, graph.nbNodes, graph.nbNodes)
 
@@ -304,7 +308,7 @@ class VoronoiZones(graph:ConditionalGraph,
           val otherNodeID = otherNode.nodeId
           val newLabelingForOtherNode = currentNodeLabeling + edge.length
 
-          if (newLabelingForOtherNode.distance < maxDistanceToCentroid && newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
+          if (newLabelingForOtherNode.distance <= maxDistanceToCentroid && newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
             labelNode(otherNodeID,newLabelingForOtherNode)
             loadOrCorrectNodeIntoHeap(otherNode)
           }
@@ -393,6 +397,7 @@ class VoronoiZones(graph:ConditionalGraph,
     }
 
     orphanNodeOpt match {
+      case None => //no passing through centroid, nothing to do
       case Some(orphanNode) =>
         val orphanNodeID = orphanNode.nodeId
         val orphanNodeLabeling = nodeLabeling(orphanNodeID).asInstanceOf[VoronoiZone]
@@ -401,10 +406,11 @@ class VoronoiZones(graph:ConditionalGraph,
 
         markNodeUnreachableAndRemoveFromHeapIfPresent(orphanNode)
 
-
-        //we usse an iteratie approach here with explicit front
+        //we use an iterative approach here with explicit front
         // because a recursive approach did lead to stack overflow in large graphs.
         var toDevelop: QList[Node] = QList(orphanNode)
+
+        var otherReachedCentroid:SortedSet[Int] = SortedSet.empty
 
         while (toDevelop != null) {
           val currentNode = toDevelop.head
@@ -420,6 +426,12 @@ class VoronoiZones(graph:ConditionalGraph,
                   //still marking
                   markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
                   toDevelop = QList(otherNode, toDevelop)
+                }else if(centroid != centroidThrough && distance == 0 && !otherReachedCentroid.contains(centroid.nodeId)){
+                  //We are at another centroid.
+                  //this one might  be a new centroid, added by another event, so we must pass over it and continue marking
+                  otherReachedCentroid = otherReachedCentroid + centroid.nodeId
+                  toDevelop = QList(otherNode, toDevelop)
+                  loadOrCorrectNodeIDIntoHeap(otherNodeID)
                 } else {
                   //we are at another centroid, or found a path from the same centroid that does not take the closed edge.
                   loadOrCorrectNodeIDIntoHeap(otherNodeID)
@@ -428,15 +440,14 @@ class VoronoiZones(graph:ConditionalGraph,
             }
           }
         }
-
-      case None => //no passing through centroid, nothing to do
-
     }
   }
 
   private def loadExternalBoundaryIntoHeapMarkInnerZone(removedCentroid:Node){
     //performed as a DFS, non-redundant exploration, so not very costly
     //TODO: try an explicit tack to replace the recursion since there is a risk of stack overflow in large graphs.
+    var reachedNewCentroids:SortedSet[Int] = SortedSet.empty
+
     def explore(node:Node){
       for(edge <- node.incidentEdges if isEdgeOpen(edge)){
         val otherNode = edge.otherNode(node)
@@ -444,13 +455,19 @@ class VoronoiZones(graph:ConditionalGraph,
 
         nodeLabeling(otherNodeID) match{
           case VoronoiZone(centroid:Node,distance:Long) =>
-            if (centroid == removedCentroid){
+            if (centroid == removedCentroid) {
 
               markNodeUnreachableAndRemoveFromHeapIfPresent(otherNode)
 
               explore(otherNode)
+            }else if(centroid != removedCentroid && distance == 0 && !reachedNewCentroids.contains(centroid.nodeId)){
+              //this node was just inserted as a centroid, so we must pass over it and continue unmarking
+              //but only one pass over is allowed otherwise, there is an infinite loop
+              reachedNewCentroids = reachedNewCentroids + centroid.nodeId
+              loadOrCorrectNodeIDIntoHeap(otherNodeID)
+              explore(otherNode)
             } else {
-              //we are at anotherNOde
+              //we are at anotherNode related to another centroid, so this is the new boundary
               loadOrCorrectNodeIDIntoHeap(otherNodeID)
             }
           case Unreachable => ;
