@@ -1,98 +1,138 @@
 package oscar.cbls.test.unit
 
+import org.scalacheck.Gen
 import org.scalatest.{FunSuite, Matchers}
+import TestUtils._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence}
+import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
 
 import scala.util.Random
 
 
-// Test suite to handle cases that were not covered in InvariantTests
 class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
 
-  test("largestValue returns expected value"){
-    forAll((referenceArray: Array[Long]) => {
-      whenever(referenceArray.nonEmpty){
-        val seq = IntSequence(referenceArray)
-        seq.asInstanceOf[ConcreteIntSequence].largestValue.get should be(referenceArray.max)
-      }
-    })
-  }
+  test("ConcreteIntSequence : batch queries keep expected list"){
+    forAll(testBenchGen){testBench => {
+      whenever(testBench._1.size > 5){
 
-  test("smallestValue returns expected value"){
-    forAll((referenceArray: Array[Long]) => {
-      whenever(referenceArray.nonEmpty){
-        val seq = IntSequence(referenceArray)
-        seq.asInstanceOf[ConcreteIntSequence].smallestValue.get should be(referenceArray.min)
-      }
-    })
-  }
-
-  test("insertAtPosition with fast=false inserts expected elements"){
-    forAll((referenceArray: Array[Long]) => {
-      whenever(referenceArray.nonEmpty){
-
-        var seq = IntSequence(referenceArray)
-        val randomIndex = Random.nextInt(referenceArray.size)
-        val randomValue = Random.nextInt(1000)
-
-        seq = seq.insertAtPosition(randomValue,randomIndex,false)
-
-        seq.toList(randomIndex) should be (randomValue)
-      }
-    })
-  }
-
-  test("deleteAtPosition with fast=false deletes expected element"){
-    forAll((referenceList: List[Long]) => {
-      whenever(referenceList.nonEmpty){
-
+        val actionsList = testBench._2
+        val referenceList = testBench._1
         var seq = IntSequence(referenceList)
-        val randomIndex = Random.nextInt(referenceList.size)
-        seq = seq.delete(randomIndex,false)
+        var modifiedList = referenceList
 
-        seq.iterator.size should be (referenceList.size - 1)
-        // The new list is the referenceList without the item at randomIndex
-        seq.toList should be (referenceList.zipWithIndex.filter{case (e,i) => i != randomIndex}
-          .map(tuple => tuple._1))
-      }
-    })
-  }
+        for (action <- actionsList) {
+          action match {
+            case 0 =>
+              val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = false)
+              modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
 
-  test("moveAfter applies expected transformation"){
-    forAll (minSuccessful(500)) { referenceList :List[Long] => {
-      whenever(referenceList.size > 5){
+            case 1 =>
+              val (value, pos) = getRandomParametersForInsert(modifiedList)
+              seq = seq.insertAtPosition(value,pos,fast = false)
 
-        var seq = IntSequence(referenceList)
-        val (indexFrom,indexTo,destination) = getRandomParameters(referenceList)
-        seq = seq.moveAfter(indexFrom, indexTo, destination, true)
-        val flippedList = flipListManually(referenceList,indexFrom,indexTo,destination)
+              val (front, back) = modifiedList.splitAt(pos)
+              modifiedList = front ++ List(value) ++ back
 
-        seq.toList should be (flippedList)
+            case 2 =>
+              if(referenceList.nonEmpty){
+                val index= Random.nextInt(seq.size)
+                seq = seq.delete(index, fast = false)
+                modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
+              }
+
+            case 3 =>
+              seq = seq.flip(fast = false)
+              modifiedList = modifiedList.reverse
+
+            case 4 =>
+              seq = seq.regularize()
+
+            case 5 =>
+              seq = seq.commitPendingMoves
+
+            case default => {}
+          }
+        }
+        compareAllAttributes(seq, modifiedList)
+        println(seq.getClass.getCanonicalName)
       }
     }}
   }
 
-  test("regularization on sequence keeps expected values"){
-    var seq = IntSequence(0L to 100)
-    var referenceList = (0L to 100).toList
-    for(i <- 0 to 100){
-      val (indexFrom,indexTo,destination) = getRandomParameters(referenceList)
-      seq = seq.moveAfter(indexFrom, indexTo, destination, true)
-      referenceList = flipListManually(referenceList,indexFrom,indexTo,destination)
-    }
+  test("MovedIntSequence : batch queries keep expected list"){
+    forAll(testBenchGen){testBench => {
+      whenever(testBench._1.size > 5){
+        val actionsList = testBench._2
+        val referenceList = testBench._1
+        val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(referenceList)
+        var seq :IntSequence = new MovedIntSequence(IntSequence(referenceList),indexFrom,indexTo,destination,true)
+        var modifiedList = flipListManually(referenceList,indexFrom,indexTo,destination)
 
-    seq = seq.regularize()
-    seq.toList should be (referenceList)
+        for (action <- actionsList) {
+          action match {
+            case 0 =>
+              val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = false)
+              modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
+
+            case 3 =>
+              seq = seq.flip(fast = false)
+              modifiedList = modifiedList.reverse
+
+            case default => {}
+          }
+        }
+        compareAllAttributes(seq, modifiedList)
+      }
+    }}
   }
+
+  test("RemovedIntSequence : batch queries keep expected list"){
+    forAll(testBenchGen){testBench => {
+      whenever(testBench._1.size > 5){
+        val actionsList = testBench._2
+        val referenceList = testBench._1
+
+        val i = Random.nextInt(referenceList.size)
+        var seq :IntSequence = new RemovedIntSequence(IntSequence(referenceList),i)
+        var modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
+
+        for (action <- actionsList) {
+         if(modifiedList.nonEmpty){
+           val index= Random.nextInt(seq.size)
+           seq = seq.delete(index, fast = false)
+           modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
+         }
+        }
+        compareAllAttributes(seq, modifiedList)
+      }
+    }}
+  }
+
+
+  val elem = for (n <- Gen.choose(0, 100)) yield n * 4L // Sparse elements
+  val action = for (n <- Gen.choose(0, 5)) yield n
+
+  val testBenchGen = for{
+    numElems <- Gen.choose(20, 1000)
+    numActions <- Gen.choose(20, 100)
+    elems <- Gen.listOfN(numElems, elem)
+    actions <- Gen.listOfN(numActions, action)
+  } yield(elems,actions)
+}
+
+object TestUtils{
+
+  private val myTestUtils = new TestUtils()
 
   /**
     * Implements manually the moveAfter transformation (to compare with IntSequence)
-    * @param list
-    * @param indexFrom
-    * @param indexTo
-    * @param destination
-    * @return
+    * @param list The original list to swap
+    * @param indexFrom The starting index of the subsequence to flip (inclusive)
+    * @param indexTo The ending index of the subsequence to flip (inclusive)
+    * @param destination The index where the subsequence must be re-inserted (equivalent to moveAfter parameter)
+    * @return A new sequence with the proper transformation
     */
   def flipListManually(list :List[Long], indexFrom :Int, indexTo :Int, destination :Int) : List[Long] = {
 
@@ -106,21 +146,22 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
     }
     else {
       if(destination < indexFrom){
+        // Insert the flip at the left
         val part1 = start.take(destination + 1)
         val part2 = start.takeRight(indexFrom - destination - 1)
         flippedList = part1 ::: flip ::: part2 ::: end
       }
       else{
+        // Insert the flip at the right
         val part1 = end.take(destination - indexTo)
         val part2 = end.takeRight(list.size - destination - 1)
         flippedList = start ::: part1 ::: flip ::: part2
       }
     }
-
     flippedList
   }
 
-  def getRandomParameters(list :List[Long]): (Int, Int, Int) = {
+  def getRandomParametersForMoveAfter(list :List[Long]): (Int, Int, Int) = {
     val indexFrom = Random.nextInt(list.size - 1)
     val indexTo = indexFrom + Random.nextInt(list.size - indexFrom)
     var destination = -1
@@ -138,5 +179,69 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
     }
 
     (indexFrom,indexTo,destination)
+  }
+
+  def getRandomParametersForInsert(list :List[Long]) : (Long,Int) = {
+    val value = Random.nextInt(1000)
+    val position = Random.nextInt(list.size)
+    (value,position)
+  }
+
+  def compareAllAttributes(intSeq :IntSequence, list :List[Long]): Unit = myTestUtils.compare(intSeq,list)
+}
+
+class TestUtils extends FunSuite with Matchers {
+
+  def compare(intSeq :IntSequence, list: List[Long]): Unit ={
+    intSeq.size             should be (list.size)
+    intSeq.isEmpty          should be (list.isEmpty)
+    intSeq.nonEmpty         should be (list.nonEmpty)
+    intSeq.iterator.toList  should be (list.iterator.toList)
+
+    intSeq.unorderedContentNoDuplicate.sorted                 should be (list.sorted.distinct)
+    intSeq.unorderedContentNoDuplicateWithNBOccurences.sorted should be (list.sorted.distinct.map(e => (e,list.count(_ == e))))
+
+    for(i <- list.min until list.max){ // This will intentionally search for items that are not in the list
+      intSeq.nbOccurrence(i)              should be (list.count(_ == i))
+      intSeq.contains(i)                  should be (list.contains(i))
+      if(intSeq.contains(i)){
+        list(intSeq.positionOfAnyOccurrence(i).get) should be (i)
+        intSeq.positionOfFirstOccurrence(i).get     should be (list.indexOf(i))
+        intSeq.positionOfLastOccurrence(i).get      should be (list.lastIndexOf(i))
+      }
+      else{
+        intSeq.positionOfAnyOccurrence(i)   should be (None)
+        intSeq.positionOfFirstOccurrence(i) should be (None)
+        intSeq.positionOfLastOccurrence(i)  should be (None)
+      }
+    }
+
+    for(i <- list.indices){
+      val positionsOfValue = list.zipWithIndex.filter(_._1 == list(i)).map(_._2).sorted
+      intSeq.positionsOfValue(list(i)).toList.sorted      should be (positionsOfValue)
+      intSeq.positionsOfValueQ(list(i)).toList.sorted     should be (positionsOfValue)
+      intSeq.positionsOfValueSet(list(i)).toList.sorted   should be (positionsOfValue)
+      intSeq.valueAtPosition(i).get                       should be (list(i))
+
+      // Didn't find a matcher for that ...
+      list containsSlice (intSeq.iterateFromAnyOccurrenceOfValue(list(i)).toList) should be (true)
+    }
+
+    // It is way too expensive to test all index values exhaustively
+    // Instead, test with indexFrom fixed at 0 and exhaustive indexTo, then backwards
+
+    for(j <- 1 until list.size - 1){
+      val slice = list.zipWithIndex.slice(0,j+1).map{case (e,i) => (i,e)}.sorted
+      intSeq.valuesBetweenPositionsQList(0,j).toList.sorted           should be (slice.map(_._2).sorted)
+      intSeq.valuesBetweenPositionsSet(0,j).toList                    should be (slice.map(_._2).sorted.distinct)
+      intSeq.positionsBetweenFromToAndTheirValues(0,j).toList.sorted  should be (slice)
+    }
+
+    for(j <- 1 until list.size){
+      val slice = list.zipWithIndex.slice(j,list.size).map{case (e,i) => (i,e)}.sorted
+      intSeq.valuesBetweenPositionsQList(j,list.size-1).toList.sorted           should be (slice.map(_._2).sorted)
+      intSeq.valuesBetweenPositionsSet(j,list.size-1).toList                    should be (slice.map(_._2).sorted.distinct)
+      intSeq.positionsBetweenFromToAndTheirValues(j, list.size-1).toList.sorted should be (slice)
+    }
   }
 }
