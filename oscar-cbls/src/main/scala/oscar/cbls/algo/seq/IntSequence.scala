@@ -344,7 +344,6 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     }
   }
 
-  // TODO useless variable autoRework
   def insertAtPosition(value : Long, pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
 
     //println(this + ".insertAtPosition(value:" + value + " pos:" + pos + ")")
@@ -383,7 +382,6 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       startFreeRangeForInternalPosition + 1)
   }
 
-  // TODO useless variable autoRework
   def delete(pos : Int, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".delete(pos:" + pos + ")")
     require(pos < size, "deleting past the end of the sequence (size:" + size + " pos:" + pos + ")")
@@ -434,7 +432,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
       startFreeRangeForInternalPosition - 1)
   }
 
-  // TODO useless variable autoRework
+
   def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast : Boolean, autoRework : Boolean) : IntSequence = {
     //println(this + ".moveAfter(startPositionIncluded:" + startPositionIncluded + " endPositionIncluded:" + endPositionIncluded + " moveAfterPosition:" + moveAfterPosition + " flip:" + flip + ")")
     require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[ in UniqueIntSequence.moveAfter")
@@ -711,7 +709,6 @@ abstract class StackedUpdateIntSequence extends IntSequence(){
     new RemovedIntSequence(this,pos)
   }
 
-  // TODO useless variable autoRework
   override def moveAfter(startPositionIncluded : Int, endPositionIncluded : Int, moveAfterPosition : Int, flip : Boolean, fast:Boolean,autoRework:Boolean) : IntSequence = {
     require(startPositionIncluded >= 0L && startPositionIncluded < size , "startPositionIncluded=" + startPositionIncluded + " should be in [0L,size" + size + "[ in UniqueIntSequence.moveAfter")
     require(endPositionIncluded >= 0L && endPositionIncluded < size , "endPositionIncluded=" + endPositionIncluded +" should be in [0L,size"+size+"[ in UniqueIntSequence.moveAfter")
@@ -858,7 +855,7 @@ class MovedIntSequence(val seq:IntSequence,
 
   def oldPosToNewPos(oldPos : Int) :Int = {
     val tmp = MovedIntSequence.oldPosToNewPos(oldPos, startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
-    assert(tmp == localBijection.backward(oldPos), "oldPosToNewPos got " + tmp + " expected " + localBijection.backward(oldPos))
+    assert(tmp == localBijection.backward(oldPos), "oldPosToNewPos got" + tmp + " expected " + localBijection.backward(oldPos))
     tmp
   }
 

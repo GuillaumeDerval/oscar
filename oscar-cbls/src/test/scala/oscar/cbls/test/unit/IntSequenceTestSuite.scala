@@ -2,9 +2,9 @@ package oscar.cbls.test.unit
 
 import org.scalacheck.Gen
 import org.scalatest.{FunSuite, Matchers}
-import TestUtils._
+import SequenceTestUtils._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import oscar.cbls.algo.seq.{ConcreteIntSequence, IntSequence, MovedIntSequence, RemovedIntSequence}
+import oscar.cbls.algo.seq._
 
 import scala.util.Random
 
@@ -55,7 +55,6 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
           }
         }
         compareAllAttributes(seq, modifiedList)
-        println(seq.getClass.getCanonicalName)
       }
     }}
   }
@@ -99,11 +98,82 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
         var modifiedList = referenceList.take(i) ++ referenceList.drop(i+1)
 
         for (action <- actionsList) {
-         if(modifiedList.nonEmpty){
-           val index= Random.nextInt(seq.size)
-           seq = seq.delete(index, fast = false)
-           modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
-         }
+          if(modifiedList.size > 1){
+            val index= Random.nextInt(seq.size)
+            seq = seq.delete(index, fast = false)
+            modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
+          }
+        }
+        compareAllAttributes(seq, modifiedList)
+      }
+    }}
+  }
+
+  test("InsertedIntSequence : batch queries keep expected list"){
+    forAll(testBenchGen){testBench => {
+      whenever(testBench._1.size > 5){
+        val actionsList = testBench._2
+        val referenceList = testBench._1
+
+        val (value, pos) = getRandomParametersForInsert(referenceList)
+        var seq :IntSequence = new InsertedIntSequence(IntSequence(referenceList),value,pos)
+        val (front, back) = referenceList.splitAt(pos)
+        var modifiedList = front ++ List(value) ++ back
+
+        for (action <- actionsList) {
+          val (value, pos) = getRandomParametersForInsert(modifiedList)
+          seq = seq.insertAtPosition(value,pos,fast = false)
+
+          val (front, back) = modifiedList.splitAt(pos)
+          modifiedList = front ++ List(value) ++ back
+        }
+        compareAllAttributes(seq, modifiedList)
+      }
+    }}
+  }
+
+  test("Mixed IntSequence types : batch queries keep expected list"){
+    forAll(testBenchGen){testBench => {
+      whenever(testBench._1.size > 5){
+
+        val actionsList = testBench._2
+        val referenceList = testBench._1
+        var seq = IntSequence(referenceList)
+        var modifiedList = referenceList
+
+        for (action <- actionsList) {
+          action match {
+            case 0 =>
+              val (indexFrom, indexTo, destination) = getRandomParametersForMoveAfter(modifiedList)
+              seq = seq.moveAfter(indexFrom, indexTo, destination, true, fast = true)
+              modifiedList = flipListManually(modifiedList, indexFrom, indexTo, destination)
+
+            case 1 =>
+              val (value, pos) = getRandomParametersForInsert(modifiedList)
+              seq = seq.insertAtPosition(value,pos,fast = true)
+
+              val (front, back) = modifiedList.splitAt(pos)
+              modifiedList = front ++ List(value) ++ back
+
+            case 2 =>
+              if(referenceList.nonEmpty){
+                val index= Random.nextInt(seq.size)
+                seq = seq.delete(index, fast = true)
+                modifiedList = modifiedList.take(index) ++ modifiedList.drop(index+1)
+              }
+
+            case 3 =>
+              seq = seq.flip(fast = true)
+              modifiedList = modifiedList.reverse
+
+            case 4 =>
+              seq.regularizeToMaxPivot(4)
+
+            case 5 =>
+              seq = seq.commitPendingMoves
+
+            case default => {}
+          }
         }
         compareAllAttributes(seq, modifiedList)
       }
@@ -115,16 +185,16 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
   val action = for (n <- Gen.choose(0, 5)) yield n
 
   val testBenchGen = for{
-    numElems <- Gen.choose(20, 1000)
+    numElems <- Gen.choose(20, 200)
     numActions <- Gen.choose(20, 100)
     elems <- Gen.listOfN(numElems, elem)
     actions <- Gen.listOfN(numActions, action)
   } yield(elems,actions)
 }
 
-object TestUtils{
+object SequenceTestUtils{
 
-  private val myTestUtils = new TestUtils()
+  private val myTestUtils = new SequenceTestUtils()
 
   /**
     * Implements manually the moveAfter transformation (to compare with IntSequence)
@@ -190,13 +260,22 @@ object TestUtils{
   def compareAllAttributes(intSeq :IntSequence, list :List[Long]): Unit = myTestUtils.compare(intSeq,list)
 }
 
-class TestUtils extends FunSuite with Matchers {
+class SequenceTestUtils extends FunSuite with Matchers {
 
+  /**
+    * Exhaustively compares the IntSequence with a reference list, supposed to be identical
+    * @param intSeq
+    * @param list
+    */
   def compare(intSeq :IntSequence, list: List[Long]): Unit ={
     intSeq.size             should be (list.size)
     intSeq.isEmpty          should be (list.isEmpty)
     intSeq.nonEmpty         should be (list.nonEmpty)
     intSeq.iterator.toList  should be (list.iterator.toList)
+    if(intSeq.isInstanceOf[ConcreteIntSequence]){
+      intSeq.asInstanceOf[ConcreteIntSequence].largestValue.get   should be (list.max)
+      intSeq.asInstanceOf[ConcreteIntSequence].smallestValue.get  should be (list.min)
+    }
 
     intSeq.unorderedContentNoDuplicate.sorted                 should be (list.sorted.distinct)
     intSeq.unorderedContentNoDuplicateWithNBOccurences.sorted should be (list.sorted.distinct.map(e => (e,list.count(_ == e))))
