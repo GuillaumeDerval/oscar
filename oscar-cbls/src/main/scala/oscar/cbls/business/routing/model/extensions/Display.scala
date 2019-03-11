@@ -16,10 +16,9 @@ class Display(vrp: VRP,
              ) {
 
   val routingMap = RoutingMap(vrp,nodePositions, ColorGenerator.generateRandomColors(vrp.v), sizeOfMap, refreshRate,routingMapType)
-  SingleFrameWindow.show(routingMap, "Routing Map")
+  SingleFrameWindow.show(routingMap, title)
 
   def drawRoutes(force:Boolean = false): Unit ={
     routingMap.drawRoutes(force)
   }
-
 }

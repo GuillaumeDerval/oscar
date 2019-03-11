@@ -54,7 +54,7 @@ object VRPAutonomyDemo extends App {
   val hoveringPowerComsumption = 3250 //W
   val hoverintTime = 10 * 60 //seconde
   //val batteryCapacity: Int = hoveringPowerComsumption * hoverintTime //J
-  val batteryCapacity: Long = 400000000000L //J
+  val batteryCapacity: Long = 400000000000L //uJ
 
 
   /**
@@ -102,7 +102,11 @@ object VRPAutonomyDemo extends App {
 
   val penaltyForUnrouted  = 1000000000000L
 
-  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._2.toDouble,np._1.toDouble)),sizeOfMap = None, refreshRate = displayDelay)
+  val graphicExtension = display(
+    myVRP,nodesPositions.map(np => (np._2.toDouble,np._1.toDouble)),
+    sizeOfMap = None,
+    refreshRate = displayDelay,
+    title="Drone flight optimization")
 
   val unroutedPenaltyObj = Objective(penaltyForUnrouted*(n - length(myVRP.routes)))
 
@@ -122,9 +126,8 @@ object VRPAutonomyDemo extends App {
   def printVRP(): Unit = {
     println(myVRP)
     for(vehicle <- 0 until v){
-      println("energy needed for route " + vehicle + " : " + routeEnergyPerVehicle(vehicle).value + "/"+batteryCapacity + " J"
+      println("energy needed for route " + vehicle + " : " + (routeEnergyPerVehicle(vehicle).value/1000000) + "/"+(batteryCapacity/1000000) + " J"
         + " and " + routeWeightPerVehicle(vehicle).value + "0/"+maxDroneWeight + "0 g")
-
     }
   }
 
