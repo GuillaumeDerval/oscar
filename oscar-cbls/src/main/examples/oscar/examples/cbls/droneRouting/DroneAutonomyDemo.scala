@@ -25,10 +25,10 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 
 object VRPAutonomyDemo extends App {
 
-  val n = 200
-  val v = 10
+  val n = 200L
+  val v = 10L
 
-  val vehicles = 0 until v
+  val vehicles = 0L until v
 
   val displayDelay = if (n >= 1000) 1500 else 500 //ms
   val verbose = 1
@@ -46,7 +46,7 @@ object VRPAutonomyDemo extends App {
       symmetricDistanceMatrix1(a min b)(a max b)
     })})
 
-  val droppedWeights = Array.tabulate(n)(dropPerNode => 50)
+  val droppedWeights = Array.tabulate(n)(dropPerNode => 50L)
 
   val droneWeight = 1250 //dg
   val maxDroneWeight = 2250 //dg
@@ -54,7 +54,7 @@ object VRPAutonomyDemo extends App {
   val hoveringPowerComsumption = 3250 //W
   val hoverintTime = 10 * 60 //seconde
   //val batteryCapacity: Int = hoveringPowerComsumption * hoverintTime //J
-  val batteryCapacity: Int = 400000 //J
+  val batteryCapacity: Long = 400000000000L //J
 
 
   /**
@@ -64,7 +64,6 @@ object VRPAutonomyDemo extends App {
   val a: Long = 8
   val b: Long = -9504
   val c: Long = 271590000
-  val d: Long = 1000000
 
   val model = new Store()
 
@@ -79,7 +78,7 @@ object VRPAutonomyDemo extends App {
   val totalEnergy = sum(routeEnergyPerVehicle)
   val totalWeight = sum(routeWeightPerVehicle)
 
-  val auto = new AutonomyGlobalConstraint(a,b,c,d,v,symmetricDistanceMatrix,droppedWeights,droneWeight,routeEnergyPerVehicle,routeWeightPerVehicle,myVRP.routes)
+  val auto = new AutonomyGlobalConstraint(a,b,c,v,symmetricDistanceMatrix,droppedWeights,droneWeight,routeEnergyPerVehicle,routeWeightPerVehicle,myVRP.routes)
 
   val constraint = new ConstraintSystem(model)
 
@@ -101,9 +100,9 @@ object VRPAutonomyDemo extends App {
 
   constraint.close()
 
-  val penaltyForUnrouted  = 100000
+  val penaltyForUnrouted  = 1000000000000L
 
-  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._2.toDouble,np._1.toDouble)).toList,sizeOfMap = None, refreshRate = displayDelay,displayOnRealMap = false)
+  val graphicExtension = display(myVRP,nodesPositions.map(np => (np._2.toDouble,np._1.toDouble)),sizeOfMap = None, refreshRate = displayDelay)
 
   val unroutedPenaltyObj = Objective(penaltyForUnrouted*(n - length(myVRP.routes)))
 
@@ -129,10 +128,10 @@ object VRPAutonomyDemo extends App {
     }
   }
 
-  val relevantPredecessorsOfNodes = (node:Int) => myVRP.nodes
-  val closestRelevantNeighborsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes))
+  val relevantPredecessorsOfNodes = (node:Long) => myVRP.nodes
+  val closestRelevantNeighborsByDistance = DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistanceMatrix,relevantPredecessorsOfNodes)(_)
 
-  val routedPostFilter = (node:Int) => (neighbor:Int) => myVRP.isRouted(neighbor)
+  val routedPostFilter = (node:Long) => (neighbor:Long) => myVRP.isRouted(neighbor)
 
   val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
     ()=>myVRP.kFirst(10,closestRelevantNeighborsByDistance,routedPostFilter),
@@ -154,16 +153,16 @@ object VRPAutonomyDemo extends App {
 
   def vlsn(l:Int = Int.MaxValue) = {
 
-    val lClosestNeighborsByDistance: Array[SortedSet[Int]] = Array.tabulate(n)(node =>
-      SortedSet.empty[Int] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
+    val lClosestNeighborsByDistance: Array[SortedSet[Long]] = Array.tabulate(n)(node =>
+      SortedSet.empty[Long] ++ myVRP.kFirst(l, closestRelevantNeighborsByDistance)(node))
 
     //VLSN neighborhood
-    val nodeToAllVehicles = SortedMap.empty[Int, Iterable[Int]] ++ (v until n).map(node => (node, vehicles))
+    val nodeToAllVehicles = SortedMap.empty[Long, Iterable[Long]] ++ (v until n).map(node => (node, vehicles))
 
-    def routeUnroutedPointVLSN(targetVehicle: Int):Int => Neighborhood = {
+    def routeUnroutedPointVLSN(targetVehicle: Long):Long => Neighborhood = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
-      unroutedNodeToInsert:Int => {
+      unroutedNodeToInsert:Long => {
         val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(unroutedNodeToInsert) contains x)
         insertPointUnroutedFirst(
           () => List(unroutedNodeToInsert),
@@ -177,10 +176,10 @@ object VRPAutonomyDemo extends App {
     }
 
     //targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
-    def movePointVLSN(targetVehicle: Int): Int => Neighborhood = {
+    def movePointVLSN(targetVehicle: Long): Long => Neighborhood = {
       val nodesOfTargetVehicle = myVRP.getRouteOfVehicle(targetVehicle)
 
-      nodeToMove:Int => {
+      nodeToMove:Long => {
         val lNearestNodesOfTargetVehicle = nodesOfTargetVehicle.filter(x => lClosestNeighborsByDistance(nodeToMove) contains x)
         onePointMove(
           () => List(nodeToMove),
@@ -193,7 +192,7 @@ object VRPAutonomyDemo extends App {
       }
     }
 
-    def removePointVLSN(node: Int) =
+    def removePointVLSN(node: Long) =
       removePoint(
         () => List(node),
         myVRP,
@@ -213,7 +212,7 @@ object VRPAutonomyDemo extends App {
         breakSymmetry = false).afterMove(graphicExtension.drawRoutes())
     }
 
-    def removeAndReInsertVLSN(pointToRemove: Int): (() => Unit) = {
+    def removeAndReInsertVLSN(pointToRemove: Long): (() => Unit) = {
       val checkpointBeforeRemove = myVRP.routes.defineCurrentValueAsCheckpoint(true)
       require(pointToRemove >= v, "cannot remove vehicle point: " + v)
 
@@ -233,10 +232,10 @@ object VRPAutonomyDemo extends App {
 
     new VLSN(
       v,
-      () => SortedMap.empty[Int, SortedSet[Int]] ++
-        vehicles.map((vehicle: Int) =>
-          (vehicle, SortedSet.empty[Int] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v))),
-      () => SortedSet.empty[Int] ++ myVRP.unroutedNodes,
+      () => SortedMap.empty[Long, SortedSet[Long]] ++
+        vehicles.map((vehicle: Long) =>
+          (vehicle, (SortedSet.empty[Long] ++ myVRP.getRouteOfVehicle(vehicle).filter(_ >= v)))),
+      () => SortedSet.empty[Long] ++ myVRP.unroutedNodes,
       nodeToRelevantVehicles = () => nodeToAllVehicles,
 
       targetVehicleNodeToInsertNeighborhood = routeUnroutedPointVLSN,
