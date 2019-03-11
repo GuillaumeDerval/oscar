@@ -87,10 +87,8 @@ class RealRoutingMap(vrp: VRP,
     val geoCoordsList = geoCoords.toList
     val latitudes = geoCoordsList.map(_._1)
     val longitudes = geoCoordsList.map(_._2)
-    println(latitudes.min, latitudes.max, longitudes.min, longitudes.max)
     val latMiddle = (latitudes.max + latitudes.min)/2
     val lonMiddle = (longitudes.max + longitudes.min)/2
-    println(latMiddle, lonMiddle)
     new GeoPosition(latMiddle, lonMiddle)
   }
 
@@ -130,6 +128,12 @@ class RealRoutingMap(vrp: VRP,
         roads(longToInt(previousPoint)).color = color
         roads(longToInt(previousPoint)).dest = (depots(r).lat, depots(r).long)
       }
+
+      for(unroutedNode <- vrp.unroutedNodes){
+        roads(longToInt(unroutedNode)).color = Color.black
+        roads(longToInt(unroutedNode)).dest = (customers(longToInt(unroutedNode-vrp.v)).lat, customers(longToInt(unroutedNode-vrp.v)).long)
+      }
+
       lastRefresh = currentTime
     }
   }
