@@ -18,7 +18,7 @@
 package oscar.examples.cbls.wlpGraph
 
 import oscar.cbls._
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node, NodeWithIntegerCoordinates}
+import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.search.KSmallest
 import oscar.cbls.lib.invariant.graph._
@@ -35,7 +35,7 @@ import scala.collection.immutable.SortedMap
 import scala.language.postfixOps
 import scala.swing.Color
 
-object WLPGraph extends App with StopWatch{
+object WarehouseAndBridgeLocation extends App with StopWatch{
 
   //the number of warehouses
   val W:Int = 1000
@@ -49,9 +49,9 @@ object WLPGraph extends App with StopWatch{
   //nb non conditional edges
   val nbNonConditionalEdges =  (W+D)*5
 
-  val displayDelay = 100
+  val displayDelay = 1000
 
-  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
+  println("WarehouseAndBridgeLocation(W:" + W + " D:" + D + " B:" + nbConditionalEdges + ")")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -73,15 +73,13 @@ object WLPGraph extends App with StopWatch{
 
   val deliveryNodeList = QList.buildFromIterable(deliveryToNode).asInstanceOf[QList[Node]]
 
-  def distance(node1:NodeWithIntegerCoordinates,node2:NodeWithIntegerCoordinates):Int = {
-    val dx = node1.x - node2.x
-    val dy = node1.y - node2.y
-    math.sqrt(dx*dx + dy*dy).floor.toInt
-  }
+  println("start floyd")
+  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrix(graph, _ => true)
+  println("end floyd")
 
   //val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
-  val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distance(warehouseToNode(w1),warehouseToNode(w2))))
-
+  val warehouseToWarehouseDistances:Array[Array[Long]] =
+    Array.tabulate(W)(w1 => Array.tabulate(W)(w2 =>  underApproximatingDistanceInGraphAllCondtionsOpen(warehouseToNode(w1).nodeId)(warehouseToNode(w2).nodeId)))
 
   val costForOpeningWarehouse =  Array.fill[Long](W)(800)
 
@@ -113,24 +111,23 @@ object WLPGraph extends App with StopWatch{
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
 
-  val costOfPassage = 10
+  val costOfBridgesPerBridge = 7
 
-  val straigntLineDistance = (a:Int,b:Int) => distance(graph.nodeswithCoordinates(a),graph.nodeswithCoordinates(b))
 
-  val graphDistanceFloyd = {
-    println("start floyd")
-    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
-    println("end floyd")
-    (a: Int, b: Int) => {
-      underApproxDistanceMatrix(a)(b)
-    }
-  }
   val selectedDistances = Array.tabulate(20)(w =>
-    new DistanceInConditionalGraph(graph,0,w,openConditions,10000)(graphDistanceFloyd))
+    new DistanceInConditionalGraph(graph,0,w,openConditions,10000)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_)))
   val totalDistanceToWs = sum(selectedDistances)
   val x = Cardinality(openConditions)
 
-  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfPassage) + totalDistanceToWs)
+
+  val smallestCentroïd = minSet(openWarehouses,-1)
+  val biggestCentroïd = maxSet(openWarehouses,-1)
+  val distanceMinMax = new DistanceInConditionalGraphVariableNodes(graph,
+    from = smallestCentroïd,
+    to = biggestCentroïd,
+    openConditions,Int.MaxValue)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_))
+
+  val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses) + (x*costOfBridgesPerBridge) + totalDistanceToWs)// + distanceMinMax)
 
   m.close()
 
@@ -139,9 +136,9 @@ object WLPGraph extends App with StopWatch{
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
     centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
 
-  SingleFrameWindow.show(visual,title = "Warehouse and new road location")
+  SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
 
-  var bestDisplayedObj = Int.MaxValue
+  var bestDisplayedObj:Long = Int.MaxValue
 
   //this is an array, that, for each warehouse, keeps the sorted closest warehouses in a lazy way.
   val closestWarehouses = Array.tabulate(W)(warehouse =>
@@ -193,6 +190,35 @@ object WLPGraph extends App with StopWatch{
 
   println("\t" + selectedDistances.mkString("\n\t"))
 
+  def getFactorApartBridges(w1:Int,w2:Int,factor:Int):Iterable[Long] = {
+    val nodeW1 = warehouseToNode(w1)
+    val nodeW2 = warehouseToNode(w2)
+
+    val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.nodeId)(nodeW2.nodeId)
+
+    (0L until nbConditionalEdges).filter(c => {
+      val conditionalEdge = graph.conditionToConditionalEdges(c)
+      val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW1.nodeId)
+      val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW2.nodeId)
+      val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeB.nodeId)(nodeW1.nodeId)
+      val distB2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeB.nodeId)(nodeW2.nodeId)
+
+      ((distA1 + distB2) min (distA2 + distB1)) < distanceW1W2*factor
+    })
+  }
+
+  val factorForFastCombined = 2
+
+
+  println("start warehousesPairToTwiceApartBridges")
+  //we only fill half of the matrix; it is symmetric anyway, so just use the upper part
+  //Also we use a for below to enable parallelism, since this is brutal computation
+  val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] = Array.fill(W)(null)
+
+  for(w1 <- (0 until W).par){
+    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => if(w1 > w2) null else getFactorApartBridges(w1,w2,factorForFastCombined))
+  }
+  println("end warehousesPairToTwiceApartBridges")
 
   val neighborhood =(
     BestSlopeFirst(
@@ -201,10 +227,21 @@ object WLPGraph extends App with StopWatch{
         Profile(AssignNeighborhood(edgeConditionArray, "SwitchConditions")),
         Profile(SwapsNeighborhood(edgeConditionArray, "SwapConditions")),
         Profile(swapsK(20) guard(() => openWarehouses.value.size >= 5)), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditions")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
-        Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
+        Profile(swapsK(20)
+          dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
+          guard(() => openWarehouses.value.size >= 5)
+          name "fastCombined"),
+        //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
-      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => openWarehouses.value.size/5), 2, obj)
+
+      //TODO: proposer aussi maxResstart!
+      //TODO: vérifier quon restart bien du best so far.
+      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
+//      onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize2"), 2, obj, restartFromBest = true)
+
+      //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
+      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {
       bestDisplayedObj = obj.value
@@ -212,12 +249,12 @@ object WLPGraph extends App with StopWatch{
       visual.redraw(
         openConditions.value,
         openWarehouses.value,
-        trackedNodeToDistanceAndCentroid.mapValues({ case (v1, v2) => (v2.value) }),
+        trackedNodeToDistanceAndCentroid.mapValues({case (v1, v2) => v2.value}),
         hideClosedEdges = false,
-        hideRegularEdges = false,
+        hideRegularEdges = true,
         hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        selectedDistances.map(_.getPath)
+        distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList
       )
 
       lastDisplay = this.getWatch
@@ -230,12 +267,12 @@ object WLPGraph extends App with StopWatch{
   visual.redraw(
     openConditions.value,
     openWarehouses.value,
-    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => (v2.value)}),
-    hideClosedEdges = true,
+    trackedNodeToDistanceAndCentroid.mapValues({case (v1,v2) => v2.value}),
     emphasizeEdges = vor.spanningTree(deliveryNodeList),
-    hideRegularEdges = true,
+    hideClosedEdges = true,
+    hideRegularEdges = false,
     hideOpenEdges=false,
-    extraPath = selectedDistances.map(_.getPath))
+    extraPath = distanceMinMax.getPath :: selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 

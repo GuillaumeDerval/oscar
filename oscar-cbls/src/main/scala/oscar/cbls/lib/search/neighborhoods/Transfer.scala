@@ -127,7 +127,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
             //println("Delta :" + delta)
             this.delta = delta
             firstVar := oldValOfFirstVar + delta
-            secondVar := oldValOfSecondVar - (delta * factor2 / factor1)
+            secondVar := oldValOfSecondVar - ((delta * factor2) / factor1)
             val newObj = obj.value
             firstVar := oldValOfFirstVar
             secondVar := oldValOfSecondVar
@@ -166,7 +166,7 @@ case class TransferNeighborhood(vars:Array[CBLSIntVar],
     TransferMove(
       firstVar, oldValOfFirstVar, firstVarIndice,
       secondVar, oldValOfSecondVar, secondVarIndice,
-      factor1,factor2,delta:Long,
+      factor1, factor2, delta: Long,
       newObj, name)
 
   //this resets the internal state of the Neighborhood
@@ -191,7 +191,7 @@ case class TransferMove(firstVar:CBLSIntVar, oldValOfFirstVar:Long, firstVarIndi
   extends Move(objAfter, neighborhoodName){
 
   val newValOfFirstVar = oldValOfFirstVar + delta
-  val newValOfSecondVar = oldValOfSecondVar - (delta * factor2) / factor1
+  val newValOfSecondVar = oldValOfSecondVar - ((delta * factor2) / factor1)
 
   override def commit() {
     firstVar := newValOfFirstVar

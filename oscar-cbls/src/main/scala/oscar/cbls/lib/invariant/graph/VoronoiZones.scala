@@ -78,15 +78,32 @@ class VoronoiZones(graph:ConditionalGraph,
                    openConditions:SetValue,
                    centroids:SetValue,
                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,(CBLSIntVar,CBLSIntVar)],
-                   defaultDistanceForUnreachableNodes:Long)
+                   defaultDistanceForUnreachableNodes:Long,
+                   maxDistanceToCentroid:Long = Long.MaxValue)
   extends Invariant with SetNotificationTarget {
 
-
-  //TODO: maxDistanceToCentroid:Int
   require(openConditions != centroids, "something absurd in the voronoi zone declaration")
 
   //this condition is needed because we use the distance to unmark the voronoi zones whe na conditional edge is closed
   require(graph.conditionToConditionalEdges.forall(_.length >0),"all conditional edges should have length >0")
+
+  require(maxDistanceToCentroid > 0)
+
+  registerStaticAndDynamicDependency(openConditions)
+  registerStaticAndDynamicDependency(centroids)
+
+  finishInitialization()
+
+  private val trackedNodeToDistanceAndCentroid: Array[OutputLabeling] =
+    Array.tabulate(graph.nbNodes)(nodeID =>
+      trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
+        case None => null
+        case Some((distanceVar, centroidVar)) =>
+          distanceVar.setDefiningInvariant(this)
+          centroidVar.setDefiningInvariant(this)
+          OutputLabeling(distance=distanceVar,centroid = centroidVar)
+      })
+
 
   case class OutputLabeling(distance:CBLSIntVar,
                             centroid:CBLSIntVar){
@@ -120,22 +137,6 @@ class VoronoiZones(graph:ConditionalGraph,
     }
   }
 
-  //TODO: this invariant would divide its runtime by two in case of global checkpointing
-
-  registerStaticAndDynamicDependency(openConditions)
-  registerStaticAndDynamicDependency(centroids)
-
-  finishInitialization()
-
-  private val trackedNodeToDistanceAndCentroid: Array[OutputLabeling] =
-    Array.tabulate(graph.nbNodes)(nodeID =>
-      trackedNodeToDistanceAndCentroidMap.get(nodeID) match {
-        case None => null
-        case Some((distanceVar, centroidVar)) =>
-          distanceVar.setDefiningInvariant(this)
-          centroidVar.setDefiningInvariant(this)
-          OutputLabeling(distance=distanceVar,centroid = centroidVar)
-      })
 
   private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(graph.nbConditions)(false)
 
@@ -291,6 +292,8 @@ class VoronoiZones(graph:ConditionalGraph,
       val currentNode = graph.nodes(currentNodeId)
       val currentNodeLabeling = nodeLabeling(currentNodeId).asInstanceOf[VoronoiZone]
 
+      require(currentNodeLabeling.distance <= maxDistanceToCentroid)
+
       var l = currentNode.incidentEdges
       while(l != null){
         val edge = l.head
@@ -300,8 +303,7 @@ class VoronoiZones(graph:ConditionalGraph,
           val otherNodeID = otherNode.nodeId
           val newLabelingForOtherNode = currentNodeLabeling + edge.length
 
-          if (newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
-
+          if (newLabelingForOtherNode.distance < maxDistanceToCentroid && newLabelingForOtherNode < nodeLabeling(otherNodeID)) {
             labelNode(otherNodeID,newLabelingForOtherNode)
             loadOrCorrectNodeIntoHeap(otherNode)
           }

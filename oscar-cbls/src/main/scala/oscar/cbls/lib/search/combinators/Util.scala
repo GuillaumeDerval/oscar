@@ -30,7 +30,7 @@ trait UtilityCombinators{
  * @param obj the objective function
  * @author fabian.germeau@student.vinci.be
  */
-class ShowObjectiveFunction(a: Neighborhood, obj: Objective, title: String = "Objective function") extends NeighborhoodCombinator(a){
+class ShowObjectiveFunction(a: Neighborhood, obj: Objective, title: String = "Objective function vs. time[s]") extends NeighborhoodCombinator(a){
   //objGraphic is an internal frame that contains the curve itself and visualFrame is a basic frame that contains objGraphic
   val objGraphic = ObjectiveFunctionDisplay(title)
   SingleFrameWindow.show(objGraphic,title)
@@ -327,7 +327,7 @@ class Timeout(a:Neighborhood, maxDuration:Long) extends NeighborhoodCombinator(a
   * @param timePeriodInMilliSecond defines teh time period for the cut
   * @param minRelativeImprovementByCut the relative improvement over obj
   */
-class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double)
+class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovementByCut:Double,minTimeBeforeFirstCutInMilliSecond:Long)
   extends NeighborhoodCombinator(a){
 
   var bestSoFarAtPreviousCut:Long = -1
@@ -353,13 +353,13 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
 
     if(nextCutTime == -1){
       //the combinator has just been reset, so we just reinitialize it.
-      nextCutTime = currentTime + timePeriodInMilliSecond
+      nextCutTime = currentTime + (timePeriodInMilliSecond max minTimeBeforeFirstCutInMilliSecond)
       bestSoFar = initialObj
       bestSoFarAtPreviousCut = initialObj
-      println("initialize cut")
+      //println("initialize cut")
     }else if(nextCutTime < currentTime){
       //need to check for a cut
-      val relativeImprovementSincePreviousCut = (bestSoFar - bestSoFarAtPreviousCut).toDouble / bestSoFar.toDouble
+      val relativeImprovementSincePreviousCut = (bestSoFarAtPreviousCut - bestSoFar).toDouble / bestSoFar.toDouble
 
       if(relativeImprovementSincePreviousCut < minRelativeImprovementByCut){
         //we have to stop it
@@ -378,7 +378,7 @@ class CutTail(a:Neighborhood, timePeriodInMilliSecond:Long,minRelativeImprovemen
     a.getMove(obj,initialObj,acceptanceCriterion) match{
       case NoMoveFound => NoMoveFound
       case f:MoveFound =>
-        println("update best in cut")
+//        println("update best in cut")
         bestSoFar = bestSoFar min f.objAfter
         f
     }
