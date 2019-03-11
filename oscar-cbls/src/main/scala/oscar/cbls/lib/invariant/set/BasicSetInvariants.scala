@@ -501,8 +501,8 @@ case class Singleton(v: IntValue)
   finishInitialization()
 
   override def checkInternals(c: Checker) {
-    assert(this.value.size == 1L)
-    assert(this.value.head == v.value)
+    c.check(this.value.size == 1L)
+    c.check(this.value.head == v.value)
   }
 
   override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {

@@ -727,16 +727,16 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genIntSetVar(
                     nbVars: Int = 5,
                     range: Range = 0 to 100,
-                    isInput: Boolean = true) = {
+                    isInput: Boolean = true): CBLSSetVar = {
     val risVar = InvGen.randomFixedIntSetVar(nbVars, range, model).sample.get
     addVar(isInput, risVar)
     risVar.randomVar
   }
 
   /**
-   * Method for generating an array of random IntSetVar to add to the bench
-   * and to its model.
-   */
+    * Method for generating an array of random IntSetVar to add to the bench
+    * and to its model.
+    */
   def genIntSetVars(
                      nbVars: Int = 4,
                      upToSize: Int = 20,
