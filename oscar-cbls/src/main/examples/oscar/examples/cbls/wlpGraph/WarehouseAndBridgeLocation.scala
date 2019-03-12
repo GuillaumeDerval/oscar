@@ -222,8 +222,17 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   //Also we use a for below to enable parallelism, since this is brutal computation
   val warehousesPairToTwiceApartBridges:Array[Array[Iterable[Long]]] = Array.fill(W)(null)
 
+  val l = 40
+  val isAmongLNearestWarehouses:Array[Array[Boolean]] = Array.tabulate(W)(_ => Array.fill(W)(false))
   for(w1 <- (0 until W).par){
-    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => if(w1 > w2) null else getFactorApartBridges(w1,w2,factorForFastCombined))
+    for(w2 <- kNearestdWarehouses(w1,l)) {
+      isAmongLNearestWarehouses(w1)(w2) = true
+      isAmongLNearestWarehouses(w2)(w1) = true
+    }
+  }
+
+  for(w1 <- (0 until W).par){
+    warehousesPairToTwiceApartBridges(w1) = Array.tabulate(W)(w2 => if(w1 > w2 || !isAmongLNearestWarehouses(w1)(w2)) List.empty else getFactorApartBridges(w1,w2,factorForFastCombined))
   }
   println("end warehousesPairToTwiceApartBridges")
 
