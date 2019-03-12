@@ -53,12 +53,12 @@ class BasicRoutingMap(vrp: VRP,
       val position = position_node._1
       val node = position_node._2
       if(node < vrp.v){
-        val tempPoint = new VisualCircle(this,position._1.toInt,position._2.toInt,5)
+        val tempPoint = new VisualCircle(this,position._1,position._2,5.0)
         tempPoint.innerCol_$eq(colorValues(node))
         tempPoint
       }
       else{
-        val tempPoint = new VisualCircle(this,position._1.toInt,position._2.toInt,1)
+        val tempPoint = new VisualCircle(this,position._1,position._2,1.0)
         tempPoint.innerCol_$eq(Color.black)
         tempPoint
       }
@@ -91,6 +91,12 @@ class BasicRoutingMap(vrp: VRP,
         lines(longToInt(previousPoint)).outerCol_$eq(color)
         lines(longToInt(previousPoint)).dest = (points(r).getX, points(r).getY)
       }
+
+      for(unroutedNode <- vrp.unroutedNodes){
+        lines(longToInt(unroutedNode)).outerCol_$eq(Color.black)
+        lines(longToInt(unroutedNode)).dest = (points(unroutedNode).getX,points(unroutedNode).getY)
+      }
+
       lastRefresh = currentTime
     }
   }
