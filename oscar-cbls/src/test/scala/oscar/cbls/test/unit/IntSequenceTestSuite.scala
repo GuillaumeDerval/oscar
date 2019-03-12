@@ -272,9 +272,11 @@ class SequenceTestUtils extends FunSuite with Matchers {
     intSeq.isEmpty          should be (list.isEmpty)
     intSeq.nonEmpty         should be (list.nonEmpty)
     intSeq.iterator.toList  should be (list.iterator.toList)
-    if(intSeq.isInstanceOf[ConcreteIntSequence]){
-      intSeq.asInstanceOf[ConcreteIntSequence].largestValue.get   should be (list.max)
-      intSeq.asInstanceOf[ConcreteIntSequence].smallestValue.get  should be (list.min)
+    intSeq match {
+      case sequence: ConcreteIntSequence =>
+        sequence.largestValue.get should be(list.max)
+        sequence.smallestValue.get should be(list.min)
+      case _ =>
     }
 
     intSeq.unorderedContentNoDuplicate.sorted                 should be (list.sorted.distinct)
