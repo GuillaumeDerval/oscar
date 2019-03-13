@@ -6,6 +6,7 @@ package oscar.cbls.algo.graph
   */
 object FloydWarshall{
 
+  //TODO: manage the isTransit!!
   def buildDistanceMatrix(g:ConditionalGraph,
                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
     val m = buildAdjacencyMatrix(g:ConditionalGraph,

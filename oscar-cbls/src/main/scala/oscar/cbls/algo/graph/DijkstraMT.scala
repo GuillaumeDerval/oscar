@@ -54,10 +54,13 @@ class DijkstraMT(g:ConditionalGraph){
           val oldDistance = nodeToDistance(otherNodeID)
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
-            if (toDevelopHeap.contains(otherNodeID)) {
-              toDevelopHeap.notifyChange(otherNodeID)
-            } else {
-              toDevelopHeap.insert(otherNodeID)
+
+            if(otherNode.transitAlowed) {
+              if (toDevelopHeap.contains(otherNodeID)) {
+                toDevelopHeap.notifyChange(otherNodeID)
+              } else {
+                toDevelopHeap.insert(otherNodeID)
+              }
             }
           }
 
