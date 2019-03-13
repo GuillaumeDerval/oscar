@@ -43,6 +43,8 @@ class CumulativeResourceWithSetupTimes(val capacity: Long,
   }
 }
 
+//TODO: the name mapConsumingActivities mentions that is is a map(not very useful) but is not clear about what is in the map.
+//TODO: properName would be for instance activitiesToConsumedAmount
 class ConsumableResource(capacity: Long,
                          val mapConsumingActivities: Map[Int, Long]) extends ResourceConstraint {
   override def usingActivities: Iterable[Int] = mapConsumingActivities.keys
@@ -159,6 +161,9 @@ class CumulativeResourceState(base: CumulativeResource,
   }
 }
 
+//TODO: this assumes that all resoruces in the cumulative rsrouce have the same state.
+//TODO: this model seems a bit odd in view of the reality.
+//TODO: the correct model would be based on a more complex state model: timeToReleases:time -> ResourceState -> Amount
 class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTimes,
                                             mapTimeReleases: RedBlackTreeMap[Long],
                                             setupTimes: SetupTimes,
