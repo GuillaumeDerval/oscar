@@ -15,7 +15,7 @@
 
 package oscar.cbls.lib.invariant.graph
 
-import oscar.cbls.SetValue
+import oscar.cbls._
 import oscar.cbls.algo.graph._
 import oscar.cbls.core._
 import oscar.cbls.core.computation.{Domain, SetNotificationTarget}
@@ -23,28 +23,33 @@ import oscar.cbls.core.computation.{Domain, SetNotificationTarget}
 import scala.collection.immutable.SortedSet
 
 class DistanceInConditionalGraph(graph:ConditionalGraph,
-                                 from:Int,
-                                 to:Int,
+                                 from:IntValue,
+                                 to:IntValue,
                                  openConditions:SetValue,
-                                 distanceIfNotConnected:Long)
+                                 distanceIfNotConnected:Long) //must be bigger than the real distance!!
                                 (underApproximatingDistance:(Int,Int) => Long
                                  = {val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true);
                                   (a:Int,b:Int) =>{
                                     underApproxDistanceMatrix(a)(b)
                                   }})
-  extends IntInvariant(initialDomain = Domain(underApproximatingDistance(from,to) match{ case Long.MaxValue => distanceIfNotConnected case x => x} ,distanceIfNotConnected))
+  extends IntInvariant(initialDomain = Domain(0,distanceIfNotConnected))
     with VaryingDependencies
-    with SetNotificationTarget {
+    with SetNotificationTarget
+    with IntNotificationTarget {
 
   registerStaticDependency(openConditions)
-  private var key:ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
+  registerStaticAndDynamicDependency(from)
+  registerStaticAndDynamicDependency(to)
+
+  private val key: ValueWiseKey = registerDynamicValueWiseDependency(openConditions)
 
   finishInitialization()
 
   val aStar = new RevisableAStar(graph, underApproximatingDistance)
 
-  var listenedValues:SortedSet[Int] = SortedSet.empty
-  def setListenedValueOnValueWiseKey(newListenedValues:SortedSet[Int]): Unit ={
+  var listenedValues: SortedSet[Int] = SortedSet.empty
+
+  def setListenedValueOnValueWiseKey(newListenedValues: SortedSet[Int]): Unit = {
     val toRemoveValues = listenedValues -- newListenedValues
 
     toRemoveValues.foreach(k => key.removeFromKey(k))
@@ -58,38 +63,44 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
   //initialize the stuff
   scheduleForPropagation()
 
-  def getPath:RevisableDistance =  aStar.search(
-    graph.nodes(from),
-    graph.nodes(to),
-    {val o = openConditions.value; condition => o contains condition},
-    true)
+  def getPath: RevisableDistance = {
+    getRevisableDistance(withPath = true)
+  }
 
-  def computeAffectAndAdjustValueWiseKey(){
+  def getRevisableDistance(withPath: Boolean): RevisableDistance = {
+    val fromID = longToInt(from.value)
+    val toID = longToInt(to.value)
+    if (fromID == -1 || toID == -1) NeverConnected(null, null)
+    else {
+      val o = openConditions.value
+      aStar.search(
+        graph.nodes(fromID),
+        graph.nodes(toID),
+        condition => o contains condition,
+        withPath)
+    }
+  }
+
+  def computeAffectAndAdjustValueWiseKey() {
     //println("computeAffectAndAdjustValueWiseKey")
-    if(key==null) return //in this case,it will never be connected, and this was already checked.
 
-    aStar.search(
-      graph.nodes(from),
-      graph.nodes(to),
-      {val o = openConditions.value; condition => o contains condition},false)
+    getRevisableDistance(withPath = false)
+    match {
+      case d@Distance(_, _, distance: Long, requiredConditions, unlockingConditions, _) =>
+        //println("Distance")
 
-    match{
-      case d@Distance(from, to,distance:Long, requiredConditions, unlockingConditions,_) =>
-        //println("computeAffectAndAdjustValueWiseKey" + d)
         setListenedValueOnValueWiseKey(requiredConditions ++ unlockingConditions)
-
         this := distance
 
-      case n@NeverConnected(from,to) =>
-        //println("computeAffectAndAdjustValueWiseKey" + n)
-        //will only happen once at startup
+      case n@NeverConnected(_, _) =>
+        //println("NeverConnected")
+        //these two nodes will never be connected, so nothing to listen in the condition changes
 
-        key.performRemove()
-        key = null
-
+        setListenedValueOnValueWiseKey(SortedSet.empty[Int])
         this := distanceIfNotConnected
 
-      case n@NotConnected(from, to, unlockingConditions) =>
+      case n@NotConnected(_, _, unlockingConditions) =>
+        //println("NotConnected")
         //println("computeAffectAndAdjustValueWiseKey" + n)
         setListenedValueOnValueWiseKey(unlockingConditions)
 
@@ -112,8 +123,16 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
     scheduleForPropagation()
   }
 
+
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
+    //we changed the from or the to, so path recomputation is needed
+    scheduleForPropagation()
+  }
+
   override def performInvariantPropagation(): Unit = {
     //note: this will be called even if not needed simply because we have an output that requires propagation.
+
+    //TODO: check that source and dest have not changed, if we just exchanged them since last time, and nothing changed on the path, we do not need to re-compute
     computeAffectAndAdjustValueWiseKey()
   }
 
@@ -125,29 +144,41 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
     //We rely on the existing Astar, but call it twice.
 
-    val fwd = aStar.search(
-      graph.nodes(from),
-      graph.nodes(to),
-      {val o = openConditions.value; condition => o contains condition},false)
+    val fromID = longToInt(from.value)
+    val toID = longToInt(to.value)
 
-    val bwt = aStar.search(
-      graph.nodes(to),
-      graph.nodes(from),
-      {val o = openConditions.value; condition => o contains condition},false)
+    if (fromID == -1 || toID == -1) {
+      require(this.value == distanceIfNotConnected)
+    } else {
 
-    (fwd,bwt) match{
-      case (Distance(a, b,distance1, _, _,_),Distance(c, d,distance2, _, _,_)) =>
-        require(this.value == distance1)
-        require(distance1 == distance2)
+      val fwd = aStar.search(
+        graph.nodes(fromID),
+        graph.nodes(toID),
+        {
+          val o = openConditions.value; condition => o contains condition
+        }, false)
 
-      case (NeverConnected(a,b),NeverConnected(c,d)) =>
+      val bwt = aStar.search(
+        graph.nodes(toID),
+        graph.nodes(fromID),
+        {
+          val o = openConditions.value; condition => o contains condition
+        }, false)
 
-        require(this.value == distanceIfNotConnected)
+      (fwd, bwt) match {
+        case (Distance(a, b, distance1, _, _, _), Distance(c, d, distance2, _, _, _)) =>
+          require(this.value == distance1)
+          require(distance1 == distance2)
 
-      case (NotConnected(a, b, _),NotConnected(c, d, _))=>
-        //println("computeAffectAndAdjustValueWiseKey" + n)
-        require(this.value == distanceIfNotConnected)
-      case _ => throw new Error("disagreeing aStar")
+        case (NeverConnected(a, b), NeverConnected(c, d)) =>
+
+          require(this.value == distanceIfNotConnected)
+
+        case (NotConnected(a, b, _), NotConnected(c, d, _)) =>
+          //println("computeAffectAndAdjustValueWiseKey" + n)
+          require(this.value == distanceIfNotConnected)
+        case _ => throw new Error("disagreeing aStar")
+      }
     }
   }
 }

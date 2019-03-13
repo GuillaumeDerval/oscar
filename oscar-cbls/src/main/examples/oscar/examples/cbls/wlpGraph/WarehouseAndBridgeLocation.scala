@@ -129,7 +129,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val smallestCentroïd = minSet(openWarehouses,-1)
   val biggestCentroïd = maxSet(openWarehouses,-1)
-  val distanceMinMax = new DistanceInConditionalGraphVariableNodes(graph,
+  val distanceMinMax = new DistanceInConditionalGraph(graph,
     from = smallestCentroïd,
     to = biggestCentroïd,
     openConditions,Int.MaxValue)(underApproximatingDistanceInGraphAllCondtionsOpen(_)(_))

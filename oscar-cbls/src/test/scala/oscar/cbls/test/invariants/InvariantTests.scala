@@ -27,7 +27,7 @@ import oscar.cbls.lib.invariant.logic.{SetElement, _}
 import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
-import oscar.cbls.lib.invariant.graph.{DistanceInConditionalGraph, VoronoiZones}
+import oscar.cbls.lib.invariant.graph.VoronoiZones
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.test.algo.graph.RandomGraphGenerator
