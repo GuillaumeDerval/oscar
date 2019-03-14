@@ -417,7 +417,7 @@ class VoronoiZones(graph:ConditionalGraph,
                       case v:VoronoiZone if v.centroid == otherNode => true;
                       case _ => false})
                 }
-              case x => ; //it can be unreachable, no worries
+              case _ => ; //it can be unreachable, no worries
             }
           }
         }
