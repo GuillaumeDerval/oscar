@@ -5,13 +5,11 @@ package oscar.cbls.algo.graph
   * this data structure is non-directed graph, the FloydWarshall is tehrefore tuned accordignly
   */
 object FloydWarshall{
-
-  //TODO: manage the isTransit!!
   def buildDistanceMatrix(g:ConditionalGraph,
                           isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
     val m = buildAdjacencyMatrix(g:ConditionalGraph,
       isConditionalEdgeOpen:Int => Boolean)
-    saturateAdjacencyMatrixToDistanceMatrix(m)
+    saturateAdjacencyMatrixToDistanceMatrix(m,g)
     m
   }
 
@@ -84,14 +82,14 @@ object FloydWarshall{
     matrix
   }
 
-  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Long]]){
+  def saturateAdjacencyMatrixToDistanceMatrix(w:Array[Array[Long]], graph:ConditionalGraph){
     val n = w.length
 
     for (k <- 0 to n-1) {
       for (i <- (0 to n-1).par) {
         for (j <- i+1 to n-1) {
 
-          if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue) {
+          if(w(i)(k) != Long.MaxValue && w(k)(j)!= Long.MaxValue &&graph.nodes(k).transitAllowed) {
             val newDistance = w(i)(k) + w(k)(j)
             if (newDistance < w(i)(j)) {
               w(i)(j) = newDistance
