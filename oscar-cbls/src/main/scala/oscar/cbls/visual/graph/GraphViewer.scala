@@ -2,7 +2,7 @@ package oscar.cbls.visual.graph
 
 import java.awt.geom.Line2D.Double
 import java.awt.geom.Rectangle2D
-import java.awt.{BorderLayout, Color}
+import java.awt.{BorderLayout, Color, Polygon}
 
 import javax.swing.JFrame
 import oscar.cbls
@@ -103,8 +103,8 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
 
   this.setDoubleBuffered(true) //does not work.
 
-  val maxX = graph.nodeswithCoordinates.map(_.x).max
-  val maxY = graph.nodeswithCoordinates.map(_.y).max
+  val maxX = graph.coordinates.toList.map(_._1).max
+  val maxY = graph.coordinates.toList.map(_._2).max
 
   var xMultiplier = this.getWidth.toDouble / maxX.toDouble
   var yMultiplier = this.getHeight.toDouble / maxY.toDouble
@@ -143,58 +143,97 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
   def drawNodes(centroids:SortedSet[Long],
                 nodeToCentroid:SortedMap[Long,Long]): Unit ={
 
-    for(node <- graph.nodeswithCoordinates){
-      if(centroids contains node.nodeId){
+    for(nodeId <- graph.nodeRange){
+      if(centroids contains nodeId){
         //this is a centroid
-        drawNode(node:NodeWithIntegerCoordinates,centroidColor(node.nodeId),true)
+        drawNode(nodeId,centroidColor(nodeId),true,graph.nodes(nodeId).transitAllowed)
       }else{
         //this is not a centroid, check for a marked node
-        nodeToCentroid.get(node.nodeId) match{
+        nodeToCentroid.get(nodeId) match{
           case Some(centroidID) =>
             //a folowed node
             if(centroidID == -1){
               //not reacheable
-              drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
+              drawNode(nodeId,colorForUnreachableNodes,false,graph.nodes(nodeId).transitAllowed)
             }else{
               //reachable by centroidID
-              drawNode(node:NodeWithIntegerCoordinates,centroidColor(cbls.longToInt(centroidID)),false)
+              drawNode(nodeId,centroidColor(cbls.longToInt(centroidID)),false,graph.nodes(nodeId).transitAllowed)
             }
           case None =>
-          //not a marked node, set default black color, small dot
+          //not a followed node, set default black color, small dot
           //drawNode(node:NodeWithIntegerCoordinates,colorForUnreachableNodes,false)
         }
       }
     }
   }
 
-  def drawNode(node:NodeWithIntegerCoordinates,color:Color,isCentroid:Boolean) = {
+  def drawNode(nodeId:Int,color:Color,isCentroid:Boolean,isTransitAllowed:Boolean) = {
+    val nodeCoordinates = graph.coordinates(nodeId)
     if(isCentroid){
       //rectangle
       val side = 12
       val tempPoint = new VisualRectangle(this, new Rectangle2D.Double(
-        node.x * xMultiplier - side/2,
-        node.y * yMultiplier - side/2,
+        nodeCoordinates._1 * xMultiplier - side/2,
+        nodeCoordinates._2 * yMultiplier - side/2,
         side,
         side))
       tempPoint.innerCol_$eq(color)
+      tempPoint.toolTip = "Centroid" + "(id:" + nodeId + " transit:"  +isTransitAllowed + ")"
     }else {
-      //circle
-      val radius = 3
-      val tempPoint = new VisualCircle(this,
-        node.x * xMultiplier,
-        node.y * yMultiplier,
-        radius)
-      tempPoint.innerCol_$eq(color)
+      if(isTransitAllowed) {
+        //circle
+        val radius = 3
+        val tempPoint = new VisualCircle(this,
+          nodeCoordinates._1 * xMultiplier,
+          nodeCoordinates._2 * yMultiplier,
+          radius)
+
+        tempPoint.innerCol_$eq(color)
+        tempPoint.toolTip = "Node" + "(id:" + nodeId + " transit:true)"
+
+      }else {
+        //cross
+        val radius = 3
+        val lineV = new VisualLine(this, new Double(
+          nodeCoordinates._1 * xMultiplier,
+          nodeCoordinates._2 * yMultiplier + radius,
+          nodeCoordinates._1 * xMultiplier,
+          nodeCoordinates._2 * yMultiplier - radius))
+        val lineH = new VisualLine(this, new Double(
+          nodeCoordinates._1 * xMultiplier + radius,
+          nodeCoordinates._2 * yMultiplier,
+          nodeCoordinates._1 * xMultiplier - radius,
+          nodeCoordinates._2 * yMultiplier))
+
+        lineV.dashed = false
+        lineV.borderWidth = 3
+        lineV.outerCol = color
+        lineH.dashed = false
+        lineH.borderWidth = 3
+        lineH.outerCol = color
+
+        lineV.toolTip = "Node" + "(id:" + nodeId + " transit:false)"
+        lineH.toolTip = "Node" + "(id:" + nodeId + " transit:false)"
+
+        val tempPoint = new VisualCircle(this,
+          nodeCoordinates._1 * xMultiplier,
+          nodeCoordinates._2 * yMultiplier,
+          radius)
+        tempPoint.border = false
+        tempPoint.innerCol_$eq(color)
+        tempPoint.toolTip = "Node" + "(id:" + nodeId + " transit:false)"
+
+      }
     }
   }
 
-  def emphNode(node:NodeWithIntegerCoordinates,
+  def emphNode(nodeCoordinates:(Int,Int),
                color:Color) = {
     //circle
     val radius = 6
     val tempPoint = new VisualCircle(this,
-      node.x * xMultiplier,
-      node.y * yMultiplier,
+      nodeCoordinates._1 * xMultiplier,
+      nodeCoordinates._2 * yMultiplier,
       radius)
     tempPoint.innerCol_$eq(color)
   }
@@ -224,14 +263,14 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
   }
 
   def drawEdge(edge:Edge,style:Int): Unit ={
-    val fromCoord = graph.nodeswithCoordinates(edge.nodeA.nodeId)
-    val toCoord = graph.nodeswithCoordinates(edge.nodeB.nodeId)
+    val fromCoord = graph.coordinates(edge.nodeA.nodeId)
+    val toCoord = graph.coordinates(edge.nodeB.nodeId)
 
     val line = new VisualLine(this, new Double(
-      fromCoord.x * xMultiplier,
-      fromCoord.y * yMultiplier,
-      toCoord.x * xMultiplier,
-      toCoord.y * yMultiplier))
+      fromCoord._1 * xMultiplier,
+      fromCoord._2 * yMultiplier,
+      toCoord._1 * xMultiplier,
+      toCoord._2 * yMultiplier))
 
     style match{
       case 0 => //permanent edge
@@ -272,9 +311,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       path: Option[List[Edge]]) =>
 
         if(emphNodes){
-          emphNode(graph.nodeswithCoordinates(from.nodeId),
+          emphNode(graph.coordinates(from.nodeId),
             Color.orange)
-          emphNode(graph.nodeswithCoordinates(to.nodeId),
+          emphNode(graph.coordinates(to.nodeId),
             Color.orange)
         }
 
@@ -291,9 +330,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       from: Node,
       to: Node) =>
         if(emphNodes){
-          emphNode(graph.nodeswithCoordinates(from.nodeId),
+          emphNode(graph.coordinates(from.nodeId),
             Color.orange)
-          emphNode(graph.nodeswithCoordinates(to.nodeId),
+          emphNode(graph.coordinates(to.nodeId),
             Color.orange)
         }
       case NotConnected(
@@ -301,9 +340,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       to: Node,
       unlockingConditions: SortedSet[Int]) =>
         if(emphNodes){
-          emphNode(graph.nodeswithCoordinates(from.nodeId),
+          emphNode(graph.coordinates(from.nodeId),
             Color.orange)
-          emphNode(graph.nodeswithCoordinates(to.nodeId),
+          emphNode(graph.coordinates(to.nodeId),
             Color.orange)
         }
 

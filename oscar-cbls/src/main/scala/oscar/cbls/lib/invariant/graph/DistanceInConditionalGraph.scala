@@ -81,8 +81,33 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
     }
   }
 
+  var fromAtLatestComputation:Long = -1
+  var toAtLatestComputation:Long = -1
+
   def computeAffectAndAdjustValueWiseKey() {
     //println("computeAffectAndAdjustValueWiseKey")
+
+    val (a,b) =
+      if(fromAtLatestComputation<toAtLatestComputation)
+        (fromAtLatestComputation,toAtLatestComputation)
+      else (toAtLatestComputation,fromAtLatestComputation)
+
+    val fromValue = from.value
+    val toValue = to.value
+
+    val (c,d) =
+      if(fromValue < toValue) (fromValue,toValue)
+      else (toValue,fromValue)
+
+    if(a == c && b == d){
+      //We are essentially asking for the same path,
+      // maybe the values were reversed,
+      // in that case,since it is symmetric, we do nothing
+      return
+    }else{
+      fromAtLatestComputation = fromValue
+      toAtLatestComputation = toValue
+    }
 
     getRevisableDistance(withPath = false)
     match {
@@ -121,6 +146,8 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
     // when something happened to the graph
     // that requires the path to be re-computed
     scheduleForPropagation()
+
+    fromAtLatestComputation = -1 //we kil the guard on node swap to ensure computation is performed
   }
 
 
@@ -130,9 +157,6 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
   }
 
   override def performInvariantPropagation(): Unit = {
-    //note: this will be called even if not needed simply because we have an output that requires propagation.
-
-    //TODO: check that source and dest have not changed, if we just exchanged them since last time, and nothing changed on the path, we do not need to re-compute
     computeAffectAndAdjustValueWiseKey()
   }
 
