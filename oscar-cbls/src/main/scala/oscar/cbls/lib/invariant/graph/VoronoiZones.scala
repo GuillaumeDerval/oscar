@@ -227,7 +227,7 @@ class VoronoiZones(graph:ConditionalGraph,
       for (added <- addedValues) {
         val addedInt = cbls.longToInt(added)
         labelNode(addedInt,VoronoiZone(graph.nodes(addedInt),0))
-        loadOrCorrectNodeIDIntoHeap(addedInt,true)
+        loadOrCorrectNodeIDIntoHeap(addedInt,true) //centroids are force inserted
       }
 
     } else if (v == openConditions) {
@@ -286,7 +286,7 @@ class VoronoiZones(graph:ConditionalGraph,
           if (newLabelingForOtherNode.distance <= maxDistanceToCentroid
             && newLabelingForOtherNode < nodeLabeling(otherNodeID)) { //this performs a tie break on centroid ID
             labelNode(otherNodeID,newLabelingForOtherNode)
-            loadOrCorrectNodeIntoHeap(otherNode)
+            loadOrCorrectNodeIntoHeap(otherNode,false)
           }
         }
       }
@@ -314,12 +314,12 @@ class VoronoiZones(graph:ConditionalGraph,
     for (centroid <- centroids) {
       val centroidInt = cbls.longToInt(centroid)
       labelNode(centroidInt,VoronoiZone(graph.nodes(centroidInt),0))
-      loadOrCorrectNodeIDIntoHeap(centroidInt,true)
+      loadOrCorrectNodeIDIntoHeap(centroidInt,true) //Centroids are force inserted
     }
   }
 
   private def loadOrCorrectNodeIDIntoHeap(nodeID: Int, alsoLoadTransitNode:Boolean): Unit = {
-    if(alsoLoadTransitNode || graph.nodes(nodeID).transitAlowed) {
+    if(alsoLoadTransitNode || graph.nodes(nodeID).transitAllowed) {
       if (nodeIDHeap.contains(nodeID)) {
         nodeIDHeap.notifyChange(nodeID)
       } else {
@@ -335,19 +335,14 @@ class VoronoiZones(graph:ConditionalGraph,
 
   private def loadEdgeExtremitiesIntoHeapIfReachable(edge:Edge): Unit ={
     nodeLabeling(edge.nodeA.nodeId) match{
-      case _:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeA,false)
+      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeA,v.centroid == edge.nodeA)//we force insert centroid
       case _ => ;
     }
 
     nodeLabeling(edge.nodeB.nodeId) match{
-      case _:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,false)
+      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,v.centroid == edge.nodeA) //we force insert centroid
       case _ => ;
     }
-  }
-
-  private def loadEdgeExtremitiesIntoHeap(edge:Edge): Unit ={
-    loadOrCorrectNodeIntoHeap(edge.nodeA,false)
-    loadOrCorrectNodeIntoHeap(edge.nodeB,false)
   }
 
   /**
@@ -412,10 +407,15 @@ class VoronoiZones(graph:ConditionalGraph,
                   //this one might  be a new centroid, added by another event, so we must pass over it and continue marking
                   otherReachedCentroid = otherReachedCentroid + centroid.nodeId
                   toDevelop = QList(otherNode, toDevelop)
-                  loadOrCorrectNodeIDIntoHeap(otherNodeID,false)
+                  loadOrCorrectNodeIDIntoHeap(otherNodeID,true) // centroid are loaded because they must be developed.
                 } else {
-                  //we are at another centroid, or found a path from the same centroid that does not take the closed edge.
-                  loadOrCorrectNodeIDIntoHeap(otherNodeID)
+                  //we are at a node associated to another centroid
+                  // or to the same centroid that does not take the closed edge.
+                  //if this other node is a centroid, it must be force loaded
+                  loadOrCorrectNodeIDIntoHeap(otherNodeID,
+                    nodeLabeling(otherNodeID) match{
+                      case v:VoronoiZone if v.centroid == otherNode => true;
+                      case _ => false})
                 }
               case x => ; //it can be unreachable, no worries
             }
@@ -445,11 +445,15 @@ class VoronoiZones(graph:ConditionalGraph,
               //this node was just inserted as a centroid, so we must pass over it and continue unmarking
               //but only one pass over is allowed otherwise, there is an infinite loop
               reachedNewCentroids = reachedNewCentroids + centroid.nodeId
-              loadOrCorrectNodeIDIntoHeap(otherNodeID)
+              loadOrCorrectNodeIDIntoHeap(otherNodeID,true) //centroids are inserted by force; they will not be transit node since they are at position zero.
               explore(otherNode)
             } else {
               //we are at anotherNode related to another centroid, so this is the new boundary
-              loadOrCorrectNodeIDIntoHeap(otherNodeID)
+              //if this other node is a centroid, it is force inserted
+              loadOrCorrectNodeIDIntoHeap(otherNodeID,
+                nodeLabeling(otherNodeID) match{
+                  case v:VoronoiZone if v.centroid == otherNode => true;
+                  case _ => false})
             }
           case Unreachable => ;
           //we can reach an unreacable one in case two path from the removed centroid lead to the same node

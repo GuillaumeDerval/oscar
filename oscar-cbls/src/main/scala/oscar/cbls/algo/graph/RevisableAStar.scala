@@ -100,7 +100,7 @@ class RevisableAStar(graph:ConditionalGraph,
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
 
-            if(otherNode.transitAlowed) {
+            if(otherNode.transitAllowed) {
               if (toDevelopHeap.contains(otherNodeID)) {
                 //Already to explore
                 toDevelopHeap.notifyChange(otherNodeID)

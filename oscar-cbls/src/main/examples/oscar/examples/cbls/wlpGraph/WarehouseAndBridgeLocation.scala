@@ -60,6 +60,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     nbNodes=(W+D),
     nbConditionalEdges=nbConditionalEdges,
     nbNonConditionalEdges=nbNonConditionalEdges,
+    nbTransitNodes = (W+D) - 20,
     mapSide = 1000)
 
 
@@ -68,10 +69,10 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   //warehouses are numbered by nodeID from 0 to W-1
   //shops are numbered by ndeID from W to W+D-1
-  val warehouseToNode =  Array.tabulate(W)(w => graph.nodeswithCoordinates(w))
-  val deliveryToNode = Array.tabulate(D)(d => graph.nodeswithCoordinates(d + W))
+  val warehouseToNode =  Array.tabulate(W)(w => graph.nodes(w))
+  val deliveryToNode = Array.tabulate(D)(d => graph.nodes(d + W))
 
-  val deliveryNodeList = QList.buildFromIterable(deliveryToNode).asInstanceOf[QList[Node]]
+  val deliveryNodeList = QList.buildFromIterable(deliveryToNode)
 
   println("start floyd")
   val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)

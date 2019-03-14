@@ -16,6 +16,8 @@ case class ConditionalGraph(nodes:Array[Node],
                             nbConditions:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
+  val nodeRange = 0 until nbNodes
+
   val conditionToConditionalEdges:Array[Edge] = Array.fill[Edge](nbConditions)(null)
   for(edge <- edges){
     edge.conditionID match{
@@ -28,14 +30,14 @@ case class ConditionalGraph(nodes:Array[Node],
   require(conditionToConditionalEdges.forall(_ != null))
 }
 
-class ConditionalGraphWithIntegerNodeCoordinates(val nodeswithCoordinates:Array[NodeWithIntegerCoordinates],
+class ConditionalGraphWithIntegerNodeCoordinates(nodes:Array[Node],
                                                  edges:Array[Edge],
-                                                 nbConditions:Int)
-  extends ConditionalGraph(
-    nodeswithCoordinates.asInstanceOf[Array[Node]],
+                                                 nbConditions:Int,
+                                                 val coordinates:Array[(Int,Int)])
+  extends ConditionalGraph(nodes:Array[Node],
     edges:Array[Edge],
     nbConditions:Int){
-
+  require(nodes.length == coordinates.length)
 }
 
 class Edge(val edgeId:Int,
@@ -52,12 +54,7 @@ class Edge(val edgeId:Int,
   def otherNode(node:Node):Node = if(node == nodeA) nodeB else nodeA
 }
 
-
-class NodeWithIntegerCoordinates(nodeID:Int,val x:Int,val y:Int) extends Node(nodeID){
-  override def toString: String = "NodeWithIntegerCoordinates(nodeId:" + nodeId + ")"
-}
-
-class Node(val nodeId:Int, val transitAlowed:Boolean = true){
+class Node(val nodeId:Int, val transitAllowed:Boolean = true){
   var incidentEdges:QList[Edge] = null
   def registerEdge(edge:Edge) {incidentEdges = QList(edge,incidentEdges)}
 
