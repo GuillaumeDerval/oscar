@@ -69,6 +69,8 @@ object WarehouseLocationTabu extends App{
   // *the protection of the objectiveFunction
   val tabuTenure = W/5
 
+  //TODO: this does not work at all.
+
   val switchWithTabuNeighborhood = (
     AssignNeighborhood(
       warehouseOpenArray,
@@ -80,6 +82,7 @@ object WarehouseLocationTabu extends App{
       //update the tabu mechanics
     TabuArray(a.id) := It.value + tabuTenure
     It :+= 1
+      println(nonTabuWarehouses)
   })
     acceptAll()
     maxMoves W withoutImprovementOver obj

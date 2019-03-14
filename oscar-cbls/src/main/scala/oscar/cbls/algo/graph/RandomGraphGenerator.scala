@@ -1,6 +1,4 @@
-package oscar.cbls.test.algo.graph
-
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, NodeWithIntegerCoordinates}
+package oscar.cbls.algo.graph
 
 import scala.util.Random
 
@@ -8,6 +6,7 @@ object RandomGraphGenerator {
   def generatePseudoPlanarConditionalGraph(nbNodes : Int,
                                            nbConditionalEdges:Int,
                                            nbNonConditionalEdges:Int,
+                                           nbTransitNodes:Int,
                                            mapSide:Int = 1000) : ConditionalGraphWithIntegerNodeCoordinates = {
     //closest edges first
     val totalEdges = nbConditionalEdges + nbNonConditionalEdges
@@ -29,14 +28,13 @@ object RandomGraphGenerator {
 
     val scrambled = Random.shuffle(sortedDistances.take(totalEdges)).iterator
 
-    val nodeArray = Array.tabulate(nbNodes)(nodeId =>
-      new NodeWithIntegerCoordinates(
-        nodeId,
-        pointPosition(nodeId)._1,
-        pointPosition(nodeId)._2))
+    val isTransitAllowed = Random.shuffle(nodes.toList.map(i => i < nbTransitNodes)).toArray
+
+    val nodeArray = Array.tabulate(nbNodes)(nodeId => new Node(nodeId,isTransitAllowed(nodeId)))
 
     new ConditionalGraphWithIntegerNodeCoordinates(
-      nodeswithCoordinates = nodeArray,
+      coordinates = pointPosition,
+      nodes = nodeArray,
       edges = Array.tabulate(nbConditionalEdges + nbNonConditionalEdges)(edgeId => {
         val edgeData = scrambled.next
         new Edge(
@@ -47,6 +45,6 @@ object RandomGraphGenerator {
           conditionID = if(edgeId < nbConditionalEdges) Some(edgeId) else None
         )
       }),
-    nbConditionalEdges)
+      nbConditions = nbConditionalEdges)
   }
 }

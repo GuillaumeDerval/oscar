@@ -28,6 +28,10 @@ case class NotConnected(from:Node,
 class RevisableAStar(graph:ConditionalGraph,
                      underApproximatingDistance:(Int,Int) => Long){
 
+  //TODO: speed up if we know, beside the under approximating distance, that the approximation is exact (ie: no conditional edge on the shortest path)
+  //then either the search can be stopped andthe distance is just added and returned
+  //or the path can be computed faster, given that we know the approximation is exact.
+
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
 
   def search(from:Node,
@@ -73,9 +77,10 @@ class RevisableAStar(graph:ConditionalGraph,
         val toReturn = extractAnswerFromFinishedSearch(
           from:Node,
           to:Node,
-          _ match{
+          {
             case None => true
-            case Some(c) => isConditionalEdgeOpen(c)},
+            case Some(c) => isConditionalEdgeOpen(c)
+          },
           nodeToDistance:Array[Long],
           pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to.nodeId,nodeToDistance(to.nodeId)),
           includePath)
@@ -94,12 +99,22 @@ class RevisableAStar(graph:ConditionalGraph,
           val newDistance = currentNodeDistance + outgoingEdge.length
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
-            if (toDevelopHeap.contains(otherNodeID)) {
-              //Already to explore
-              toDevelopHeap.notifyChange(otherNodeID)
-            } else {
-              reachedNodeIDs = QList(otherNodeID, reachedNodeIDs)
-              toDevelopHeap.insert(otherNodeID)
+
+            if(otherNode.transitAllowed) {
+              if (toDevelopHeap.contains(otherNodeID)) {
+                //Already to explore
+                toDevelopHeap.notifyChange(otherNodeID)
+              } else {
+                reachedNodeIDs = QList(otherNodeID, reachedNodeIDs)
+                toDevelopHeap.insert(otherNodeID)
+              }
+            }else{
+              // transit is not allowed, so we'v already updated the distance,
+              // ensure the node is to be cleaned upon next call.
+              // the only node where this is relevant is the target node.
+              if(oldDistance == Long.MaxValue) {
+                reachedNodeIDs = QList(otherNodeID, reachedNodeIDs)
+              }
             }
           }
 
