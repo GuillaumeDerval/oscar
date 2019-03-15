@@ -26,9 +26,9 @@ object VRPDemo extends App {
 
   println("usage: VRPDemo n v")
   //val n:Long=args(0).toLong
-  val n = 2000L
+  val n = 100L
   //val v = args(1).toLong
-  val v = 10L
+  val v = 4L
 
   val displayDelay = 100 //ms
   val verbose = 1

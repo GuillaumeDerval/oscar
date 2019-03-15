@@ -15,7 +15,7 @@ import oscar.cbls._
   * @tparam T type of pre-computes used by the invariant
   * @tparam U type of the output of the invariant
   */
-abstract class GlobalConstraintDefinition[@specialized(Long) T : Manifest, @specialized(Long) U:Manifest](routes: ChangingSeqValue, v: Int)
+abstract class GlobalConstraintDefinition[T : Manifest, U:Manifest](routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
 
   val n = routes.maxValue+1L

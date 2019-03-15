@@ -29,13 +29,16 @@ trait RoutingExtensions {
     * Your routing problem can be displayed on a real map or a simple map
     * (blank frame with dots at there respective position)
     *
-    * To use it after. Add this at the end of your search procedure : afterMove(myDisplayObject.drawRoutes())
+    * For an ultimate refresh add this at the end of your search procedure : afterMove(myDisplayObject.drawRoutes())
     *
     * @param vrp The basic vehicle routing problem
     * @param nodePositions A list of node's position. nodePosition(0L) represent the position of the first node
     * @param sizeOfMap The size of your map
     * @param refreshRate The refresh rate (be carefull if the refresh rate is to high you may have greate performance issues
     * @param routingMapType The type of map you want to generate
+    * @param toolTipInfo A function node => String used to display some information concerning the node.
+    *                    NOTE : Basic information is already given :
+    *                        "Node " + node + " at the " + position + "th position of the vehicle " + vehicle + "\n"
     * @return A display object
     */
   def display(vrp: VRP,
@@ -43,9 +46,10 @@ trait RoutingExtensions {
               sizeOfMap: Option[Long] = None,
               refreshRate: Long = 100L,
               routingMapType: RoutingMapTypes.Value = RoutingMapTypes.BasicRoutingMap,
+              toolTipInfo: Option[Int => Option[String]] = None,
               title:String = "VRP with OscaR.cbls"
              ) =
-    new Display(vrp,nodePositions,sizeOfMap,refreshRate,routingMapType,title)
+    new Display(vrp,nodePositions,sizeOfMap,refreshRate,toolTipInfo, routingMapType,title)
   type Display = oscar.cbls.business.routing.model.extensions.Display
 
 
