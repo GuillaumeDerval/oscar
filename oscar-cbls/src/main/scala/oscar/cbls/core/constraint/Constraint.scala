@@ -113,5 +113,6 @@ trait Constraint{
     for (vv <- v){registerConstrainedVariable(vv)}
   }
 
+  //TODO this is never called
   def checkInternals(c: Checker) {}
 }

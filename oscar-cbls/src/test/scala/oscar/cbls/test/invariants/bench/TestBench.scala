@@ -19,6 +19,7 @@ import org.scalacheck.{Gen, Prop}
 import org.scalatest.prop.Checkers
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
+import sun.plugin.dom.exception.InvalidStateException
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
@@ -817,34 +818,36 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   }
 
   /**
-   * This method runs the bench.
-   */
-  def run() = {
+    * This method runs the bench
+    * @param c Some constraints (that are not inserted in the propagation graph) but that will have to have their
+    *          internals checked after the propagation.
+    * @return
+    */
+  def run(c :Constraint*) = {
     model.close()
-    //println("Model closed")
     model.propagate()
 
-    try {
-      property = org.scalacheck.Prop.forAll(move) {
-        randomMove: Move =>
-          if (verbose > 0) {
-            println("---------------------------------------------------")
-            printVars("Input", inputVars)
-            printVars("Output", outputVars)
-            print(randomMove.toString + " ")
-          }
-          val randomVar = Gen.oneOf(inputVars).sample.get
-          if (verbose > 0) print(randomVar.toString() + " => ")
-          randomVar.move(randomMove)
-          if (verbose > 0) println(randomVar.toString() + "\n")
-          model.propagate()
-          if (verbose > 0) println
-          checker.isChecked()
-      }
-    } catch {
-      case e: Exception =>
-        println("Exception caught: " + e)
+    property = org.scalacheck.Prop.forAll(move) {
+      randomMove: Move =>
+        if (verbose > 0) {
+          println("---------------------------------------------------")
+          printVars("Input", inputVars)
+          printVars("Output", outputVars)
+          print(randomMove.toString + " ")
+        }
+        val randomVar = Gen.oneOf(inputVars).sample.get
+        if (verbose > 0) print(randomVar.toString() + " => ")
+        randomVar.move(randomMove)
+        if (verbose > 0) println(randomVar.toString() + "\n")
+        model.propagate()                       //Will check the propagation elements
+        c.foreach(_.checkInternals(checker))    //Will check the constraints
+        if (verbose > 0) println
+
+        //Assertion implicitly used by scalaTest
+        checker.isChecked()
     }
-    Checkers.check(property)
+
+    Checkers.check(property)            // All checkInternals() are true
+    Checkers.check(!checker.firstCheck) // The checker has been called at least once
   }
 }
