@@ -354,12 +354,14 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
   val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
   def addToKey(value:Long) {
+    if(!(minValue <= value  && value <= maxValue)) return
     val intValue = cbls.longToInt(value)
     require(valueToKeyArray(intValue) == null)
     valueToKeyArray(intValue) = setValue.addToValueWiseKeys(this,intValue)
   }
 
   def removeFromKey(value:Long){
+    if(!(minValue <= value  && value <= maxValue)) return
     val intValue = cbls.longToInt(value)
     val k = valueToKeyArray(intValue)
     k.delete()
