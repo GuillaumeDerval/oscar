@@ -5,20 +5,28 @@ import oscar.cbls.algo.quick.QList
 import scala.collection.immutable.SortedSet
 
 abstract sealed class RevisableDistance(from:Node,
-                                        to:Node)
+                                        to:Node){
+  def conditionsForRevisions:Iterable[Int]
+}
 
 case class Distance(from:Node,
                     to:Node,
                     distance:Long,
                     requiredConditions:SortedSet[Int],
                     unlockingConditions:SortedSet[Int],
-                    path:Option[List[Edge]]) extends RevisableDistance(from,to)
+                    path:Option[List[Edge]]) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = requiredConditions ++ unlockingConditions
+}
 
-case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to)
+case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = Nil
+}
 
 case class NotConnected(from:Node,
                         to:Node,
-                        unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to)
+                        unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to){
+  override def conditionsForRevisions: Iterable[Int] = unlockingConditions
+}
 
 /**
   *
