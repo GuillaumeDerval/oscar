@@ -22,12 +22,13 @@ object RoutingMap{
             vehiclesToColor: Array[Color],
             size: Option[Long],
             resfreshRate: Long,
+            toolTipInfo: Option[Int => Option[String]],
             routingMapType: RoutingMapTypes.Value): JPanel with RoutingMapTrait ={
     routingMapType match{
       case RoutingMapTypes.BasicRoutingMap =>
-        new BasicRoutingMap(vrp,nodesPositions,vehiclesToColor,size,resfreshRate)
+        new BasicRoutingMap(vrp,nodesPositions,vehiclesToColor,size,resfreshRate,toolTipInfo)
       case RoutingMapTypes.RealRoutingMap =>
-        new RealRoutingMap(vrp,nodesPositions,vehiclesToColor,resfreshRate)
+        new RealRoutingMap(vrp,nodesPositions,vehiclesToColor,resfreshRate,toolTipInfo)
     }
   }
 }

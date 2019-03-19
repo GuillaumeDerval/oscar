@@ -17,7 +17,7 @@ class BasicSaveBest(a: Neighborhood, o: Objective, alsoSaveOnExhaust:Boolean = f
   protected val s = o.model
 
   require(s != null, "you are using an objective function that has no attached model, so "
-    + this.getClass.getSimpleName + " cannot save the model; pass it explicitely to the Objective creation to solve this issue")
+    + this.getClass.getSimpleName + " cannot save the model; pass it explicitly to the Objective creation to solve this issue")
 
   protected var myBestObj = if (currentSolutionIsAcceptable) o.value else Long.MaxValue
   protected var best = if (currentSolutionIsAcceptable) s.solution() else null
