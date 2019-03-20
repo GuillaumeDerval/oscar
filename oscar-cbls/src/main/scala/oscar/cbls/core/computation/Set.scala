@@ -340,8 +340,8 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
 
   def performRemove(){
     //remove all values in the focus of this key
-    for(i <- valueToKeyArray){
-      if(i != null) i.delete()
+    for(i <- valueToKey.values){
+       i.delete()
     }
     originalKey.performRemove()
   }
@@ -349,21 +349,20 @@ class ValueWiseKey(originalKey:KeyForElementRemoval,setValue:ChangingSetValue,va
   val minValue:Long = setValue.min
   val maxValue:Long = setValue.max
 
-  //var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
-
-  val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
+  var valueToKey:RedBlackTreeMap[DLLStorageElement[ValueWiseKey]] = RedBlackTreeMap.empty
+  //val valueToKeyArray = Array.fill[DLLStorageElement[ValueWiseKey]](sizeOfSet)(null)
 
   def addToKey(value:Long) {
     val intValue = cbls.longToInt(value)
-    require(valueToKeyArray(intValue) == null)
-    valueToKeyArray(intValue) = setValue.addToValueWiseKeys(this,intValue)
+    require(!valueToKey.contains(intValue))
+    valueToKey = valueToKey.insert(intValue,setValue.addToValueWiseKeys(this,intValue))
   }
 
   def removeFromKey(value:Long){
     val intValue = cbls.longToInt(value)
-    val k = valueToKeyArray(intValue)
+    val k = valueToKey.get(intValue).get
     k.delete()
-    valueToKeyArray(intValue) = null
+    valueToKey = valueToKey.remove(intValue)
   }
 }
 
