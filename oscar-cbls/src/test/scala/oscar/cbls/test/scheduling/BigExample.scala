@@ -21,6 +21,7 @@ object BigExample {
   val minSetupTimeRM = 0L
   val maxSetupTimeRM = 25L
   val densityPrecedencies = 5
+  val densityMultiResources = 50
   // Random Generator
   val randomGen = new Random()
 
@@ -74,6 +75,8 @@ object BigExample {
       val setupTimes = SetupTimes(initialMode, mapRMs, mapSetupTimes)
       if (resCap == 1L) {
         new DisjunctiveResourceWithSetupTimes(mapUsedCaps.keys, setupTimes)
+      } else if (randomBoolean(densityMultiResources)) {
+        new CumulativeMultiResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
       } else {
         new CumulativeResourceWithSetupTimes(resCap, mapUsedCaps, setupTimes)
       }
