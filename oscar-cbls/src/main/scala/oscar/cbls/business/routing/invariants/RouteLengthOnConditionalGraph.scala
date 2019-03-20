@@ -1,5 +1,6 @@
 package oscar.cbls.business.routing.invariants
 
+import oscar.cbls
 import oscar.cbls._
 import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 import oscar.cbls.core._
@@ -20,9 +21,15 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
                                     distance:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
+  require(v == distance.length)
+
+  warning(
+    openConditions.min == 0 && openConditions.max == graph.nbConditions-1,
+    "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph")
+
   val nbConditions = graph.nbConditions
 
-  registerStaticDependency(openConditions) //no dynamic since we will use value-wise keys on each hop.
+  registerStaticAndDynamicDependency(openConditions)
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
   for(i <- distance) i.setDefiningInvariant(this)
@@ -63,7 +70,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     toReturn
   }
 
-  def freeAstarId(id:Int):Unit = {
+  def freeAStarId(id:Int):Unit = {
     availableAstarIDs = QList(id,availableAstarIDs)
   }
 
@@ -109,7 +116,6 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     }
     toReturn
   }
-
 
   //this is an internal value-wise mechanism.
   val valueToAStarInfos:Array[DoublyLinkedList[AStarInfo]] = Array.fill(nbConditions)(new DoublyLinkedList[AStarInfo])
