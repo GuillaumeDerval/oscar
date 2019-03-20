@@ -60,7 +60,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     nbNodes=(W+D),
     nbConditionalEdges=nbConditionalEdges,
     nbNonConditionalEdges=nbNonConditionalEdges,
-    nbTransitNodes = (W+D) - 20,
+    nbTransitNodes = (W+D) - 50,
     mapSide = 1000)
 
 

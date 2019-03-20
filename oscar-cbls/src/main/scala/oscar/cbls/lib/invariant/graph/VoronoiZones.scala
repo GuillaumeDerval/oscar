@@ -18,8 +18,8 @@ package oscar.cbls.lib.invariant.graph
 import oscar.cbls
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
+import oscar.cbls.core.Checker
 import oscar.cbls.core.computation._
-import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.Filter
 import oscar.cbls.lib.invariant.set.SetMap
 import oscar.cbls.{CBLSIntVar, Domain, SetValue}
@@ -340,7 +340,7 @@ class VoronoiZones(graph:ConditionalGraph,
     }
 
     nodeLabeling(edge.nodeB.nodeId) match{
-      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,v.centroid == edge.nodeA) //we force insert centroid
+      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,v.centroid == edge.nodeB) //we force insert centroid
       case _ => ;
     }
   }
@@ -482,6 +482,7 @@ class VoronoiZones(graph:ConditionalGraph,
         isConditionalEdgeOpen)
 
       val incremental = nodeLabeling(node.nodeId)
+
       require(fromScratch equals incremental, "node:" + node + " incremental:" + incremental + " fromScratch:" + fromScratch)
     }
 
