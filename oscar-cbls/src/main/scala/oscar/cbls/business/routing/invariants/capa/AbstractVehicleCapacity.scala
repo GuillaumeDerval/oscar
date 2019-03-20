@@ -22,21 +22,21 @@ import oscar.cbls.business.routing.model.{ConcreteVehicleLocation, VehicleLocati
 import oscar.cbls._
 
 /**
- * Maintains the content of vehicles at each node and the starting position of each vehicle
- * @param n The maximum number of nodes
- * @param v The number of vehicles
- */
+  * Maintains the content of vehicles at each node and the starting position of each vehicle
+  * @param n The maximum number of nodes
+  * @param v The number of vehicles
+  */
 abstract class AbstractVehicleCapacity(n:Int,
                                        v:Int) extends Invariant{
 
   /**
-   * we only require that zoneStart is <= list.head._2 if exists
-   * @param zoneStart
-   * @param zoneEnd
-   * @param list
-   * @return
-   * @author renaud.delandtsheer@cetic.be
-   */
+    * we only require that zoneStart is <= list.head._2 if exists
+    * @param zoneStart
+    * @param zoneEnd
+    * @param list
+    * @return
+    * @author renaud.delandtsheer@cetic.be
+    */
   protected def smartPrepend(zoneStart: Long, zoneEnd:Long, list:List[(Long,Long)]): List[(Long,Long)] = {
     require(zoneStart >=0L)
     require(zoneEnd >=0L)
@@ -101,6 +101,57 @@ abstract class AbstractVehicleCapacity(n:Int,
     val zoneOFVehicleAfterInsert = addInsertionIntoZonesToUpdate(zoneOfVehicleBeforeInsert)
 
     zoneToUpdate.insert(vehicleOfInsert, zoneOFVehicleAfterInsert)
+  }
+
+  /**
+    * this method is for invariant that have other input than the sequence.
+    * for instance, a node to node distance based on a conditional distance in a graph.
+    * Ths conditional distance in the graph depends on other things than the sequence, hence,
+    * some hops might be modified without any changes in the sequence.
+    * @param zoneToUpdate the zones to update
+    * @param posToRecompute the position where a change has occurred, which must therefore be included in the refresh iterations.
+    * @param sequence the sequence (same before and after, because this is for changes that do not affect the sequence)
+    * @param vehicleLocation the vehicle location
+    * @return the zones to update
+    */
+  def updateZoneToUpdateWithNewPointToUpdate(zoneToUpdate: RedBlackTreeMap[List[(Long, Long)]],
+                                             posToRecompute:Long,
+                                             sequence:IntSequence,
+                                             vehicleLocation:VehicleLocation):RedBlackTreeMap[List[(Long, Long)]] = {
+
+    if (zoneToUpdate == null) return null
+    val vehicle = vehicleLocation.vehicleReachingPosition(posToRecompute)
+    val startPosOfVehicle = vehicleLocation.startPosOfVehicle(vehicle)
+    val relativePosToRecompute = posToRecompute - startPosOfVehicle
+
+    val shouldNextNodeBeIncluded = sequence.valueAtPosition(posToRecompute) match {
+      case Some(x) if x >= v => true
+      case _ => false
+    }
+
+    def addPositionIntoZonesToUpdate(zonesToUpdate:List[(Long,Long)]):List[(Long,Long)] = {
+      zonesToUpdate match {
+        case Nil =>
+          List((relativePosToRecompute, if(shouldNextNodeBeIncluded) relativePosToRecompute+1L else relativePosToRecompute))
+        case (startZone, endZone) :: tail =>
+
+          if(relativePosToRecompute < startZone){
+            //insert before, the zone
+            //shift zonesToUpdate, and smartPrepend (in case the touch)
+            smartPrepend(relativePosToRecompute,relativePosToRecompute+1L,zonesToUpdate)
+          }else{
+            if(relativePosToRecompute <= endZone){
+              (startZone,endZone+1L)::tail
+            }else{
+              smartPrepend(startZone,endZone,addPositionIntoZonesToUpdate(tail))
+            }
+          }
+      }
+    }
+    val zoneOfVehicleBeforeInsert = zoneToUpdate.getOrElse(vehicle, List.empty[(Long, Long)])
+    val zoneOFVehicleAfterInsert = addPositionIntoZonesToUpdate(zoneOfVehicleBeforeInsert)
+
+    zoneToUpdate.insert(vehicle, zoneOFVehicleAfterInsert)
   }
 
 
@@ -181,13 +232,13 @@ abstract class AbstractVehicleCapacity(n:Int,
   }
 
   /**
-   * Updates vehicles starting positions and list zones of position of nodes which content have to be updated after the move
-   * @param zonesToUpdate
-   * @param m
-   * @param sequenceBeforeMove
-   * @param vehicleLocationBeforeMove
-   * @return
-   */
+    * Updates vehicles starting positions and list zones of position of nodes which content have to be updated after the move
+    * @param zonesToUpdate
+    * @param m
+    * @param sequenceBeforeMove
+    * @param vehicleLocationBeforeMove
+    * @return
+    */
   def updateZoneToUpdateAfterMove(zonesToUpdate: RedBlackTreeMap[List[(Long, Long)]],
                                   m:SeqUpdateMove,
                                   sequenceBeforeMove:IntSequence,
@@ -227,14 +278,14 @@ abstract class AbstractVehicleCapacity(n:Int,
       }
 
       /**
-       * @param listOfZonesForVehicle the list of zones to update on vehicleFrom
-       * @return (cleanedList,removedList)
-       *         cleanedList: the list of zones where the subsequence of the move has been removed.
-       *         An additional zone of size 1L is added after the removed subsequence
-       *         removedList: and the list of zones that are within the moved subsequence,
-       *         not including the first position in this segment unless covered by zone in the input.
-       *         These removed zones are re-computed to be relative to the subsequence start.
-       */
+        * @param listOfZonesForVehicle the list of zones to update on vehicleFrom
+        * @return (cleanedList,removedList)
+        *         cleanedList: the list of zones where the subsequence of the move has been removed.
+        *         An additional zone of size 1L is added after the removed subsequence
+        *         removedList: and the list of zones that are within the moved subsequence,
+        *         not including the first position in this segment unless covered by zone in the input.
+        *         These removed zones are re-computed to be relative to the subsequence start.
+        */
       def removeMovedZoneFromZonesToUpdate(listOfZonesForVehicle : List[(Long, Long)]) : (List[(Long, Long)], List[(Long, Long)]) = {
         listOfZonesForVehicle match {
           case Nil =>
@@ -306,7 +357,7 @@ abstract class AbstractVehicleCapacity(n:Int,
       //building the sequence to insert back. also adding a compulsory zone at start of this zone (since its pred has changed)
       val relativeZonesToInsert =
         if (m.flip) List((0L, nbPointsInMovedSegment - 1L))
-         else smartPrepend(0L, 0L, removedZones)
+        else smartPrepend(0L, 0L, removedZones)
 
       //println("shouldNextNodeBeIncludedInVehicleTo:" + shouldNextNodeBeIncludedInVehicleTo)
       //println("relativeZonesToInsert:" + relativeZonesToInsert)
@@ -418,29 +469,29 @@ abstract class AbstractVehicleCapacity(n:Int,
   def setNodesUnrouted(unroutedNodes:Iterable[Long])
 
   /**
-   *
-   * @param prevNode
-   * @param node
-   * @return true if changed, false otherwise
-   */
+    *
+    * @param prevNode
+    * @param node
+    * @return true if changed, false otherwise
+    */
   def setVehicleContentAtNode(prevNode:Long, node: Long):Boolean
 
   def setVehicleContentAtEnd(vehicle:Long, lastNode:Long)
 
   /**
-   *
-   * @param vehicle
-   * @return true if changed, false otherwise
-   */
+    *
+    * @param vehicle
+    * @return true if changed, false otherwise
+    */
   def setVehicleContentAtStart(vehicle:Long):Boolean
 
 
   /**
-   * updates the output, based on the zones to updata, for all vehicles
-   * @param s
-   * @param vehiclesToZonesToUpdate
-   * @param vehicleLocationInSequence
-   */
+    * updates the output, based on the zones to updata, for all vehicles
+    * @param s
+    * @param vehiclesToZonesToUpdate
+    * @param vehicleLocationInSequence
+    */
   protected def updateVehicleContentOnAllVehicle(s:IntSequence,
                                                  vehiclesToZonesToUpdate: RedBlackTreeMap[List[(Long, Long)]],
                                                  vehicleLocationInSequence:VehicleLocation){
@@ -475,15 +526,15 @@ abstract class AbstractVehicleCapacity(n:Int,
   }
 
   /**
-   * performs the update of vehicle content on the mentioned vehicle
-   * beware, this does not update the contentAtVehicleEnd; you must do it somewhere else.
-   * @param s the sequence
-   * @param sortedZonesToUpdateRelativeToVehicleStartPosition a sorted lsit of non-overlapping intervals wit hthe relative positions to update
-   * @param startPositionOfVehicle the start position o he vehicle to update
-   * @param vehicle the vehicle to update
-   * @param explorerToLatestUpdatedPosition an explorer to the latest position that was updated
-   * @return the last position that was updated
-   */
+    * performs the update of vehicle content on the mentioned vehicle
+    * beware, this does not update the contentAtVehicleEnd; you must do it somewhere else.
+    * @param s the sequence
+    * @param sortedZonesToUpdateRelativeToVehicleStartPosition a sorted lsit of non-overlapping intervals wit hthe relative positions to update
+    * @param startPositionOfVehicle the start position o he vehicle to update
+    * @param vehicle the vehicle to update
+    * @param explorerToLatestUpdatedPosition an explorer to the latest position that was updated
+    * @return the last position that was updated
+    */
   private def updateVehicleContent(s:IntSequence,
                                    sortedZonesToUpdateRelativeToVehicleStartPosition: List[(Long, Long)],
                                    startPositionOfVehicle:Long,
@@ -553,11 +604,11 @@ abstract class AbstractVehicleCapacity(n:Int,
   }
 
   /**
-   * @param previousUpdatedPosition
-   * @param endCompulsoryAbsolute
-   * @param vehicle the vehicle to which this belongs
-   * @return the last position where an update was performed
-   */
+    * @param previousUpdatedPosition
+    * @param endCompulsoryAbsolute
+    * @param vehicle the vehicle to which this belongs
+    * @return the last position where an update was performed
+    */
   private def updateUntilAbsolutePositionAndSaturatedOrVehicleEnd(previousUpdatedPosition:IntSequenceExplorer,
                                                                   endCompulsoryAbsolute:Long,
                                                                   vehicle:Long):Option[IntSequenceExplorer] = {
@@ -586,10 +637,10 @@ abstract class AbstractVehicleCapacity(n:Int,
   }
 
   /**
-   *Computes content of vehicle and their starting position from scratch
-   * @param s the sequence
-   * @return (VehicleLocation)
-   */
+    *Computes content of vehicle and their starting position from scratch
+    * @param s the sequence
+    * @return (VehicleLocation)
+    */
   def computeAndAffectContentAndVehicleStartPositionsFromScratch(s:IntSequence,unrouteAllNodes:Boolean):(ConcreteVehicleLocation) = {
     val vehicleLocation = Array.fill(v)(0)
 
@@ -628,10 +679,10 @@ abstract class AbstractVehicleCapacity(n:Int,
 
 object AbstractVehicleCapacity{
   /**
-   *Computes content of vehicle and their starting position from scratch
-   * @param s the sequence
-   * @return (nodeToContent,vehicleToContentAtEnd,vehicleLocation)
-   */
+    *Computes content of vehicle and their starting position from scratch
+    * @param s the sequence
+    * @return (nodeToContent,vehicleToContentAtEnd,vehicleLocation)
+    */
   def computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch[T]
   (n:Int,
    v:Int,

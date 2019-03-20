@@ -263,8 +263,8 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
   }
 
   def drawEdge(edge:Edge,style:Int): Unit ={
-    val fromCoord = graph.coordinates(edge.nodeA.nodeId)
-    val toCoord = graph.coordinates(edge.nodeB.nodeId)
+    val fromCoord = graph.coordinates(edge.nodeIDA)
+    val toCoord = graph.coordinates(edge.nodeB.id)
 
     val line = new VisualLine(this, new Double(
       fromCoord._1 * xMultiplier,
@@ -311,9 +311,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       path: Option[List[Edge]]) =>
 
         if(emphNodes){
-          emphNode(graph.coordinates(from.nodeId),
+          emphNode(graph.coordinates(from.id),
             Color.orange)
-          emphNode(graph.coordinates(to.nodeId),
+          emphNode(graph.coordinates(to.id),
             Color.orange)
         }
 
@@ -330,9 +330,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       from: Node,
       to: Node) =>
         if(emphNodes){
-          emphNode(graph.coordinates(from.nodeId),
+          emphNode(graph.coordinates(from.id),
             Color.orange)
-          emphNode(graph.coordinates(to.nodeId),
+          emphNode(graph.coordinates(to.id),
             Color.orange)
         }
       case NotConnected(
@@ -340,9 +340,9 @@ class GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
       to: Node,
       unlockingConditions: SortedSet[Int]) =>
         if(emphNodes){
-          emphNode(graph.coordinates(from.nodeId),
+          emphNode(graph.coordinates(from.id),
             Color.orange)
-          emphNode(graph.coordinates(to.nodeId),
+          emphNode(graph.coordinates(to.id),
             Color.orange)
         }
 

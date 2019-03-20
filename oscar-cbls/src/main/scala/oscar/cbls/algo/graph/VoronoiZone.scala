@@ -13,7 +13,7 @@ case class VoronoiZone(centroid:Node,distance:Long) extends ClosestCentroidLabel
   override def <(that: ClosestCentroidLabeling): Boolean = that match{
     case Unreachable => true
     case that:VoronoiZone =>
-      this.distance < that.distance || (that.distance == this.distance && this.centroid.nodeId < that.centroid.nodeId)
+      this.distance < that.distance || (that.distance == this.distance && this.centroid.id < that.centroid.id)
   }
 
   override def equals(that: ClosestCentroidLabeling): Boolean = that match{
@@ -23,7 +23,7 @@ case class VoronoiZone(centroid:Node,distance:Long) extends ClosestCentroidLabel
 
   def + (length:Long):VoronoiZone = VoronoiZone(centroid,distance+length)
 
-  override def toString: String = "VoronoiZone(centroid:" + centroid.nodeId + " distance:" + distance + ")"
+  override def toString: String = "VoronoiZone(centroid:" + centroid.id + " distance:" + distance + ")"
 }
 
 case object Unreachable extends ClosestCentroidLabeling{
