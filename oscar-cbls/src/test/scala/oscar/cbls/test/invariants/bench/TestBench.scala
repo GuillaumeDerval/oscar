@@ -16,7 +16,8 @@ package oscar.cbls.test.invariants.bench
   ******************************************************************************/
 
 import org.scalacheck.{Gen, Prop}
-import org.scalatest.prop.Checkers
+import org.scalatest.{AppendedClues, FunSuite, Matchers}
+import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import sun.plugin.dom.exception.InvalidStateException
@@ -98,11 +99,11 @@ object InvGen {
    * A sorted set is made of the list of values, and the generated variable
    * is added to the given model.
    */
-  def randomFixedIntSetVar(nbVars: Int, range: Range, model: Store) = for {
+  def randomFixedIntSetVar(nbVars: Int, range: Range, model: Store, name: String) = for {
     c <- Gen.alphaChar
     v <- Gen.containerOfN[List, Long](nbVars, Gen.choose(range.min, range.max))
   } yield RandomIntSetVar(new CBLSSetVar(model, SortedSet[Long](v: _*), range,
-      c.toString.toUpperCase))
+    name))
 
   /**
    * Method to generate a random IntSetVar of size less or equal to the given
@@ -631,12 +632,15 @@ case class RouteOfNodesForCheckPoint(intSeqVar: CBLSSeqVar, v:Int, checker:Invar
   *
   * @author yoann.guyot@cetic.be
  */
-class InvBench(verbose: Int = 0, moves:List[Move]) {
+class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with GeneratorDrivenPropertyChecks with Matchers with Checkers with AppendedClues{
   var property: Prop = false
   val checker = new InvariantChecker(verbose)
   val model = new Store(false, Some(checker), true, false, false)
 
-  val move = Gen.oneOf(moves)
+  val moveAndVar = for {
+    m <- Gen.oneOf(moves)
+    v <- Gen.oneOf(inputVars)
+  } yield(m,v)
 
   var inputVars: List[RandomVar] = List()
   var outputVars: List[RandomVar] = List()
@@ -728,8 +732,8 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
   def genIntSetVar(
                     nbVars: Int = 5,
                     range: Range = 0 to 100,
-                    isInput: Boolean = true): CBLSSetVar = {
-    val risVar = InvGen.randomFixedIntSetVar(nbVars, range, model).sample.get
+                    isInput: Boolean = true, name :String = "setVar"): CBLSSetVar = {
+    val risVar = InvGen.randomFixedIntSetVar(nbVars, range, model,name).sample.get
     addVar(isInput, risVar)
     risVar.randomVar
   }
@@ -827,27 +831,41 @@ class InvBench(verbose: Int = 0, moves:List[Move]) {
     model.close()
     model.propagate()
 
-    property = org.scalacheck.Prop.forAll(move) {
-      randomMove: Move =>
-        if (verbose > 0) {
-          println("---------------------------------------------------")
-          printVars("Input", inputVars)
-          printVars("Output", outputVars)
-          print(randomMove.toString + " ")
-        }
-        val randomVar = Gen.oneOf(inputVars).sample.get
-        if (verbose > 0) print(randomVar.toString() + " => ")
+    forAll(moveAndVar) {
+      moveAndVar: (Move,RandomVar) =>
+
+        val randomMove = moveAndVar._1
+        val randomVar = moveAndVar._2
+        val randomVarBefore = randomVar.toString
+
         randomVar.move(randomMove)
-        if (verbose > 0) println(randomVar.toString() + "\n")
-        model.propagate()                       //Will check the propagation elements
-        c.foreach(_.checkInternals(checker))    //Will check the constraints
-        if (verbose > 0) println
 
-        //Assertion implicitly used by scalaTest
-        checker.isChecked()
+        var hasCaught = false
+        var hasPropagated = false
+        var clue = ""
+
+        try{
+          model.propagate()                       //Will check the propagation elements
+          hasPropagated = true
+          c.foreach(_.checkInternals(checker))    //Will check the constraints
+        }
+        catch{
+          case e:Exception => {
+            hasCaught = true
+
+            if(!hasPropagated)
+              clue = s"\nTest failed in propagation, internal error => ${e.getMessage}"
+            else
+              clue = s"\nTest failed while checkInternals() on constraints, internal error => ${e.getMessage}"
+
+            clue = clue.concat(s"\nOccured after executing move $randomMove")
+            clue = clue.concat(s"\nOn variable ${randomVar.getClass}")
+            clue = clue.concat(s"\nVariable before move $randomVarBefore")
+            clue = clue.concat(s"\nVariable after move $randomVar")
+          }
+        }
+
+        hasCaught should be(false) withClue clue
     }
-
-    Checkers.check(property)            // All checkInternals() are true
-    Checkers.check(!checker.firstCheck) // The checker has been called at least once
   }
 }

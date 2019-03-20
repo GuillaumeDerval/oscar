@@ -340,7 +340,7 @@ class VoronoiZones(graph:ConditionalGraph,
     }
 
     nodeLabeling(edge.nodeB.nodeId) match{
-      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,v.centroid == edge.nodeA) //we force insert centroid
+      case v:VoronoiZone => loadOrCorrectNodeIntoHeap(edge.nodeB,v.centroid == edge.nodeB) //we force insert centroid
       case _ => ;
     }
   }
