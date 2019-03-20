@@ -21,7 +21,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNonConditionalEdges = 50
     val nbTarget = 10
 
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges)
+    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges,"OpenConditions")
 
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
@@ -107,7 +107,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNodes = 10
     val nbConditionalEdges = 0
     val nbNonConditionalEdges = 15
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 0, range = 0 to 0)
+    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to 0)
     val graphTemp = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
       nbNonConditionalEdges,
@@ -144,7 +144,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNodes = 10
     val nbConditionalEdges = 15
     val nbNonConditionalEdges = 0
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 0, range = 0 to nbConditionalEdges)
+    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to nbConditionalEdges)
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
       nbNonConditionalEdges,
