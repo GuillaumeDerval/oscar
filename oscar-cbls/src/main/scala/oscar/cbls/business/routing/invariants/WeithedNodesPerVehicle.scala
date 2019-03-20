@@ -7,7 +7,7 @@ import oscar.cbls.core.computation.ChangingSeqValue
 import oscar.cbls.{CBLSIntVar, Variable}
 
 
-object WeigthedNodesPerVehicle{
+object WeightedNodesPerVehicle{
   /**
     * this constraints maintains the number of node per vehicle.
     *
@@ -16,7 +16,7 @@ object WeigthedNodesPerVehicle{
     * @param nbNodesPerVehicle an array telling how many nodes are reached per vehicle
     */
   def apply(routes:ChangingSeqValue, v : Int,  nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar]) =
-    new WeigthedNodesPerVehicle(routes, v , nodeWeight, weightPerVehicle)
+    new WeightedNodesPerVehicle(routes, v , nodeWeight, weightPerVehicle)
 }
 
 
@@ -27,7 +27,7 @@ object WeigthedNodesPerVehicle{
   * @param v number of vehicle
   * @param weightPerVehicle an array telling how many nodes are reached per vehicle
   */
-class WeigthedNodesPerVehicle(routes:ChangingSeqValue, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
+class WeightedNodesPerVehicle(routes:ChangingSeqValue, v : Int, nodeWeight:Array[Long], weightPerVehicle : Array[CBLSIntVar])
   extends GlobalConstraintDefinition[Long,Long](routes,v){
 
   /**
