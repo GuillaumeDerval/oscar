@@ -2,7 +2,7 @@ package oscar.cbls.business.routing.invariants
 
 import oscar.cbls._
 import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
-import oscar.cbls.algo.graph._
+import oscar.cbls.algo.graph.{RevisableDistance, _}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
@@ -23,7 +23,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   require(v == distancePerVehicle.length)
 
   warning(
-    openConditions.min == 0 && openConditions.max == graph.nbConditions-1,
+    openConditions.min == 0 && openConditions.max == graph.nbConditions - 1,
     "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph")
 
   val nbConditions = graph.nbConditions
@@ -31,13 +31,13 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   registerStaticAndDynamicDependency(openConditions)
   registerStaticAndDynamicDependency(routes)
   finishInitialization()
-  for(i <- distancePerVehicle) i.setDefiningInvariant(this)
+  for (i <- distancePerVehicle) i.setDefiningInvariant(this)
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val isConditionalEdgeOpen:Array[Boolean] = Array.fill(openConditions.max.toInt+1)(false)
+  val isConditionalEdgeOpen: Array[Boolean] = Array.fill(openConditions.max.toInt + 1)(false)
 
-  val aStarEngine = new RevisableAStar(graph:ConditionalGraph, underApproximatingDistance)
+  val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
   //les Astar sont stockés par identifiant de Astar (utilisés comme id dans les messages de notification de set)
   //AStarValue = (minNode,maxNode,AStarResult,astarId,key)
@@ -58,17 +58,17 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   //on utilise un vehicle searcher en log(v)
 
   //max two of them.
-  val minNodeToAStarInfos:Array[QList[AStarInfo]] = Array.fill(n)(null)
+  val minNodeToAStarInfos: Array[QList[AStarInfo]] = Array.fill(n)(null)
 
 
-  def getAStarInfo(node1:Long,node2:Long):AStarInfo = {
-    val (minNode,maxNode) = if(node1 < node2)(node1,node2) else (node2,node1)
+  def getAStarInfo(node1: Long, node2: Long): AStarInfo = {
+    val (minNode, maxNode) = if (node1 < node2) (node1, node2) else (node2, node1)
 
     val allInfoOnMinNode = minNodeToAStarInfos(minNode) // at most two
 
-    if(allInfoOnMinNode.head.maxNode == maxNode){
+    if (allInfoOnMinNode.head.maxNode == maxNode) {
       allInfoOnMinNode.head
-    }else{
+    } else {
       //there are two of them, so we are the second one (of course)
       require(allInfoOnMinNode.tail.head.maxNode == maxNode)
       require(allInfoOnMinNode.tail.tail == null)
@@ -76,14 +76,23 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     }
   }
 
-  val conditionToAStarInfo:Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
+  val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
 
 
-  val allAStarInfo:DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
+  val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
+
+  def getDistanceForAStarResult(d: RevisableDistance):Long = {
+    d match {
+      case d: Distance =>
+        d.distance
+      case _ =>
+        distanceIfNotConnected
+    }
+  }
 
   class AStarInfo(val minNode:Int,
                   val maxNode:Int,
-                  val result:RevisableDistance){
+                  result:RevisableDistance){
 
     private var myElements:QList[DLLStorageElement[AStarInfo]] = QList(allAStarInfo.addElem(this))
 
@@ -93,12 +102,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
     minNodeToAStarInfos(minNode) = QList(this,minNodeToAStarInfos(minNode))
 
-    val distance:Long = result match{
-      case d:Distance =>
-        d.distance
-      case _ =>
-        distanceIfNotConnected
-    }
+    val distance = getDistanceForAStarResult(result)
 
     /**
       * @return true if this info was valid and invalidated, false if it was already invalidated
@@ -262,7 +266,8 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
         //also from --> to cannot include a vehicle start.
         digestUpdates(prev)
         if(x.isNop) return
-        else if(x.isSimpleFlip){
+
+        if(x.isSimpleFlip){
           //this is a simple flip
 
           val oldPrevFromValue = prev.newValue.valueAtPosition(fromIncluded - 1L).get
@@ -287,7 +292,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
           distancePerVehicle(vehicleOfMovedSegment) :+= (
             newAStarBeforeMovedSegment.distance + newAStarAfterMovedSegment.distance
-            - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegment.distance))
+              - (oldAStarBeforeMovedSegment.distance + oldAStarAfterMovedSegment.distance))
 
         }else {
           //actually moving, not simple flip
@@ -369,6 +374,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
       case x@SeqUpdateRemove(positionOfDelete : Int, prev : SeqUpdate) =>
         digestUpdates(prev)
+
         val removedValue = x.removedValue
 
         val oldPrevValue = prev.newValue.valueAtPosition(positionOfDelete-1).get
@@ -417,27 +423,59 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     }
   }
 
-
-
   override def checkInternals(c : Checker) : Unit = {
     check(c, routes.value)
   }
 
   def check(c : Checker,s:IntSequence) {
-    c.check(!distanceIsSymmetric || RouteLength.isDistanceSymmetric(distanceMatrix, n), Some("distance matrix should be symmetric if invariant told so"))
+    require(allAStarInfo.isEmpty)
+    var currentPosition = routes.value.explorerAtAnyOccurrence(0).get
+    var currentVehicle:Int = 0
+    var currentLength:Long = 0
 
-    val values = computeValueFromScratch(s)
-    for (vehicle <- 0L until v) {
-      c.check(distancePerVehicle(vehicle).newValue == values(vehicle), Some("distance(" + vehicle + ").value=" + distancePerVehicle(vehicle).newValue + " should == computeValueFromScratch(routes.value)(0L)" + values(vehicle)))
+    def checkHopAndReturnDistance(fromNode:Int,toNode:Int):Long = {
+      val distance1 = getDistanceForAStarResult(aStarEngine.search(
+        graph.nodes(fromNode),
+        graph.nodes(toNode),
+        isConditionalEdgeOpen,
+        includePath = false))
+      val distance2 = getDistanceForAStarResult(aStarEngine.search(
+        graph.nodes(toNode),
+        graph.nodes(fromNode),
+        isConditionalEdgeOpen,
+        includePath = false))
+
+      require(getAStarInfo(fromNode,toNode).distance == distance1)
+      require(distance1 == distance2)
+
+      distance1
     }
 
-    if (checkpoint != null) {
-      val values = computeValueFromScratch(checkpoint)
-      for (vehicle <- 0L until v) {
-        if (isVehicleChangedSinceCheckpoint(vehicle))
-          c.check(savedValues(vehicle) == values(vehicle))
-      }
-    }
+    while(currentPosition.next match{
+      case None => //at the end of the current vehicle, which is the last one
+        //compute the last hop
+        currentLength += checkHopAndReturnDistance(currentPosition.value,v-1)
+        require(distancePerVehicle(v-1).value == currentLength)
+        false
+      case Some(nextPosition) if nextPosition.value < v =>
+        //at the end of the current vehicle; starting a new one
+        val lastHopToComeBack = checkHopAndReturnDistance(currentPosition.value,currentVehicle)
+        currentLength += lastHopToComeBack
+        require(distancePerVehicle(currentVehicle).value == currentLength)
+
+        currentPosition = nextPosition
+        currentVehicle += 1
+        currentLength = 0
+        require(currentVehicle == nextPosition.value)
+        true
+      case Some(nextPosition) if nextPosition.value >= v =>
+        //carry on the current vehicle
+        val newHop = checkHopAndReturnDistance(currentPosition.value,nextPosition.value)
+        currentLength += newHop
+        currentPosition = nextPosition
+        true
+    }){}
+
   }
 }
 
