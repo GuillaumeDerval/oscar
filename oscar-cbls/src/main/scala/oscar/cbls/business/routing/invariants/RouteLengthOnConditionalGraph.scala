@@ -16,7 +16,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
                                     openConditions:ChangingSetValue,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
-                                    distanceIfNotConnected:Int,
+                                    distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
                                     distancePerVehicle:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
@@ -26,7 +26,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     openConditions.min == 0 && openConditions.max == graph.nbConditions - 1,
     "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph")
 
-  val nbConditions = graph.nbConditions
+  private val nbConditions = graph.nbConditions
 
   registerStaticAndDynamicDependency(openConditions)
   registerStaticAndDynamicDependency(routes)
@@ -34,34 +34,36 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   for (i <- distancePerVehicle) i.setDefiningInvariant(this)
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //there is no checkpoint at all.
+  //a cached vehicle searcher is used here, and updated at each checkpoint.
 
-  val isConditionalEdgeOpen: Array[Boolean] = Array.fill(openConditions.max.toInt + 1)(false)
+  //the engine, used in all computations.
+  //it was developed to be quickly restarteable
+  private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
-  val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
+  private var vehicleSearcher:((IntSequence,Long)=>Long) = if(v == 1L) ((_,_) => 0L) else
+    RoutingConventionMethods.cachedVehicleReachingPosition(routes.value, v)
 
-  //les Astar sont stockés par identifiant de Astar (utilisés comme id dans les messages de notification de set)
-  //AStarValue = (minNode,maxNode,AStarResult,astarId,key)
-
-  //pour gérer les changements dans le graphe
-  //on a un array:
-  //astarId => nodeFrom //on ne peut pas dire que le AStarID est le nodeFrom parce-que on veut gérer la symétrie en O(1)
-  //quand on a une notification de setChange, on a forcément un ID de astar.
-  //on va rechercher les deux noeuds, from et to, et on note les deux comme étant à réévaluer.
-
-  //un array
-  //nodeFrom => AStarValue
-  //pour permettre de re-parcourir la séquence efficacement.
-
-  //on a un invariant en une passes:
-  //mise à jour immédiate à chaque notification
-  //pas de checkpoint.
-  //on utilise un vehicle searcher en log(v)
+  //fast query for the AStar algo.
+  private val isConditionalEdgeOpen: Array[Boolean] = Array.fill(openConditions.max.toInt + 1)(false)
+  for(o <- openConditions.value){
+    isConditionalEdgeOpen(o) = true
+  }
 
   //max two of them.
-  val minNodeToAStarInfos: Array[QList[AStarInfo]] = Array.fill(n)(null)
+  private val minNodeToAStarInfos: Array[QList[AStarInfo]] = Array.fill(n)(null)
+
+  private val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
+
+  private val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
 
 
-  def getAStarInfo(node1: Long, node2: Long): AStarInfo = {
+  //initialization
+  computeAndAffectValueFromScratch(routes.value)
+
+  // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+  private def getAStarInfo(node1: Long, node2: Long): AStarInfo = {
     val (minNode, maxNode) = if (node1 < node2) (node1, node2) else (node2, node1)
 
     val allInfoOnMinNode = minNodeToAStarInfos(minNode) // at most two
@@ -76,12 +78,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     }
   }
 
-  val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
-
-
-  val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
-
-  def getDistanceForAStarResult(d: RevisableDistance):Long = {
+  private def getDistanceForAStarResult(d: RevisableDistance):Long = {
     d match {
       case d: Distance =>
         d.distance
@@ -102,7 +99,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
     minNodeToAStarInfos(minNode) = QList(this,minNodeToAStarInfos(minNode))
 
-    val distance = getDistanceForAStarResult(result)
+    val distance:Long = getDistanceForAStarResult(result)
 
     /**
       * @return true if this info was valid and invalidated, false if it was already invalidated
@@ -124,9 +121,9 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     }
   }
 
-  val fromNodeToAStarInfo:Array[AStarInfo] = Array.fill(n)(null)
 
-  def computeDistanceAndSaveItAll(fromNode:Int,toNode:Int): AStarInfo = {
+
+  private def computeDistanceAndSaveItAll(fromNode:Int,toNode:Int): AStarInfo = {
     val (minNode,maxNode) = if(fromNode < toNode)(fromNode,toNode) else (toNode,fromNode)
     val result = aStarEngine.search(
       graph.nodes(fromNode),
@@ -138,7 +135,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     new AStarInfo(minNode, maxNode, result)
   }
 
-  def dropAllAStarInfo(): Unit ={
+  private def dropAllAStarInfo(): Unit ={
     //we are forced to do this way because DLL are mutable things
     while(allAStarInfo.nonEmpty){
       allAStarInfo.head.invalidate()
@@ -190,10 +187,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //there is no checkpoint at all.
-  //a cached vehicle searcher is used here, and updated at each checkpoint.
-  protected var vehicleSearcher:((IntSequence,Long)=>Long) = if(v == 1L) ((_,_) => 0L) else
-    RoutingConventionMethods.cachedVehicleReachingPosition(routes.value, v)
+
 
 
   /**
@@ -405,7 +399,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   }
 
 
-  protected def computeValueBetween(s:IntSequence, vehicle:Long, fromPosIncluded:Long, fromValueIncluded:Long, toPosIncluded:Long, toValueIncluded:Long):Long = {
+  private def computeValueBetween(s:IntSequence, vehicle:Long, fromPosIncluded:Long, fromValueIncluded:Long, toPosIncluded:Long, toValueIncluded:Long):Long = {
     if(fromPosIncluded == toPosIncluded) 0
     else if(fromPosIncluded < toPosIncluded) {
       var e = s.explorerAtPosition(fromPosIncluded).get
@@ -427,7 +421,7 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
     check(c, routes.value)
   }
 
-  def check(c : Checker,s:IntSequence) {
+  private def check(c : Checker,s:IntSequence) {
     require(allAStarInfo.isEmpty)
     var currentPosition = routes.value.explorerAtAnyOccurrence(0).get
     var currentVehicle:Int = 0
