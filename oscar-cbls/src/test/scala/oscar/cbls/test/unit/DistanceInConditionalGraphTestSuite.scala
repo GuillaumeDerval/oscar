@@ -122,13 +122,13 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
       edges = graphTemp.edges,
       nbConditions = graphTemp.nbConditions)
 
-    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
+    val underApproxDistance = FloydWarshall.buildDistanceMatrix(graph,_ => true)
     val distancesArray = Array.tabulate(nbNodes)(
       nodeId => new DistanceInConditionalGraph(graph,
         from = nodeId,
-        to = lonelyNode.nodeId,
+        to = lonelyNode.id,
         openConditions = openConditions,
-        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+        distanceIfNotConnected = Long.MaxValue)(underApproximatingDistance = (a:Int,b:Int) => underApproxDistance(a)(b))
     )
 
     bench.model.close()

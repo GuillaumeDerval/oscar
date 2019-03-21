@@ -2,7 +2,8 @@ package oscar.cbls.test.unit
 
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.CBLSSetVar
-import oscar.cbls.algo.graph.{FloydWarshall, RandomGraphGenerator}
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, FloydWarshall, Node, RandomGraphGenerator}
+import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
 class FloydWarshallTestSuite extends FunSuite with Matchers{
 
@@ -41,6 +42,33 @@ class FloydWarshallTestSuite extends FunSuite with Matchers{
           underApproxDistanceMatrix(i)(j) should not be 0
         }
       }
+    }
+  }
+
+  test("distances from node to unreachable node should be Long.MaxValue"){
+    val nbNodes = 10
+    val nbConditionalEdges = 0
+    val nbNonConditionalEdges = 15
+    val graphTemp = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
+      nbConditionalEdges,
+      nbNonConditionalEdges,
+      nbTransitNodes = nbNodes/2,
+      mapSide = 1000)
+
+    val lonelyNode = new Node(nbNodes,true)
+
+    val graph = new ConditionalGraphWithIntegerNodeCoordinates(
+      coordinates = graphTemp.coordinates :+ (0,0),
+      nodes = graphTemp.nodes :+ lonelyNode,
+      edges = graphTemp.edges,
+      nbConditions = graphTemp.nbConditions)
+
+    val last = graphTemp.nodes.length
+
+    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
+    for(i <- 0 until underApproxDistanceMatrix.length-1){
+
+      underApproxDistanceMatrix(i)(last) should be(Long.MaxValue)
     }
   }
 }
