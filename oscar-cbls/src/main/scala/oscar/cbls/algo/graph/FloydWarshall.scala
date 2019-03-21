@@ -44,9 +44,9 @@ object FloydWarshall{
     }
 
     for(edge <- g.edges if isEdgeOpen(edge)){
-      val sl = edge.length min distanceMatrix(edge.nodeA.nodeId)(edge.nodeB.nodeId)
-      distanceMatrix(edge.nodeA.nodeId)(edge.nodeB.nodeId) = sl
-      distanceMatrix(edge.nodeB.nodeId)(edge.nodeA.nodeId) = sl
+      val sl = edge.length min distanceMatrix(edge.nodeIDA)(edge.nodeIDB)
+      distanceMatrix(edge.nodeIDA)(edge.nodeIDB) = sl
+      distanceMatrix(edge.nodeIDB)(edge.nodeIDA) = sl
     }
 
     distanceMatrix
@@ -70,8 +70,8 @@ object FloydWarshall{
 
     for(edge <- g.edges if isEdgeOpen(edge)){
 
-      val idA = edge.nodeA.nodeId
-      val idB = edge.nodeB.nodeId
+      val idA = edge.nodeIDA
+      val idB = edge.nodeIDB
 
       val (minNode,maxNode) = if(idA>idB) (idB,idA) else (idA,idB)
 

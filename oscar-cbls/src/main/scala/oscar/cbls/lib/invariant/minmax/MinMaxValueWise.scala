@@ -11,7 +11,7 @@ import scala.collection.immutable.SortedSet
   * considering only the indices included in condSet.
   * default if condSet is empty
   *
- * @param constArray an array of contant values
+ * @param constArray an array of constant values
  * @param condSet
  * @param default
  * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.
@@ -24,7 +24,7 @@ class MinConstArrayValueWise(constArray: Array[Long], condSet: SetValue, default
   private val n = constArray.length
   private val range = 0L until n
 
-  //TODO: this is very slow!
+  //this is very slow; probably the weak point of this invariant
   private val idSortedByIncreasingValue:Array[Long] = range.toArray.sortBy(a => constArray(a))
 
   private var nbListenedVals = 0L

@@ -88,7 +88,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   //val warehouseToWarehouseDistances = Array.tabulate(W)(w1 => Array.tabulate(W)(w2 => distanceMatrix(w1)(w2).getOrElse(1000)))
   val warehouseToWarehouseDistances:Array[Array[Long]] =
-    Array.tabulate(W)(w1 => Array.tabulate(W)(w2 =>  underApproximatingDistanceInGraphAllCondtionsOpen(warehouseToNode(w1).nodeId)(warehouseToNode(w2).nodeId)))
+    Array.tabulate(W)(w1 => Array.tabulate(W)(w2 =>  underApproximatingDistanceInGraphAllCondtionsOpen(warehouseToNode(w1).id)(warehouseToNode(w2).id)))
 
   val costForOpeningWarehouse =  Array.fill[Long](W)(800)
 
@@ -108,7 +108,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     graphDiameterOverApprox = Int.MaxValue,
     openConditions = openConditions,
     centroids = openWarehouses,
-    trackedNodes = deliveryToNode.map(_.nodeId:Long),
+    trackedNodes = deliveryToNode.map(_.id:Long),
     m,
     defaultDistanceForUnreachableNodes = 10000)
 
@@ -117,7 +117,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   println("done init voronoï zones")
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
-    trackedNodeToDistanceAndCentroid(deliveryToNode(d).nodeId)._1)
+    trackedNodeToDistanceAndCentroid(deliveryToNode(d).id)._1)
 
   val costOfBridgesPerBridge = 7
 
@@ -142,7 +142,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
   val centroidColors = ColorGenerator.generateRandomColors(W)
 
   val visual = new GraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates,
-    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.nodeId,centroidColors(node.nodeId))))
+    centroidColor = SortedMap.empty[Int,Color] ++ warehouseToNode.toList.map(node => (node.id,centroidColors(node.id))))
 
   SingleFrameWindow.show(visual,title = "Warehouse and bridge location", 1025, 1105)
 
@@ -202,14 +202,14 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     val nodeW1 = warehouseToNode(w1)
     val nodeW2 = warehouseToNode(w2)
 
-    val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.nodeId)(nodeW2.nodeId)
+    val distanceW1W2:Long = underApproximatingDistanceInGraphAllCondtionsOpen(nodeW1.id)(nodeW2.id)
 
     (0L until nbConditionalEdges).filter(c => {
       val conditionalEdge = graph.conditionToConditionalEdges(c)
-      val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW1.nodeId)
-      val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeA.nodeId)(nodeW2.nodeId)
-      val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeB.nodeId)(nodeW1.nodeId)
-      val distB2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeB.nodeId)(nodeW2.nodeId)
+      val distA1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW1.id)
+      val distA2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDA)(nodeW2.id)
+      val distB1 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDB)(nodeW1.id)
+      val distB2 = underApproximatingDistanceInGraphAllCondtionsOpen(conditionalEdge.nodeIDB)(nodeW2.id)
 
       ((distA1 + distB2) min (distA2 + distB1)) < distanceW1W2*factor
     })

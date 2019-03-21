@@ -11,9 +11,9 @@ import oscar.cbls.algo.quick.QList
   *                     Conditions are labeled from 0 to nbCondition-1 inclusive.
   *                     all conditions mut appear in one edge.
   */
-case class ConditionalGraph(nodes:Array[Node],
-                            edges:Array[Edge],
-                            nbConditions:Int){
+class ConditionalGraph(val nodes:Array[Node],
+                       val edges:Array[Edge],
+                       val nbConditions:Int){
   val nbNodes = nodes.length
   val nbEdges = edges.length
   val nodeRange = 0 until nbNodes
@@ -28,6 +28,11 @@ case class ConditionalGraph(nodes:Array[Node],
     }
   }
   require(conditionToConditionalEdges.forall(_ != null))
+
+  override def toString: String =
+    "ConditionalGraph(nbNodes:" + nbNodes + " nbEdges:" + nbEdges + " nbConditions:" + nbConditions+ "\n\t" +
+      "nodes:[\n\t\t" + nodes.mkString("\n\t\t") + "\n\t]" +
+      "edges:[\n\t\t" + edges.mkString("\n\t\t") + "\n\t]" + "\n\t)"
 }
 
 class ConditionalGraphWithIntegerNodeCoordinates(nodes:Array[Node],
@@ -40,7 +45,7 @@ class ConditionalGraphWithIntegerNodeCoordinates(nodes:Array[Node],
   require(nodes.length == coordinates.length)
 }
 
-class Edge(val edgeId:Int,
+class Edge(val id:Int,
            val nodeA:Node,
            val nodeB:Node,
            val length:Long,
@@ -48,17 +53,24 @@ class Edge(val edgeId:Int,
   require(length > 0)
   require(nodeA != nodeB)
 
+  val nodeIDA:Int = nodeA.id
+  val nodeIDB:Int = nodeB.id
+
   nodeA.registerEdge(this)
   nodeB.registerEdge(this)
 
   def otherNode(node:Node):Node = if(node == nodeA) nodeB else nodeA
+
+  override def toString: String =
+    "Edge(id:" + id + " nodeA:" + nodeIDA + " nodeB:" + nodeIDB +
+      " length:" + length + (conditionID match{case None => ""  case Some(c) => " condition:" + c}) + ")"
 }
 
-class Node(val nodeId:Int, val transitAllowed:Boolean = true){
+class Node(val id:Int, val transitAllowed:Boolean = true){
   var incidentEdges:QList[Edge] = null
   def registerEdge(edge:Edge) {incidentEdges = QList(edge,incidentEdges)}
 
-  override def toString: String = "Node(nodeId:" + nodeId + ")"
+  override def toString: String = "Node(nodeId:" + id + " transitAllowed:" + transitAllowed + ")"
 }
 
 

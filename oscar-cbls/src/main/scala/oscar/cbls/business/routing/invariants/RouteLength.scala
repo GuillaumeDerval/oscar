@@ -379,8 +379,7 @@ class RouteLength(routes:ChangingSeqValue,
         true
 
       case SeqUpdateLastNotified(value:IntSequence) =>
-        require(value quickEquals routes.value) //TODO this fails!!!!!
-//        throw new Error("must check why this fails!!")
+        require(value quickEquals routes.value)
         true //we are starting from the previous value
       case SeqUpdateAssign(value : IntSequence) =>
         false //impossible to go incremental
