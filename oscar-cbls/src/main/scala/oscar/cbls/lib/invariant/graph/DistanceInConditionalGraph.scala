@@ -21,6 +21,7 @@ import oscar.cbls.core._
 import oscar.cbls.core.computation.{Domain, SetNotificationTarget}
 
 import scala.collection.immutable.SortedSet
+import scala.util.Random
 
 class DistanceInConditionalGraph(graph:ConditionalGraph,
                                  from:IntValue,
@@ -172,7 +173,7 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
     val toID = longToInt(to.value)
 
     if (fromID == -1 || toID == -1) {
-      checker.check(this.value == distanceIfNotConnected)
+      assert(this.value == distanceIfNotConnected)
     } else {
 
       val fwd = aStar.search(
@@ -191,15 +192,15 @@ class DistanceInConditionalGraph(graph:ConditionalGraph,
 
       (fwd, bwt) match {
         case (Distance(a, b, distance1, _, _, _), Distance(c, d, distance2, _, _, _)) =>
-          checker.check(this.value == distance1)
-          checker.check(distance1 == distance2)
+          assert(this.value == distance1)
+          assert(distance1 == distance2)
 
         case (NeverConnected(a, b), NeverConnected(c, d)) =>
-          checker.check(this.value == distanceIfNotConnected)
+          assert(this.value == distanceIfNotConnected)
 
        case (NotConnected(a, b, _), NotConnected(c, d, _)) =>
           //println("computeAffectAndAdjustValueWiseKey" + n)
-          checker.check(this.value == distanceIfNotConnected)
+          assert(this.value == distanceIfNotConnected)
         case _ => throw new Error("disagreeing aStar")
       }
     }

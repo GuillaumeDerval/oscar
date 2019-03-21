@@ -838,9 +838,13 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with Generat
           model.propagate()                       //Will check the propagation elements
           hasPropagated = true
           c.foreach(_.checkInternals(checker))    //Will check the constraints
+
+          if(!checker.isChecked()){
+            clue = s"\nTest failed during checker.check(), the assertion was false."
+          }
         }
         catch{
-          case e:Exception => {
+          case e:Error => {
             hasCaught = true
             caughtStacktrace = e.getStackTrace
 
@@ -861,10 +865,15 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with Generat
     try{
       Checkers.check(prop)
     }catch{
-      case e :Exception => {
-        val ex = new Exception(clue)
-        ex.setStackTrace(caughtStacktrace)
-        throw ex
+      case e :Throwable => {
+
+        if(caughtStacktrace != null){
+          val ex = new Exception(clue)
+          ex.setStackTrace(caughtStacktrace)
+          throw ex
+        }
+
+        throw e
       }
     }
   }

@@ -7,6 +7,8 @@ import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
+import scala.util.Random
+
 class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {
 
   val verbose = 0
@@ -35,7 +37,6 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
           case Distance(_, _, distance1, _, _, _) =>
             distance1 should be (0)
         }
-
     }
   }
 
@@ -94,10 +95,47 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
     val gen = Gen.oneOf(graphTemp.nodes)
 
+
     forAll(gen){
       node =>
         val result = aStar.search(node,lonelyNode,_ => true,false)
         result should (be (a[NotConnected]) or be (a[NeverConnected]))
+    }
+  }
+
+  test("path should contain only non-conditional edges or open conditional edges"){
+
+    val nbNodes = 10
+    val nbConditionalEdges = 9
+    val nbNonConditionalEdges = 5
+    val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
+      nbConditionalEdges,
+      nbNonConditionalEdges,
+      nbTransitNodes = nbNodes/2,
+      mapSide = 1000)
+
+    val openConditions = Random.shuffle(List(0,0,0,0,1,1,1,1,1))
+    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph,_ => true)
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))
+    val gen = Gen.listOfN(2,Gen.oneOf(graph.nodes))
+
+    forAll(gen){
+      nodesCouple =>
+        whenever(nodesCouple.size == 2 && nodesCouple.head != nodesCouple(1)){
+          val nodeFrom = nodesCouple.head
+          val nodeTo = nodesCouple(1)
+          val result = aStar.search(nodeFrom,nodeTo,id => openConditions(id) == 1,includePath = true)
+          result match {
+            case Distance(_,_,_,_,_,path) =>
+              path.get.foreach(e =>
+                e.conditionID match{
+                  case Some(c) => openConditions(c) should be (1)
+                  case None =>
+                }
+              )
+            case _ =>
+          }
+        }
     }
   }
 }

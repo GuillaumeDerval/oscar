@@ -167,4 +167,5 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
       distance :DistanceInConditionalGraph => distance.value should (be(Long.MaxValue) or be(0))
     }
   }
+
 }
