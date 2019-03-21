@@ -202,3 +202,30 @@ class ResourceFlowState(val resourceIndex: Int, initialModeInd: Int, maxCapacity
        |****
        """.stripMargin
 }
+
+
+class ResourceFlowState_B(val resourceIndex: Int,
+                          initialMode: Option[RunningMode_B],
+                          maxCapacity: Int) {
+  // Last activity that used this resource
+  var lastActivityIndex: Int = -1
+  // Forward flows after last activity that used this resource
+  var forwardFlows: AbstractHeap[ResourceFlow] = new BinomialHeap[ResourceFlow](_.endTime, maxCapacity)
+  forwardFlows.insert(SourceFlow(maxCapacity))
+  // Running mode of last activity that used this resource
+  var lastRunningMode: Option[RunningMode_B] = initialMode
+  // Checking whether running mode has changed
+  var changedRunningMode: Option[RunningMode_B] = None
+
+  override def toString: String =
+    s"""****
+       |RFW:
+       |Resource index : $resourceIndex
+       |Initial mode : $initialMode
+       |Max capacity : $maxCapacity
+       |Last mode : $lastRunningMode
+       |Last activity : $lastActivityIndex
+       |Forward flows : $forwardFlows
+       |****
+       """.stripMargin
+}

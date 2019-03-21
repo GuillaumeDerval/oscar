@@ -1,12 +1,52 @@
 package oscar.cbls.test.scheduling
 
-import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object ReaganSeqScheduling {
+  // Model
+  // Activities
+  lazy val eat = Activity_B("Eat", 2)
+    .withResource(reagan, 2)
+    .precedes(sleep)
+  lazy val sleep = Activity_B("Sleep", 8).withResource(reagan, 3)
+  lazy val think = Activity_B("Think", 12)
+    .withResource(reagan, 1)
+    .precedes(drink)
+  lazy val chew = Activity_B("Chew", 3)
+    .withResource(reagan, 1)
+    .precedes(speak)
+  lazy val speak = Activity_B("Speak", 3).withResource(reagan, 3)
+  lazy val drink = Activity_B("Drink", 2).withResource(reagan, 3)
+  // Resource
+  lazy val reagan = Resource_B("Ronald Reagan", 3)
+
+  def main(args: Array[String]): Unit = {
+    // Problem model
+    val model = Store(checker = None, noCycle=false)
+    val scProblem = new SchedulingProblem_B(model, Set(eat, sleep, think, chew, speak, drink), Set(reagan))
+    model.close()
+    println("Model closed.")
+    // Neighborhoods
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    // This is the search strategy
+    combinedNH.doAllMoves(obj = scProblem.mkspObj)
+    // And here, the results
+    println(combinedNH.profilingStatistics)
+    println(s"*************** RESULTS ***********************************")
+    println(s"Schedule makespan = ${scProblem.makeSpan.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
+    println("Scheduling start times = [  ")
+    scProblem.startTimes.foreach(v => println(s"    $v"))
+    println("]")
+    println(s"Scheduling setup times: ${scProblem.setupTimes}")
+  }
+
+  /*
   val model = Store(checker = None, noCycle=false)
   // Activities
   val eat = new Activity(model, "Eat", 2)
@@ -61,4 +101,5 @@ object ReaganSeqScheduling {
     println("]")
     println(s"Scheduling setup times: ${scProblem.setupTimes}")
   }
+  */
 }

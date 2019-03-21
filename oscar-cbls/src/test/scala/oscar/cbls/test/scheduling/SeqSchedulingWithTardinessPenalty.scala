@@ -8,6 +8,46 @@ import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object SeqSchedulingWithTardinessPenalty {
+  // Model
+  // Activities
+  lazy val a1 = Activity_B("A1", 10).withResource(analyst, 1)
+  lazy val a2 = Activity_B("A2", 10).withResource(analyst, 1)
+  lazy val a3 = Activity_B("A3", 10).withResource(analyst, 1)
+  lazy val a4 = Activity_B("A4", 10).withResource(analyst, 1)
+  lazy val a5 = Activity_B("A5", 10).withResource(analyst, 1)
+  // Resource
+  lazy val analyst = Resource_B("AnalystQAPM", 1)
+
+  def main(args: Array[String]): Unit = {
+    // CBLS Store
+    val m = new Store()
+    val scProblem = new SchedulingProblem_B(m, Set(a1, a2, a3, a4, a5), Set(analyst))
+    // Tardiness variables
+    val tardinessPenalty = 100
+    val activitiesTardiness = Array.tabulate(5) { i =>
+      scProblem.startTimes(i)*tardinessPenalty*i
+    }
+    val globalTardiness: Objective = Sum(activitiesTardiness)
+    // Model closed
+    m.close()
+    // Neighborhoods
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    // This is the search strategy
+    combinedNH.doAllMoves(obj = globalTardiness)
+    // And here, the results
+    println(combinedNH.profilingStatistics)
+    println(s"*************** RESULTS ***********************************")
+    println(s"Schedule makespan = ${scProblem.makeSpan.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
+    println("Scheduling start times = [  ")
+    scProblem.startTimes.foreach(v => println(s"    $v"))
+    println("]")
+    println(s"Global tardiness = ${globalTardiness.value}")
+  }
+
+  /*
   // CBLS Store
   val m = new Store()
 
@@ -76,5 +116,7 @@ object SeqSchedulingWithTardinessPenalty {
     println(s"Global tardiness = ${globalTardiness.value}")
 
   }
+
+  */
 
 }

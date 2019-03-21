@@ -1,11 +1,11 @@
 package oscar.cbls.business.seqScheduling.neighborhood
 
 import oscar.cbls.algo.search.HotRestart
-import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem}
+import oscar.cbls.business.seqScheduling.model.{Constants, SchedulingProblem, SchedulingProblem_B}
 import oscar.cbls.core.computation.CBLSSeqVar
 import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, LoopBehavior}
 
-class SwapActivity(schP: SchedulingProblem,
+class SwapActivity(schP: SchedulingProblem_B,
                    neighborhoodName: String,
                    selectIndiceBehavior:LoopBehavior = First(),
                    selectSwapBehavior:LoopBehavior = Best(),
@@ -23,7 +23,7 @@ class SwapActivity(schP: SchedulingProblem,
   override def exploreNeighborhood(initialObj: Int): Unit = {
     // Iteration zone on activities indices
     // Checking the Hot Restart
-    val iterationZone1 = searchIndices.getOrElse(() => 0 until schP.activities.size)
+    val iterationZone1 = searchIndices.getOrElse(() => schP.actArray.indices)
     val hotRestart = true
     val iterationZone =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
@@ -66,7 +66,7 @@ class SwapActivity(schP: SchedulingProblem,
   }
 }
 
-case class SwapActivityMove(schP: SchedulingProblem,
+case class SwapActivityMove(schP: SchedulingProblem_B,
                             firstIndex: Int,
                             secondIndex: Int,
                             override val neighborhood: SwapActivity,

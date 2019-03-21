@@ -8,7 +8,6 @@ import oscar.cbls._
   *
   * @param name a readable name for the activity
   * @param valDuration the initial duration of the activity
-  * @param schP the scheduling model this activity belongs to
   */
 class Activity(m: Store,
                val name: String,

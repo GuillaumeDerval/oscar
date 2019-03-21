@@ -1,13 +1,69 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls.Store
-import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.core.propagation.ErrorChecker
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object SeqScheduling {
+  // Model
+  // Running Modes
+  val m0 = RunningMode_B("0")
+  val m1 = RunningMode_B("1")
+  // Resources
+  val r = Resource_B("R", 3)
+    .withMode(m0)
+    .withMode(m1, true)
+    .setupTime(m0, m1, 1)
+    .setupTime(m1, m0, 1)
+  val r1 = Resource_B("R'", 1)
+    .withMode(m0, true)
+    .withMode(m1)
+    .setupTime(m0, m1, 1)
+    .setupTime(m1, m0, 4)
+  // Activities
+  lazy val a = Activity_B("A", 4)
+    .withResource(r, 2, m1)
+    .precedes(c)
+  lazy val b = Activity_B("B", 1)
+    .withResource(r, 1, m1)
+    .withResource(r1, 1, m0)
+  lazy val c = Activity_B("C", 3)
+    .withResource(r, 1, m1)
+    .withResource(r1, 1, m1)
+    .precedes(e)
+  lazy val d = Activity_B("D", 4)
+    .withResource(r, 2, m1)
+  lazy val e = Activity_B("E", 2)
+    .withResource(r, 2, m0)
+    .withResource(r1, 1, m0)
+
+  def main(args: Array[String]): Unit = {
+    // CBLS store
+    val m = new Store(checker = Some(ErrorChecker()))
+    // Create Scheduling Problem from model
+    val scProblem = new SchedulingProblem_B(m, Set(a, b, c, d, e), Set(r, r1))
+    m.close()
+    println("Model closed.")
+    // Neighborhoods
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    // This is the search strategy
+    combinedNH.doAllMoves(obj = scProblem.mkspObj)
+    // And here, the results
+    println(combinedNH.profilingStatistics)
+    println(s"*************** RESULTS ***********************************")
+    println(s"Schedule makespan = ${scProblem.makeSpan.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value.toList}")
+    println("Scheduling start times = [  ")
+    scProblem.startTimes.foreach(v => println(s"    $v"))
+    println("]")
+    println(s"Scheduling setup times: ${scProblem.setupTimes}")
+  }
+
+  /*
   // CBLS store
   val m = new Store(checker = Some(ErrorChecker()))
   // Activities
@@ -78,4 +134,5 @@ object SeqScheduling {
     println("]")
     println(s"Scheduling setup times: ${scProblem.setupTimes}")
   }
+  */
 }

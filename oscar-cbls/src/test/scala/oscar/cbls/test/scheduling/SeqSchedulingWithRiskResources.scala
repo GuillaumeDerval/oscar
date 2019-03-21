@@ -1,12 +1,73 @@
 package oscar.cbls.test.scheduling
 
 import oscar.cbls._
-import oscar.cbls.algo.boundedArray.BoundedArray
 import oscar.cbls.business.seqScheduling.model._
 import oscar.cbls.business.seqScheduling.neighborhood.{ReinsertActivity, SwapActivity}
 import oscar.cbls.lib.search.combinators.{BestSlopeFirst, Profile}
 
 object SeqSchedulingWithRiskResources {
+  // Model
+  // Modes
+  lazy val analyst_mode = RunningMode_B("ANALYSIS")
+  lazy val qapm = RunningMode_B("QAPM")
+  lazy val dev_mode = RunningMode_B("Dev")
+  lazy val test_mode = RunningMode_B("Test")
+  // Resources
+  lazy val analyst = Resource_B("AnalystQAPM", 5)
+    .withMode(analyst_mode, true)
+    .withMode(qapm)
+    .setupTime(analyst_mode, qapm, 1)
+    .setupTime(qapm, analyst_mode, 1)
+  lazy val senior_dev_test = Resource_B("Senior Dev/test", 2)
+    .withMode(test_mode)
+    .withMode(dev_mode, true)
+    .setupTime(dev_mode, test_mode, 2)
+    .setupTime(test_mode, dev_mode, 2)
+  // Activities
+  lazy val analysis = Activity_B("Analysis", 10)
+    .precedes(design)
+    .precedes(qc)
+    .withResource(analyst, 2, analyst_mode)
+  lazy val design = Activity_B("Design", 10)
+    .precedes(coding)
+    .withResource(analyst, 1, analyst_mode)
+  lazy val coding = Activity_B("Coding", 15)
+    .precedes(testing)
+    .withResource(senior_dev_test, 2, dev_mode)
+  lazy val testing = Activity_B("Testing", 25)
+    .withResource(senior_dev_test, 1, test_mode)
+  lazy val qc = Activity_B("Quality Control", 50)
+    .withResource(analyst, 1, qapm)
+  lazy val pm = Activity_B("Project Management", 60)
+    .withResource(analyst, 2, qapm)
+
+  def main(args: Array[String]): Unit = {
+    // CBLS Store
+    val m = new Store()
+    // Scheduling Problem
+    val scProblem = new SchedulingProblem_B(m,
+      Set(analysis, design, coding, testing, qc, pm),
+      Set(analyst, senior_dev_test))
+    m.close()
+    // Neighborhoods
+    val swapNH = new SwapActivity(scProblem, "Swap")
+    val reinsertNH = new ReinsertActivity(scProblem, "Reinsert")
+    val combinedNH = BestSlopeFirst(List(Profile(reinsertNH), Profile(swapNH)))
+    // This is the search strategy
+    combinedNH.doAllMoves(obj = scProblem.mkspObj)
+    // And here, the results
+    println(combinedNH.profilingStatistics)
+    println(s"*************** RESULTS ***********************************")
+    println(s"Schedule makespan = ${scProblem.makeSpan.value}")
+    println(s"Scheduling sequence = ${scProblem.activitiesPriorList.value}")
+    println("Scheduling start times = [  ")
+    scProblem.startTimes.foreach(v => println(s"    $v"))
+    println("]")
+    println("Setup Times:")
+    println(scProblem.setupTimes)
+  }
+
+  /*
   // CBLS Store
   val m = new Store()
 
@@ -99,4 +160,5 @@ object SeqSchedulingWithRiskResources {
       }
     }
   }
+  */
 }
