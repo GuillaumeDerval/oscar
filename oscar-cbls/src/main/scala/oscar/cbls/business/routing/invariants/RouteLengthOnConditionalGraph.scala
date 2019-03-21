@@ -10,10 +10,12 @@ import oscar.cbls.core._
 
 import scala.collection.immutable.SortedSet
 
+
 class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
                                     n:Int,
                                     v:Int,
                                     openConditions:ChangingSetValue,
+                                    nodeInRoutingToNodeInGraph:Int => Int,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
                                     distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
@@ -126,8 +128,8 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
   private def computeDistanceAndSaveItAll(fromNode:Int,toNode:Int): AStarInfo = {
     val (minNode,maxNode) = if(fromNode < toNode)(fromNode,toNode) else (toNode,fromNode)
     val result = aStarEngine.search(
-      graph.nodes(fromNode),
-      graph.nodes(toNode),
+      graph.nodes(nodeInRoutingToNodeInGraph(fromNode)),
+      graph.nodes(nodeInRoutingToNodeInGraph(toNode)),
       isConditionalEdgeOpen,
       includePath = false)
 
@@ -429,13 +431,13 @@ class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
 
     def checkHopAndReturnDistance(fromNode:Int,toNode:Int):Long = {
       val distance1 = getDistanceForAStarResult(aStarEngine.search(
-        graph.nodes(fromNode),
-        graph.nodes(toNode),
+        graph.nodes(nodeInRoutingToNodeInGraph(fromNode)),
+        graph.nodes(nodeInRoutingToNodeInGraph(toNode)),
         isConditionalEdgeOpen,
         includePath = false))
       val distance2 = getDistanceForAStarResult(aStarEngine.search(
-        graph.nodes(toNode),
-        graph.nodes(fromNode),
+        graph.nodes(nodeInRoutingToNodeInGraph(toNode)),
+        graph.nodes(nodeInRoutingToNodeInGraph(fromNode)),
         isConditionalEdgeOpen,
         includePath = false))
 
