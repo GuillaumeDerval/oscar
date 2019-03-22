@@ -42,6 +42,17 @@ class RevisableAStar(graph:ConditionalGraph,
 
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
 
+
+  def getPath(from:Node,to:Node,isConditionalEdgeOpen:Int => Boolean):Option[List[Edge]] = {
+    search(from,
+      to,
+      isConditionalEdgeOpen,
+      includePath = true) match {
+      case d: Distance => Some(d.path.get)
+      case _ => None
+    }
+  }
+
   def search(from:Node,
              to:Node,
              isConditionalEdgeOpen:Int => Boolean,
@@ -223,7 +234,7 @@ class RevisableAStar(graph:ConditionalGraph,
     toReturn
   }
 
-  def extractPath(from:Node,
+  private def extractPath(from:Node,
                   to:Node,
                   isConditionalEdgeOpen:Option[Int] => Boolean,
                   nodeToDistance:Array[Long]):List[Edge] = {
