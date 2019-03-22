@@ -74,9 +74,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val deliveryNodeList = QList.buildFromIterable(deliveryToNode)
 
-  println("start floyd")
-  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
-  println("end floyd")
+  //println("start floyd")
+  //startWatch()
+  //val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
+  //println("end floyd:" + getWatch)
+
+  println("start dijkstra")
+  startWatch()
+  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
+  println("start dijkstra" + getWatch)
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)

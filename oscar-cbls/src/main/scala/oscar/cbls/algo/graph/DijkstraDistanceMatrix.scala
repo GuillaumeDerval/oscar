@@ -1,8 +1,8 @@
 package oscar.cbls.algo.graph
 
-class DijkstraDistanceMatrix {
+object DijkstraDistanceMatrix {
 
-  def buildAdjacencyMatrix(g:ConditionalGraph,
+  def buildDistanceMatrix(g:ConditionalGraph,
                            isConditionalEdgeOpen:Int => Boolean):Array[Array[Long]] = {
 
 
