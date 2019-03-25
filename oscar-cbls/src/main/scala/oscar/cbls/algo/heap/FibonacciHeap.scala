@@ -78,7 +78,7 @@ class FibonacciHeap[T] {
     */
   def delete(x: Node){
     decreaseKey(x,Long.MinValue)
-    removeMin()
+    popMin()
   }
 
   /**
@@ -112,7 +112,7 @@ class FibonacciHeap[T] {
     *
     * @return  data object with the smallest key.
     */
-  def removeMin(): Option[T] = {
+  def popMin(): Option[T] = {
     val z = min
     if (z == null) {
       None
@@ -180,8 +180,27 @@ class FibonacciHeap[T] {
     }
   }
 
-  def getFirst:T = minNode.value
-  def popFirst():T = removeMin().get
+  /**
+    * Returns the current min value
+    * @return
+    */
+  def getMin:T = minNode.value
+
+  /**
+    * Pops all the elements with their key equal to the current min
+    * @return the list of mins
+    */
+  def popMins :List[T] = {
+    var list = List[T]()
+    if(min != null){
+      var savedMin = min.key
+      while(!isEmpty && min.key == savedMin){
+        list = min.value :: list
+        popMin()
+      }
+    }
+    list
+  }
 }
 
 
@@ -200,7 +219,7 @@ object FibonacciHeap {
     private[heap] var degree = 0
     private[heap] var mark = false
 
-    def key = privateKey
+    def key: Long = privateKey
 
     private[heap] def cascadingCut(min: Node[T]) {
       val z = parent

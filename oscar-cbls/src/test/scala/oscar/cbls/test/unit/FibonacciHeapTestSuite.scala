@@ -30,6 +30,8 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
 
         val keys = (1L to operations.length).toList
         val heap = new FibonacciHeap[Long]()
+
+
         var listNodes = List[FibonacciHeap.Node[Long]]()
         var currentKey = 1
 
@@ -63,7 +65,7 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
               listNodes = List[FibonacciHeap.Node[Long]]()
 
             case RemoveMin() =>
-              val min = heap.removeMin()
+              val min = heap.popMin()
 
               if(min.isDefined){
                 listNodes = listNodes.filter(_.value != min.get)
@@ -73,7 +75,7 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
 
         var list :List[Long] = List()
         while(!heap.isEmpty){
-          list = heap.popFirst() :: list
+          list = heap.popMin().get :: list
         }
 
         list.sorted should be(listNodes.map(n => n.value).sorted)
@@ -105,17 +107,17 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
           heap2.insert(e,e)
         })
 
-        heap1.removeMin() // Will consolidate the heaps
-        heap2.removeMin()
+        heap1.popMin() // Will consolidate the heaps
+        heap2.popMin()
         list1 = removeMin(list1)
         list2 = removeMin(list2)
 
         val unionHeap = FibonacciHeap.union(heap1,heap2)
-        val min = unionHeap.removeMin() // Consolidate
+        val min = unionHeap.popMin() // Consolidate
 
         var list :List[Long] = List(min.get)
         while(!unionHeap.isEmpty){
-          list = unionHeap.popFirst() :: list
+          list = unionHeap.popMin().get :: list
         }
 
         list.sorted should be((list2 ::: list1).sorted)
@@ -126,6 +128,37 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
   def removeMin(list :List[Long]) :List[Long] = {
     val indexMin = list.indexOf(list.min)
     list.take(indexMin) ::: list.takeRight(list.size - indexMin - 1)
+  }
+
+  test("popMins returns expected list"){
+
+    val heap = new FibonacciHeap[Long]()
+    heap.insert(1,0)
+    heap.insert(1,0)
+    heap.insert(1,0)
+    heap.insert(1,0)
+    heap.insert(1,0)
+
+    var list = heap.popMins
+    list.size should be (5)
+    list.forall(v => v == 1) should be(true)
+
+
+    /////////////////
+
+    val heap2 = new FibonacciHeap[Long]()
+    heap2.insert(0,0)
+    heap2.insert(1,1)
+    heap2.insert(2,2)
+    heap2.insert(3,4)
+    heap2.insert(4,5)
+
+    heap2.popMins.size should be (1)
+
+    /////////////////
+
+    val heap3 = new FibonacciHeap[Long]()
+    heap3.popMins.size should be (0)
   }
 }
 
