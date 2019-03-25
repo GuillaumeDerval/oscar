@@ -139,7 +139,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     }
   }
 
-  test("DistanceInConditionalGraph with all edges closed should be 'distanceIfNotConnected'"){
+  test("DistanceInConditionalGraph with all edges closed should be 'distanceIfNotConnected' or 0"){
     val bench = new InvBench(verbose,List(ToZero()))
     val nbNodes = 10
     val nbConditionalEdges = 15

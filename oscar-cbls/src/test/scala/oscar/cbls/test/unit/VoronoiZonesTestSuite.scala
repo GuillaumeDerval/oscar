@@ -24,9 +24,8 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with AppendedClues {
 
     val nbCentroids = 10L
 
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges)
-    val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbCentroids)
-
+    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbConditionalEdges,"openConditions")
+    val centroids:CBLSSetVar = bench.genIntSetVar(nbVars = 50, range = 0 until nbCentroids,"centroids")
 
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,

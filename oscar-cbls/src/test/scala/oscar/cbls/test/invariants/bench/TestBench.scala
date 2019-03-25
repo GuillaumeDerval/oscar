@@ -865,6 +865,8 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with Generat
     try{
       Checkers.check(prop)
     }catch{
+
+      // Catch both Errors and Exceptions
       case e :Throwable => {
 
         if(caughtStacktrace != null){

@@ -1,5 +1,6 @@
 package oscar.cbls.test.unit
 
+import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.dll.DoublyLinkedList
@@ -69,17 +70,25 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
 
     var helper = new CRUDHelpers[Int]()
     val dll = new DoublyLinkedList[Int]()
-    var size = 0
 
-    for(i <- 1 to 100){
-      // Select a random element from the function list
-      val a = helper.operationList(Random.nextInt(helper.operationList.size))
+    val genActions = Gen.oneOf(helper.operationList)
 
-      // Apply the function and update the expected size
-      size = a(dll,i,size)
+    val gen = for{
+      size <- Gen.chooseNum(1,100)
+      list <- Gen.listOfN(size,genActions)
+    } yield list
+
+    forAll(gen){ actionsList =>
+      whenever(actionsList.nonEmpty){
+        val dll = new DoublyLinkedList[Int]()
+        var size = 0
+        for(action <- actionsList){
+          val i = Random.nextInt(dll.size + 1)
+          size = action(dll,i,size)
+        }
+        size should be (dll.size)
+      }
     }
-
-    size should be (dll.size)
   }
 
   test("Delete one DLLStorageElement removes the item"){

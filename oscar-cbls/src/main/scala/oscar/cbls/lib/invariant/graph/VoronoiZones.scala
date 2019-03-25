@@ -235,7 +235,7 @@ class VoronoiZones(graph:ConditionalGraph,
       //println("changed open conditions(addedValues:" + addedValues + " removedValues:" + removedValues + " oldValue:" + oldValue + " newValue:" + newValue)
       for (added <- addedValues) {
         val addedInt = cbls.longToInt(added)
-        assert(isConditionalEdgeOpen(addedInt))
+        assert(!isConditionalEdgeOpen(addedInt))
         //if the edge is not reachable, no need to load it.
         isConditionalEdgeOpen(addedInt) = true
         assert(graph.conditionToConditionalEdges(addedInt).conditionID contains  addedInt)
