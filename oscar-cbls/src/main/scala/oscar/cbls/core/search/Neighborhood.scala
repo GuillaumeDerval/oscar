@@ -38,7 +38,7 @@ object SearchResult {
   implicit def moveToSearchResult(m: Move): MoveFound = MoveFound(m)
 }
 
-abstract class JumpNeighborhood extends Neighborhood {
+abstract class JumpNeighborhood(name:String) extends Neighborhood(name) {
 
   /**
    * the method that actually performs the move
@@ -58,10 +58,8 @@ abstract class JumpNeighborhood extends Neighborhood {
    */
   def canDoIt: Boolean = true
 
-  def shortDescription(): String
-
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean = (oldObj, newObj) => oldObj > newObj): SearchResult = {
-    if (canDoIt) CallBackMove(() => doIt(), valueAfter, this.getClass.getSimpleName, shortDescription _)
+    if (canDoIt) CallBackMove(() => doIt(), valueAfter, name)
     else NoMoveFound
   }
 
@@ -75,7 +73,7 @@ abstract class JumpNeighborhood extends Neighborhood {
   def valueAfter = Long.MaxValue
 }
 
-abstract class JumpNeighborhoodParam[T] extends Neighborhood {
+abstract class JumpNeighborhoodParam[T](name:String) extends Neighborhood(name) {
 
   final def doIt() {
     doIt(getParam)
@@ -90,7 +88,7 @@ abstract class JumpNeighborhoodParam[T] extends Neighborhood {
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
     val param: T = getParam
     if (param == null) NoMoveFound
-    else CallBackMove((param: T) => doIt(param), Long.MaxValue, this.getClass.getSimpleName, () => getShortDescription(param), param)
+    else CallBackMove((param: T) => doIt(param), Long.MaxValue, name, param)
   }
 }
 

@@ -85,6 +85,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   private val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
 
+  //all the AStarInfo that are currently instantiated (and that can be deleted easily when an assign is taking place)
   private val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
 
 
@@ -120,7 +121,6 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   class AStarInfo(val minNode:Int,
                   val maxNode:Int,
                   result:RevisableDistance){
-
 
     override def toString: String = "AStarInfo(minNode:" + minNode + " maxNode:" + maxNode + " result:" + result + ")"
 
@@ -455,7 +455,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   }
 
   private def check(c : Checker,s:IntSequence) {
-    require(allAStarInfo.isEmpty)
+    require(allAStarInfo.nonEmpty)
     var currentPosition = routes.value.explorerAtAnyOccurrence(0).get
     var currentVehicle:Int = 0
     var currentLength:Long = 0
@@ -472,8 +472,14 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         isConditionalEdgeOpen,
         includePath = false))
 
-      require(getAStarInfo(fromNode,toNode).distance == distance1)
-      require(distance1 == distance2)
+      val info = getAStarInfo(fromNode,toNode)
+      val (minNode, maxNode) = if (fromNode < toNode) (fromNode, toNode) else (toNode, fromNode)
+
+      require(minNode == info.minNode)
+      require(maxNode == info.maxNode)
+      require(distance1 == distance2, distance1 + "==" +  distance2)
+      //TODO: did fail
+      require(info.distance == distance1, info.distance + "==" + distance1)
 
       distance1
     }
