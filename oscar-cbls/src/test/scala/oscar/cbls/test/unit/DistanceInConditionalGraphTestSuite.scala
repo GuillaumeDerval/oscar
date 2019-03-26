@@ -3,11 +3,13 @@ package oscar.cbls.test.unit
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
-import oscar.cbls.CBLSSetVar
+import oscar.cbls.{CBLSSetVar, Store}
 import oscar.cbls.algo.graph._
 import oscar.cbls.core.propagation.PropagationElement
 import oscar.cbls.lib.invariant.graph.DistanceInConditionalGraph
 import oscar.cbls.test.invariants.bench._
+
+import scala.collection.immutable.SortedSet
 
 class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers{
 
@@ -96,9 +98,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     bench.model.close()
     bench.model.propagate()
 
-    forAll(Gen.oneOf(distancesArray)){
-      distance :DistanceInConditionalGraph => distance.value should be(0)
-    }
+    distancesArray.foreach(d => d.value should (be(Long.MaxValue) or be(0)))
   }
 
   test("DistanceInConditionalGraph from a node to an unreachable node should be 'distanceIfNotConnected'"){
@@ -134,9 +134,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     bench.model.close()
     bench.model.propagate()
 
-    forAll(Gen.oneOf(distancesArray)){
-      distance :DistanceInConditionalGraph => distance.value should be(Long.MaxValue)
-    }
+    distancesArray.foreach(d => d.value should (be(Long.MaxValue) or be(0)))
   }
 
   test("DistanceInConditionalGraph with all edges closed should be 'distanceIfNotConnected' or 0"){
@@ -144,7 +142,7 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     val nbNodes = 10
     val nbConditionalEdges = 15
     val nbNonConditionalEdges = 0
-    val openConditions:CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to nbConditionalEdges)
+    val openConditions:CBLSSetVar = new CBLSSetVar(bench.model,SortedSet[Long](), 0 to 0, "openConditions")
     val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
       nbConditionalEdges,
       nbNonConditionalEdges,
@@ -160,12 +158,29 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
         distanceIfNotConnected = Long.MaxValue)
       (underApproximatingDistance = (a:Int,b:Int) => underApproxDistanceMatrix(a)(b))).flatten
 
+
     bench.model.close()
     bench.model.propagate()
 
-    forAll(Gen.oneOf(distancesArray)){
-      distance :DistanceInConditionalGraph => distance.value should (be(Long.MaxValue) or be(0))
-    }
+    println(exportGraphToNetworkxInstructions(graph,openConditions))
+
+    distancesArray.foreach(d => d.value should (be(Long.MaxValue) or be(0)))
   }
 
+  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :CBLSSetVar): String ={
+
+    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
+
+    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val openEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions.value contains e.conditionID.get)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && !(openConditions.value contains e.conditionID.get)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
+
+    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
+    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
+    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
+    toReturn = toReturn.concat(s"pos = {${nodesPositions}}")
+
+    toReturn
+  }
 }

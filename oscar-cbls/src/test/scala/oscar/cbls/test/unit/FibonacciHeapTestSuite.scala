@@ -25,7 +25,7 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
   } yield list
 
   test("Batch operations keep expected heap"){
-    forAll(genOperations){ operations :List[Operation] =>
+    forAll(genOperations,minSuccessful(150)){ operations :List[Operation] =>
       whenever(operations.nonEmpty){
 
         val keys = (1L to operations.length).toList
@@ -92,7 +92,7 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
   } yield (list1,list2)
 
   test("Union yields the expected fibonacci heap"){
-    forAll(genBigList){ bothLists =>
+    forAll(genBigList,minSuccessful(150)){ bothLists =>
       whenever(bothLists._1.size > 2 && bothLists._2.size > 2){
         var list1 = bothLists._1
         var list2 = bothLists._2
