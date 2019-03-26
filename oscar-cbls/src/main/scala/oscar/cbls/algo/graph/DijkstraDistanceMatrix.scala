@@ -31,7 +31,7 @@ object DijkstraDistanceMatrix {
     val nodeToDistance = Array.fill(g.nbNodes)(Long.MaxValue)
     nodeToDistance(from.id) = 0
 
-    //TODO: use a fibonacci heap here. 
+    //TODO: use a fibonacci heap here.
     val toDevelopHeap = new oscar.cbls.algo.heap.BinomialHeapWithMoveLong(
       nodeID => nodeToDistance(nodeID),
       g.nodes.length,
