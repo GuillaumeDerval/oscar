@@ -178,7 +178,7 @@ package object cbls extends ModelingAPI{
 
     def -(v: IntValue): IntInvariant = Minus(x, v)
 
-    def *(v: IntValue): IntInvariant = Prod(List(x, v))
+    def *(v: IntValue): IntInvariant = Prod2(x, v)
 
     def /(v: IntValue): IntInvariant = Div(x, v)
     def /(i:Long):IntInvariant = {

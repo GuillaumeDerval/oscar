@@ -52,9 +52,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   require(v == distancePerVehicle.length)
 
-  warning(
+  require(
     openConditions.min == 0 && openConditions.max == graph.nbConditions - 1,
-    "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph")
+    "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph; openConditions.domain:" + openConditions.domain + " nbConditions:" + graph.nbConditions)
 
   private val nbConditions = graph.nbConditions
 
@@ -121,6 +121,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                   val maxNode:Int,
                   result:RevisableDistance){
 
+
+    override def toString: String = "AStarInfo(minNode:" + minNode + " maxNode:" + maxNode + " result:" + result + ")"
+
     private var myElements:QList[DLLStorageElement[AStarInfo]] = QList(allAStarInfo.addElem(this))
 
     for( c <- result.conditionsForRevisions){
@@ -134,7 +137,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     /**
       * @return true if this info was valid and invalidated, false if it was already invalidated
       */
-    def invalidate(): Unit ={
+    def invalidate(): Unit = {
+      //println("invalidate " + this)
       while(myElements != null){
         myElements.head.delete()
         myElements = myElements.tail
@@ -215,9 +219,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     }
   }
 
-
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
   /**
@@ -302,9 +304,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
           //we do not care about order:-)
           val oldAStarBeforeMovedSegment = getAStarInfo(oldPrevFromValue,fromValue)
-          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
-
           oldAStarBeforeMovedSegment.invalidate()
+
+          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
           oldAStarAfterMovedSegment.invalidate()
 
           val newAStarBeforeMovedSegment = computeDistanceAndSaveItAll(oldPrevFromValue,toValue)
@@ -334,11 +336,12 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
           val oldSuccAfterValue = RoutingConventionMethods.routingSuccPos2Val(after, prev.newValue, v)
 
           val oldAStarBeforeMovedSegment = getAStarInfo(oldPrevFromValue,fromValue)
-          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
-          val oldAStarAfterAfter = getAStarInfo(afterValue,oldSuccAfterValue)
-
           oldAStarBeforeMovedSegment.invalidate()
+
+          val oldAStarAfterMovedSegment = getAStarInfo(toValue,oldSuccToValue)
           oldAStarAfterMovedSegment.invalidate()
+
+          val oldAStarAfterAfter = getAStarInfo(afterValue,oldSuccAfterValue)
           oldAStarAfterAfter.invalidate()
 
           val newAStarBeforeMovedSegment = computeDistanceAndSaveItAll(afterValue,if(flip) toValue else fromValue)
@@ -406,9 +409,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
         //we do not care about order:-)
         val oldAStarBefore = getAStarInfo(oldPrevValue,removedValue)
-        val oldAStarAfter = getAStarInfo(oldSuccValue,removedValue)
-
         oldAStarBefore.invalidate()
+
+        val oldAStarAfter = getAStarInfo(oldSuccValue,removedValue)
         oldAStarAfter.invalidate()
 
         val newDistance = computeDistanceAndSaveItAll(oldPrevValue,oldSuccValue).distance
