@@ -7,14 +7,42 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.RoutingConventionMethods
 import oscar.cbls.core._
+import oscar.cbls.core.computation.InvariantHelper
 
 import scala.collection.immutable.SortedSet
 
+object RouteLengthOnConditionalGraph{
 
-class RouteLengthOnConditionalGraph(routes:ChangingSeqValue,
+  def apply(routes:SeqValue,
+            n:Int,
+            v:Int,
+            openConditions:SetValue,
+            nodeInRoutingToNodeInGraph:Int => Int,
+            graph:ConditionalGraph,
+            underApproximatingDistance:(Int,Int) => Long,
+            distanceIfNotConnected:Int):Array[CBLSIntVar] ={
+
+    val store:Store = InvariantHelper.findModel(routes,openConditions)
+    val vehicleToRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(store,0,name = "route_length_of_vehicle_" + vehicle))
+
+    new RouteLengthOnConditionalGraph(routes:SeqValue,
+      n:Int,
+      v:Int,
+      openConditions:SetValue,
+      nodeInRoutingToNodeInGraph:Int => Int,
+      graph:ConditionalGraph,
+      underApproximatingDistance:(Int,Int) => Long,
+      distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
+      vehicleToRouteLength)
+
+    vehicleToRouteLength
+  }
+}
+
+class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     n:Int,
                                     v:Int,
-                                    openConditions:ChangingSetValue,
+                                    openConditions:SetValue,
                                     nodeInRoutingToNodeInGraph:Int => Int,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
