@@ -24,7 +24,7 @@ object Pralet {
 
   def main(args: Array[String]): Unit = {
     val m = new Store(checker = Some(ErrorChecker()))
-    val schedule = new Schedule(m, durations, precPairs, Array(r, r1))
+    val schedule = new Schedule(m, durations, precPairs, 0 to 4, Array(r, r1))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     println("Model closed.")

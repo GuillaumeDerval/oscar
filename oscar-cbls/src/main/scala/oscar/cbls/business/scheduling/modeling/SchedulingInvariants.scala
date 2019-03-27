@@ -12,5 +12,4 @@ trait SchedulingInvariants {
                  resourceConstraints: Array[ResourceConstraint]): (CBLSIntVar, Array[CBLSIntVar]) = {
     StartTimes(actPriorityList, actDurations, actPrecedences, resourceConstraints)
   }
-
 }

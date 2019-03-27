@@ -16,7 +16,7 @@ object SwDevTardiness {
   def main(args: Array[String]): Unit = {
     // CBLS Store
     val m = new Store()
-    val schedule = new Schedule(m, durations, Nil, Array(analyst))
+    val schedule = new Schedule(m, durations, Nil, 0 to 4, Array(analyst))
     // Tardiness variables
     val tardinessPenalty = 100L
     val activitiesTardiness = Array.tabulate(5) { i =>

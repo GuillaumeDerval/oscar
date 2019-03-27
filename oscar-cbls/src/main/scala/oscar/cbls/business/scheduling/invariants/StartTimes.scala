@@ -60,8 +60,8 @@ class StartTimes(actPriorityList: ChangingSeqValue,
         .precArray(actIndI)
         .filter(actPriorityList.contains(_))
         .foldLeft(0L) { (acc, precInd) =>
-        acc max (startTimes(precInd).value + actDurations(precInd))
-      }
+          acc max (startTimes(precInd).value + actDurations(precInd))
+        }
       // Compute maximum of earliest release time for all needed resources
       val maxReleaseResources = actUsedResources(actIndI).foldLeft(0L) { (acc, resInd) =>
         acc max resourceStates(resInd).earliestStartTime(actIndI, 0L)
@@ -76,7 +76,7 @@ class StartTimes(actPriorityList: ChangingSeqValue,
       val actEndTime = earliestStartTime + actDurations(actIndI)
       if (actEndTime > makeSpanValue) {
         makeSpanValue = actEndTime
-    }
+      }
       startTimes(actIndI) := earliestStartTime
     }
     makeSpan := makeSpanValue
@@ -91,7 +91,7 @@ object StartTimes {
     val model = actPriorityList.model
     val makeSpan = CBLSIntVar(model, 0L, name="Schedule Makespan")
     val startTimes: Array[CBLSIntVar] = Array.tabulate(actDurations.length) { ind =>
-      CBLSIntVar(model, 0L, name=s"Start Time of Activity ($ind)")
+      CBLSIntVar(model, 0L, name=s"Start Time of Activity($ind)")
     }
     new StartTimes(actPriorityList, actDurations, actPrecedences, resourceConstraints, makeSpan, startTimes)
     (makeSpan, startTimes)

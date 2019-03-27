@@ -17,6 +17,19 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
+package oscar.cbls.business
+
+import oscar.cbls.Store
+import oscar.cbls.business.scheduling.model.ResourceConstraint
+import oscar.cbls.business.scheduling.modeling.SchedulingInvariants
+
+package object scheduling extends SchedulingInvariants {
+  type Schedule = oscar.cbls.business.scheduling.model.Schedule
+
+  def schedule(m: Store, durations: Array[Long], precPairs: List[(Int, Int)],
+               initialActs: Iterable[Int], resConstraints: Array[ResourceConstraint]): Schedule =
+    new Schedule(m, durations, precPairs, initialActs, resConstraints)
+}
 /*
 package oscar.cbls.business
 

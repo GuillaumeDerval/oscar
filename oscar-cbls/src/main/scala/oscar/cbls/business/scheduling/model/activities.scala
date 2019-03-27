@@ -1,7 +1,5 @@
 package oscar.cbls.business.scheduling.model
 
-import scala.collection.mutable
-
 abstract class Activity(index: Int, name: String) {
   def duration: Long
 }
@@ -31,14 +29,13 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     succArray(indA) ::= indB
   }
 
-
   /**
     * Gets a priority list according to the precedences constraints
     *
     * @return a list containing a permutation of [0..numActivity) corresponding
     *         to a consistent priority list (if A->B, index of A is before index of B in the list)
     */
-  def getPriorityList: List[Long] = {
+  def getPriorityList(activitiesOnList: Iterable[Int]): List[Long] = {
     def insertList(i: Int, succI: List[Int], accList: List[Long]): List[Long] = {
       accList match {
         case Nil => List(i)
@@ -51,7 +48,7 @@ class Precedences(numActivities: Int, beforeAfterPairs: List [(Int, Int)]) {
     }
     /////
     var result: List[Long] = Nil
-    for {i <- precArray.indices} {
+    for {i <- activitiesOnList} {
       result = insertList(i, succArray(i), result)
     }
     result

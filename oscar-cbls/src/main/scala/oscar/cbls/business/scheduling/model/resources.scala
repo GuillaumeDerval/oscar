@@ -176,9 +176,6 @@ class CumulativeResourceState(base: CumulativeResource,
   }
 }
 
-//TODO: this assumes that all resource in the cumulative resource have the same state.
-//TODO: this model seems a bit odd in view of the reality.
-//TODO: the correct model would be based on a more complex state model: timeToReleases:time -> ResourceState -> Amount
 class CumulativeResourceWithSetupTimesState(base: CumulativeResourceWithSetupTimes,
                                             releaseTimes: RedBlackTreeMap[Long],
                                             setupTimes: SetupTimes,

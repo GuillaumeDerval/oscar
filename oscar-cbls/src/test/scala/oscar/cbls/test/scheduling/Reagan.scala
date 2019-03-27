@@ -47,7 +47,7 @@ object Reagan {
 
   def main(args: Array[String]): Unit = {
     val m = new Store()
-    val schedule = new Schedule(m, durations, precPairs, Array(reagan))
+    val schedule = new Schedule(m, durations, precPairs, 0 to 5, Array(reagan))
     val objFunc = Objective(schedule.makeSpan)
     m.close()
     // Neighborhoods
