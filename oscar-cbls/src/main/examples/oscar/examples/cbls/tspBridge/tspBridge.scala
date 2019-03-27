@@ -40,7 +40,7 @@ object TspBridge extends App {
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
-  val m = Store(checker = Some(new ErrorChecker()))
+  val m = Store() //checker = Some(new ErrorChecker()))
   println("model")
 
   //initially all bridges open
@@ -74,7 +74,7 @@ object TspBridge extends App {
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // visu
- //TODO
+  //TODO
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -106,16 +106,20 @@ object TspBridge extends App {
 
   def switchBridge = Profile(AssignNeighborhood(bridgeConditionArray,"switchBridge"))
 
-  val search = BestSlopeFirst(List(
+  val search = (BestSlopeFirst(List(
     routeUnroutedPoint(20),
+    onePtMove(20)),refresh = 20)
+    onExhaust (() => {println("finished inserts")})
+    exhaust (BestSlopeFirst(List(
     onePtMove(20),
-    switchBridge),refresh = 20) onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
+    switchBridge),refresh = 20)
+    onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
     override def doIt(): Unit = {
       for(bridge <- bridgeConditionArray.indices){
         bridgeConditionArray(bridge) := 1
       }
     }
-  },maxRestartWithoutImprovement = 2, obj)
+  },maxRestartWithoutImprovement = 2, obj)))
 
   search.verbose = 1
 

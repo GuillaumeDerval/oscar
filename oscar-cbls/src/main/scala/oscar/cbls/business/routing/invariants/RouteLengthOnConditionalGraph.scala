@@ -460,7 +460,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     var currentVehicle:Int = 0
     var currentLength:Long = 0
 
-    def checkHopAndReturnDistance(fromNode:Int,toNode:Int):Long = {
+    def checkHop(fromNode:Int,toNode:Int):Long = {
       val distance1 = getDistanceForAStarResult(aStarEngine.search(
         graph.nodes(nodeInRoutingToNodeInGraph(fromNode)),
         graph.nodes(nodeInRoutingToNodeInGraph(toNode)),
@@ -479,7 +479,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       require(maxNode == info.maxNode)
       require(distance1 == distance2, distance1 + "==" +  distance2)
       //TODO: did fail
-      require(info.distance == distance1, info.distance + "==" + distance1)
+      require(info.distance == distance1, info.distance + "==" + distance1 + " info:" + info)
 
       distance1
     }
@@ -487,12 +487,12 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     while(currentPosition.next match{
       case None => //at the end of the current vehicle, which is the last one
         //compute the last hop
-        currentLength += checkHopAndReturnDistance(currentPosition.value,v-1)
+        currentLength += checkHop(currentPosition.value,v-1)
         require(distancePerVehicle(v-1).value == currentLength)
         false
       case Some(nextPosition) if nextPosition.value < v =>
         //at the end of the current vehicle; starting a new one
-        val lastHopToComeBack = checkHopAndReturnDistance(currentPosition.value,currentVehicle)
+        val lastHopToComeBack = checkHop(currentPosition.value,currentVehicle)
         currentLength += lastHopToComeBack
         require(distancePerVehicle(currentVehicle).value == currentLength)
 
@@ -503,12 +503,11 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         true
       case Some(nextPosition) if nextPosition.value >= v =>
         //carry on the current vehicle
-        val newHop = checkHopAndReturnDistance(currentPosition.value,nextPosition.value)
+        val newHop = checkHop(currentPosition.value,nextPosition.value)
         currentLength += newHop
         currentPosition = nextPosition
         true
     }){}
-
   }
 }
 

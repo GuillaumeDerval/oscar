@@ -36,9 +36,10 @@ case class NotConnected(from:Node,
 class RevisableAStar(graph:ConditionalGraph,
                      underApproximatingDistance:(Int,Int) => Long){
 
-  //TODO: speed up if we know, beside the under approximating distance, that the approximation is exact (ie: no conditional edge on the shortest path)
-  //then either the search can be stopped andthe distance is just added and returned
-  //or the path can be computed faster, given that we know the approximation is exact.
+  //TODO: speed up if we know, beside the under approximating distance,
+  // that the approximation is exact (ie: no conditional edge on the shortest path)
+  // then either the search can be stopped andthe distance is just added and returned
+  // or the path can be computed faster, given that we know the approximation is exact.
 
   private val nodeToDistance = Array.fill[Long](graph.nodes.length)(Long.MaxValue)
 
@@ -67,8 +68,6 @@ class RevisableAStar(graph:ConditionalGraph,
     if (underApproximatingDistance(from.id, to.id) == Long.MaxValue) {
       return NeverConnected(from, to)
     }
-
-    //TODO: this array might be time-consuming to allocate; store it permanently in the class for faster query time?
 
     var reachedClosedConditions: SortedSet[Int] = SortedSet.empty
 
@@ -218,7 +217,9 @@ class RevisableAStar(graph:ConditionalGraph,
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.id)
 
-        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue
+          && newDistance + incomingEdge.length == currentDistance
+          && newNode.transitAllowed || newNode == from) {
 
           currentDistance = newDistance
           currentNode = newNode
@@ -230,6 +231,7 @@ class RevisableAStar(graph:ConditionalGraph,
         }
       }
     }
+    require(currentDistance == 0)
     toReturn
   }
 
