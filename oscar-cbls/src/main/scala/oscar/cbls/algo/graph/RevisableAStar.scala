@@ -249,7 +249,9 @@ class RevisableAStar(graph:ConditionalGraph,
         val newNode = incomingEdge.otherNode(currentNode)
         val newDistance = nodeToDistance(newNode.id)
 
-        if (newDistance != Long.MaxValue && newDistance + incomingEdge.length == currentDistance) {
+        if (newDistance != Long.MaxValue
+          && newDistance + incomingEdge.length == currentDistance
+          && newNode.transitAllowed || newNode == from) {
 
           currentDistance = newDistance
           currentNode = newNode
