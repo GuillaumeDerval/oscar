@@ -11,7 +11,6 @@ import scala.util.Random
 
 class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks{
 
-  val listOperations = List(Insert(),Clear(),RemoveMin(),DecreaseKey())
   val gen: Gen[Operation] = Gen.frequency(
     (10,Insert()),
     (4,RemoveMin()),
@@ -30,8 +29,6 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
 
         val keys = (1L to operations.length).toList
         val heap = new FibonacciHeap[Long]()
-
-
         var listNodes = List[FibonacciHeap.Node[Long]]()
         var currentKey = 1
 

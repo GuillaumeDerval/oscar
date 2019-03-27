@@ -138,4 +138,67 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
         }
     }
   }
+
+  test("Flipping from and to on search yield the same value (and possibly the same path)"){
+
+    val nbNodes = 60
+    val nbConditionalEdges = 110
+    val nbNonConditionalEdges = 50
+    val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
+      nbConditionalEdges,
+      nbNonConditionalEdges,
+      nbTransitNodes = nbNodes / 2,
+      mapSide = 1000)
+
+    val open = Array.tabulate((nbConditionalEdges * 0.7).toInt)(_ => 1).toList
+    val closed = Array.tabulate((nbConditionalEdges * 0.3).toInt)(_ => 0).toList
+    val openConditions = Random.shuffle(open ::: closed)
+
+    val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
+    val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+
+    for (nodeFrom <- graph.nodes) {
+      for (nodeTo <- graph.nodes) {
+
+        val res1 = aStar.search(nodeFrom, nodeTo, id => openConditions(id) == 1, includePath = true)
+        val res2 = aStar.search(nodeTo, nodeFrom, id => openConditions(id) == 1, includePath = true)
+        (res1, res2) match {
+          case (Distance(_, _, dist1, conditions1, _, path1), Distance(_, _, dist2, conditions2, _, path2)) =>
+            dist1 should be(dist2)
+            if (path1.isDefined) {
+
+              path2 should not be None
+
+              val pathForward = path1.get
+              val pathBackward = path2.get
+              val conditionsForward = pathForward.filter(_.conditionID.isDefined).sortBy(_.conditionID.get)
+              val conditionsBackward = pathBackward.filter(_.conditionID.isDefined).sortBy(_.conditionID.get)
+              if (pathForward.sortBy(_.id) equals pathBackward.sortBy(_.id)) {
+                // If the path is the same, the conditions should be the same
+                conditionsForward should be(conditionsBackward)
+              }
+            }
+
+          case _ =>
+        }
+      }
+    }
+  }
+
+  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Int]): String ={
+
+    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
+
+    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
+
+    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
+    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
+    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
+    toReturn = toReturn.concat(s"pos = {${nodesPositions}}")
+
+    toReturn
+  }
 }
