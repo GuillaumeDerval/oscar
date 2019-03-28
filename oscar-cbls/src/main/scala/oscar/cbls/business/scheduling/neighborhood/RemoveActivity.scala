@@ -3,11 +3,11 @@ package oscar.cbls.business.scheduling.neighborhood
 import oscar.cbls.LoopBehavior
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.scheduling.model.Schedule
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel}
+import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First}
 
 class RemoveActivity(schedule: Schedule,
                      neighborhoodName: String,
-                     selectIndexBehavior:LoopBehavior = Best(),
+                     selectIndexBehavior:LoopBehavior = First(),
                      searchIndices: Option[() => Iterable[Long]] = None)
   extends EasyNeighborhoodMultiLevel[RemoveActivityMove](neighborhoodName) {
 
@@ -21,7 +21,7 @@ class RemoveActivity(schedule: Schedule,
   override def exploreNeighborhood(initialObj: Long): Unit = {
     // Iteration zone on indices to remove
     // Checking the Hot Restart
-    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() => 0L until schedule.activitiesPriorList.value.size)
+    val iterationZone1: () => Iterable[Long] = searchIndices.getOrElse(() => 0L until schedule.activitiesPriorList.value.size.toLong)
     val hotRestart = true
     val iterationZone: Iterable[Long] =
       if (hotRestart) HotRestart(iterationZone1(), currentIndex)
