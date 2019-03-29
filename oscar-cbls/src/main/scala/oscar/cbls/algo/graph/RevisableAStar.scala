@@ -89,7 +89,7 @@ class RevisableAStar(graph:ConditionalGraph,
       val currentNodeId: Int = if (toDevelopHeap.isEmpty) -1
       else toDevelopHeap.removeFirst()
 
-      if (currentNodeId == -1 || (nodeToDistance(currentNodeId) > nodeToDistance(to.id))) {
+      if (currentNodeId == -1 || (nodeToDistance(currentNodeId) >= nodeToDistance(to.id))) {
         //this is the exit code
         val toReturn = extractAnswerFromFinishedSearch(
           from:Node,
@@ -117,7 +117,7 @@ class RevisableAStar(graph:ConditionalGraph,
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
 
-            if(otherNode.transitAllowed) {
+            if(otherNode.transitAllowed || otherNode == to) {
               if (toDevelopHeap.contains(otherNodeID)) {
                 //Already to explore
                 toDevelopHeap.notifyChange(otherNodeID)
@@ -145,7 +145,7 @@ class RevisableAStar(graph:ConditionalGraph,
   }
 
 
-  def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
+  private def pruneReachedClosedConditions(reachedClosedConditions:SortedSet[Int],to:Int,distance:Long):SortedSet[Int] = {
     reachedClosedConditions.filter((conditionID:Int) => {
       val edge = graph.conditionToConditionalEdges(conditionID)
 
