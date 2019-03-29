@@ -158,7 +158,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
 
     for (nodeFrom <- graph.nodes) {
-      for (nodeTo <- graph.nodes) {
+      for (nodeTo <- graph.nodes){
 
         val res1 = aStar.search(nodeFrom, nodeTo, id => openConditions(id) == 1, includePath = true)
         val res2 = aStar.search(nodeTo, nodeFrom, id => openConditions(id) == 1, includePath = true)
@@ -183,22 +183,5 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
         }
       }
     }
-  }
-
-  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Int]): String ={
-
-    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
-
-    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
-
-    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
-    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
-    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
-    toReturn = toReturn.concat(s"pos = {${nodesPositions}}")
-
-    toReturn
   }
 }

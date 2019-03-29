@@ -162,25 +162,6 @@ class DistanceInConditionalGraphTestSuite extends FunSuite with GeneratorDrivenP
     bench.model.close()
     bench.model.propagate()
 
-    println(exportGraphToNetworkxInstructions(graph,openConditions))
-
     distancesArray.foreach(d => d.value should (be(Long.MaxValue) or be(0)))
-  }
-
-  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :CBLSSetVar): String ={
-
-    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
-
-    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val openEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions.value contains e.conditionID.get)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && !(openConditions.value contains e.conditionID.get)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
-
-    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
-    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
-    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
-    toReturn = toReturn.concat(s"pos = {${nodesPositions}}")
-
-    toReturn
   }
 }

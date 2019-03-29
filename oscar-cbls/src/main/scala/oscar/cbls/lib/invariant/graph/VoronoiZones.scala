@@ -165,13 +165,15 @@ class VoronoiZones(graph:ConditionalGraph,
 
     var toDevelop = nodes
     while(toDevelop!=null){
-      val p = pathToCentroid(toDevelop.head)
+      val target = toDevelop.head
+      val p = pathToCentroid(target)
       toDevelop = toDevelop.tail
 
       p match{
-        case None => ;
-        case Some(l) =>
-          var toEnqueue = l
+        case None =>
+        case Some(list) =>
+          println(s"Found a path for ${target.id} -> ${list.toList.mkString(",")}")
+          var toEnqueue = list
           while(toEnqueue != null) {
             acc = QList(toEnqueue.head, acc)
             toEnqueue = toEnqueue.tail
@@ -204,6 +206,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
     nodeLabeling(node.id) match {
       case Unreachable =>
+        println(s"Node ${node.id} is unreachable")
         None
       case z:VoronoiZone =>
         Some(pathToExistingCentroid(node,z))
@@ -500,6 +503,25 @@ class VoronoiZones(graph:ConditionalGraph,
           trackedNodeToDistanceAndCentroid(node.id).checkEqual(nodeLabeling(node.id))
       }
     }
+  }
+
+  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Long],spanningTree :List[Edge] = List()): String ={
+
+    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
+
+    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
+    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
+    val spanningTreeString = spanningTree.map(e => s"(${e.nodeIDB},${e.nodeIDA})").mkString(",")
+
+    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
+    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
+    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
+    toReturn = toReturn.concat(s"pos = {$nodesPositions}\n")
+    toReturn = toReturn.concat(s"span = [$spanningTreeString]")
+
+    toReturn
   }
 }
 
