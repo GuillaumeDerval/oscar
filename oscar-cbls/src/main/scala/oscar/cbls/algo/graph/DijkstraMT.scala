@@ -17,10 +17,10 @@ class DijkstraMT(g:ConditionalGraph){
 
     val isTarget:Array[Boolean] = Array.fill[Boolean](g.nodes.length)(false)
     for(target <- targets){
-      isTarget(target.nodeId) = true
+      isTarget(target.id) = true
     }
 
-    if(isTarget(from.nodeId)){
+    if(isTarget(from.id)){
       return VoronoiZone(from, 0)
     }
     //we can only put node with an existing under-approximated distance to the target, this only needs to be checked on the source node, actually
@@ -29,8 +29,8 @@ class DijkstraMT(g:ConditionalGraph){
       g.nodes.length,
       g.nodes.length - 1)
 
-    nodeToDistance(from.nodeId) = 0
-    toDevelopHeap.insert(from.nodeId)
+    nodeToDistance(from.id) = 0
+    toDevelopHeap.insert(from.id)
 
     var toReturn:ClosestCentroidLabeling = Unreachable
     var maxDistance:Long = Long.MaxValue
@@ -41,7 +41,7 @@ class DijkstraMT(g:ConditionalGraph){
 
       val currentNodeId: Int = toDevelopHeap.removeFirst()
       val currentNode = g.nodes(currentNodeId)
-      val currentNodeDistance = nodeToDistance(currentNode.nodeId)
+      val currentNodeDistance = nodeToDistance(currentNode.id)
 
       if (currentNodeDistance > maxDistance) return toReturn
 
@@ -49,15 +49,18 @@ class DijkstraMT(g:ConditionalGraph){
         if (isEdgeOpen(outgoingEdge)) {
           val otherNode:Node = outgoingEdge.otherNode(currentNode)
           val newDistance:Long = currentNodeDistance + outgoingEdge.length
-          val otherNodeID:Int = otherNode.nodeId
+          val otherNodeID:Int = otherNode.id
 
           val oldDistance = nodeToDistance(otherNodeID)
           if (newDistance < oldDistance) {
             nodeToDistance(otherNodeID) = newDistance
-            if (toDevelopHeap.contains(otherNodeID)) {
-              toDevelopHeap.notifyChange(otherNodeID)
-            } else {
-              toDevelopHeap.insert(otherNodeID)
+
+            if(otherNode.transitAllowed) {
+              if (toDevelopHeap.contains(otherNodeID)) {
+                toDevelopHeap.notifyChange(otherNodeID)
+              } else {
+                toDevelopHeap.insert(otherNodeID)
+              }
             }
           }
 
