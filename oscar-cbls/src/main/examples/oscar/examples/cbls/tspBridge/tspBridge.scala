@@ -19,6 +19,7 @@ import scala.language.implicitConversions
 object TspBridge extends App {
 
   val n = 100
+  val v = 1
   val nbNodes = 1000
   val nbConditionalEdges = 500
   val nbNonConditionalEdges = 3000
@@ -57,7 +58,7 @@ object TspBridge extends App {
   val routeLengthInvar = RouteLengthOnConditionalGraph(
     myVRP.routes,
     n = n,
-    v = 1,
+    v = v,
     openConditions = openBridges,
     nodeInRoutingToNodeInGraph = identity, //we keep it simple for this random example
     graph = graph,
@@ -77,7 +78,7 @@ object TspBridge extends App {
   // visu
 
   val visu = new TspBridgeVisu(graph, v = 1, n,(a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b))
-  SingleFrameWindow.show(visu,"TspBridge(n" + n + ")")
+  SingleFrameWindow.show(visu,"TspBridge(tspN:" + n + " tspV:" + v + " graphN:" + nbNodes + " graphE:" + (nbNonConditionalEdges + nbConditionalEdges) + " graphNCE:" + nbNonConditionalEdges + " graphCE:" + nbConditionalEdges + ")")
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -116,16 +117,29 @@ object TspBridge extends App {
 
   def swapBridge = swapsNeighborhood(bridgeConditionArray,"swapBridge")
 
+  def closeAllUselessBridges = new JumpNeighborhood("closeUselessBridges"){
+    override def doIt(): Unit = {
+     val neededCond = routeLengthInvar.neededConditions
+      for(c <- 0 until nbConditionalEdges if !(neededCond contains c)){
+        bridgeConditionArray(c) := 0
+     }
+    }
+  }
+
+  def closeUsedBridge = profile(assignNeighborhood(bridgeConditionArray,name = "closeUsedBridge",searchZone = () => routeLengthInvar.neededConditions.toList.map(_.toLong)))
+
   val search = (bestSlopeFirst(List(
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
     onExhaust (() => {println("finished inserts; neededBridges:" + routeLengthInvar.neededConditions)})
+    exhaust (profile(closeAllUselessBridges) maxMoves 1)
     exhaust (bestSlopeFirst(List(
     profile(onePtMove(40)),
     myThreeOpt(20),
     profile(swapBridge),
-    profile((onePtMove(20) andThen switchBridge) name "swapAndMove"),
+    closeUsedBridge,
+    profile((onePtMove(20) andThen switchBridge) name "switchAndMove"),
     profile(switchBridge)),refresh = 10)
     onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
     override def doIt(): Unit = {
@@ -176,7 +190,7 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
       if(openBridges contains condition){
         drawEdge(conditionalEdge, 5, Color.green)
       }else{
-        drawEdge(conditionalEdge, 1, Color.pink, dashed = true)
+        drawEdge(conditionalEdge, 2, Color.pink, dashed = true)
       }
     }
 

@@ -7,6 +7,7 @@ import scala.collection.immutable.SortedSet
 abstract sealed class RevisableDistance(from:Node,
                                         to:Node){
   def conditionsForRevisions:Iterable[Int]
+  def requiredConditions:SortedSet[Int]
 }
 
 case class Distance(from:Node,
@@ -20,12 +21,15 @@ case class Distance(from:Node,
 
 case class NeverConnected(from:Node,to:Node) extends RevisableDistance(from,to){
   override def conditionsForRevisions: Iterable[Int] = Nil
+
+  override def requiredConditions: SortedSet[Int] = SortedSet.empty
 }
 
 case class NotConnected(from:Node,
                         to:Node,
                         unlockingConditions:SortedSet[Int]) extends RevisableDistance(from,to){
   override def conditionsForRevisions: Iterable[Int] = unlockingConditions
+  override def requiredConditions: SortedSet[Int] = SortedSet.empty
 }
 
 /**

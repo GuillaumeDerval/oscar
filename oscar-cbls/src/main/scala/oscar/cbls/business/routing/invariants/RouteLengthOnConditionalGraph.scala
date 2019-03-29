@@ -85,6 +85,8 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   private var myNeededConditions:SortedSet[Int] = SortedSet.empty
 
+  private var myRelevantConditions:SortedSet[Int] = SortedSet.empty
+
   //all the AStarInfo that are currently instantiated (and that can be deleted easily when an assign is taking place)
   private val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
 
@@ -96,8 +98,10 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   /**
     * @return the conditions that are actually used in the present state.
     */
-  //TODO: make it an additional output variable!!
+  //TODO: make it an additional output variable?
   def neededConditions:SortedSet[Int] = myNeededConditions
+
+  def relevantConditions:SortedSet[Int] = myRelevantConditions
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -134,8 +138,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
     private var myElements:QList[DLLStorageElement[AStarInfo]] = QList(allAStarInfo.addElem(this))
 
     for( c <- result.conditionsForRevisions){
+      if(conditionToAStarInfo(c).isEmpty) myRelevantConditions += c //awfully expensive!
       myElements = QList(conditionToAStarInfo(c).addElem(this),myElements)
-      myNeededConditions += c
+      if(isConditionalEdgeOpen(c)) myNeededConditions += c
     }
 
     minNodeToAStarInfos(minNode) = QList(this,minNodeToAStarInfos(minNode))
@@ -161,10 +166,13 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         minNodeToAStarInfos(minNode) = QList(minNodeToAStarInfos(minNode).head)
       }
 
-
+      //TODO: this is c log(c), by far too slow!!
       for( c <- result.conditionsForRevisions){
-        if(conditionToAStarInfo(c).isEmpty) {
+        if(!isConditionalEdgeOpen(c) || conditionToAStarInfo(c).isEmpty) {
           myNeededConditions -= c
+        }
+        if(conditionToAStarInfo(c).isEmpty){
+          myRelevantConditions -= c
         }
       }
     }
@@ -521,6 +529,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         currentPosition = nextPosition
         true
     }){}
+
   }
 }
 
