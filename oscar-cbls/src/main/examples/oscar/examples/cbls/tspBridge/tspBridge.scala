@@ -54,7 +54,7 @@ object TspBridge extends App {
   val myVRP = new VRP(m,n,1)
 
 
-  val routeLength:IntValue = RouteLengthOnConditionalGraph(
+  val routeLengthInvar = RouteLengthOnConditionalGraph(
     myVRP.routes,
     n = n,
     v = 1,
@@ -62,8 +62,9 @@ object TspBridge extends App {
     nodeInRoutingToNodeInGraph = identity, //we keep it simple for this random example
     graph = graph,
     underApproximatingDistance = (a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b),
-    distanceIfNotConnected = Int.MaxValue/10)(0)
+    distanceIfNotConnected = Int.MaxValue/10)
 
+  val routeLength:IntValue = routeLengthInvar.distancePerVehicle(0)
 
   val penaltyForUnrouted  = 1000L
 
@@ -100,10 +101,10 @@ object TspBridge extends App {
     selectInsertionPointBehavior = First())) // Inserting after the first node in myVRP.kFirst(10,...)
 
   // Moves a routed node to a better place (best neighbor within the 10 closest nodes)
-  def onePtMove(k:Long) = profile(onePointMove(
+  def onePtMove(k:Long) = onePointMove(
     myVRP.routed,
     ()=>myVRP.kFirst(20,(x:Long) =>closestRoutingPoint( x.toInt),routedPostFilter),
-    myVRP))
+    myVRP)
 
 
   def myThreeOpt(k:Int) = profile(
@@ -111,17 +112,21 @@ object TspBridge extends App {
       relevantNeighbors =()=>myVRP.kFirst(k,(x:Long) =>closestRoutingPoint(x.toInt),routedPostFilter),
       vrp = myVRP))
 
-  def switchBridge = profile(assignNeighborhood(bridgeConditionArray,"switchBridge"))
+  def switchBridge = assignNeighborhood(bridgeConditionArray,"switchBridge")
+
+  def swapBridge = swapsNeighborhood(bridgeConditionArray,"swapBridge")
 
   val search = (bestSlopeFirst(List(
     routeUnroutedPoint(50),
     myThreeOpt(20),
-    onePtMove(20)),refresh = 20)
-    onExhaust (() => {println("finished inserts")})
+    profile(onePtMove(20))),refresh = 20)
+    onExhaust (() => {println("finished inserts; neededBridges:" + routeLengthInvar.neededConditions)})
     exhaust (bestSlopeFirst(List(
-    onePtMove(40),
+    profile(onePtMove(40)),
     myThreeOpt(20),
-    switchBridge),refresh = 10)
+    profile(swapBridge),
+    profile((onePtMove(20) andThen switchBridge) name "swapAndMove"),
+    profile(switchBridge)),refresh = 10)
     onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
     override def doIt(): Unit = {
       for(bridge <- bridgeConditionArray.indices){
@@ -141,7 +146,7 @@ object TspBridge extends App {
 
   println(myVRP)
   println(openBridges)
-
+  println("neededBridges:" + routeLengthInvar.neededConditions)
   visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
 
 }

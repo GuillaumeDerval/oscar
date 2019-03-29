@@ -20,7 +20,7 @@ object RouteLengthOnConditionalGraph{
             nodeInRoutingToNodeInGraph:Int => Int,
             graph:ConditionalGraph,
             underApproximatingDistance:(Int,Int) => Long,
-            distanceIfNotConnected:Int):Array[CBLSIntVar] ={
+            distanceIfNotConnected:Int):RouteLengthOnConditionalGraph ={
 
     val store:Store = InvariantHelper.findModel(routes,openConditions)
     val vehicleToRouteLength = Array.tabulate(v)(vehicle => CBLSIntVar(store,0,name = "route_length_of_vehicle_" + vehicle))
@@ -34,8 +34,6 @@ object RouteLengthOnConditionalGraph{
       underApproximatingDistance:(Int,Int) => Long,
       distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
       vehicleToRouteLength)
-
-    vehicleToRouteLength
   }
 }
 
@@ -47,7 +45,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
                                     distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
-                                    distancePerVehicle:Array[CBLSIntVar])
+                                    val distancePerVehicle:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
   require(v == distancePerVehicle.length)
@@ -85,12 +83,21 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   private val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
 
+  private var myNeededConditions:SortedSet[Int] = SortedSet.empty
+
   //all the AStarInfo that are currently instantiated (and that can be deleted easily when an assign is taking place)
   private val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
 
 
   //initialization
   computeAndAffectValueFromScratch(routes.value)
+
+
+  /**
+    * @return the conditions that are actually used in the present state.
+    */
+  //TODO: make it an additional output variable!!
+  def neededConditions:SortedSet[Int] = myNeededConditions
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -128,6 +135,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
     for( c <- result.conditionsForRevisions){
       myElements = QList(conditionToAStarInfo(c).addElem(this),myElements)
+      myNeededConditions += c
     }
 
     minNodeToAStarInfos(minNode) = QList(this,minNodeToAStarInfos(minNode))
@@ -152,10 +160,15 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
         require(minNodeToAStarInfos(minNode).tail.tail == null)
         minNodeToAStarInfos(minNode) = QList(minNodeToAStarInfos(minNode).head)
       }
+
+
+      for( c <- result.conditionsForRevisions){
+        if(conditionToAStarInfo(c).isEmpty) {
+          myNeededConditions -= c
+        }
+      }
     }
   }
-
-
 
   private def computeDistanceAndSaveItAll(fromNode:Int,toNode:Int): AStarInfo = {
     val (minNode,maxNode) = if(fromNode < toNode)(fromNode,toNode) else (toNode,fromNode)
