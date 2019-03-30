@@ -65,6 +65,8 @@ object TspBridge extends App {
     underApproximatingDistance = (a,b) => underApproximatingDistanceInGraphAllBridgesOpen(a)(b),
     distanceIfNotConnected = Int.MaxValue/10)
 
+  val neededConditions = routeLengthInvar.neededConditions
+
   val routeLength:IntValue = routeLengthInvar.distancePerVehicle(0)
 
   val penaltyForUnrouted  = 1000L
@@ -119,35 +121,38 @@ object TspBridge extends App {
 
   def closeAllUselessBridges = new JumpNeighborhood("closeUselessBridges"){
     override def doIt(): Unit = {
-     val neededCond = routeLengthInvar.neededConditions
+      val neededCond = neededConditions.value
       for(c <- 0 until nbConditionalEdges if !(neededCond contains c)){
         bridgeConditionArray(c) := 0
-     }
+      }
     }
   }
 
-  def closeUsedBridge = profile(assignNeighborhood(bridgeConditionArray,name = "closeUsedBridge",searchZone = () => routeLengthInvar.neededConditions.toList.map(_.toLong)))
+  def closeUsedBridge = profile(assignNeighborhood(bridgeConditionArray,name = "closeUsedBridge",searchZone = neededConditions))
 
   val search = (bestSlopeFirst(List(
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
-    onExhaust (() => {println("finished inserts; neededBridges:" + routeLengthInvar.neededConditions)})
+    onExhaust (() => {println("finished inserts; neededBridges:" + neededConditions)})
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
-    exhaust (bestSlopeFirst(List(
-    profile(onePtMove(40)),
-    myThreeOpt(20),
-    profile(swapBridge),
-    closeUsedBridge,
-    profile((onePtMove(20) andThen switchBridge) name "switchAndMove"),
-    profile(switchBridge)),refresh = 10)
-    onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
-    override def doIt(): Unit = {
-      for(bridge <- bridgeConditionArray.indices){
-        bridgeConditionArray(bridge) := 1
+    exhaust (
+    bestSlopeFirst(
+      List(
+        profile(onePtMove(40)),
+        myThreeOpt(40),
+        profile(swapBridge),
+        closeUsedBridge,
+        profile((onePtMove(20) andThen switchBridge) name "switchAndMove"),
+        profile(switchBridge)),
+      refresh = 10)
+      onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
+      override def doIt(): Unit = {
+        for(bridge <- bridgeConditionArray.indices){
+          bridgeConditionArray(bridge) := 1
+        }
       }
-    }
-  },maxRestartWithoutImprovement = 2, obj))
+    },maxRestartWithoutImprovement = 2, obj))
     afterMove{
     visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
   })
@@ -162,6 +167,9 @@ object TspBridge extends App {
   println(openBridges)
   println("neededBridges:" + routeLengthInvar.neededConditions)
   visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
+
+
+  //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
 
 }
 

@@ -83,9 +83,9 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   private val conditionToAStarInfo: Array[DoublyLinkedList[AStarInfo]] = Array.tabulate(nbConditions)(_ => new DoublyLinkedList[AStarInfo]())
 
-  private var myNeededConditions:SortedSet[Int] = SortedSet.empty
+  private var myNeededConditions:Option[CBLSSetVar] = None
 
-  private var myRelevantConditions:SortedSet[Int] = SortedSet.empty
+  private var myRelevantConditions:Option[CBLSSetVar] = None
 
   //all the AStarInfo that are currently instantiated (and that can be deleted easily when an assign is taking place)
   private val allAStarInfo: DoublyLinkedList[AStarInfo] = new DoublyLinkedList[AStarInfo]()
@@ -98,10 +98,37 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
   /**
     * @return the conditions that are actually used in the present state.
     */
-  //TODO: make it an additional output variable?
-  def neededConditions:SortedSet[Int] = myNeededConditions
+  def neededConditions:CBLSSetVar = {
+    myNeededConditions match{
+      case Some(variable) => variable
+      case None =>
+        var neededConditionsAcc:Set[Long] = SortedSet.empty
+        for(aStarInfo:AStarInfo <- allAStarInfo) {
+          for (c <- aStarInfo.requiredConditions){
+            neededConditionsAcc = neededConditionsAcc + c
+          }
+        }
+        val toReturn = CBLSSetVar(model,neededConditionsAcc,Domain(0,graph.nbConditions-1), "neededConditions")
+        myNeededConditions = Some(toReturn)
+        toReturn
+    }
+  }
 
-  def relevantConditions:SortedSet[Int] = myRelevantConditions
+  def relevantConditions:CBLSSetVar =     {
+    myRelevantConditions match{
+      case Some(variable) => variable
+      case None =>
+        var relevantConditionsAcc:Set[Long] = SortedSet.empty
+        for(aStarInfo:AStarInfo <- allAStarInfo){
+          for(c <- aStarInfo.conditionsForRevision) {
+            relevantConditionsAcc = relevantConditionsAcc + c
+          }
+        }
+        val toReturn = CBLSSetVar(model,relevantConditionsAcc,Domain(0,graph.nbConditions-1), "relevantConditions")
+        myRelevantConditions = Some(toReturn)
+        toReturn
+    }
+  }
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -137,11 +164,22 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
     private var myElements:QList[DLLStorageElement[AStarInfo]] = QList(allAStarInfo.addElem(this))
 
-    for( c <- result.conditionsForRevisions){
-      if(conditionToAStarInfo(c).isEmpty) myRelevantConditions += c //awfully expensive!
-      myElements = QList(conditionToAStarInfo(c).addElem(this),myElements)
-      if(isConditionalEdgeOpen(c)) myNeededConditions += c
+    for( c <- result.conditionsForRevisions) {
+      if (conditionToAStarInfo(c).isEmpty) myRelevantConditions match {
+        case Some(variable) => variable :+= c
+        case None => ; //awfully expensive!
+      }
+      myElements = QList(conditionToAStarInfo(c).addElem(this), myElements)
+
+      if (isConditionalEdgeOpen(c)) myNeededConditions match {
+        case Some(neededConditionVar) => neededConditionVar :+= c
+        case None => ;
+      }
     }
+
+    def conditionsForRevision:Iterable[Int] = result.conditionsForRevisions
+
+    def requiredConditions:SortedSet[Int] = result.requiredConditions
 
     minNodeToAStarInfos(minNode) = QList(this,minNodeToAStarInfos(minNode))
 
@@ -167,13 +205,24 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
       }
 
       //TODO: this is c log(c), by far too slow!!
-      for( c <- result.conditionsForRevisions){
-        if(!isConditionalEdgeOpen(c) || conditionToAStarInfo(c).isEmpty) {
-          myNeededConditions -= c
-        }
-        if(conditionToAStarInfo(c).isEmpty){
-          myRelevantConditions -= c
-        }
+      myNeededConditions match{
+        case Some(neededConditionVar) =>
+          for( c <- result.conditionsForRevisions) {
+            if (!isConditionalEdgeOpen(c) || conditionToAStarInfo(c).isEmpty) {
+              neededConditionVar :-= c
+            }
+          }
+        case None => ;
+      }
+
+      myRelevantConditions match{
+        case Some(relevantConditionVar) =>
+          for( c <- result.conditionsForRevisions){
+            if(conditionToAStarInfo(c).isEmpty){
+              relevantConditionVar :-= c
+            }
+          }
+        case None => ;
       }
     }
   }
@@ -245,7 +294,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   /**
     *
-    * @param s a sequence of integers representing routes
+    * @param routes a sequence of integers representing routes
     * @return the distance per vehicle or the total distance in a singleton array, according to the global "perVehicle" flag
     */
   private def computeAndAffectValueFromScratch(routes:IntSequence){
