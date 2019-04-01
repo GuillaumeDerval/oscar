@@ -54,7 +54,7 @@ class SimpleGraphViewer(graph:ConditionalGraphWithIntegerNodeCoordinates)
     tempPoint.toolTip = if(toolTip == null) "" + node else toolTip
   }
 
-  def drawCrossNode(node:Node, side:Int, color:Color, toolTip:String = null){
+  def drawCrossNode(node:Node, color:Color, side:Int, toolTip:String = null){
     val nodeCoordinates = graph.coordinates(node.id)
     val lineV = new VisualLine(this, new Double(
       nodeCoordinates._1 * xMultiplier,

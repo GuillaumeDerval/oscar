@@ -23,7 +23,7 @@ object TspBridge extends App {
   val nbNodes = 1000
   val nbConditionalEdges = 500
   val nbNonConditionalEdges = 3000
-  val nbTransitNodes = (nbNodes).toInt
+  val nbTransitNodes = nbNodes
 
   println("generate random graph")
   val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(
@@ -32,17 +32,13 @@ object TspBridge extends App {
     nbNonConditionalEdges = nbNonConditionalEdges,
     nbTransitNodes = nbTransitNodes,
     mapSide = 1000)
-
   println("end generate random graph")
 
-
   println("start dijkstra")
-
   val underApproximatingDistanceInGraphAllBridgesOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
   println("end dijkstra")
 
   val m = Store() //checker = Some(new ErrorChecker()))
-  println("model")
 
   //initially all bridges open
   val bridgeConditionArray = Array.tabulate(nbConditionalEdges)(c => CBLSIntVar(m, 1, 0 to 1, "bridge_" + c + "_open"))
@@ -53,7 +49,6 @@ object TspBridge extends App {
 
   val bridgeCost:IntValue = cardinality(openBridges) * costPerBridge
   val myVRP = new VRP(m,n,1)
-
 
   val routeLengthInvar = RouteLengthOnConditionalGraph(
     myVRP.routes,
@@ -74,7 +69,7 @@ object TspBridge extends App {
   val obj:Objective = routeLength + bridgeCost - length(myVRP.routes) * penaltyForUnrouted + CBLSIntConst(n * penaltyForUnrouted)
 
   m.close()
-
+  println("finished model")
 
   // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // visu
@@ -134,7 +129,7 @@ object TspBridge extends App {
     routeUnroutedPoint(50),
     myThreeOpt(20),
     profile(onePtMove(20))),refresh = 20)
-    onExhaust (() => {println("finished inserts; neededBridges:" + neededConditions)})
+    onExhaust {println("finished inserts; neededBridges:" + neededConditions)}
     exhaust (profile(closeAllUselessBridges) maxMoves 1)
     exhaust (
     bestSlopeFirst(
@@ -143,19 +138,19 @@ object TspBridge extends App {
         myThreeOpt(40),
         profile(swapBridge),
         closeUsedBridge,
-        profile((onePtMove(20) andThen switchBridge) name "switchAndMove"),
+        profile(onePtMove(20) andThen switchBridge name "switchAndMove"),
         profile(switchBridge)),
       refresh = 10)
-      onExhaustRestartAfter(new JumpNeighborhood("OpenAllBridges"){
-      override def doIt(): Unit = {
+      onExhaustRestartAfterJump(
         for(bridge <- bridgeConditionArray.indices){
           bridgeConditionArray(bridge) := 1
-        }
-      }
-    },maxRestartWithoutImprovement = 2, obj))
+        },
+      maxRestartWithoutImprovement = 2,
+      obj,
+      randomizationName = "OpenAllBridges"))
     afterMove{
     visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
-  })
+  }) showObjectiveFunction obj
 
   search.verbose = 1
 
@@ -168,9 +163,7 @@ object TspBridge extends App {
   println("neededBridges:" + routeLengthInvar.neededConditions)
   visu.redraw(SortedSet.empty[Int] ++ openBridges.value.toList.map(_.toInt), myVRP.routes.value)
 
-
   //TODO: we should actually substract the open & not used bridges from the objective function, and never try to switch them.
-
 }
 
 
@@ -186,11 +179,8 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
     xMultiplier = this.getWidth.toDouble / maxX.toDouble
     yMultiplier = this.getHeight.toDouble / maxY.toDouble
 
-
     //all edges, simple made
-    for(edge <- graph.edges){
-      drawEdge(edge, 1, Color.black, dashed = true)
-    }
+    drawEdges(graph.edges, 1, Color.black, dashed = true)
 
     //furthermore, open edges are in Green, cosed edges are in RED
     for(condition <- 0 until graph.nbConditions){
@@ -202,9 +192,8 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
       }
     }
 
-    //pathes
+    //path in the routing problem
     var currentExplorer = routes.explorerAtAnyOccurrence(0).get
-
     while(currentExplorer.next match{
       case None => //return
         drawPath(graph.nodes(currentExplorer.value), graph.nodes(0), openBridges)
@@ -215,30 +204,46 @@ class TspBridgeVisu(graph:ConditionalGraphWithIntegerNodeCoordinates,
         true
     }){}
 
-    //underlying graph with small nodes, dotted black edges
+    //underlying graph with small nodes, cross for non-transit nodes
     for(node <- graph.nodes){
-      drawRoundNode(node, Color.BLACK, 1)
+      if(node.transitAllowed) {
+        drawRoundNode(node, Color.BLACK, 1,toolTip = "simple" + node)
+      }else{
+        drawCrossNode(node ,Color.BLACK, side = 3,toolTip = "simple" + node)
+      }
     }
 
     //routing nodes
     for(nodeId <- 0 until n){
       val node = graph.nodes(nodeId)
-      if(routes contains nodeId){
-        drawRoundNode(node, Color.BLUE, 3)
+      val color = if(routes contains nodeId) {
+        Color.BLUE
+      }else {
+        Color.RED
+      }
+      if(node.transitAllowed) {
+        drawRoundNode(node, color , radius = 3, toolTip = "routing" + node)
       }else{
-        drawRoundNode(node, Color.RED, 3)
+        drawCrossNode(node ,color, side = 3, toolTip = "routing" + node)
       }
     }
 
-    //double buffering still does not work!
+    //start points
+    for(vehicle <- 0 until v){
+      val node = graph.nodes(vehicle)
+      if(node.transitAllowed) {
+        drawRoundNode(node, Color.ORANGE, radius = 5, "startPoint" + node)
+      }else{
+        drawCrossNode(node, Color.ORANGE, side = 5, "startPoint" + node)
+      }
+    }
+
     super.repaint()
   }
 
   private val aStarEngine = new RevisableAStar(graph: ConditionalGraph, underApproximatingDistance)
 
-
   def drawPath(fromNode:Node, toNode:Node, openConditions:SortedSet[Int]): Unit ={
     drawEdges(aStarEngine.getPath(fromNode,toNode,openConditions).get, 2, Color.BLUE)
   }
-
 }
