@@ -172,7 +172,6 @@ class VoronoiZones(graph:ConditionalGraph,
       p match{
         case None =>
         case Some(list) =>
-          println(s"Found a path for ${target.id} -> ${list.toList.mkString(",")}")
           var toEnqueue = list
           while(toEnqueue != null) {
             acc = QList(toEnqueue.head, acc)
@@ -206,7 +205,6 @@ class VoronoiZones(graph:ConditionalGraph,
 
     nodeLabeling(node.id) match {
       case Unreachable =>
-        println(s"Node ${node.id} is unreachable")
         None
       case z:VoronoiZone =>
         Some(pathToExistingCentroid(node,z))

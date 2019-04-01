@@ -1,16 +1,17 @@
 package oscar.cbls.test.unit
 
+import org.scalacheck.Gen
 import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import org.scalatest.prop.Checkers
 import oscar.cbls._
 import oscar.cbls.algo.clique.Clique
-import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, FloydWarshall, RandomGraphGenerator}
+import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.lib.invariant.graph.{DistanceInConditionalGraph, VoronoiZones}
 import oscar.cbls.test.invariants.bench._
 
 
-class VoronoiZonesTestSuite extends FunSuite with Matchers with AppendedClues {
+class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
   val verbose = 0
 
@@ -76,65 +77,47 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with AppendedClues {
     bench.run()
   }
 
+  /**
+    * Given an arbitrary graph and it's set of nodes (N), calling voronoi.spanningTree(N)
+    * should yield a list of edges (E) for which any node (n) of N is in E, except if
+    * - n is a centroid
+    * - n has no path to its centroid
+    */
   test("Voronoi.SpanningTree contains all the given nodes"){
 
-    for (i <- 0 until 100) {
-      println("***********")
-      val bench = new InvBench(verbose, List(PlusOne()))
+    val bench = new InvBench(verbose, List(PlusOne()))
 
-      val nbNodes = 15
-      val nbConditionalEdges = 0
-      val nbNonConditionalEdges = 80
-      val nbCentroids = 3L
+    val nbNodes = 30
+    val nbConditionalEdges = 0
+    val nbNonConditionalEdges = 40
+    val nbCentroids = 3L
 
-      val openConditions: CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to nbConditionalEdges, name = "openConditions")
-      val centroids: CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")
+    val openConditions: CBLSSetVar = bench.genIntSetVar(nbVars = nbConditionalEdges, range = 0 to nbConditionalEdges, name = "openConditions")
+    val centroids: CBLSSetVar = bench.genIntSetVar(nbVars = nbCentroids, range = 0 until nbCentroids, name = "Centroids")
 
-      val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
-        nbConditionalEdges,
-        nbNonConditionalEdges,
-        nbTransitNodes = nbNodes,
-        mapSide = 1000)
+    val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
+      nbConditionalEdges,
+      nbNonConditionalEdges,
+      nbTransitNodes = nbNodes,
+      mapSide = 1000)
 
-      val voronoi = VoronoiZones(graph,
-        graphDiameterOverApprox = Long.MaxValue - 1,
-        openConditions,
-        centroids: SetValue,
-        trackedNodes = nbCentroids until nbNodes,
-        openConditions.model,
-        defaultDistanceForUnreachableNodes = Long.MaxValue)
+    val voronoi = VoronoiZones(graph,
+      graphDiameterOverApprox = Long.MaxValue - 1,
+      openConditions,
+      centroids,
+      trackedNodes = nbCentroids until nbNodes,
+      openConditions.model,
+      defaultDistanceForUnreachableNodes = Long.MaxValue)
 
-      val tree = voronoi.spanningTree(QList.buildFromIterable(graph.nodes))
-      val edgeList = tree.toList
+    val tree = voronoi.spanningTree(QList.buildFromIterable(graph.nodes))
+    val edgeList = tree.toList
 
-      println(centroids.value.mkString(","))
-      println(exportGraphToNetworkxInstructions(graph, openConditions.value.toList, edgeList))
-      graph.nodes.forall(n => {
-        val count = edgeList.count(e => e.nodeIDA == n.id || e.nodeIDB == n.id)
-        val isCentroid = centroids.value.contains(n.id)
+    graph.nodes.forall(n => {
+      val count = edgeList.count(e => e.nodeIDA == n.id || e.nodeIDB == n.id)
+      val isCentroid = centroids.value.contains(n.id)
+      val pathToCentroid = voronoi.pathToCentroid(n)
 
-        println(s"${n.id} -> $count. IsCentroid -> $isCentroid")
-        count > 0 || isCentroid
-      }) should be(true)
-    }
-  }
-
-  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Long],spanningTree :List[Edge] = List()): String ={
-
-    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
-
-    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
-    val spanningTreeString = spanningTree.map(e => s"(${e.nodeIDB},${e.nodeIDA})").mkString(",")
-
-    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
-    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
-    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
-    toReturn = toReturn.concat(s"pos = {$nodesPositions}\n")
-    toReturn = toReturn.concat(s"span = [$spanningTreeString]")
-
-    toReturn
+      count > 0 || isCentroid || pathToCentroid.isEmpty
+    }) should be(true)
   }
 }
