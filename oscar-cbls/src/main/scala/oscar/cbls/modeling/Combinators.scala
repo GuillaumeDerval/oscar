@@ -495,7 +495,7 @@ class NeighborhoodOps(n:Neighborhood){
 
   def onExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,false)
 
-  def onFirstExhaust(proc:()=>Unit) = DoOnExhaust(n,proc,true)
+  def onFirstExhaust(proc: =>Unit) = DoOnExhaust(n,() => proc,true)
 
   /**
     * bounds the number of tolerated moves without improvements over the best value
