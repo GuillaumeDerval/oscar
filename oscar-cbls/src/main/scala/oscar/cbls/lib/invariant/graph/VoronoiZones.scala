@@ -172,6 +172,7 @@ class VoronoiZones(graph:ConditionalGraph,
       p match{
         case None =>
         case Some(list) =>
+          println(s"Found a path for ${target.id} -> ${list.toList.mkString(",")}")
           var toEnqueue = list
           while(toEnqueue != null) {
             acc = QList(toEnqueue.head, acc)

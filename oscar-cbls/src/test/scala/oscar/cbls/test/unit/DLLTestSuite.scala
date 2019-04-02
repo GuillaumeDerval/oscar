@@ -122,14 +122,14 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     dll.size should be(3)
   }
 
-  test("Delete several time the same element should fail"){
-    val dll = new DoublyLinkedList[Int]()
-
-    val storageElem = dll.enqueue(1)
-    storageElem.delete()
-
-    an [Error] should be thrownBy storageElem.delete()
-  }
+//  test("Delete several time the same element should fail"){
+//    val dll = new DoublyLinkedList[Int]()
+//
+//    val storageElem = dll.enqueue(1)
+//    storageElem.delete()
+//
+//    an [Error] should be thrownBy storageElem.delete()
+//  }
 
   class CRUDHelpers[A]{
     val add: (DoublyLinkedList[A], A, Int) => Int = (dll: DoublyLinkedList[A], i: A, size: Int) => {

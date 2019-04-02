@@ -259,7 +259,6 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       n2 <- Gen.oneOf(graph.nodes)
     } yield(n1,n2)
 
-    println(exportGraphToNetworkxInstructions(graph,openConditions))
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
 
     forAll(gen,minSuccessful(iterations)){
@@ -310,7 +309,6 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       n2 <- Gen.oneOf(graph.nodes)
     } yield(n1,n2)
 
-    println(exportGraphToNetworkxInstructions(graph,openConditions))
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
 
     forAll(gen,minSuccessful(iterations)){
@@ -341,6 +339,55 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     }
   }
 
+  test("Path do respect transitive conditions"){
+    for(i <- 0 until 1000){
+      val nbNodes = 20
+      val nbConditionalEdges = 10
+      val nbNonConditionalEdges = 10
+      val graph = RandomGraphGenerator.generatePseudoPlanarConditionalGraph(nbNodes,
+        nbConditionalEdges,
+        nbNonConditionalEdges,
+        nbTransitNodes = nbNodes / 2,
+        mapSide = 1000)
+
+      val open = Array.tabulate((nbConditionalEdges * 0.7).toInt)(_ => 1L).toList
+      val closed = Array.tabulate((nbConditionalEdges * 0.3).toInt)(_ => 0L).toList
+      val openConditions = Random.shuffle(open ::: closed)
+
+      val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
+      val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
+
+      println("***************")
+      for (nodeFrom <- graph.nodes) {
+        for (nodeTo <- graph.nodes){
+          val res = aStar.search(nodeFrom, nodeTo, openConditions(_) == 1, includePath = true)
+          res match{
+            case Distance(_,_,_,_,_,path) =>
+              if(path.isDefined){
+                val _path = path.get.filter(e => e != path.get.head && e != path.get.last)
+                try {
+                  _path.forall(e => e.nodeB.transitAllowed && e.nodeA.transitAllowed) should be(true)
+                  println("OK")
+                } catch {
+                  case e:Throwable =>
+                    val faultyEdge = _path.filter(e => !e.nodeB.transitAllowed || !e.nodeA.transitAllowed).head
+                    println("----")
+                    println(path.get.mkString(","))
+                    println(_path.mkString(","))
+                    println(s"Path from $nodeFrom to $nodeTo")
+                    println(s"Edge $faultyEdge was faulty. Node ${faultyEdge.nodeA} or ${faultyEdge.nodeB} was not transitive, but somewhere in the middle of the path")
+                    println(exportGraphToNetworkxInstructions(graph,openConditions))
+                    throw e
+                }
+              }
+
+            case _ =>
+          }
+        }
+      }
+    }
+  }
+
   def scrambleAllConditionsExcept(conditions: List[Long], except :List[Int], setTo :Int = -1): List[Long] ={
 
     var getNewState = () => setTo
@@ -367,14 +414,18 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
 
   def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Long],spanningTree :List[Edge] = List()): String ={
 
-    var toReturn = s"nbNodes = ${graph.nbNodes}\n"
+    var toReturn = ""
 
+    val transitNodes = graph.nodes.filter(_.transitAllowed).map(n => s"${n.id}").mkString(",")
+    val nonTransitNodes = graph.nodes.filter(!_.transitAllowed).map(n => s"${n.id}").mkString(",")
     val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
     val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
     val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
     val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
     val spanningTreeString = spanningTree.map(e => s"(${e.nodeIDB},${e.nodeIDA})").mkString(",")
 
+    toReturn = toReturn.concat(s"transitNodes = [$transitNodes]\n")
+    toReturn = toReturn.concat(s"nonTransitNodes = [$nonTransitNodes]\n")
     toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
     toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
     toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
