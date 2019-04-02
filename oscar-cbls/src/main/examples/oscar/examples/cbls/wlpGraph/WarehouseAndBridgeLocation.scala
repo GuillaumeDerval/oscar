@@ -74,9 +74,15 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
 
   val deliveryNodeList = QList.buildFromIterable(deliveryToNode)
 
-  println("start floyd")
-  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
-  println("end floyd")
+  //println("start floyd")
+  //startWatch()
+  //val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = FloydWarshall.buildDistanceMatrixAllConditionalEdgesSame(graph, true)
+  //println("end floyd:" + getWatch)
+
+  println("start dijkstra")
+  startWatch()
+  val underApproximatingDistanceInGraphAllCondtionsOpen:Array[Array[Long]] = DijkstraDistanceMatrix.buildDistanceMatrix(graph, _ => true)
+  println("start dijkstra" + getWatch)
 
   /*
   val anyConditionalEdgeOnShortestPath = FloydWarshall.anyConditionalEdgeOnShortestPath(graph,underApproximatingDistanceInGraphAllCondtionsOpen)
@@ -271,7 +277,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         hideRegularEdges = true,
         hideOpenEdges = false,
         emphasizeEdges = vor.spanningTree(deliveryNodeList),
-        List(distanceMinMax.getPath) // :: selectedDistances.map(_.getPath).toList
+        List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList
       )
 
       lastDisplay = this.getWatch
@@ -293,7 +299,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
     hideClosedEdges = true,
     hideRegularEdges = false,
     hideOpenEdges=false,
-    extraPath = List(distanceMinMax.getPath)) // :: selectedDistances.map(_.getPath).toList)
+    extraPath = List(distanceMinMax.getPath) ::: selectedDistances.map(_.getPath).toList)
 
   println(neighborhood.profilingStatistics)
 
