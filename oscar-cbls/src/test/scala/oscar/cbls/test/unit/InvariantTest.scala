@@ -415,10 +415,17 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  test ("PositionsOf maintains the positions of a value"){
-    val bench = new InvBench(verbose,List(PlusOne(), Random(), Shuffle()))
+  test ("PositionsOfConst maintains the positions of a value"){
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar()
-    val value = seqVar.value.valueAtPosition(0).get
+    PositionsOf(seqVar,Gen.choose(0, 100).sample.get)
+    bench.run()
+  }
+
+  test ("PositionsOf maintains the positions of a value"){
+    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    val seqVar = bench.genIntSeqVar(range = 0 to 100)
+    val value = bench.genIntVar(0 to 100)
     PositionsOf(seqVar,value)
     bench.run()
   }
@@ -436,6 +443,21 @@ class InvariantTests extends FunSuite with Checkers {
     val precedences = RoutingMatrixGenerator.generatePrecedence(seqVar.value.size,0,seqVar.value.size/2)
     Precedence(seqVar,precedences)
     bench.run()
+  }
+
+  test("SubSequence"){
+
+    val bench = new InvBench(verbose,List(PlusOne(),Shuffle()))
+    val maxsize = 25
+    val seqVar = bench.genIntSeqVar(maxsize)
+    val index = scala.util.Random.nextInt(seqVar.value.size)
+    val length = scala.util.Random.nextInt(seqVar.value.size - index)
+    SubSequence(seqVar,index,length)
+    bench.run()
+  }
+
+  test("SubSequenceVar"){
+
   }
 
   test ("Successors"){

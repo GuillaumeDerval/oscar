@@ -357,7 +357,6 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       val underApproxDistanceMatrix = FloydWarshall.buildDistanceMatrix(graph, _ => true)
       val aStar = new RevisableAStar(graph, underApproximatingDistance = (a: Int, b: Int) => underApproxDistanceMatrix(a)(b))
 
-      println("***************")
       for (nodeFrom <- graph.nodes) {
         for (nodeTo <- graph.nodes){
           val res = aStar.search(nodeFrom, nodeTo, openConditions(_) == 1, includePath = true)
@@ -365,20 +364,7 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
             case Distance(_,_,_,_,_,path) =>
               if(path.isDefined){
                 val _path = path.get.filter(e => e != path.get.head && e != path.get.last)
-                try {
-                  _path.forall(e => e.nodeB.transitAllowed && e.nodeA.transitAllowed) should be(true)
-                  println("OK")
-                } catch {
-                  case e:Throwable =>
-                    val faultyEdge = _path.filter(e => !e.nodeB.transitAllowed || !e.nodeA.transitAllowed).head
-                    println("----")
-                    println(path.get.mkString(","))
-                    println(_path.mkString(","))
-                    println(s"Path from $nodeFrom to $nodeTo")
-                    println(s"Edge $faultyEdge was faulty. Node ${faultyEdge.nodeA} or ${faultyEdge.nodeB} was not transitive, but somewhere in the middle of the path")
-                    println(exportGraphToNetworkxInstructions(graph,openConditions))
-                    throw e
-                }
+                _path.forall(e => e.nodeB.transitAllowed && e.nodeA.transitAllowed) should be(true)
               }
 
             case _ =>

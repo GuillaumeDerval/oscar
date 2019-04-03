@@ -638,13 +638,14 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with Generat
   val checker = new InvariantChecker(verbose)
   val model = new Store(false, Some(checker), true, false, false)
 
+  var inputVars: List[RandomVar] = List()
+  var outputVars: List[RandomVar] = List()
+
+
   val moveAndVar = for {
     m <- Gen.oneOf(moves)
     v <- Gen.oneOf(inputVars)
   } yield(m,v)
-
-  var inputVars: List[RandomVar] = List()
-  var outputVars: List[RandomVar] = List()
 
   /**
    * These methods add variables to the bench.
@@ -844,7 +845,7 @@ class InvBench(verbose: Int = 0, moves:List[Move]) extends FunSuite with Generat
           }
         }
         catch{
-          case e:Error => {
+          case e:Throwable => {
             hasCaught = true
             caughtStacktrace = e.getStackTrace
 

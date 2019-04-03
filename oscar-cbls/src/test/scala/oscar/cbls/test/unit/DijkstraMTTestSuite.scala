@@ -56,8 +56,7 @@ class DijkstraMTTestSuite extends FunSuite with GeneratorDrivenPropertyChecks wi
             aStarResults
               .filter(r => r.isInstanceOf[Distance])
               .minBy(_.asInstanceOf[Distance].distance)
-              .asInstanceOf[Distance]
-              .distance should be (distance)
+              .asInstanceOf[Distance].distance should be (distance)
         }
     }
   }
