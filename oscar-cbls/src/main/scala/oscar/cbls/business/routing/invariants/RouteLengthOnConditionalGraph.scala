@@ -50,7 +50,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
   require(v == distancePerVehicle.length)
 
-  require(
+  warning(
     openConditions.min == 0 && openConditions.max == graph.nbConditions - 1,
     "RouteLengthOnConditionalGraph: openConditions should range on the conditions of the conditional graph; openConditions.domain:" + openConditions.domain + " nbConditions:" + graph.nbConditions)
 
@@ -503,10 +503,10 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
 
 
   private def computeValueBetween(s:IntSequence, vehicle:Long, fromPosIncluded:Long, fromValueIncluded:Long, toPosIncluded:Long, toValueIncluded:Long):Long = {
-    if(fromPosIncluded == toPosIncluded) 0
+    if(fromPosIncluded == toPosIncluded) 0L
     else if(fromPosIncluded < toPosIncluded) {
       var e = s.explorerAtPosition(fromPosIncluded).get
-      var toReturn = 0
+      var toReturn = 0L
 
       while (e.position < toPosIncluded) {
         val nextPos = e.next.get
