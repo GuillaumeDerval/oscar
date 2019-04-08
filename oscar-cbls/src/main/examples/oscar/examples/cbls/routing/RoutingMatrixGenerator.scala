@@ -81,7 +81,7 @@ object RoutingMatrixGenerator {
       (R * c).toDouble //meters
     }
 
-    val pointPosition: Array[(Double,Double)] = Array.tabulate(n)(w => (randomLat, randomLong))
+    val pointPosition: Array[(Double,Double)] = Array.fill(n)((randomLat, randomLong))
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(n)(
@@ -289,11 +289,11 @@ object RoutingMatrixGenerator {
     * @param distanceMatrix The distance matrix (of size n*n)
     * @return A TTFMatrix object that represent the travel time matrix.
     */
-  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]]): TTFMatrix = {
+  def generateLinearTravelTimeFunction(n: Int,distanceMatrix: Array[Array[Long]], multiplier: Double = 1.0): TTFMatrix = {
     val ttf = new TTFMatrix(n, new TTFConst(500))
     for (i <- 0L until n)
       for (j <- 0L until n)
-        ttf.setTTF(i, j, new TTFConst(distanceMatrix(longToInt(i))(longToInt(j))))
+        ttf.setTTF(i, j, new TTFConst((distanceMatrix(longToInt(i))(longToInt(j))*multiplier).toInt))
     ttf
   }
 
