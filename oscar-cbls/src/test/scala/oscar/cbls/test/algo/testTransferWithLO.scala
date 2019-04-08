@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalatest._
 import oscar.cbls._
