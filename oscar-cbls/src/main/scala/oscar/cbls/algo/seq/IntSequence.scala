@@ -20,6 +20,8 @@ import oscar.cbls.algo.quick.{IterableQList, QList}
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 
 import scala.collection.immutable.SortedSet
+import scala.collection.mutable
+import scala.collection.mutable.HashMap
 import scala.language.implicitConversions
 
 object IntSequence{
@@ -267,7 +269,7 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   }
 
   override val size : Int = internalPositionToValue.size
-  
+
   override def isEmpty : Boolean = internalPositionToValue.isEmpty
 
   override def nbOccurrence(value : Long) : Int = valueToInternalPositions.get(value) match {
@@ -629,7 +631,7 @@ class ConcreteIntSequenceExplorer(sequence:ConcreteIntSequence,
                                    slopeIsPositive:Boolean = currentPivotPosition match{
                                      case None => true
                                      case Some(p) => !p.value.f.minus}
-                                   ) extends IntSequenceExplorer{
+                                 ) extends IntSequenceExplorer{
 
   override def toString : String = "ConcreteIntSequenceExplorer(position:" + position + " value:" + value + " currentPivotPosition:" + currentPivotPosition + " pivotAbovePosition:" + pivotAbovePosition + " positionInRB:" + positionInRB + ")"
 
@@ -826,7 +828,10 @@ class MovedIntSequence(val seq:IntSequence,
                        val flip:Boolean)
   extends StackedUpdateIntSequence{
 
-  //TODO: provide a cache on the values at the boundary of the move
+  private var prevStartPositionCachedExplorer: Option[MovedIntSequenceExplorer] = None
+  private var nextEndPositionCachedExplorer: Option[MovedIntSequenceExplorer] = None
+  private var prevMoveAfterPositionCachedExplorer: Option[MovedIntSequenceExplorer] = None
+  private var nextMoveAfterPositionCachedExplorer: Option[MovedIntSequenceExplorer] = None
 
   override def unorderedContentNoDuplicate : List[Long] = seq.unorderedContentNoDuplicate
 
@@ -843,14 +848,37 @@ class MovedIntSequence(val seq:IntSequence,
   override def commitPendingMoves:IntSequence = seq.commitPendingMoves.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false,autoRework = false)
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    val positionOfCurrentPivot = localBijection.forward.pivotWithPositionApplyingTo(position)
-    seq.explorerAtPosition(localBijection.forward(position)) match{
-      case None => None
-      case Some(explorerInBasicSequence) =>
-        Some(new MovedIntSequenceExplorer(this,position,
-          explorerInBasicSequence,
-          positionOfCurrentPivot,
-          positionOfCurrentPivot match{case None => localBijection.forward.firstPivotAndPosition case Some(x) => x.next})())
+
+    def createExplorer = {
+      val positionOfCurrentPivot = localBijection.forward.pivotWithPositionApplyingTo(position)
+      seq.explorerAtPosition(localBijection.forward(position)) match {
+        case None => None
+        case Some(explorerInBasicSequence) =>
+          Some(new MovedIntSequenceExplorer(this, position,
+            explorerInBasicSequence,
+            positionOfCurrentPivot,
+            positionOfCurrentPivot match { case None => localBijection.forward.firstPivotAndPosition case Some(x) => x.next })())
+      }
+    }
+
+    if(position == startPositionIncluded-1) {
+      if (prevStartPositionCachedExplorer.isEmpty)
+        prevStartPositionCachedExplorer = createExplorer
+      prevStartPositionCachedExplorer
+    } else if(position == endPositionIncluded+1) {
+      if (nextEndPositionCachedExplorer.isEmpty)
+        nextEndPositionCachedExplorer = createExplorer
+      nextEndPositionCachedExplorer
+    } else if(position == moveAfterPosition-1) {
+      if (prevMoveAfterPositionCachedExplorer.isEmpty)
+        prevMoveAfterPositionCachedExplorer = createExplorer
+      prevMoveAfterPositionCachedExplorer
+    } else if(position == moveAfterPosition+1) {
+      if (nextMoveAfterPositionCachedExplorer.isEmpty)
+        nextMoveAfterPositionCachedExplorer = createExplorer
+      nextMoveAfterPositionCachedExplorer
+    } else {
+      createExplorer
     }
   }
 
@@ -895,7 +923,7 @@ class MovedIntSequenceExplorer(sequence:MovedIntSequence,
                                 slopeIsPositive:Boolean = currentPivotPosition match{
                                   case None => true
                                   case Some(p) => !p.value.f.minus}
-                                ) extends IntSequenceExplorer{
+                              ) extends IntSequenceExplorer{
 
   override val value : Long = positionInBasicSequence.value
 
@@ -968,6 +996,10 @@ class InsertedIntSequence(seq:IntSequence,
                           val insertedValue:Long,
                           val pos:Int)
   extends StackedUpdateIntSequence {
+
+  private var prevPosCachedExplorer: Option[IntSequenceExplorer] = explorerAtPosition(pos-1)
+  private var nextPosCachedExplorer: Option[IntSequenceExplorer] = prevPosCachedExplorer.get.next.get.next
+
   override val size : Int = seq.size + 1
 
   override def nbOccurrence(value : Long) : Int = if(value == this.insertedValue) seq.nbOccurrence(value) + 1 else seq.nbOccurrence(value)
@@ -998,21 +1030,25 @@ class InsertedIntSequence(seq:IntSequence,
   }
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    if (position == this.pos) {
-      if (position == 0) {
-        Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(0), true, true))
+    if (position == pos - 1 && prevPosCachedExplorer != null) prevPosCachedExplorer
+    else if (position == pos + 1 && nextPosCachedExplorer != null) nextPosCachedExplorer
+    else {
+      if (position == this.pos) {
+        if (position == 0) {
+          Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(0), true, true))
+        } else {
+          Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(position - 1), true, false))
+        }
+      } else if (position < this.pos) {
+        seq.explorerAtPosition(position) match {
+          case None => None
+          case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
+        }
       } else {
-        Some(new InsertedIntSequenceExplorer(this, position, seq.explorerAtPosition(position - 1), true, false))
-      }
-    } else if (position < this.pos) {
-      seq.explorerAtPosition(position) match{
-        case None => None
-        case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
-      }
-    } else {
-      seq.explorerAtPosition(position-1) match{
-        case None => None
-        case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
+        seq.explorerAtPosition(position - 1) match {
+          case None => None
+          case Some(p) => Some(new InsertedIntSequenceExplorer(this, position, Some(p), false, false))
+        }
       }
     }
   }
@@ -1102,6 +1138,9 @@ class RemovedIntSequence(val seq:IntSequence,
                          val positionOfDelete:Int)
   extends StackedUpdateIntSequence{
 
+  private var prevPositionOfDeleteCachedExplorer: Option[RemovedIntSequenceExplorer] = None
+  private var nextPositionOfDeleteCachedExplorer: Option[RemovedIntSequenceExplorer] = None
+
   val removedValue = seq.valueAtPosition(positionOfDelete).head
 
   override def descriptorString : String = seq.descriptorString + ".removed(pos:" + positionOfDelete + " val:" + removedValue + ")"
@@ -1122,9 +1161,22 @@ class RemovedIntSequence(val seq:IntSequence,
   override val size : Int = seq.size - 1
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
-      case None => None
-      case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
+    def createExplorer ={
+      seq.explorerAtPosition(if (position < this.positionOfDelete) position else position + 1) match {
+        case None => None
+        case Some(e) => Some(new RemovedIntSequenceExplorer(this, position, e))
+      }
+    }
+    if(position == positionOfDelete-1) {
+      if (prevPositionOfDeleteCachedExplorer.isEmpty)
+        prevPositionOfDeleteCachedExplorer = createExplorer
+      prevPositionOfDeleteCachedExplorer
+    } else if(position == positionOfDelete+1) {
+      if (nextPositionOfDeleteCachedExplorer.isEmpty)
+        nextPositionOfDeleteCachedExplorer = createExplorer
+      nextPositionOfDeleteCachedExplorer
+    } else {
+      createExplorer
     }
   }
 
