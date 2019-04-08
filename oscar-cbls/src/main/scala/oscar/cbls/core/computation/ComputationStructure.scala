@@ -161,7 +161,7 @@ case class Store(override val verbose:Boolean = false,
   /**this checks that invariant i is one that is supposed to do something now
     * used to check that invariants have declared all their controling links to the model
     * */
-  def checkExecutingInvariantOK(i:Invariant):Boolean = {
+  def   checkExecutingInvariantOK(i:Invariant):Boolean = {
     if(i != null){
       if (notifiedInvariant != null && notifiedInvariant != i){
         return false

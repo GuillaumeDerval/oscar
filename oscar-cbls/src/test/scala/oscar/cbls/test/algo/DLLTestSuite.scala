@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -122,6 +122,7 @@ class DLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
     dll.size should be(3)
   }
 
+  // TODO Known to fail. Don't know if it will be corrected, or if it is by design
 //  test("Delete several time the same element should fail"){
 //    val dll = new DoublyLinkedList[Int]()
 //

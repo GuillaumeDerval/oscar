@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.invariants
 
 import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers

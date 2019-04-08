@@ -1,11 +1,9 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.graph
 
-import org.scalacheck.{Gen, Prop}
+import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
-import oscar.cbls.{CBLSSetVar, Store}
+import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
-import oscar.cbls.core.propagation.PropagationElement
 import oscar.cbls.lib.invariant.graph.DistanceInConditionalGraph
 import oscar.cbls.test.invariants.bench._
 

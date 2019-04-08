@@ -1,13 +1,11 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.graph
 
-import org.scalacheck.Gen
-import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import org.scalatest.prop.Checkers
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls._
-import oscar.cbls.algo.clique.Clique
 import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
-import oscar.cbls.lib.invariant.graph.{DistanceInConditionalGraph, VoronoiZones}
+import oscar.cbls.lib.invariant.graph.VoronoiZones
 import oscar.cbls.test.invariants.bench._
 
 

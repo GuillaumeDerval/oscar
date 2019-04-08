@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -15,8 +15,8 @@ package oscar.cbls.test.unit
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.fun.{IdentityNaive, LinearTransform, PiecewiseLinearFun, PiecewiseLinearFunNaive}
 
 class PiecewiseLinearFunTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matchers {

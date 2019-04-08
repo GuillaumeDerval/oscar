@@ -1,9 +1,9 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.{Gen, Shrink}
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import oscar.cbls.algo.rb.{RedBlackTreeMap, T}
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cbls.algo.rb.RedBlackTreeMap
 
 import scala.util.Random
 

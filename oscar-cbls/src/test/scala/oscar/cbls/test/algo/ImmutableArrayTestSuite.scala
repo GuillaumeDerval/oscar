@@ -1,7 +1,7 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.magicArray.ImmutableArray
 
 import scala.util.Random

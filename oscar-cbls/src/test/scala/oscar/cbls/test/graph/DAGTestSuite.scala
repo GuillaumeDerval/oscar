@@ -1,10 +1,9 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.graph
 
 import org.scalacheck.Gen
-import org.scalatest.{FunSuite, Matchers}
-import org.scalatest._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import oscar.cbls.algo.dag.{ConcreteDAG, ConcreteDAGNode, CycleException, DAGNode}
+import org.scalatest.{FunSuite, Matchers}
+import oscar.cbls.algo.dag.{ConcreteDAG, ConcreteDAGNode, CycleException}
 
 import scala.util.Random
 

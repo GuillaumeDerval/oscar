@@ -1,9 +1,9 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
 import org.scalactic.anyvals.PosInt
+import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
 import oscar.cbls.test.invariants.bench.{InvBench, ToZero}

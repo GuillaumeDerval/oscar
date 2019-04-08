@@ -1,13 +1,9 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
-import oscar.cbls.algo.dll.DoublyLinkedList
-import oscar.cbls.algo.heap.FibonacciHeap.Node
-import oscar.cbls.algo.heap.{BinomialHeap, FibonacciHeap}
-
-import scala.util.Random
+import oscar.cbls.algo.heap.FibonacciHeap
 
 class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks{
 

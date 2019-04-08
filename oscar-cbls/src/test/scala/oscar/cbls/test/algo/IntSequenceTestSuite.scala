@@ -1,10 +1,10 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
-import org.scalatest.{FunSuite, Matchers}
-import SequenceTestUtils._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.algo.seq._
+import oscar.cbls.test.algo.SequenceTestUtils._
 
 import scala.util.Random
 

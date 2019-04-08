@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.invariants
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -20,17 +20,12 @@ import org.scalatest.FunSuite
 import org.scalatest.prop.Checkers
 import oscar.cbls._
 import oscar.cbls.benchmarks.vrp.RoutingMatrixGenerator
-import oscar.cbls.business.routing.invariants._
-import oscar.cbls.business.routing.invariants.capa.{ForwardCumulativeConstraintOnVehicle, ForwardCumulativeIntegerDimensionOnVehicle}
 import oscar.cbls.lib.constraint._
 import oscar.cbls.lib.invariant.logic.{SetElement, _}
-import oscar.cbls.lib.invariant.minmax._
 import oscar.cbls.lib.invariant.numeric._
 import oscar.cbls.lib.invariant.seq._
 import oscar.cbls.lib.invariant.set._
 import oscar.cbls.test.invariants.bench._
-
-import scala.collection.immutable.SortedMap
 
 /**
   * @author yoann.guyot@cetic.be
@@ -446,7 +441,6 @@ class InvariantTests extends FunSuite with Checkers {
   }
 
   test("SubSequence"){
-
     val bench = new InvBench(verbose,List(PlusOne(),Shuffle()))
     val maxsize = 25
     val seqVar = bench.genIntSeqVar(maxsize)
@@ -456,12 +450,8 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  test("SubSequenceVar"){
-
-  }
-
   test ("Successors"){
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    val bench = new InvBench(verbose,List(PlusOne(),Shuffle(), Random(), RandomDiff()))
     val seqVar = bench.genIntSeqVar(25)
     Successors(seqVar)
     bench.run()
@@ -488,12 +478,12 @@ class InvariantTests extends FunSuite with Checkers {
     bench.run()
   }
 
-  /*test("Flip maintains a flipped sequence"){
+  test("Flip maintains a flipped sequence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))
     val seqVar = bench.genIntSeqVar()
     Flip(seqVar)
     bench.run()
-  }*/
+  }
 
   test("SeqSum maintains the sum of all values in a sequence"){
     val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff(),Shuffle()))

@@ -1,4 +1,4 @@
-package oscar.cbls.test.unit
+package oscar.cbls.test.algo
 
 import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -52,6 +52,8 @@ class BinomialHeapTestSuite extends FunSuite with GeneratorDrivenPropertyChecks 
                 keys(elem) should be (keys(firsts.head))
               }
           }
+
+          heap.checkInternals()
         }
 
         var list: List[Int] = List()
