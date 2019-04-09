@@ -57,10 +57,10 @@ object VRPWithOnlyTimeWindow extends App {
   val vs_2 = List(5L, 10L, 20L, 50L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 1
+  val iterations = 10
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
-  runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
+  //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false){
@@ -73,7 +73,6 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
 
   val myVRP =  new VRP(m,n,v)
 
-  var globalConstraintWithLogReduc: Option[TimeWindowConstraintWithLogReduction] = None
   // Distance
   val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
@@ -124,25 +123,22 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      val smartTimeWindowInvariant =
-        TimeWindowConstraint(myVRP.routes, n, v,
-          timeWindowExtension.earliestArrivalTimes,
-          timeWindowExtension.latestLeavingTimes,
-          timeWindowExtension.taskDurations,
-          timeMatrix, violations)
+      TimeWindowConstraint(myVRP.routes, n, v,
+        timeWindowExtension.earliestArrivalTimes,
+        timeWindowExtension.latestLeavingTimes,
+        timeWindowExtension.taskDurations,
+        timeMatrix, violations)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     } else {
       // Global constraint with log reduction
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      val smartTimeWindowInvariant =
-        TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
-          timeWindowExtension.earliestArrivalTimes,
-          timeWindowExtension.latestLeavingTimes,
-          timeWindowExtension.taskDurations,
-          timeMatrix, violations)
-      globalConstraintWithLogReduc = Some(smartTimeWindowInvariant)
+      TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
+        timeWindowExtension.earliestArrivalTimes,
+        timeWindowExtension.latestLeavingTimes,
+        timeWindowExtension.taskDurations,
+        timeMatrix, violations)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
