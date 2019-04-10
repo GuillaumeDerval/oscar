@@ -6,6 +6,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls.CBLSSetVar
 import oscar.cbls.algo.graph._
+import oscar.cbls.test.graph.RandomGraphGenerator
 import oscar.cbls.test.invariants.bench.{InvBench, ToZero}
 
 import scala.util.Random
@@ -208,7 +209,6 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       n2 <- Gen.oneOf(graph.nodes)
     } yield(n1,n2)
 
-    println(exportGraphToNetworkxInstructions(graph,openConditions))
     val iterations = PosInt.from(Math.pow(graph.nodes.length,2).toInt).get
 
     forAll(gen,minSuccessful(iterations)){
@@ -396,28 +396,5 @@ class RevisableAStarTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
       else
       if(Random.nextDouble() > 0.5) e else setTo
     })
-  }
-
-  def exportGraphToNetworkxInstructions(graph :ConditionalGraphWithIntegerNodeCoordinates, openConditions :List[Long],spanningTree :List[Edge] = List()): String ={
-
-    var toReturn = ""
-
-    val transitNodes = graph.nodes.filter(_.transitAllowed).map(n => s"${n.id}").mkString(",")
-    val nonTransitNodes = graph.nodes.filter(!_.transitAllowed).map(n => s"${n.id}").mkString(",")
-    val nonConditionalEdges = graph.edges.filter(e => e.conditionID.isEmpty).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val openEdges =  graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 1)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val closeEdges = graph.edges.filter(e => e.conditionID.isDefined && (openConditions(e.conditionID.get) == 0)).map(e => s"(${e.nodeIDA},${e.nodeIDB})").mkString(",")
-    val nodesPositions = graph.coordinates.zipWithIndex.map({case (e,i) => s"$i : (${e._1},${e._2})"}).mkString(",")
-    val spanningTreeString = spanningTree.map(e => s"(${e.nodeIDB},${e.nodeIDA})").mkString(",")
-
-    toReturn = toReturn.concat(s"transitNodes = [$transitNodes]\n")
-    toReturn = toReturn.concat(s"nonTransitNodes = [$nonTransitNodes]\n")
-    toReturn = toReturn.concat(s"openEdges = [$openEdges]\n")
-    toReturn = toReturn.concat(s"closedEdges = [$closeEdges]\n")
-    toReturn = toReturn.concat(s"nonConditionalEdges = [$nonConditionalEdges]\n")
-    toReturn = toReturn.concat(s"pos = {$nodesPositions}\n")
-    toReturn = toReturn.concat(s"span = [$spanningTreeString]")
-
-    toReturn
   }
 }

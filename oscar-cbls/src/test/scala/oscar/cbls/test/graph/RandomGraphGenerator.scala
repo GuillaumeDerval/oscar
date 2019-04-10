@@ -1,4 +1,9 @@
-package oscar.cbls.algo.graph
+package oscar.cbls.test.graph
+
+import org.scalacheck.Gen
+import oscar.cbls.algo.graph.{ConditionalGraphWithIntegerNodeCoordinates, Edge, Node}
+import oscar.cbls.business.routing.neighborhood.vlsn._
+import oscar.cbls.core.search.DoNothingMove
 
 import scala.util.Random
 
