@@ -481,6 +481,7 @@ class CBLSSeqVar(givenModel:Store,
     * @param pos the position where the value is located afer the insert is completed
     */
   override def insertAtPosition(value:Long,pos:Int){
+    println(s"Value = $value \t Pos = $pos")
     super.insertAtPosition(value,pos)
   }
 

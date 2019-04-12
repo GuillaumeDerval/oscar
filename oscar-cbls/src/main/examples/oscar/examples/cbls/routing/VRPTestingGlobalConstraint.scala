@@ -14,8 +14,8 @@ import oscar.cbls.lib.constraint.LE
 object VRPTestingGlobalConstraint extends App {
 
 
-  val nbNode = 1000
-  val nbVehicle = 10
+  val nbNode = 150
+  val nbVehicle = 4
   val model = new Store() //checker = Some(new ErrorChecker))
   //val model = new Store()
 
@@ -90,10 +90,7 @@ object VRPTestingGlobalConstraint extends App {
       problem)
 
   val search =
-    bestSlopeFirst(List(routeUnroutedPoint orElse routeUnroutedPointLarger,
-      onePtMove,
-      twoOpt,
-      threeOpt andThen threeOpt))
+    bestSlopeFirst(List(routeUnroutedPoint, twoOpt))
 
   search.verbose = 1
 
