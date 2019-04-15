@@ -6,10 +6,11 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.{CBLSSeqVar, Objective, Store, bestSlopeFirst, length, sum}
 import oscar.cbls.business.routing.{DistanceHelper, VRP}
 import oscar.cbls.core.computation.{CBLSSetVar, Store}
-import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First}
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, First, Neighborhood}
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 import oscar.cbls.business.routing._
 import oscar.cbls._
+import oscar.cbls.test.neighborhood.NeighborhoodTestBench.MockedVRP
 
 class RoutingNeighborhoodTestSuite extends FunSuite with Checkers with Matchers{
 
@@ -64,26 +65,33 @@ class RoutingNeighborhoodTestSuite extends FunSuite with Checkers with Matchers{
     searchProcedure.doAllMoves(obj = obj)
   }
 
-  test("removePoint"){
 
+  test("onePointMove"){
     def check(previousObjective :Long, newObjective :Long,
               previousSequence :IntSequence, newSequence :IntSequence) : Unit = {
 
 
-      previousObjective should be <= newObjective
-      previousSequence.size should be >= newSequence.size
+      println("move")
     }
 
     val (model,problem,obj,closestRelevantNeighbors,postFilter) = NeighborhoodTestBench.initTest(check)
-    val removePointNeighborhood =
-      removePoint(
-        () => problem.routed.value,
+    val onePointNeighborhood =
+      onePointMove(
+        problem.routed,
+        ()=>problem.kFirst(6,d => closestRelevantNeighbors(d),postFilter),
+        problem
+      )
+
+    val insertPointNeighborhood =
+      insertPointUnroutedFirst(
+        problem.unrouted,
+        ()=>problem.kFirst(6,d => closestRelevantNeighbors(d),postFilter),
         problem
       )
 
     model.close()
 
-    val searchProcedure = bestSlopeFirst(List(removePointNeighborhood))
+    val searchProcedure = bestSlopeFirst(List(insertPointNeighborhood,onePointNeighborhood)) maxMoves 10
     searchProcedure.doAllMoves(obj = obj)
   }
 }

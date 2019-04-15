@@ -60,7 +60,7 @@ class CliqueTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
   }
 
   // Generates a list of 0 to 20 unique tuples
-  val graphGen = for {
+  val graphGen: Gen[(Int, Array[(Long, Long)])] = for {
     v <- Gen.choose(0, 30) // Number of tuples
     p <- Gen.choose(80,90) // Probability of 2 nodes to be neighbor
   } yield (v,Array.tabulate(v)(item => {

@@ -15,7 +15,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
   test("Voronoi Zones in conditional graph"){
 
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    val bench = new InvBench(verbose,List(PlusOne()))
 
     val nbNodes = 50
     val nbConditionalEdges = 50
@@ -46,7 +46,7 @@ class VoronoiZonesTestSuite extends FunSuite with Matchers with Checkers {
 
   test("Voronoi Zones in conditional graph with non transit nodes"){
 
-    val bench = new InvBench(verbose,List(PlusOne(), MinusOne(), ToZero(), ToMin(), ToMax(), Random(), RandomDiff()))
+    val bench = new InvBench(verbose,List(PlusOne()))
 
     val nbNodes = 50
     val nbConditionalEdges = 50

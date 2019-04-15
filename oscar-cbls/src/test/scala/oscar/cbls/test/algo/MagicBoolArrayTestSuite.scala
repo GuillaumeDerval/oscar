@@ -22,8 +22,8 @@ class MagicBoolArrayTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
   }
 
 
-  val bool = for (n <- Gen.choose(0, 1)) yield n
-  val boolList =  for {
+  val bool: Gen[Int] = for (n <- Gen.choose(0, 1)) yield n
+  val boolList: Gen[List[Int]] =  for {
     numElems <- Gen.choose(20, 1000)
     elems <- Gen.listOfN(numElems, bool)
   } yield elems

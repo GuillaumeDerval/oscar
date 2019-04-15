@@ -192,7 +192,7 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
 
         var parrallelMap = list.sortBy(_._1)
         var tree = RedBlackTreeMap.makeFromSortedArray(list.toArray)
-        val operations = Gen.listOfN(50,operationGenerator).sample.get
+        val operations = operationGenerator.sample.get
         var gapAboveLastKey = 0
 
         for(i <- operations){
@@ -200,19 +200,17 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
           var operation = i
           var randomKey: Long = 1
 
-          if(tree.content.isEmpty){
-            operation = 2
-          }
-          else{
+          if(tree.content.isEmpty)
+            operation = Insert()
+          else
             randomKey = Random.shuffle(tree.content).head._1
-          }
 
           operation match {
-            case 0 => {
+            case Delete() =>
               tree = tree.remove(randomKey)
               parrallelMap = parrallelMap.filter(_._1 != randomKey)
-            }
-            case 1 => {
+
+            case Update() =>
               var randomKeyTo = Random.shuffle(tree.content).head._1
               if(randomKey > randomKeyTo){
                 val tmp = randomKey
@@ -223,14 +221,12 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
               tree = tree.update(randomKey,randomKeyTo,(key,value) => (key,value+1))
               parrallelMap = parrallelMap.map(tuple => if(tuple._1 >= randomKey && tuple._1 <= randomKeyTo) (tuple._1,tuple._2 + 1) else (tuple._1,tuple._2))
 
-            }
-            case 2 => {
+            case Insert() =>
               val newkey :Long = 2000 + gapAboveLastKey // Ensures to add a new unique key
               gapAboveLastKey += 1
               tree = tree.insert(newkey,0)
 
               parrallelMap = parrallelMap ::: List((newkey,0))
-            }
           }
         }
         parrallelMap.sortBy(_._1) should be (tree.content.sortBy(_._1))
@@ -238,19 +234,30 @@ class RBTreeTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with M
     }}
   }
 
-  def operationGenerator = for (n <- Gen.choose(0,2)) yield n
-  def intGenerator = for (n <- Gen.choose(10, 1000)) yield n
+  val genOperations: Gen[Operation] = Gen.oneOf(List(Insert(),Update(),Delete()))
+
+  val operationGenerator: Gen[List[Operation]] = for {
+    size <- Gen.choose(1,100)
+    list <- Gen.listOfN(size,genOperations)
+  } yield list
+
+  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
 
   // Generates a list of key-value tuples with incremental key (in order) and random values
-  def sequentialTuplesList =  for {
+  val sequentialTuplesList: Gen[List[(Long, Int)]] =  for {
     numElems <- Gen.choose(0, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
   } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Long,tuple._1 :Int))
 
   // Generates a list of key-value tuples with sparse unique keys (in order) and random values
-  def nonSequentialTuplesList =  for {
+  val nonSequentialTuplesList: Gen[List[(Long, Int)]] =  for {
     numElems <- Gen.choose(0, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
     keysList <- Gen.listOfN(numElems,intGenerator)
   } yield keysList.distinct.zip(valuesList).map(tuple => (tuple._1 :Long,tuple._2 :Int)).sortWith(_._1 < _._1)
+
+  abstract sealed class Operation()
+  case class Insert() extends Operation
+  case class Update() extends Operation
+  case class Delete() extends Operation
 }

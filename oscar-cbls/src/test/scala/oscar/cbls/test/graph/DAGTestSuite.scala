@@ -142,7 +142,7 @@ class DAGTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Matc
   }
 
   // Generates a list of 0 to 30 unique tuples, guaranteed to form an acyclic graph
-  val acyclicGraphGen = for {
+  val acyclicGraphGen: Gen[(Int, Array[(Int, Int)])] = for {
     v <- Gen.choose(1, 30) // Number of tuples
     p <- Gen.choose(10,50) // Probability of 2 nodes to be neighbor
     d <- Gen.choose(v,100) // Density of precedences

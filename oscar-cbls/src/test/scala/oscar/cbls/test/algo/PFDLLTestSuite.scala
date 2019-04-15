@@ -106,8 +106,8 @@ class PFDLLTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
   }
 
 
-  val action = for (n <- Gen.choose(0, 1)) yield n
-  val actionList =  for {
+  val action: Gen[Int] = for (n <- Gen.choose(0, 1)) yield n
+  val actionList: Gen[List[Int]] =  for {
     numElems <- Gen.choose(20, 1000)
     elems <- Gen.listOfN(numElems, action)
   } yield elems

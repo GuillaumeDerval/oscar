@@ -5,17 +5,19 @@ import oscar.cbls.business.routing.{DistanceHelper, VRP, routeLength}
 import oscar.cbls.core.computation.Store
 import oscar.cbls.{CBLSSeqVar, Objective, length, sum}
 import oscar.cbls._
+import oscar.cbls.core.search.Neighborhood
 import oscar.examples.cbls.routing.RoutingMatrixGenerator
 
 object NeighborhoodTestBench {
 
   var obj :Objective = _
+  var problem :MockedVRP = null
 
-  def initTest(check :(Long,Long,IntSequence,IntSequence) => Unit) :(Store, VRP,Objective,Array[Iterable[Long]],Long => Long => Boolean) = {
+  def initTest(check :(Long,Long,IntSequence,IntSequence) => Unit) :(Store, MockedVRP,Objective,Array[Iterable[Long]],Long => Long => Boolean) = {
     val nbNode = 30
     val nbVehicle = 15
     val model = Store()
-    val problem = new MockedVRP(check,model,nbNode,nbVehicle)
+    problem = new MockedVRP(check,model,nbNode,nbVehicle)
     val relevantPredecessorsOfNodes = (node:Long) => problem.nodes
     val (symetricDistanceMatrix,_) = RoutingMatrixGenerator(nbNode)
     val routedPostFilter = (node:Long) => (neighbor:Long) => problem.isRouted(neighbor)
@@ -46,9 +48,30 @@ object NeighborhoodTestBench {
     var previousObj :Long = _
     var previousSeq :IntSequence = _
 
-    // Be careful, this method is called twice : once when exploring and once when commiting the move.
     override def insertAtPosition(value:Long,pos:Int): Unit ={
       super.insertAtPosition(value,pos)
+
+      if(!firstRun)
+        check(previousObj,obj.value,previousSeq,this.value)
+
+      firstRun = false
+      previousObj = obj.value
+      previousSeq = this.value
+    }
+
+    override def remove(position: Int): Unit = {
+      super.remove(position)
+
+      if(!firstRun)
+        check(previousObj,obj.value,previousSeq,this.value)
+
+      firstRun = false
+      previousObj = obj.value
+      previousSeq = this.value
+    }
+
+    override def move(fromIncludedPosition: Int, toIncludedPosition: Int, afterPosition: Int, flip: Boolean): Unit = {
+      super.move(fromIncludedPosition, toIncludedPosition, afterPosition, flip)
 
       if(!firstRun)
         check(previousObj,obj.value,previousSeq,this.value)

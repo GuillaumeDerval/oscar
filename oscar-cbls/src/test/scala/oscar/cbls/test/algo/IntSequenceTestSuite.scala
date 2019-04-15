@@ -172,7 +172,7 @@ class IntSequenceTestSuite extends FunSuite with GeneratorDrivenPropertyChecks w
             case Commit() =>
               seq = seq.commitPendingMoves
 
-            case default => {}
+            case default => _
           }
         }
         compareAllAttributes(seq, modifiedList)

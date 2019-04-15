@@ -69,10 +69,10 @@ class RBTreeExplorerTestSuite extends FunSuite with GeneratorDrivenPropertyCheck
     }}
   }
 
-  def intGenerator = for (n <- Gen.choose(10, 1000)) yield n
+  val intGenerator: Gen[Int] = for (n <- Gen.choose(10, 1000)) yield n
 
   // Generates a list of key-value tuples with incremental key (in order) and random values
-  def sequentialTuplesList =  for {
+  val sequentialTuplesList: Gen[List[(Long, Int)]] =  for {
     numElems <- Gen.choose(0, 500)
     valuesList <- Gen.listOfN(numElems,intGenerator)
   } yield valuesList.zipWithIndex.map(tuple => (tuple._2 :Long,tuple._1 :Int))
