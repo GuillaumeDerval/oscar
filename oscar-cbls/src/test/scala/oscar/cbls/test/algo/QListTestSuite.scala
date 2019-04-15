@@ -38,7 +38,7 @@ class QListTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
             case Append() =>
               val toAppend = Gen.listOfN(5, Gen.choose(0L, 10)).sample.get
               qlist = QList.append(toAppend, qlist)
-              modifiedList = toAppend ::: modifiedList
+              modifiedList = toAppend.reverse ::: modifiedList
           }
         }
 
@@ -49,7 +49,7 @@ class QListTestSuite extends FunSuite with GeneratorDrivenPropertyChecks with Ma
   }
 
   val elem: Gen[Long] = for (n <- Gen.choose(0, 100)) yield n * 4L // Sparse elements
-  val gen: Gen[Operation] = Gen.oneOf(List(Reverse(),Insert()))
+  val gen: Gen[Operation] = Gen.oneOf(List(Reverse(),Insert(),Map(),Append()))
 
   val testBenchGen: Gen[(List[Long], List[Operation])] = for{
     numElems <- Gen.choose(20, 200)
