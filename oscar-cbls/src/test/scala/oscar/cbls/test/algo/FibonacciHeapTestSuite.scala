@@ -153,13 +153,11 @@ class FibonacciHeapTestSuite extends FunSuite with Matchers with GeneratorDriven
     val heap3 = new FibonacciHeap[Long]()
     heap3.popMins.size should be (0)
   }
+
+  abstract sealed class Operation()
+  case class Insert() extends Operation
+  case class Clear() extends Operation
+  case class RemoveMin() extends Operation
+  case class DecreaseKey() extends Operation
+  case class Delete() extends Operation
 }
-
-
-
-abstract sealed class Operation()
-case class Insert() extends Operation
-case class Clear() extends Operation
-case class RemoveMin() extends Operation
-case class DecreaseKey() extends Operation
-case class Delete() extends Operation

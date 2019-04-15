@@ -26,7 +26,7 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
     * However, a cycle may not be found by Mouthuy, yet DFS finds one.
     */
   test("Mouthuy is coherent with DFS search (standard & pruned)") {
-    forAll(graphGen) { vlsnGraph =>
+    forAll(genVlsn,minSuccessful(500)) { vlsnGraph =>
 
       val mouthuyAlgo = CycleFinderAlgo(vlsnGraph, Mouthuy)
       val dfsAlgo = CycleFinderAlgo(vlsnGraph, DFS)
@@ -49,6 +49,24 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
       }
       else {
         println("Definitely no cycle in this graph.")
+      }
+    }
+  }
+
+  test("Cycles found by Mouthuy have negative weight"){
+    forAll(genVlsn) { vlsnGraph =>
+
+      val mouthuyAlgo = CycleFinderAlgo(vlsnGraph, Mouthuy)
+      val size = vlsnGraph.nodes.maxBy(_.nodeID).nodeID.toInt
+      val liveNodes = Array.tabulate(size + 1)(_ => true)
+      val cycle = mouthuyAlgo.findCycle(liveNodes)
+
+      if(cycle.isDefined){
+        println("Found cycle")
+
+        val edges = cycle.get
+        val sum = edges.map(_.deltaObj).sum
+        sum.toInt should be < 0
       }
     }
   }
@@ -92,8 +110,6 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
     cycle shouldBe defined
   }
 
-
-
   val bench = new InvBench(0,List(ToMax()))
   val moveTypeEnumGen :Gen[VLSNMoveType.Value] = Gen.frequency(
     (10, VLSNMoveType.InsertNoEject),
@@ -131,10 +147,10 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
     (1,VLSNSNodeType.FictiveNode),
   )
 
-  val graphGen: Gen[VLSNGraph] = {
+  def randomVLSN() : VLSNGraph = {
 
-    val nbNodes = Gen.choose(10, 100).sample.get
-    val nbEdges = Gen.choose(nbNodes * 2, nbNodes * 3).sample.get
+    val nbNodes = Gen.choose(10,20).sample.get
+    val nbEdges = Gen.choose(nbNodes * 2,nbNodes * 3).sample.get
     val tempGraph = generatePseudoPlanarConditionalGraph(nbNodes, 0, nbEdges, 0)
 
     val nodes = Array.tabulate(nbNodes)(nodeID =>
@@ -143,17 +159,30 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
     val builder = new VLSNEdgeBuilder(nodes: Array[oscar.cbls.business.routing.neighborhood.vlsn.Node], nbNodes, 2) //nbLAbel is set here to nbNodes
 
     for (tempEdge <- tempGraph.edges) {
+
+      val randomMove = moveTypeObjectGen.sample.get
+      val randomType = moveTypeEnumGen.sample.get
+
       val (from,to) = if(Random.nextBoolean()) (tempEdge.nodeIDA,tempEdge.nodeIDB) else (tempEdge.nodeIDB,tempEdge.nodeIDA)
       builder.addEdge(
         nodes(from),
         nodes(to),
-        Gen.choose(-1000, 10).sample.get,
-        moveTypeObjectGen.sample.get,
-        moveTypeEnumGen.sample.get)
+        Gen.choose(-10,10).sample.get,
+        randomMove,
+        randomType)
     }
-
     builder.finish()
   }
+
+  def randomBetween(rnd :Random, min: Int, max: Int) : Int = {
+    min + rnd.nextInt( (max - min) + 1 )
+  }
+
+  val genVlsn: Gen[VLSNGraph] = for{
+    i <- Gen.choose(0,10)
+  } yield randomVLSN()
+
+
 }
 
 

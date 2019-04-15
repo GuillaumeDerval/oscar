@@ -31,7 +31,8 @@ object RandomGraphGenerator {
 
     val sortedDistances = allDistances.sortBy(_._3).toList
 
-    val scrambled = Random.shuffle(sortedDistances.take(totalEdges)).iterator
+    val subDistance = sortedDistances.take(totalEdges)
+    val scrambled = Random.shuffle(subDistance).iterator
 
     val isTransitAllowed = Random.shuffle(nodes.toList.map(i => i < nbTransitNodes)).toArray
 
@@ -40,7 +41,7 @@ object RandomGraphGenerator {
     new ConditionalGraphWithIntegerNodeCoordinates(
       coordinates = pointPosition,
       nodes = nodeArray,
-      edges = Array.tabulate(nbConditionalEdges + nbNonConditionalEdges)(edgeId => {
+      edges = Array.tabulate(subDistance.size)(edgeId => {
         val edgeData = scrambled.next
         new Edge(
           edgeId,
