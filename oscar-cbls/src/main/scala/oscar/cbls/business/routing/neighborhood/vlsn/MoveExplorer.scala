@@ -241,7 +241,7 @@ class MoveExplorerAlgo(v:Int,
   private def exploreInsertionsWithRemove(vehicleToUnroutedNodeToInsert: Map[Long, Iterable[Long]]): Unit = {
 
     for ((targetVehicleForInsertion, unroutedNodesToInsert) <- vehicleToUnroutedNodeToInsert
-         if !vehicleHasDirectInsertOrMove(targetVehicleForInsertion)) {
+         if !vehicleHasDirectInsertOrMove(targetVehicleForInsertion) && vehicleToRoutedNodes.get(targetVehicleForInsertion).isDefined) {
 
       //insertion with remove, we remove, and then insert
       //insertion with remove
@@ -363,7 +363,7 @@ class MoveExplorerAlgo(v:Int,
   }
 
   private def exploreNodeMoveWithRemove(vehicleToNodeToMoveThere:Map[Long,Iterable[Long]]): Unit = {
-    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID)) {
+    for((targetVehicleID,routedNodesToMoveThere) <- vehicleToNodeToMoveThere if !vehicleHasDirectInsertOrMove(targetVehicleID) && vehicleToRoutedNodes.get(targetVehicleID).isDefined) {
 
       //moves with removes
       for(nodeIDToEject <- vehicleToRoutedNodes(targetVehicleID)){

@@ -30,8 +30,8 @@ import scala.collection.immutable.{SortedMap, SortedSet}
 object VRPMaxDemoVLSN  extends App {
 
   println("usage: VRPMaxDemo n v")
-  val n:Int=args(0).toInt
-  val v = args(1).toInt
+  val n:Int=250//args(0).toInt
+  val v = 10//args(1).toInt
   println(s"VRPMaxDemoVLSN(n:$n, v:$v)")
 
   require(v < n)
@@ -52,7 +52,7 @@ class VRPMaxDemoVLSN (n:Int, v:Int, maxPivotPerValuePercent:Int, verbose:Int, di
       symmetricDistanceMatrix1(a min b)(a max b)
     })})
 
-  val maxWorkloadPerVehicle = 2500
+  val maxWorkloadPerVehicle = 5000
   val serviceTimePerNode = 100
   val vehicles = 0L until v
 
