@@ -22,10 +22,9 @@ import org.locationtech.jts.geom.util.AffineTransformation
 
 package object geometry {
 
-
-  //this is the general factory to use, it is kept in floats because putting it to integers
+  // This is the general factory to use, it is kept in floats because putting it to integers
   // only adds an extra rounding at the end of each operation.
-  //so better to keep it all in floats, and perform any conversion when geting things out of JTS
+  // so better to keep it all in floats, and perform any conversion when getting things out of JTS
   val factory:GeometryFactory = new GeometryFactory()
 
   val emptyPolygon = factory.createMultiPolygon(Array.empty)
@@ -62,7 +61,7 @@ package object geometry {
 
     val startPoint = new Coordinate(r, 0)
     var currentPoint:Coordinate = startPoint
-    var allPoints:Array[Coordinate] = Array.fill(nbEdges+1)(null)
+    val allPoints:Array[Coordinate] = Array.fill(nbEdges+1)(null)
     allPoints(0) = currentPoint
     allPoints(nbEdges) = currentPoint
 

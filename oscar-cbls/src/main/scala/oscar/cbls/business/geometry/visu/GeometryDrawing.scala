@@ -1,6 +1,5 @@
 package oscar.cbls.business.geometry.visu
 
-
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -15,7 +14,6 @@ package oscar.cbls.business.geometry.visu
   * You should have received a copy of the GNU Lesser General Public License along with OscaR.
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
-
 
 import java.awt.geom.Line2D
 import java.awt.geom.Rectangle2D
@@ -100,7 +98,6 @@ class GeometryDrawing(relevantDistances:List[(Int,Int)])
 
       s.toolTip = toolTipText
     }
-
 
     paintSomeHoles(shapes.map(_._1))
 
