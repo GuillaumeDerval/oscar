@@ -16,9 +16,8 @@ package oscar.cbls.test.invariants.bench
   ******************************************************************************/
 
 import org.scalacheck.{Gen, Prop}
-import org.scalatest.exceptions.{GeneratorDrivenPropertyCheckFailedException, StackDepth, TestFailedException}
-import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
+import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 
