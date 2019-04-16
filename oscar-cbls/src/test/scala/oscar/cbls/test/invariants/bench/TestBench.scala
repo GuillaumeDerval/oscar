@@ -21,7 +21,6 @@ import org.scalatest.{AppendedClues, FunSuite, Matchers}
 import org.scalatest.prop.{Checkers, GeneratorDrivenPropertyChecks}
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
-import sun.plugin.dom.exception.InvalidStateException
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
