@@ -44,7 +44,7 @@ class RouteLengthOnConditionalGraph(routes:SeqValue,
                                     nodeInRoutingToNodeInGraph:Int => Int,
                                     graph:ConditionalGraph,
                                     underApproximatingDistance:(Int,Int) => Long,
-                                    distanceIfNotConnected:Int, //do not put anything too big, or it will trigger some overflow
+                                    distanceIfNotConnected:Long, //do not put anything too big, or it will trigger some overflow
                                     val distancePerVehicle:Array[CBLSIntVar])
   extends Invariant() with SeqNotificationTarget with SetNotificationTarget {
 
