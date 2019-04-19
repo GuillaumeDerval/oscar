@@ -274,10 +274,7 @@ class VoronoiZones(graph:ConditionalGraph,
 
       require(currentNodeLabeling.distance <= maxDistanceToCentroid)
 
-      var l = currentNode.incidentEdges
-      while(l != null){
-        val edge = l.head
-        l = l.tail
+      for(edge <- currentNode.incidentEdges){
         if (isEdgeOpen(edge)){
           val otherNode = edge.otherNode(currentNode)
           val otherNodeID = otherNode.id

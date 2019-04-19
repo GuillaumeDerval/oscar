@@ -67,8 +67,8 @@ class Edge(val id:Int,
 }
 
 class Node(val id:Int, val transitAllowed:Boolean = true){
-  var incidentEdges:QList[Edge] = null
-  def registerEdge(edge:Edge) {incidentEdges = QList(edge,incidentEdges)}
+  var incidentEdges:List[Edge] = Nil
+  def registerEdge(edge:Edge) {incidentEdges = edge::incidentEdges}
 
   override def toString: String = "Node(nodeId:" + id + " transitAllowed:" + transitAllowed + ")"
 }
