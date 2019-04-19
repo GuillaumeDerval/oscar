@@ -15,7 +15,7 @@ object OscarBuild extends Build {
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
-    val buildScalaVersion = "2.12.4"
+    val buildScalaVersion = "2.12.8"
     val buildSbtVersion= "0.13.12"
 
 
@@ -80,6 +80,8 @@ object OscarBuild extends Build {
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
     val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
     val jtscore = "org.locationtech.jts" % "jts-core" % "1.16.0"
+    val liftJson = "net.liftweb" %% "lift-json" % "3.3.0"
+    val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
 
     // Akka
     val akkaActor = "com.typesafe.akka" %% "akka-actor" % "2.5.6"
@@ -159,7 +161,7 @@ object OscarBuild extends Build {
         packAutoSettings ++
         Seq(
           resolvers ++= Seq(mvnrepository),
-          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore,
+          libraryDependencies ++= testDeps :+ scalaSwing :+ jxmapviewer2 :+ jtscore :+ liftJson :+ scopt,
           packGenerateWindowsBatFile := false
         ),
     dependencies = Seq(oscarVisual)
