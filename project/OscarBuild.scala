@@ -10,7 +10,7 @@ import java.util.Date
 
 object OscarBuild extends Build {
 
-  lazy val PerfTest = config("perf") extend(Test)
+  lazy val PerfTest = config("perf") extend Test
 
   object BuildSettings {
     val buildOrganization = "oscar"
@@ -79,6 +79,7 @@ object OscarBuild extends Build {
     val graphStreamUI = "org.graphstream" % "gs-ui" % "1.3"
     val scallop = "org.rogach" % "scallop_2.11" % "1.0.0"
     val jxmapviewer2 = "org.jxmapviewer" % "jxmapviewer2" % "2.2"
+    // Dependencies for Geometry and Json parser
     val jtscore = "org.locationtech.jts" % "jts-core" % "1.16.0"
     val liftJson = "net.liftweb" %% "lift-json" % "3.3.0"
     val scopt = "com.github.scopt" %% "scopt" % "3.7.1"
@@ -116,9 +117,9 @@ object OscarBuild extends Build {
       },
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),
-        ("REVISION_URL", ("https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID")) ),
+        ("REVISION_URL", "https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID") ),
         ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
-        ("BUILD_DATE", new Date().toString())
+        ("BUILD_DATE", new Date().toString)
       )
     )
     else Seq()
