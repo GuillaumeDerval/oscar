@@ -15,15 +15,21 @@ package oscar.cbls.business.geometry.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Geometry
+import org.locationtech.jts.geom.{Geometry, Point}
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
+
+case class GeometryValue(geometry:Geometry,
+                         enclosingCircle:Option[(Point,Double)],
+                         radius:Double,
+                         area:Double)
+
 class CBLSGeometryVar(store: Store,
-                      initialValue: Geometry,
+                      initialValue: GeometryValue,
                       givenName: String = null)
-  extends CBLSAtomicVar[Geometry](store: Store,
+  extends CBLSAtomicVar[GeometryValue](store: Store,
     initialValue,
     givenName: String ){
 
@@ -37,11 +43,11 @@ class CBLSGeometryVar(store: Store,
     clone
   }
 
-  def <== (g: ChangingAtomicValue[Geometry]): Unit ={
+  def <== (g: ChangingAtomicValue[GeometryValue]): Unit ={
     new IdentityGeometry(this, g)
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
@@ -50,7 +56,7 @@ class CBLSGeometryVar(store: Store,
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Geometry])
+class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[GeometryValue])
   extends Invariant with GeometryNotificationTarget{
 
   registerStaticAndDynamicDependency(fromValue)
@@ -60,7 +66,7 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
   toValue := fromValue.value
 
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     toValue := newVal
   }
 
@@ -70,18 +76,18 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
 }
 
 trait GeometryNotificationTarget{
-  def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
+  def notifyGeometryChange(a:ChangingAtomicValue[GeometryValue],id:Int,oldVal:GeometryValue,newVal:GeometryValue)
 }
 
-class CBLSGeometryConst(store:Store, override val value:Geometry, givenName:String = "")
-  extends CBLSAtomicConst[Geometry](value){
+class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
+  extends CBLSAtomicConst[GeometryValue](value){
   override def name = if (givenName == null) value.toString else givenName
   override def toString:String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSGeometryInvariant(store:Store,
-                            initialValue:Geometry)
-  extends AtomicInvariant[Geometry](initialValue){
+                            initialValue:GeometryValue)
+  extends AtomicInvariant[GeometryValue](initialValue){
 
   def createClone:CBLSGeometryVar = {
     val clone = new CBLSGeometryVar(
@@ -93,7 +99,7 @@ class CBLSGeometryInvariant(store:Store,
     clone
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
