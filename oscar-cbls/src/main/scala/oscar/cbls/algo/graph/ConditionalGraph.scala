@@ -61,6 +61,10 @@ class Edge(val id:Int,
 
   def otherNode(node:Node):Node = if(node == nodeA) nodeB else nodeA
 
+  def isIncidentTo(node:Node):Boolean = {
+    node == nodeA || node == nodeB
+  }
+
   override def toString: String =
     "Edge(id:" + id + " nodeA:" + nodeIDA + " nodeB:" + nodeIDB +
       " length:" + length + (conditionID match{case None => ""  case Some(c) => " condition:" + c}) + ")"

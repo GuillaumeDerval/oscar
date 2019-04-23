@@ -4,20 +4,29 @@ import oscar.cbls.algo.dll.{DLLStorageElement, DoublyLinkedList}
 
 
 /**
-  * this algo simplifies graphes by
+  * this algo simplifies graph's by
   *  removing non connected components,
   *  collapsing linear strings into single edge
   *
   *  it returns a ContractedConditionalGraph.
   *  It is a conditional graph, which has a correspondence between the new nodes and the old nodes
   */
-
-
 object GraphContractor {
 
   def apply(g:ConditionalGraph, shouldBeKept:Node=>Boolean):ContractedConditionalGraph = {
 
+    /**nodeA is incident to the first edge in origin
+      * nodeB is incident to the last ede in origin
+      *
+      * @param origin
+      * @param shouldBeKept
+      * @param nodeA
+      * @param nodeB
+      */
     class TempEdge(val origin:List[Edge],val shouldBeKept:Boolean, val nodeA:TmpNode, val nodeB:TmpNode){
+
+      require(origin.head.isIncidentTo(nodeA.origin))
+      require(origin.last.isIncidentTo(nodeB.origin))
 
       def otherNode(n:TmpNode):TmpNode = {
         if(n == nodeA) nodeB
@@ -35,7 +44,7 @@ object GraphContractor {
       }
     }
 
-    def createTempEdge(e1:TempEdge,intermediaryNode:TmpNode,e2:TempEdge):TempEdge = {
+    def createShortcutEdge(e1:TempEdge,intermediaryNode:TmpNode,e2:TempEdge):TempEdge = {
 
       val origin1 = if(e1.nodeA == intermediaryNode) e1.origin.reverse else e1.origin
       val origin2 = if(e2.nodeA == intermediaryNode) e2.origin else e2.origin.reverse
@@ -125,7 +134,7 @@ object GraphContractor {
             tmpNodes(currentNode.origin.id) = null
             currentNode.delete()
 
-            val newEdge = createTempEdge(edge1, currentNode, edge2)
+            val newEdge = createShortcutEdge(edge1, currentNode, edge2)
             newEdge.addKey(tmpNodes(newEdge.nodeA.origin.id).incidentEdges.addElem(newEdge))
             newEdge.addKey(tmpNodes(newEdge.nodeB.origin.id).incidentEdges.addElem(newEdge))
             newEdge.addKey(allEdges.addElem(newEdge))
@@ -213,7 +222,6 @@ object GraphContractor {
   }
 }
 
-
 class ContractedConditionalGraph(originalGraph:ConditionalGraph,
                                  nodes:Array[Node],
                                  edges:Array[Edge],
@@ -221,5 +229,30 @@ class ContractedConditionalGraph(originalGraph:ConditionalGraph,
                                  originalNodeToNode:Array[Option[Node]],
                                  edgeToPathInOriginalGraph:Array[List[Edge]])
   extends ConditionalGraph(nodes,edges,originalGraph.nbConditions) {
-}
 
+  override def toString: String = {
+    "Contracted" + super.toString + "\n" +
+      "edgeToPathInOriginalGraph:\n\t" + edgeToPathInOriginalGraph.mkString("\n\t")
+  }
+
+  def decontractPath(fromNodeInContractedGraph:Node,
+                     edgesInContractedGraph:List[Edge],
+                     toNodeInContractedGraph:Node):List[Edge] = {
+
+    edgesInContractedGraph match {
+      case Nil =>
+        require(fromNodeInContractedGraph == toNodeInContractedGraph)
+        Nil
+      case h :: t =>
+        val step = edgeToPathInOriginalGraph(h.id)
+        if (h.nodeA == fromNodeInContractedGraph) {
+          //do not need to reverse
+          step ::: decontractPath(h.nodeB, t, toNodeInContractedGraph)
+        } else{
+          //reverse
+          require(h.nodeA == fromNodeInContractedGraph)
+          step.reverse ::: decontractPath(h.nodeA, t, toNodeInContractedGraph)
+        }
+    }
+  }
+}
