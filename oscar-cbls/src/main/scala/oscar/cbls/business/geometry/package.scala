@@ -17,6 +17,7 @@ package oscar.cbls.business
   ******************************************************************************/
 
 
+import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Point}
 import oscar.cbls.business.geometry.model.GeometryValue
@@ -30,9 +31,11 @@ package object geometry {
 
   val emptyPolygon = factory.createMultiPolygon(Array.empty)
 
-  val emptyGeometryValue = new GeometryValue(emptyPolygon,
-    likeCircle= true)(
-    inputArea = Some(0),
+  def point(x:Double,y:Double):Point = {
+    new Point(new CoordinateArraySequence(Array(new Coordinate(0,0))), factory)
+  }
+
+  val emptyGeometryValue = new GeometryValue(emptyPolygon)(
     inputCentroid = None,
     inputOverApproximatingRadius = Some(0))
 
@@ -46,12 +49,9 @@ package object geometry {
       new Coordinate(-halfSide,halfSide),
       new Coordinate(halfSide,halfSide))).convexHull()
 
-    new GeometryValue(sq,
-      likeCircle = true)(
-      inputArea = Some(side * side),
-      inputCentroid = Some(new Point(new Coordinate(0,0))),
-      inputOverApproximatingRadius = Some(halfSide * math.sqrt(2.0)),
-      inputPerimeter = Some(4*side))
+    new GeometryValue(sq)(
+      inputCentroid = Some(point(0,0)),
+      inputOverApproximatingRadius = Some(halfSide * math.sqrt(2.0)))
   }
 
   def createRectangle(height:Double,width:Double):GeometryValue = {
@@ -66,13 +66,9 @@ package object geometry {
       new Coordinate(-halfWidth,halfHeight),
       new Coordinate(halfWidth,halfHeight))).convexHull()
 
-    new GeometryValue(rec,
-      likeCircle = true)(
-      inputArea = Some(height * width),
-      inputCentroid = Some(new Point(new Coordinate(0,0))),
-      inputOverApproximatingRadius = Some(math.sqrt((halfHeight * halfHeight) + (halfWidth * halfWidth))),
-      inputPerimeter = Some(2*(height + width))
-    )
+    new GeometryValue(rec)(
+      inputCentroid = Some(point(0,0)),
+      inputOverApproximatingRadius = Some(math.sqrt((halfHeight * halfHeight) + (halfWidth * halfWidth))))
   }
 
   def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):GeometryValue = {
@@ -99,17 +95,13 @@ package object geometry {
       val factor = math.sqrt(math.Pi*r*r/s1)
       val scaling = AffineTransformation.scaleInstance(factor,factor)
 
-      new GeometryValue(scaling.transform(c1),
-        likeCircle = true)(
-        inputArea = Some(math.Pi*r*r),
-        inputCentroid = Some(new Point(new Coordinate(0,0))),
+      new GeometryValue(scaling.transform(c1))(
+        inputCentroid = Some(point(0,0)),
         inputOverApproximatingRadius = Some(factor * r))
 
     }else{
-      new GeometryValue(c1,
-        likeCircle = true)(
-        inputArea = None,
-        inputCentroid = Some(new Point(new Coordinate(0,0))),
+      new GeometryValue(c1)(
+        inputCentroid = Some(point(0,0)),
         inputOverApproximatingRadius = Some(r))
     }
   }

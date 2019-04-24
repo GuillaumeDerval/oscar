@@ -15,12 +15,10 @@ package oscar.cbls.business.geometry.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Geometry
+import oscar.cbls._
 import oscar.cbls.business.geometry
-import oscar.cbls.{IntValue, Store, Value}
-import oscar.cbls.business.geometry.model.{CBLSGeometryInvariant, GeometryNotificationTarget, GeometryValue}
+import oscar.cbls.business.geometry.model._
 import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 
 

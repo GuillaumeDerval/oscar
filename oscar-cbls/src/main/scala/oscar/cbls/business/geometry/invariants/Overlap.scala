@@ -90,9 +90,7 @@ class Overlap(a:Array[CBLSGeometryVar]) extends IntInvariant with GeometryNotifi
 
 
   }
-
-
-
 }
-*/
 
+
+*/

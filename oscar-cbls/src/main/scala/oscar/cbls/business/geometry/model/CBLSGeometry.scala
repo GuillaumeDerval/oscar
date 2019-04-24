@@ -37,14 +37,19 @@ class GeometryValue(val geometry:Geometry)(
       c
   }
 
+  def distance(x1:Double,y1:Double,x2:Double,y2:Double):Double = {
+    Math.sqrt(Math.pow(x1-x2,2.0) + Math.pow(y1 - y2,2.0))
+  }
   def overApproximatingRadius:Double = inputOverApproximatingRadius match{
     case Some(r) => r
     case None =>
       val c = centroid
+      val xc = c.getX
+      val yc = c.getY
 
       var maxD:Double = 0
       for(coordinate:Coordinate <- geometry.getCoordinates()){
-        val d = c.distance(new Point(coordinate))
+        val d = distance(xc,yc,coordinate.x,coordinate.y)
         if (d < maxD) maxD = d
       }
       inputOverApproximatingRadius = Some(maxD)
