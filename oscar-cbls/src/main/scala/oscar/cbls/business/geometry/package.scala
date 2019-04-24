@@ -36,7 +36,7 @@ package object geometry {
   }
 
   val emptyGeometryValue = new GeometryValue(emptyPolygon)(
-    inputCentroid = None,
+    inputCentreOfOverApproximatingCircle = None,
     inputOverApproximatingRadius = Some(0))
 
   def createSquare(side:Double):GeometryValue = {
@@ -50,7 +50,7 @@ package object geometry {
       new Coordinate(halfSide,halfSide))).convexHull()
 
     new GeometryValue(sq)(
-      inputCentroid = Some(point(0,0)),
+      inputCentreOfOverApproximatingCircle = Some(point(0,0)),
       inputOverApproximatingRadius = Some(halfSide * math.sqrt(2.0)))
   }
 
@@ -67,7 +67,7 @@ package object geometry {
       new Coordinate(halfWidth,halfHeight))).convexHull()
 
     new GeometryValue(rec)(
-      inputCentroid = Some(point(0,0)),
+      inputCentreOfOverApproximatingCircle = Some(point(0,0)),
       inputOverApproximatingRadius = Some(math.sqrt((halfHeight * halfHeight) + (halfWidth * halfWidth))))
   }
 
@@ -96,12 +96,12 @@ package object geometry {
       val scaling = AffineTransformation.scaleInstance(factor,factor)
 
       new GeometryValue(scaling.transform(c1))(
-        inputCentroid = Some(point(0,0)),
+        inputCentreOfOverApproximatingCircle = Some(point(0,0)),
         inputOverApproximatingRadius = Some(factor * r))
 
     }else{
       new GeometryValue(c1)(
-        inputCentroid = Some(point(0,0)),
+        inputCentreOfOverApproximatingCircle = Some(point(0,0)),
         inputOverApproximatingRadius = Some(r))
     }
   }

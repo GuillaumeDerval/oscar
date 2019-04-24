@@ -15,26 +15,32 @@ package oscar.cbls.business.geometry.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+import org.locationtech.jts.algorithm.MinimumBoundingCircle
+import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.{Coordinate, Geometry, Point}
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 class GeometryValue(val geometry:Geometry)(
-  var inputCentroid:Option[Point] = None,
+  var inputCentreOfOverApproximatingCircle:Option[Point] = None,
   var inputOverApproximatingRadius:Option[Double] = None) {
 
+  def computeEnclosingCircle(): Unit ={
+    val algo = new MinimumBoundingCircle(geometry)
+    inputCentreOfOverApproximatingCircle = Some(new Point(new CoordinateArraySequence(Array(algo.getCentre)),geometry.getFactory))
+    inputOverApproximatingRadius = Some(algo.getRadius)
+  }
   //une value dérivée est soit:
   // donnée
   // Calculée à partir de geometry
   //on ne considère pas le cas de calculé à partir des va leurs d'origines; on doit alors juste la doner en entrée.
 
-  def centroid:Point = inputCentroid match{
+  def centerOfOverApproximatingCircle:Point = inputCentreOfOverApproximatingCircle match{
     case Some(c) => c
     case None =>
-      val c = geometry.getCentroid
-      inputCentroid = Some(c)
-      c
+      computeEnclosingCircle()
+      inputCentreOfOverApproximatingCircle.get
   }
 
   def distance(x1:Double,y1:Double,x2:Double,y2:Double):Double = {
@@ -43,17 +49,12 @@ class GeometryValue(val geometry:Geometry)(
   def overApproximatingRadius:Double = inputOverApproximatingRadius match{
     case Some(r) => r
     case None =>
-      val c = centroid
-      val xc = c.getX
-      val yc = c.getY
+      computeEnclosingCircle()
+      inputOverApproximatingRadius.get
+  }
 
-      var maxD:Double = 0
-      for(coordinate:Coordinate <- geometry.getCoordinates()){
-        val d = distance(xc,yc,coordinate.x,coordinate.y)
-        if (d < maxD) maxD = d
-      }
-      inputOverApproximatingRadius = Some(maxD)
-      maxD
+  def mightOverlapBasedOnOverApproximatingValues(other:GeometryValue):Boolean = {
+    (centerOfOverApproximatingCircle distance other.centerOfOverApproximatingCircle) <= (overApproximatingRadius + other.overApproximatingRadius)
   }
 }
 

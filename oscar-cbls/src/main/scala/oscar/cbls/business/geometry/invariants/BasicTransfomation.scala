@@ -120,7 +120,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
-          val newCentroid = b.value.inputCentroid match{
+          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match{
             case None => None
             case Some(c:Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
           }
@@ -161,7 +161,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
-          val newCentroid = b.value.inputCentroid match {
+          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match {
             case None => None
             case Some(c: Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
           }

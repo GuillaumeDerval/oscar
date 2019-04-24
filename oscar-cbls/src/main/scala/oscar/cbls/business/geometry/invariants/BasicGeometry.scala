@@ -68,7 +68,7 @@ class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue
 case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue], preCheck:Boolean)
   extends CBLSGeometryInvariant(store:Store,
     initialValue =
-      if (preCheck && ((a.value.centroid distance b.value.centroid) > (a.value.overApproximatingRadius + b.value.overApproximatingRadius)))
+      if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
         geometry.emptyGeometryValue
       else new GeometryValue(a.value.geometry intersection b.value.geometry)())
     with GeometryNotificationTarget {
@@ -82,7 +82,7 @@ case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[G
   }
 
   override def performInvariantPropagation(): Unit = {
-    this :=  (if (preCheck && ((a.value.centroid distance b.value.centroid) > (a.value.overApproximatingRadius + b.value.overApproximatingRadius)))
+    this :=  (if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
       geometry.emptyGeometryValue
     else new GeometryValue(a.value.geometry intersection b.value.geometry)())
   }
@@ -145,8 +145,8 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(
     store,
     initialValue = {
-      val c = shape.value.centroid
-      new GeometryValue(c)(inputCentroid = Some(c), inputOverApproximatingRadius= Some(0.0))
+      val c = shape.value.geometry.getCentroid
+      new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
     }
   ) with GeometryNotificationTarget{
 
@@ -158,14 +158,14 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
   }
 
   override def performInvariantPropagation(): Unit = {
-    val c = shape.value.centroid
-    this := new GeometryValue(c)(inputCentroid = Some(c), inputOverApproximatingRadius= Some(0.0))
+    val c = shape.value.geometry.getCentroid
+    this := new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
   }
 }
 
 class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],pointB:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = pointA.value.centroid.distance(pointB.value.centroid).toInt,
+    initialValue = pointA.value.geometry.getCentroid.distance(pointA.value.geometry.getCentroid).toInt,
     initialDomain = 0 to Int.MaxValue)
     with GeometryNotificationTarget{
 
@@ -178,6 +178,6 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],poi
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := pointA.value.centroid.distance(pointB.value.centroid).toInt
+    this := pointA.value.geometry.getCentroid.distance(pointA.value.geometry.getCentroid).toInt
   }
 }

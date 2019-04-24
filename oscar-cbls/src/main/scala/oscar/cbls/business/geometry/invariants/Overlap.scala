@@ -17,7 +17,11 @@ package oscar.cbls.business.geometry.invariants
   ******************************************************************************/
 
 
-import org.locationtech.jts.geom.{Geometry, GeometryCollection, Polygon}
+import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
+import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator
+import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
+import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
+import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry.model.{CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
 import oscar.cbls.core.IntInvariant
 import oscar.cbls.core.computation.ChangingAtomicValue
@@ -75,22 +79,76 @@ object Overlap {
   }
 }
 
-/*
-class Overlap(a:Array[CBLSGeometryVar]) extends IntInvariant with GeometryNotificationTarget{
 
-  registerStaticAndDynamicDependencyArrayIndex(a)
+class NoOverlap(shapes:Array[CBLSGeometryVar])
+  extends IntInvariant
+    with GeometryNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(shapes)
+  finishInitialization()
 
   //index in array => index in geometry, for fast overlap computation
-  var indexes:SortedMap
+  var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+  var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+  scheduleForPropagation()
+
+  val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
+  this := 0
+
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
                                     id: Int,
                                     oldVal: GeometryValue,
                                     newVal: GeometryValue): Unit = {
-
-
-
+    changedShapesToCheck(id) = true
+    geometryIndexes(id) = null
+    scheduleForPropagation()
   }
+
+  override def performInvariantPropagation(): Unit = {
+    for(shapeIDToCheck <- changedShapesToCheck.indicesAtTrue){
+      for(otherID <- 0 until shapeIDToCheck){
+        val newOverlap = computeOverlapViolation(shapes(shapeIDToCheck).value,shapeIDToCheck,shapes(otherID).value,otherID)
+        val oldOverlap = recordedOverlap(shapeIDToCheck)(otherID)
+        recordedOverlap(shapeIDToCheck)(otherID) = newOverlap
+        this :+= (newOverlap - oldOverlap)
+      }
+    }
+    changedShapesToCheck.all = false
+  }
+
+  private def computeOverlapViolation(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Int = {
+    if(! (shape1 mightOverlapBasedOnOverApproximatingValues shape2)) return 0
+
+    if(geometryIndexes(id1) != null){
+      if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
+    }else if (geometryIndexes(id2) != null){
+      if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
+    }else{
+      //create an index for the biggest shape
+      if(shape1.geometry.getNumPoints > shape2.geometry.getNumPoints){
+        geometryIndexes(id1) = PreparedGeometryFactory.prepare(shape1.geometry)
+      }else{
+        geometryIndexes(id2) = PreparedGeometryFactory.prepare(shape2.geometry)
+      }
+    }
+
+    //here, there is an overlap, so we quantify it, based on the penetration
+    (shape1.overApproximatingRadius
+    + shape1.overApproximatingRadius
+    - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
+    - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
+  }
+
+  private val ptDist = new PointPairDistance()
+  private def computeDistance(shape1:Geometry,point:Point):Double = {
+    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist)
+    ptDist.getDistance()
+  }
+  //criterion of overlap = penetration of approximating circle of smallest indice shape by perimeter for largest shape
+  //penetration(shape1,shape2) = penetrationAS(shape1,shape2) + penetrationAS(shape2,shape1)
+  //penetrationAS(shape1,shape2) = shape1.radius - (minimalDistance(shape1.centre; shape2))
+  //minimalDistance se alcule comment?? avec DistanceToPoint
+
+
 }
 
-
-*/
