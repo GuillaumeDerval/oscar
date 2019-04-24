@@ -51,7 +51,7 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[GeometryValue
 
 class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue=new GeometryValue(a.value.geometry union b.value.geometry,false)())
+    initialValue=new GeometryValue(a.value.geometry union b.value.geometry)())
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
@@ -127,7 +127,7 @@ case class Area(store:Store,a:AtomicValue[GeometryValue])
 
 case class Length(store:Store,a:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = a.value.getEnvelope.getLength.toInt,
+    initialValue = a.value.geometry.getEnvelope.getLength.toInt,
     initialDomain = 0 to Int.MaxValue)
     with GeometryNotificationTarget{
 
@@ -139,7 +139,7 @@ case class Length(store:Store,a:AtomicValue[GeometryValue])
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := a.value.getEnvelope.getLength.toInt
+    this := a.value.geometry.getEnvelope.getLength.toInt
   }
 }
 

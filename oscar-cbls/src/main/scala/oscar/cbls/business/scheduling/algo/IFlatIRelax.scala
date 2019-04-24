@@ -1,5 +1,5 @@
 package oscar.cbls.business.scheduling.algo
-
+/*
 
 /**
  * *****************************************************************************
@@ -30,22 +30,22 @@ package oscar.cbls.business.scheduling.algo
 abstract class StopCriterion(){
 
   //This method is called by the iFlatRelax at each step where the model is feasible
-  def shouldStop(it:Int,p:Planning):Boolean
+  def shouldStop(it:Long,p:Planning):Boolean
 }
 
-case class plateauMaxItStopCriterion(maxIt: Int, stable: Int, verbose:Boolean)
+case class plateauMaxItStopCriterion(maxIt: Long, stable: Long, verbose:Boolean)
   extends StopCriterion{
 
-  var plateauLength = 0
-  var bestMakeSpan = Int.MaxValue
+  var plateauLength = 0L
+  var bestMakeSpan = Long.MaxValue
 
-  def shouldStop(it:Int,p:Planning):Boolean = {
+  def shouldStop(it:Long,p:Planning):Boolean = {
     if (p.makeSpan.value < bestMakeSpan) {
       bestMakeSpan = p.makeSpan.value
-      plateauLength = 0
+      plateauLength = 0L
       if (verbose) println("Better MakeSpan found: " + bestMakeSpan)
     } else {
-      plateauLength += 1
+      plateauLength += 1L
     }
 
     if (it >= maxIt){
@@ -68,20 +68,20 @@ case class plateauMaxItStopCriterion(maxIt: Int, stable: Int, verbose:Boolean)
  */
 class IFlatIRelax(p: Planning,
                   verbose: Boolean = true,
-                  nbRelax: Int = 4,
-                  pkillPerRelax: Int = 50) extends SearchEngine {
+                  nbRelax: Long = 4L,
+                  pkillPerRelax: Long = 50L) extends SearchEngine {
   val model: Store = p.model
 
   require(model.isClosed, "model should be closed before iFlatRelax algo can be instantiated")
-  val maxIterations = (p.activityCount * (p.activityCount - 1)) / 2
-  var it: Int = 0
+  val maxIterations = (p.activityCount * (p.activityCount - 1L)) / 2L
+  var it: Long = 0L
 
   /**
    * This solves the jobshop by iterative relaxation and flattening
    * @param maxIt the max number of iterations of the search
    * @param stable the number of no successive noimprove that will cause the search to stop
    */
-  def solve(maxIt: Int, stable: Int) {
+  def solve(maxIt: Long, stable: Long) {
     var finished = false;
 
     flattenWorseFirst()
@@ -90,7 +90,7 @@ class IFlatIRelax(p: Planning,
 
     var bestSolution: Solution = model.solution(true)
     var bestMakeSpan = p.makeSpan.value
-    var plateaulength = 0
+    var plateaulength = 0L
 
     if (verbose) {
       println("----------------")
@@ -98,9 +98,9 @@ class IFlatIRelax(p: Planning,
 
     while (!finished) {
       //iterative weakening and flattening
-      it += 1
+      it += 1L
 
-      if (plateaulength > 10 && (plateaulength % 50) == 0) {
+      if (plateaulength > 10L && (plateaulength % 50L) == 0L) {
 
         jumpAndFlatten()
 
@@ -125,11 +125,11 @@ class IFlatIRelax(p: Planning,
       if (p.makeSpan.value < bestMakeSpan) {
         bestSolution = model.solution(true)
         bestMakeSpan = p.makeSpan.value
-        plateaulength = 0
+        plateaulength = 0L
         if (verbose) println("Better MakeSpan found")
         p.updateVisual()
       } else {
-        plateaulength += 1
+        plateaulength += 1L
         p.clean()
       }
 
@@ -159,7 +159,7 @@ class IFlatIRelax(p: Planning,
    */
   def jumpAndFlatten() {
     if (verbose) println("jumping****************")
-    for (i <- 0 until nbRelax * 3) { relax(pkillPerRelax); }
+    for (i <- 0L until nbRelax * 3L) { relax(pkillPerRelax); }
     flattenWorseFirst()
   }
 
@@ -185,7 +185,7 @@ class IFlatIRelax(p: Planning,
    * @param pKill: the probability to kill a killable precedence constraint in percent
    * @return true if something could be relaxed, false if makespan is solid (made only of dependencies that cannot be relaxed)
    */
-  def relax(pKill: Int): Boolean = {
+  def relax(pKill: Long): Boolean = {
 
     val potentiallykilledNodes = CriticalPathFinder.nonSolidCriticalPath(p)
     if (potentiallykilledNodes.isEmpty) return false
@@ -208,16 +208,16 @@ class IFlatIRelax(p: Planning,
    * @param min: the minimal number of relaxation
    * @return true if something could be relaxed, false if makespan is solid
    */
-  def relaxUntilMakespanReduced(pKill: Int, min: Int = 3): Boolean = {
+  def relaxUntilMakespanReduced(pKill: Long, min: Long = 3L): Boolean = {
     val m = p.makeSpan.value
-    var n = 0
+    var n = 0L
     var SomethingCouldBeRelaxed = false
     while ((p.makeSpan.value == m) || (n < min)) {
-      n += 1
+      n += 1L
       if (relax(pKill)) {
         SomethingCouldBeRelaxed = true
       } else {
-        if (verbose) println("Could not relax anymore (after " + (n - 1) + " relaxations)")
+        if (verbose) println("Could not relax anymore (after " + (n - 1L) + " relaxations)")
         return SomethingCouldBeRelaxed
       }
     }
@@ -227,15 +227,15 @@ class IFlatIRelax(p: Planning,
 
   /**implements the standard flatten procedure*/
   def flattenWorseFirst() {
-    var iterations = 0
+    var iterations = 0L
     while (!p.worseOvershotResource.value.isEmpty) {
       if (iterations > maxIterations)
         throw new IllegalStateException("FlattenWorseFirst() will not terminate. Check there is no conflict between non moveable activities.")
-      iterations += 1
+      iterations += 1L
 
       val r: Resource = p.resourceArray(selectFrom(p.worseOvershotResource.value))
 
-      val t: Int = r.worseOverShootTime
+      val t: Long = r.worseOverShootTime
 
       val conflictActivities = r.conflictingActivities(t)
       val baseForEjection = r.baseActivityForEjection(t)
@@ -259,8 +259,8 @@ class IFlatIRelax(p: Planning,
                   t2 => p.getDependencyToKillToAvoidCycle(baseForEjectionArray(t1), conflictActivityArray(t2))))
 
             selectMin2(baseForEjectionArray.indices, conflictActivityArray.indices,
-              (a: Int, b: Int) => estimateMakespanExpansionForNewDependency(baseForEjectionArray(a), conflictActivityArray(b)),
-              (a: Int, b: Int) => dependencyKillers(a)(b).canBeKilled) match {
+              (a: Long, b: Long) => estimateMakespanExpansionForNewDependency(baseForEjectionArray(a), conflictActivityArray(b)),
+              (a: Long, b: Long) => dependencyKillers(a)(b).canBeKilled) match {
                 case (a, b) => {
                   if (verbose) println("need to kill dependencies to complete flattening")
                   dependencyKillers(a)(b).killDependencies(verbose)
@@ -283,9 +283,10 @@ class IFlatIRelax(p: Planning,
    * @param to
    * @return
    */
-  def estimateMakespanExpansionForNewDependency(from: Activity, to: Activity): Int = {
+  def estimateMakespanExpansionForNewDependency(from: Activity, to: Activity): Long = {
     from.earliestEndDate.value - to.latestStartDate.value
   }
 
 }
+*/
 */

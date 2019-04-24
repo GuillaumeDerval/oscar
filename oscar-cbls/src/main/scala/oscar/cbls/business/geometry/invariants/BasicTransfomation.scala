@@ -19,7 +19,7 @@ package oscar.cbls.business.geometry.invariants
 import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
-import oscar.cbls.business.geometry.model.{AffineTransformNotificationTarget, CBLSAffineTransformInvariant, CBLSGeometryInvariant, GeometryNotificationTarget}
+import oscar.cbls.business.geometry.model.{AffineTransformNotificationTarget, CBLSAffineTransformInvariant, CBLSGeometryInvariant, GeometryNotificationTarget, GeometryValue}
 import oscar.cbls.core.computation._
 
 class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
@@ -53,7 +53,7 @@ class Translation(store:Store,x:IntValue,y:IntValue)
 
   override def toString: String = "Translation"
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -62,10 +62,10 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   }
 }
 
-class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geometry])
+class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(
     store:Store,
-    initialValue= a.value.transform(b.value))
+    initialValue = new GeometryValue(a.value.transform(b.value.geometry))())
     with GeometryNotificationTarget
     with AffineTransformNotificationTarget{
 
@@ -75,7 +75,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -84,8 +84,6 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
   }
 
   override def performInvariantPropagation(): Unit = {
-
-
-    this := a.value.transform(b.value)
+    this := new GeometryValue(a.value.transform(b.value.geometry))()
   }
 }

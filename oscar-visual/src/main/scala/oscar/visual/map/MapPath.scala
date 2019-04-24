@@ -15,8 +15,9 @@
 package oscar.visual.map
 
 import java.net.URL
+
 import scala.io.Source
-import scala.collection.mutable.{ HashMap, SynchronizedMap }
+import scala.collection.concurrent.{Map, TrieMap}
 import scala.xml._
 import java.io.IOException
 import java.awt.Color
@@ -33,7 +34,7 @@ case class MapPoint(lat : Double, long : Double) {
  */
 object MapQuest {
   val baseUrl = "http://open.mapquestapi.com/directions/v1/route?outFormat=xml&shapeFormat=raw&generalize=200"
-  private val cache = new HashMap[(MapPoint, MapPoint), List[MapPoint]] with SynchronizedMap[(MapPoint, MapPoint), List[MapPoint]]
+  private val cache: Map[(MapPoint, MapPoint), List[MapPoint]] = new TrieMap[(MapPoint, MapPoint), List[MapPoint]]
   
 	/*
 	 * Perform the http request and extract path from response

@@ -73,10 +73,12 @@ class CBLSGeometryVar(store: Store,
     new IdentityGeometry(this, g)
   }
 
+
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
+
 }
 
 /** an invariant that is the identity function
@@ -124,6 +126,7 @@ class CBLSGeometryInvariant(store:Store,
     clone <== this
     clone
   }
+
 
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]

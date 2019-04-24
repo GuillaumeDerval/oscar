@@ -39,7 +39,7 @@ import scala.collection.immutable.SortedSet
  * @param active the tasks that are active maintained to active(time) <== (task.indices | task.start <= time <= t.start+t.duration)
  * @author renaud.delandtsheer@cetic.be
  */
-case class Cumulative(indices: Array[Int],
+case class Cumulative(indices: Array[Long],
                       start: Array[IntValue],
                       duration: Array[IntValue],
                       amount: Array[IntValue],
@@ -49,12 +49,12 @@ case class Cumulative(indices: Array[Int],
   with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizonPlus1 = profile.length
+  val horizonPlus1 : Long = profile.length
   assert(active.length == horizonPlus1)
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizon = profile.length-1
-  assert(active.length == horizon +1)
+  val horizon = profile.length-1L
+  assert(active.length == horizon +1L)
 
   for (v <- start.indices) registerStaticAndDynamicDependency(start(v), v)
   for (v <- duration.indices) registerStaticAndDynamicDependency(duration(v), v)
@@ -62,12 +62,12 @@ case class Cumulative(indices: Array[Int],
 
   finishInitialization()
 
-  for (v <- profile) { v.setDefiningInvariant(this); v := 0 }
+  for (v <- profile) { v.setDefiningInvariant(this); v := 0L }
   for (v <- active) { v.setDefiningInvariant(this); v := SortedSet.empty }
 
   for (i <- start.indices) insert(start(i).value, duration(i).value, amount(i).value, i)
 
-  def remove(start: Int, duration: Int, amount: Int, index: Int) {
+  def remove(start: Long, duration: Long, amount: Long, index: Long) {
     if (start < horizonPlus1) {
       for (t <- start until (horizonPlus1 min (start + duration))) {
         profile(t) :-= amount
@@ -76,7 +76,7 @@ case class Cumulative(indices: Array[Int],
     }
   }
 
-  def insert(start: Int, duration: Int, amount: Int, index: Int) {
+  def insert(start: Long, duration: Long, amount: Long, index: Long) {
     if (start < horizonPlus1) {
       for (t <- start until (horizonPlus1 min (start + duration))) {
         //sprintln(s"insert($start, $duration, $amount, $index) t=$t")
@@ -87,7 +87,7 @@ case class Cumulative(indices: Array[Int],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       remove(OldVal, duration(index).value, amount(index).value, index)
@@ -132,10 +132,10 @@ case class CumulativeNoSet(start: Array[IntValue],
   with IntNotificationTarget{
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizonPlus1 = profile.length
+  val horizonPlus1 : Long = profile.length
 
   //horizon is the uppermost indice of the profile, which is supposed to be the same as active
-  val horizon = profile.length-1
+  val horizon = profile.length-1L
 
   for (v <- start.indices) registerStaticAndDynamicDependency(start(v), v)
   for (v <- duration.indices) registerStaticAndDynamicDependency(duration(v), v)
@@ -143,11 +143,11 @@ case class CumulativeNoSet(start: Array[IntValue],
 
   finishInitialization()
 
-  for (v <- profile) { v.setDefiningInvariant(this); v := 0 }
+  for (v <- profile) { v.setDefiningInvariant(this); v := 0L }
 
   for (i <- start.indices) insert(start(i).value, duration(i).value, amount(i).value, i)
 
-  def remove(start: Int, duration: Int, amount: Int, index: Int) {
+  def remove(start: Long, duration: Long, amount: Long, index: Long) {
     if (start < horizonPlus1) {
       for (t <- start until (horizonPlus1 min (start + duration))) {
         profile(t) :-= amount
@@ -155,7 +155,7 @@ case class CumulativeNoSet(start: Array[IntValue],
     }
   }
 
-  def insert(start: Int, duration: Int, amount: Int, index: Int) {
+  def insert(start: Long, duration: Long, amount: Long, index: Long) {
     if (start < horizonPlus1) {
       for (t <- start until (horizonPlus1 min (start + duration))) {
         //sprintln(s"insert($start, $duration, $amount, $index) t=$t")
@@ -165,7 +165,7 @@ case class CumulativeNoSet(start: Array[IntValue],
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     if (start(index) == v) {
       //start
       remove(OldVal, duration(index).value, amount(index).value, index)

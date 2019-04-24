@@ -38,8 +38,8 @@ trait DAGNode extends Ordered[DAGNode]{
   var visited: Boolean = false
 
   /**it gives the unique ID of the PropagationElement.
-    * those uniqueID are expected to start at 0 and to increase continuously
-    * An exception is tolerated: uniqueID is set to -1
+    * those uniqueID are expected to start at 0L and to increase continuously
+    * An exception is tolerated: uniqueID is set to -1L
     * if the Propagation Element is not mentioned in the propagation structure, such as for constants
     * yet is mentioned in the dependencies of registered propagation elements
     */
@@ -164,7 +164,7 @@ trait DAG {
     //on marque visite quand on poppe de la DFS ou quand on est retombe sur le debut du cycle
     var ExploredStack:List[DAGNode] = List.empty //upside down
 
-    var visited2:SortedSet[Int] = SortedSet.empty
+    var visited2:SortedSet[Long] = SortedSet.empty
 
     def DFS(n:DAGNode):Boolean = { //return true si on a trouve un cycle
       if(n.visited) return false
@@ -227,7 +227,7 @@ trait DAG {
   }
 
   /*
-  private def findForwardRegion(n: DAGNode, ub: Int): List[DAGNode] = {
+  private def findForwardRegion(n: DAGNode, ub: Long): List[DAGNode] = {
     def dfsF(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
       n.visited = true
       var newlist = n :: acc
@@ -248,7 +248,7 @@ trait DAG {
   val HeapForRegionDiscovery:BinomialHeap[DAGNode] = new BinomialHeap((n:DAGNode) => n.position,nodes.size)
 
   /**@return forward region, sorted by increasing position*/
-  private def findSortedForwardRegion(n: DAGNode, ub: Int): QList[DAGNode] = {
+  private def findSortedForwardRegion(n: DAGNode, ub: Long): QList[DAGNode] = {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()
@@ -278,7 +278,7 @@ trait DAG {
   }
 
   /*
-  private def findBackwardsRegion(n: DAGNode, lb: Int): List[DAGNode] = {
+  private def findBackwardsRegion(n: DAGNode, lb: Long): List[DAGNode] = {
     def dfsB(n: DAGNode, acc: List[DAGNode]): List[DAGNode] = {
       n.visited = true
       var newlist = n :: acc
@@ -293,7 +293,7 @@ trait DAG {
   }
 */
   /**@return forward region, sorted by increasing position*/
-  private def findSortedBackwardRegion(n: DAGNode, lb: Int): QList[DAGNode] = {
+  private def findSortedBackwardRegion(n: DAGNode, lb: Long): QList[DAGNode] = {
 
     val h:BinomialHeap[DAGNode] = HeapForRegionDiscovery
     h.dropAll()

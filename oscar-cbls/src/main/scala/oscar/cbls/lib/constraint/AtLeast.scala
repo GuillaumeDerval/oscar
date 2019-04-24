@@ -39,16 +39,16 @@ import scala.collection.immutable.SortedMap
  *                We use a map to ensure that there is no two bounds on the same value.
  * @author renaud.delandtsheer@cetic.be
  */
-case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValue]) extends Constraint {
+case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Long, IntValue]) extends Constraint {
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
-  private val offset:Int = countInvariant.offset
+  private val offset:Long = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
-  private val noViolation:IntValue = 0
+  private val noViolation:IntValue = 0L
 
   private val Violation =
     Sum(bounds.toList.map((value_bound) => Max2(noViolation,value_bound._2 - valueCount(value_bound._1+offset))))
@@ -90,10 +90,10 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
 
   override def checkInternals(c: Checker) {
     val (minMin,maxMax) = InvariantHelper.getMinMaxBounds(variables)
-    var MyValueCount: SortedMap[Int,Int] = SortedMap.empty
+    var MyValueCount: SortedMap[Long,Long] = SortedMap.empty
     for(v <- variables){
-      val oldCount = MyValueCount.getOrElse(v.value,0)
-      MyValueCount += ((v.value,oldCount + 1))
+      val oldCount = MyValueCount.getOrElse(v.value,0L)
+      MyValueCount += ((v.value,oldCount + 1L))
     }
 
     for (v <- minMin to maxMax) {
@@ -102,23 +102,23 @@ case class AtLeast(variables: Iterable[IntValue], bounds: SortedMap[Int, IntValu
           Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
             + ") == MyValueCount(" + v + ") (" + MyValueCount(v) + ")"))
       }else{
-        c.check(valueCount(v+offset).newValue == 0,
+        c.check(valueCount(v+offset).newValue == 0L,
           Some("ValueCount(" + v + "+offset).newValue (" + valueCount(v).newValue
-            + ") == 0"))
+            + ") == 0L"))
       }
     }
 
-    var MyViol: Int = 0
+    var MyViol: Long = 0L
     for (v <- bounds.keys) {
-      MyViol += 0.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0))
+      MyViol += 0L.max(bounds(v).value - MyValueCount.getOrElse(v + offset,0L))
     }
     c.check(Violation.value == MyViol,
       Some("Violation.value (" + Violation.value + ") == MyViol (" + MyViol + ")"))
 
     for (v <- variables) {
       if (bounds.contains(v.value) && (MyValueCount(v.value + offset) <= bounds(v.value).value)) {
-        c.check(violation(v).value == 0,
-            Some("violation(" + v.name + ").value (" + violation(v).value + ") == 0"))
+        c.check(violation(v).value == 0L,
+            Some("violation(" + v.name + ").value (" + violation(v).value + ") == 0L"))
       } else {
         c.check(violation(v).value == Violation.value,
             Some("violation(" + v.name + ").value (" + violation(v).value
