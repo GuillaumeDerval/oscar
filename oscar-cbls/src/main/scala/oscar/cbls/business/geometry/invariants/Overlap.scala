@@ -18,6 +18,11 @@ package oscar.cbls.business.geometry.invariants
 
 
 import org.locationtech.jts.geom.{Geometry, GeometryCollection, Polygon}
+import oscar.cbls.business.geometry.model.{CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
+import oscar.cbls.core.IntInvariant
+import oscar.cbls.core.computation.ChangingAtomicValue
+
+import scala.collection.immutable.SortedMap
 
 object Overlap {
 
@@ -69,3 +74,25 @@ object Overlap {
     }
   }
 }
+
+
+class Overlap(a:Array[CBLSGeometryVar]) extends IntInvariant with GeometryNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(a)
+
+  //index in array => index in geometry, for fast overlap computation
+  var indexes:SortedMap
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
+                                    id: Int,
+                                    oldVal: GeometryValue,
+                                    newVal: GeometryValue): Unit = {
+
+
+
+  }
+
+
+
+}
+
+

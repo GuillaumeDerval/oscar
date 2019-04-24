@@ -21,7 +21,6 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 /**
-  *
   * @param store
   * @param initialValue is the initial value of the variable
   * @param givenName

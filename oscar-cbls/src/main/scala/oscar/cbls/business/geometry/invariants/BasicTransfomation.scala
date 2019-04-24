@@ -65,7 +65,7 @@ class Translation(store:Store,x:IntValue,y:IntValue)
 class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geometry])
   extends CBLSGeometryInvariant(
     store:Store,
-    initialValue=a.value.transform(b.value))
+    initialValue= a.value.transform(b.value))
     with GeometryNotificationTarget
     with AffineTransformNotificationTarget{
 
@@ -84,6 +84,8 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
   }
 
   override def performInvariantPropagation(): Unit = {
+
+
     this := a.value.transform(b.value)
   }
 }

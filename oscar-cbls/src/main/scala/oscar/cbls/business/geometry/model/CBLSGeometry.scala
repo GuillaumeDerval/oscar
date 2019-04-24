@@ -15,16 +15,42 @@ package oscar.cbls.business.geometry.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.{Geometry, Point}
+import org.locationtech.jts.geom.{Coordinate, Geometry, Point}
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
+class GeometryValue(val geometry:Geometry)(
+  var inputCentroid:Option[Point] = None,
+  var inputOverApproximatingRadius:Option[Double] = None) {
 
-case class GeometryValue(geometry:Geometry,
-                         enclosingCircle:Option[(Point,Double)],
-                         radius:Double,
-                         area:Double)
+  //une value dérivée est soit:
+  // donnée
+  // Calculée à partir de geometry
+  //on ne considère pas le cas de calculé à partir des va leurs d'origines; on doit alors juste la doner en entrée.
+
+  def centroid:Point = inputCentroid match{
+    case Some(c) => c
+    case None =>
+      val c = geometry.getCentroid
+      inputCentroid = Some(c)
+      c
+  }
+
+  def overApproximatingRadius:Double = inputOverApproximatingRadius match{
+    case Some(r) => r
+    case None =>
+      val c = centroid
+
+      var maxD:Double = 0
+      for(coordinate:Coordinate <- geometry.getCoordinates()){
+        val d = c.distance(new Point(coordinate))
+        if (d < maxD) maxD = d
+      }
+      inputOverApproximatingRadius = Some(maxD)
+      maxD
+  }
+}
 
 class CBLSGeometryVar(store: Store,
                       initialValue: GeometryValue,
@@ -104,3 +130,6 @@ class CBLSGeometryInvariant(store:Store,
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
 }
+
+
+
