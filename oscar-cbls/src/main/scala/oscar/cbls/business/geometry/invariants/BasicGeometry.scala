@@ -24,7 +24,7 @@ import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 
 
-case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[GeometryValue])
+case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[GeometryValue])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(inner)
@@ -41,7 +41,7 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[GeometryValue
   }
 
   override def performInvariantPropagation(): Unit = {
-    violation := inner.value.difference(outer.value.geometry).getArea.toInt
+    violation := inner.value.geometry.difference(outer.value.geometry).getArea.toInt
   }
 
   override def violation(v: Value):IntValue = { if (inner == v || inner == v) violation else 0 }

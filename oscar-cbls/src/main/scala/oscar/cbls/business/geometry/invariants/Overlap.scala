@@ -75,7 +75,7 @@ object Overlap {
   }
 }
 
-
+/*
 class Overlap(a:Array[CBLSGeometryVar]) extends IntInvariant with GeometryNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(a)
@@ -94,5 +94,5 @@ class Overlap(a:Array[CBLSGeometryVar]) extends IntInvariant with GeometryNotifi
 
 
 }
-
+*/
 
