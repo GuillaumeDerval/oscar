@@ -80,7 +80,7 @@ object Overlap {
 }
 
 
-class NoOverlap(shapes:Array[CBLSGeometryVar])
+class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
   extends IntInvariant
     with GeometryNotificationTarget{
 
@@ -127,16 +127,20 @@ class NoOverlap(shapes:Array[CBLSGeometryVar])
       //create an index for the biggest shape
       if(shape1.geometry.getNumPoints > shape2.geometry.getNumPoints){
         geometryIndexes(id1) = PreparedGeometryFactory.prepare(shape1.geometry)
+        if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
       }else{
         geometryIndexes(id2) = PreparedGeometryFactory.prepare(shape2.geometry)
+        if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
       }
     }
 
-    //here, there is an overlap, so we quantify it, based on the penetration
+    //There is an overlap, so we quantify it; we measure some penetration,
+    //which is faster to compute than the overlap area
+    //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
     (shape1.overApproximatingRadius
-    + shape1.overApproximatingRadius
-    - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
-    - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
+      + shape1.overApproximatingRadius
+      - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
+      - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
   }
 
   private val ptDist = new PointPairDistance()
@@ -144,11 +148,4 @@ class NoOverlap(shapes:Array[CBLSGeometryVar])
     DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist)
     ptDist.getDistance()
   }
-  //criterion of overlap = penetration of approximating circle of smallest indice shape by perimeter for largest shape
-  //penetration(shape1,shape2) = penetrationAS(shape1,shape2) + penetrationAS(shape2,shape1)
-  //penetrationAS(shape1,shape2) = shape1.radius - (minimalDistance(shape1.centre; shape2))
-  //minimalDistance se alcule comment?? avec DistanceToPoint
-
-
 }
-
