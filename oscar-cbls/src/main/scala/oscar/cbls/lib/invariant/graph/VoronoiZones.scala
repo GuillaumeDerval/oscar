@@ -70,7 +70,8 @@ object VoronoiZones{
     val domainsOfTrackedNodeIDs = Domain(minTrackedNodeID,maxTrackedNodeID)
     val centroidsToTmpNodes:SortedMap[Long,CBLSSetVar] = Cluster.makeSparse(localIDtoToClusterID, centroids).clusters
 
-    centroidsToTmpNodes.mapValues(setOfTmpNodes => SetMap(setOfTmpNodes,(l:Long) => localIDtoNodeID(l.toInt),domainsOfTrackedNodeIDs))
+    //SortedMap is actuall ya lazy stuff, so aboid at all cost here!
+    SortedMap.empty[Long,SetValue] ++ centroidsToTmpNodes.toList.map({case (a,setOfTmpNodes) => (a,SetMap(setOfTmpNodes,(l:Long) => localIDtoNodeID(l.toInt),domainsOfTrackedNodeIDs))})
   }
 }
 
