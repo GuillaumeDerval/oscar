@@ -20,9 +20,9 @@ import oscar.cbls.algo.graph._
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.Checker
 import oscar.cbls.core.computation._
-import oscar.cbls.lib.invariant.logic.Filter
+import oscar.cbls.lib.invariant.logic.{Cluster, DenseCluster, Filter, SparseCluster, TranslatedDenseCluster}
 import oscar.cbls.lib.invariant.set.SetMap
-import oscar.cbls.{CBLSIntVar, Domain, SetValue}
+import oscar.cbls.{CBLSIntVar, Domain, IntValue, SetValue}
 
 import scala.collection.immutable.{SortedMap, SortedSet}
 
@@ -34,12 +34,13 @@ object VoronoiZones{
             centroids:SetValue,
             trackedNodes:Iterable[Long],
             m:Store,
-            defaultDistanceForUnreachableNodes:Long):VoronoiZones = {
+            defaultDistanceForUnreachableNodes:Long,
+            defaultCentroidForOrphanNodes:Long = -1):VoronoiZones = {
 
     val trackedNodeToDistanceAndCentroid = SortedMap.empty[Long,(CBLSIntVar,CBLSIntVar)] ++ trackedNodes.map(nodeID =>
       nodeID -> (
         CBLSIntVar(m, 0, Domain(0L,(defaultDistanceForUnreachableNodes max graphDiameterOverApprox)), "distanceToClosestCentroid_Node" + nodeID),
-        CBLSIntVar(m, 0, Domain(-1L , centroids.max), "closestCentroidToNode" + nodeID))
+        CBLSIntVar(m, 0, Domain(centroids.min , centroids.max) union defaultCentroidForOrphanNodes, "closestCentroidToNode" + nodeID))
     )
 
     new VoronoiZones(graph,
@@ -56,9 +57,20 @@ object VoronoiZones{
     SetMap(
       Filter(
         idToNodeAndCentroid.map(_._2),
-        _!= -1),
+        _!= v.defaultCentroidForUnreachableNodes),
       (nodeID:Long) => idToNodeAndCentroid(cbls.longToInt(nodeID))._1,
       Domain.setToDomain(idToNodeAndCentroid.map(_._1:Long).toSet))
+  }
+
+  def centroidToTrackedNodeSet(v:VoronoiZones, centroids:Iterable[Long]):SortedMap[Long,SetValue] = {
+    val trackedNodesArray:Array[(Long,(_,CBLSIntVar))] = v.trackedNodeToDistanceAndCentroidMap.toArray
+    val localIDtoNodeID:Array[Long] = trackedNodesArray.map(_._1)
+    val localIDtoToClusterID:Array[IntValue] = trackedNodesArray.map(_._2._2)
+    val (minTrackedNodeID,maxTrackedNodeID) = InvariantHelper.getMinMaxBoundsInt(localIDtoNodeID)
+    val domainsOfTrackedNodeIDs = Domain(minTrackedNodeID,maxTrackedNodeID)
+    val centroidsToTmpNodes:SortedMap[Long,CBLSSetVar] = Cluster.makeSparse(localIDtoToClusterID, centroids).clusters
+
+    centroidsToTmpNodes.mapValues(setOfTmpNodes => SetMap(setOfTmpNodes,(l:Long) => localIDtoNodeID(l.toInt),domainsOfTrackedNodeIDs))
   }
 }
 
@@ -72,14 +84,16 @@ object VoronoiZones{
   *                                            for the nodes that require it,
   *                                            the distance to the closest centroid
   *                                            and the centroid
+  *                                            nodes that are not reacheable by any centroid get the centroid -1
   *
   */
 class VoronoiZones(graph:ConditionalGraph,
                    openConditions:SetValue,
-                   centroids:SetValue,
+                   val centroids:SetValue,
                    val trackedNodeToDistanceAndCentroidMap:SortedMap[Long,(CBLSIntVar,CBLSIntVar)],
-                   defaultDistanceForUnreachableNodes:Long,
-                   maxDistanceToCentroid:Long = Long.MaxValue)
+                   val defaultDistanceForUnreachableNodes:Long,
+                   maxDistanceToCentroid:Long = Long.MaxValue,
+                   val defaultCentroidForUnreachableNodes:Long = -1)
   extends Invariant with SetNotificationTarget {
 
   require(openConditions != centroids, "something absurd in the voronoi zone declaration")
@@ -120,14 +134,14 @@ class VoronoiZones(graph:ConditionalGraph,
     }
 
     def setUnreachable(): Unit ={
-      this.centroid := -1
+      this.centroid := defaultCentroidForUnreachableNodes
       this.distance := defaultDistanceForUnreachableNodes
     }
 
     def checkEqual(l:ClosestCentroidLabeling): Unit ={
       l match{
         case Unreachable =>
-          require(this.centroid.value == -1)
+          require(this.centroid.value == defaultCentroidForUnreachableNodes)
           require(this.distance.value == defaultDistanceForUnreachableNodes)
 
         case VoronoiZone(centroid,distance) =>

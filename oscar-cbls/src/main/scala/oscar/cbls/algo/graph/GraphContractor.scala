@@ -198,7 +198,7 @@ object GraphContractor {
         originalNodeToNode(edge.nodeA.origin.id).get,
         originalNodeToNode(edge.nodeB.origin.id).get,
         length = edge.origin.map(_.length).sum,
-        conditionID = None)
+        conditionID = if(edge.origin.size == 1) edge.origin.head.conditionID else None)
 
       finalEdges(newEdgeID) = finalEdge
 

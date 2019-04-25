@@ -33,6 +33,19 @@ class ConditionalGraph(val nodes:Array[Node],
     "ConditionalGraph(nbNodes:" + nbNodes + " nbEdges:" + nbEdges + " nbConditions:" + nbConditions+ "\n\t" +
       "nodes:[\n\t\t" + nodes.mkString("\n\t\t") + "\n\t]" +
       "edges:[\n\t\t" + edges.mkString("\n\t\t") + "\n\t]" + "\n\t)"
+
+
+
+  //"C:\Program Files (x86)\Graphviz2.38\bin\neato" -Tpng  vlsnGraph.dot > a.png
+  def toDOT:String = {
+    "##Command to produce the output: \"neato -Tpng thisfile > thisfile.png\"\n" +
+      "graph WiringGraph {\n" +
+      nodes.map(node => node.toDOT).mkString("\t", "\n\t", "\n") +
+      edges.map(edge => edge.toDOT(this)).mkString("\t", "\n\t", "\n") +
+      "\toverlap=false\n" +
+      "\tfontsize=12;\n" +
+      "}"
+  }
 }
 
 class ConditionalGraphWithIntegerNodeCoordinates(nodes:Array[Node],
@@ -68,6 +81,13 @@ class Edge(val id:Int,
   override def toString: String =
     "Edge(id:" + id + " nodeA:" + nodeIDA + " nodeB:" + nodeIDB +
       " length:" + length + (conditionID match{case None => ""  case Some(c) => " condition:" + c}) + ")"
+
+  def toDOT(g:ConditionalGraph):String = {
+    conditionID match{
+      case None => "n" + nodeIDA + " -- " + "n" + nodeIDB + "[label= \"" + length + "\"];"
+      case Some(c) => "n" + nodeIDA + " -- " + "n" + nodeIDB + "[label= \"" + length + "\ncond=" + c + "\"];"
+    }
+  }
 }
 
 class Node(val id:Int, val transitAllowed:Boolean = true){
@@ -75,6 +95,11 @@ class Node(val id:Int, val transitAllowed:Boolean = true){
   def registerEdge(edge:Edge) {incidentEdges = edge::incidentEdges}
 
   override def toString: String = "Node(nodeId:" + id + " transitAllowed:" + transitAllowed + ")"
+
+  def toDOT: String = {
+    val borderColor = (if(transitAllowed) "black" else "yellow")
+    "n" + id + " [shape=circle,style=filled, fillcolor=yellow, color=" + borderColor + ", label = \"" + id + "\" ] ;"
+  }
 }
 
 
