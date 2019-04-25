@@ -13,7 +13,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.cbls.test.scheduling
-
+  /*
 import oscar.cbls.core.computation.Store
 import oscar.cbls.business.scheduling.model.Activity
 import oscar.cbls.business.scheduling.model.Planning
@@ -38,6 +38,7 @@ import oscar.cbls.business.scheduling.solver.IFlatIRelax
  * Iron making and then steel making must be achieved in the same day.
  * Roughing rolling and then product rolling, must be achieved in the same day.
  */
+
 object Steelworks extends App {
   val model = Store(noCycle=false)
 
@@ -81,3 +82,4 @@ object Steelworks extends App {
   println(planning.dependencies)
 
 }
+*/

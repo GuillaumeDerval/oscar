@@ -30,7 +30,7 @@ import scala.collection.immutable.SortedSet
  * @param elseVar the returned value if ifVar <= pivot
  * @author renaud.delandtsheer@cetic.be
  * */
-case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: Int = 0)
+case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: Long = 0L)
   extends IntInvariant(if(ifVar.value > pivot) thenVar.value else elseVar.value, thenVar.domain union elseVar.domain)
   with VaryingDependencies with IntNotificationTarget{
 
@@ -42,7 +42,7 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if (v == ifVar) {
       if (NewVal > pivot && OldVal <= pivot) {
         //modifier le graphe de dependances
@@ -74,12 +74,12 @@ case class IntITE(ifVar: IntValue, thenVar: IntValue, elseVar: IntValue, pivot: 
 
 /**
  * inputarray[index]
- * @param inputArray is an array of int
+ * @param inputArray is an array of Long
  * @param index is the index accessing the array
  * @author renaud.delandtsheer@cetic.be
  * */
-case class ConstantIntElement(index: IntValue, inputArray: Array[Int])
-  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxRangeInt(inputArray))
+case class ConstantIntElement(index: IntValue, inputArray: Array[Long])
+  extends Int2Int(index, inputArray(_), InvariantHelper.getMinMaxBoundsInt(inputArray))
 
 /**
  * inputarray[index]
@@ -103,11 +103,11 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
   finishInitialization()
 
   override def performBulkComputation(bulkedVar: Array[IntValue]): Domain = {
-    InvariantHelper.getMinMaxRange(bulkedVar)
+    InvariantHelper.getMinMaxBounds(bulkedVar)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     if (v == index) {
       //modifier le graphe de dependances
       KeyToCurrentVar.performRemove()
@@ -127,8 +127,8 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4){
-      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if(inputs.length > 4L){
+      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }
@@ -137,12 +137,12 @@ case class IntElement(index: IntValue, inputarray: Array[IntValue])
 
 /**
  * inputarray[index]
- * @param inputarray is an array of Int
+ * @param inputarray is an array of Long
  * @param index is the index accessing the array (its value must be always inside the array range)
  * @author renaud.delandtsheer@cetic.be
  * @author jean-noel.monette@it.uu.se
  * */
-case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
+case class IntElementNoVar(index: IntValue, inputarray: Array[Long])
   extends IntInvariant(initialValue = inputarray(index.value),DomainRange(inputarray.min,inputarray.max))
   with IntNotificationTarget{
 
@@ -150,7 +150,7 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
    // println(OldVal + " "+ NewVal)
     if(NewVal >= inputarray.length){
       println("something is wrong")
@@ -166,8 +166,8 @@ case class IntElementNoVar(index: IntValue, inputarray: Array[Int])
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4){
-      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
+    if(inputs.length > 4L){
+      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "] = " + this.value
     }
@@ -199,7 +199,7 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   finishInitialization()
 
   //this array is the number of elements with value i-myMin
-  var ValueCount: Array[Int] = Array.tabulate(max-min+1)(_ => 0)
+  var ValueCount: Array[Long] = Array.tabulate(max-min+1L)(_ => 0L)
 
   for (arrayPosition <- index.value) {
     val value = inputarray(arrayPosition).value
@@ -207,20 +207,20 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
   }
 
   override def performBulkComputation(bulkedVar: Array[T]): Domain =
-    InvariantHelper.getMinMaxRange(bulkedVar)
+    InvariantHelper.getMinMaxBounds(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     internalDelete(OldVal)
     internalInsert(NewVal)
   }
 
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     assert(index == v)
     for(value <- addedValues){
       KeysToInputArray(value) = registerDynamicDependency(inputarray(value))
-      val NewVal: Int = inputarray(value).value
+      val NewVal: Long = inputarray(value).value
 
       internalInsert(NewVal)
     }
@@ -231,45 +231,45 @@ case class Elements[T <:IntValue](index: SetValue, inputarray: Array[T])
       KeysToInputArray(value).performRemove()
       KeysToInputArray(value) = null
 
-      val OldVal:Int = inputarray(value).value
+      val OldVal:Long = inputarray(value).value
       internalDelete(OldVal)
     }
   }
 
-  private def internalInsert(value:Int){
-    if (ValueCount(value - min) == 0){
-      ValueCount(value - min) = 1
+  private def internalInsert(value:Long){
+    if (ValueCount(value - min) == 0L){
+      ValueCount(value - min) = 1L
       this :+= value
     }else{
-      ValueCount(value - min) += 1
+      ValueCount(value - min) += 1L
     }
-    assert(ValueCount(value - min) > 0)
+    assert(ValueCount(value - min) > 0L)
   }
 
-  private def internalDelete(value:Int){
-    assert(ValueCount(value - min) > 0)
-    if (ValueCount(value - min) == 1){
-      ValueCount(value - min) = 0
+  private def internalDelete(value:Long){
+    assert(ValueCount(value - min) > 0L)
+    if (ValueCount(value - min) == 1L){
+      ValueCount(value - min) = 0L
       this :-= value
     }else{
-      ValueCount(value - min) -= 1
+      ValueCount(value - min) -= 1L
     }
   }
 
   override def checkInternals(c: Checker) {
     c.check(KeysToInputArray.indices.forall(i => (KeysToInputArray(i) != null) == index.value.contains(i)),
       Some("KeysToInputArray.indices.forall(i => ((KeysToInputArray(i) != null) == index.value.contains(i)))"))
-    c.check(index.value.forall((i: Int) =>
+    c.check(index.value.forall((i: Long) =>
       this.value.contains(inputarray(i).value)),
-      Some("index.value.forall((i: Int) => output.value.contains(inputarray(i).value))"))
+      Some("index.value.forall((i: Long) => output.value.contains(inputarray(i).value))"))
     c.check(this.value.size <= index.value.size,
       Some("output.value.size (" + this.value.size + ") <= index.value.size (" + index.value.size + ")"))
   }
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4){
-      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if(inputs.length > 4L){
+      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }
@@ -304,7 +304,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     InvariantHelper.getMinMaxBoundsSet(bulkedVar)
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(v == index)
     //modifier le graphe de dependances
     KeyToCurrentVar.performRemove()
@@ -312,7 +312,7 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
     this := inputarray(NewVal).value
   }
 
-  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
+  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
     assert(v == inputarray.apply(index.value))
     this := newValue
   }
@@ -327,8 +327,8 @@ case class SetElement[X<:SetValue](index: IntValue, inputarray: Array[X])
 
   override def toString: String = {
     val inputs = inputarray.toList
-    if(inputs.length > 4){
-      "Array(" +inputs.take(4).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
+    if(inputs.length > 4L){
+      "Array(" +inputs.take(4L).map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }else{
       "Array(" +inputs.map(_.toString).mkString(",") + ", ...)"+ "[" + index.toString + "]"
     }

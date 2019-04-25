@@ -38,7 +38,7 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
    * @param id a reference name to identify to which bulk in the invariant this belongs to. Several bulks can be done with a single invariants
    * @return the result of performBulkComputation(bulkedVars),  possibly computed by co-bulking invariants
    */
-  final def bulkRegister(bulkedVars: Array[VarType], id: Int = 0): BulkedComputationResult = {
+  final def bulkRegister(bulkedVars: Array[VarType], id: Long = 0L): BulkedComputationResult = {
 
     val m = this.preFinishInitialization()
     if (m == null) {
@@ -67,7 +67,7 @@ trait Bulked[VarType <: Value, BulkedComputationResult] extends Invariant {
     }
   }
 
-  def performBulkComputationID(vars: Array[VarType], id: Int): BulkedComputationResult = performBulkComputation(vars)
+  def performBulkComputationID(vars: Array[VarType], id: Long): BulkedComputationResult = performBulkComputation(vars)
   def performBulkComputation(vars: Array[VarType]): BulkedComputationResult = null.asInstanceOf[BulkedComputationResult]
 }
 

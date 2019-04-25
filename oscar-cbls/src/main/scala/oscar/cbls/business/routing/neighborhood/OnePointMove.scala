@@ -28,6 +28,7 @@ package oscar.cbls.business.routing.neighborhood
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.business.routing.model.VRP
 import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, EasyNeighborhood}
+import oscar.cbls._
 
 /**
  * Moves a point of a route to another place in the same or in an other route.
@@ -36,8 +37,8 @@ import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, First, LoopBehavior, 
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class OnePointMove(nodesToMove: () => Iterable[Int],
-                        relevantNewPredecessors: () => Int => Iterable[Int],
+case class OnePointMove(nodesToMove: () => Iterable[Long],
+                        relevantNewPredecessors: () => Long => Iterable[Long],
                         vrp:VRP,
                         neighborhoodName: String = "OnePointMove",
                         selectPointToMoveBehavior:LoopBehavior = First(),
@@ -53,9 +54,9 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
   val n = vrp.n
 
   //the indice to start with for the exploration
-  var startIndice: Int = 0
+  var startIndice: Long = 0
 
-  override def exploreNeighborhood(initialObj: Int){
+  override def exploreNeighborhood(initialObj: Long){
 
     val iterationSchemeOnZone =
       if (hotRestart) HotRestart(nodesToMove(), startIndice)
@@ -64,7 +65,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
     //TODO: we might also want to go for checkpoint less neighborhood to avoid invariants computing checkpoint values for small neighborhoods.
     val startValue = seq.defineCurrentValueAsCheckpoint(true)
 
-    def evalObjAndRollBack() : Int = {
+    def evalObjAndRollBack() : Long = {
       val a = obj.value
       seq.rollbackToTopCheckpoint(startValue)
       a
@@ -91,7 +92,7 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
                 startValue.positionOfAnyOccurrence(newPredecessorForInstantiation) match {
                   case None => ;
                   case Some(positionOfNewPredecessor) =>
-                    if(positionOfNewPredecessor+1 != positionOfMovedPoint) {
+                    if(positionOfNewPredecessor+1L != positionOfMovedPoint) {
                       this.positionOfNewPredecessorForInstantiation = positionOfNewPredecessor
 
                       doMove(positionOfMovedPoint, positionOfNewPredecessor)
@@ -108,28 +109,28 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
       }
     }
     seq.releaseTopCheckpoint()
-    startIndice = movedPointForInstantiation + 1
+    startIndice = movedPointForInstantiation + 1L
   }
-  var movedPointForInstantiation:Int = -1
-  var newPredecessorForInstantiation:Int = -1
-  var positionOfMovedPointForInstantiation:Int = -1
-  var positionOfNewPredecessorForInstantiation:Int = -1
+  var movedPointForInstantiation:Long = -1L
+  var newPredecessorForInstantiation:Long = -1L
+  var positionOfMovedPointForInstantiation:Long = -1L
+  var positionOfNewPredecessorForInstantiation:Long = -1L
 
-  override def instantiateCurrentMove(newObj: Int) =
+  override def instantiateCurrentMove(newObj: Long) =
     OnePointMoveMove(movedPointForInstantiation, positionOfMovedPointForInstantiation,
       newPredecessorForInstantiation, positionOfNewPredecessorForInstantiation,
       positionIndependentMoves,
       newObj, this, neighborhoodName)
 
   override def reset(): Unit = {
-    startIndice = 0
+    startIndice = 0L
   }
 
-  def doMove(positionOfMovedPoint:Int, positionOfNewPredecessor:Int) {
+  def doMove(positionOfMovedPoint:Long, positionOfNewPredecessor:Long) {
     seq.move(positionOfMovedPoint,positionOfMovedPoint,positionOfNewPredecessor,false)
   }
 
-  def doPositionIndependentMove(movedPoint:Int, newPredecessor:Int): Unit ={
+  def doPositionIndependentMove(movedPoint:Long, newPredecessor:Long): Unit ={
     val s = seq.newValue
     val movedPos = s.positionOfAnyOccurrence(movedPoint).get
     val positionOfPredecessor = s.positionOfAnyOccurrence(newPredecessor).get
@@ -146,15 +147,15 @@ case class OnePointMove(nodesToMove: () => Iterable[Int],
  * @author yoann.guyot@cetic.be
  * @author Florent Ghilain (UMONS)
  */
-case class OnePointMoveMove(movedPoint: Int,movedPointPosition:Int,
-                            newPredecessor: Int,newPredecessorPosition:Int,
+case class OnePointMoveMove(movedPoint: Long,movedPointPosition:Long,
+                            newPredecessor: Long,newPredecessorPosition:Long,
                             positionIndependentMoves:Boolean,
-                            override val objAfter: Int,
+                            override val objAfter: Long,
                             override val neighborhood: OnePointMove,
                             override val neighborhoodName: String = "OnePointMoveMove")
   extends VRPSMove(objAfter, neighborhood, neighborhoodName, neighborhood.vrp){
 
-  override def impactedPoints: Iterable[Int] = List(movedPoint,newPredecessor)
+  override def impactedPoints: Iterable[Long] = List(movedPoint,newPredecessor)
 
   override def commit() {
     if(positionIndependentMoves){

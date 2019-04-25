@@ -18,6 +18,7 @@ package oscar.cbls.business.routing.invariants.capa
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core._
+import oscar.cbls.core.computation.DomainRange
 
 object ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirst {
   /**
@@ -38,28 +39,28 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFir
   def apply(routes:ChangingSeqValue,
             n:Int,
             v:Int,
-            op:(Int,Int,Int,Int)=>(Int,Int),
+            op:(Long,Long,Long,Long)=>(Long,Long),
             content1AtStart:Array[IntValue],
             content2AtStart:Array[IntValue],
-            default1ForUnroutedNodes:Int,
-            default2ForUnroutedNodes:Int,
-            minContent:Int = 0,
-            maxContent:Int = Int.MaxValue,
+            default1ForUnroutedNodes:Long,
+            default2ForUnroutedNodes:Long,
+            minContent:Long = 0L,
+            maxContent:Long = Long.MaxValue,
             contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
 
-    val content1FirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "1 at first node after start of of vehicle " + vehicle))
-    val content2AtFirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "2 at first node after start of vehicle " + vehicle))
-    val firstPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "next(" + vehicle + ")"))
+    val content1FirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at first node after start of of vehicle " + vehicle))
+    val content2AtFirstNode = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at first node after start of vehicle " + vehicle))
+    val firstPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "next(" + vehicle + ")"))
 
 
-    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1 at node "+node))
-    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2 at node "+node))
+    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
+    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
 
-    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "1 at end of route " + vehicle))
-    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "2 at end of route " + vehicle))
+    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
+    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirst(routes,n,v,op,
       content1AtStart,content2AtStart,
@@ -77,7 +78,7 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFir
 class ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirst(routes:ChangingSeqValue,
                                                                                   n:Int,
                                                                                   v:Int,
-                                                                                  op:(Int,Int,Int,Int)=>(Int,Int),
+                                                                                  op:(Long,Long,Long,Long)=>(Long,Long),
                                                                                   override val content1AtStart:Array[IntValue],
                                                                                   override val content2AtStart:Array[IntValue],
 
@@ -91,13 +92,13 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirs
                                                                                   override val content1AtEnd:Array[CBLSIntVar],
                                                                                   override val content2AtEnd:Array[CBLSIntVar],
                                                                                   override val lastPointOfVehicle:Array[CBLSIntVar],
-                                                                                  defaultVehicleContent1ForUnroutedNodes:Int,
-                                                                                  defaultVehicleContent2ForUnroutedNodes:Int,
+                                                                                  defaultVehicleContent1ForUnroutedNodes:Long,
+                                                                                  defaultVehicleContent2ForUnroutedNodes:Long,
                                                                                   contentName:String = "content")
   extends ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     n:Int,
     v:Int,
-    op:(Int,Int,Int,Int)=>(Int,Int),
+    op:(Long,Long,Long,Long)=>(Long,Long),
     content1AtStart:Array[IntValue],
     content2AtStart:Array[IntValue],
     content1AtNode:Array[CBLSIntVar],
@@ -105,15 +106,15 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicleWithFirstAndContentAtFirs
     content1AtEnd:Array[CBLSIntVar],
     content2AtEnd:Array[CBLSIntVar],
     lastPointOfVehicle:Array[CBLSIntVar],
-    defaultVehicleContent1ForUnroutedNodes:Int,
-    defaultVehicleContent2ForUnroutedNodes:Int,
+    defaultVehicleContent1ForUnroutedNodes:Long,
+    defaultVehicleContent2ForUnroutedNodes:Long,
     contentName:String){
 
   for(i <- content1AtFirstNode) i.setDefiningInvariant(this)
   for(i <- content2AtFirstNode) i.setDefiningInvariant(this)
   for(i <- firstPointOfVehicle) i.setDefiningInvariant(this)
 
-  override def setVehicleContentAtNode(prevNode : Int, node : Int) = {
+  override def setVehicleContentAtNode(prevNode : Long, node : Long) = {
     val toReturn = super.setVehicleContentAtNode(prevNode, node)
     if (prevNode < v) {
       //updating the first node of vehicle prevNode
@@ -146,22 +147,22 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
   def apply(routes:ChangingSeqValue,
             n:Int,
             v:Int,
-            op:(Int,Int,Int,Int)=>(Int,Int),
+            op:(Long,Long,Long,Long)=>(Long,Long),
             content1AtStart:Array[IntValue],
             content2AtStart:Array[IntValue],
-            default1ForUnroutedNodes:Int,
-            default2ForUnroutedNodes:Int,
-            minContent:Int = 0,
-            maxContent:Int = Int.MaxValue,
+            default1ForUnroutedNodes:Long,
+            default2ForUnroutedNodes:Long,
+            minContent:Long = 0L,
+            maxContent:Long = Long.MaxValue,
             contentName:String = "content"): ForwardCumulativeIntegerIntegerDimensionOnVehicle ={
 
-    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1 at node "+node))
-    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2 at node "+node))
+    val content1AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default1ForUnroutedNodes), contentName + "1L at node "+node))
+    val content2AtNode = Array.tabulate(n)((node: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent).union(default2ForUnroutedNodes), contentName + "2L at node "+node))
 
-    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "1 at end of route " + vehicle))
-    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, Domain.coupleToDomain(minContent,maxContent), contentName + "2 at end of route " + vehicle))
+    val content1AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "1L at end of route " + vehicle))
+    val content2AtEnd = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, Domain.coupleToDomain(minContent,maxContent), contentName + "2L at end of route " + vehicle))
 
-    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0, 0 until n, "last point of vehicle" + vehicle))
+    val lastPointOfVehicle = Array.tabulate(v)((vehicle: Int) => CBLSIntVar(routes.model, 0L, DomainRange(0L,n), "last point of vehicle" + vehicle))
 
     new ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes,n,v,op,
       content1AtStart,content2AtStart,
@@ -177,7 +178,7 @@ object ForwardCumulativeIntegerIntegerDimensionOnVehicle {
 class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         n:Int,
                                                         v:Int,
-                                                        op:(Int,Int,Int,Int)=>(Int,Int),
+                                                        op:(Long,Long,Long,Long)=>(Long,Long),
                                                         val content1AtStart:Array[IntValue],
                                                         val content2AtStart:Array[IntValue],
                                                         val content1AtNode:Array[CBLSIntVar],
@@ -185,8 +186,8 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
                                                         val content1AtEnd:Array[CBLSIntVar],
                                                         val content2AtEnd:Array[CBLSIntVar],
                                                         val lastPointOfVehicle:Array[CBLSIntVar],
-                                                        defaultVehicleContent1ForUnroutedNodes:Int,
-                                                        defaultVehicleContent2ForUnroutedNodes:Int,
+                                                        defaultVehicleContent1ForUnroutedNodes:Long,
+                                                        defaultVehicleContent2ForUnroutedNodes:Long,
                                                         contentName:String = "content")
 
   extends AbstractForwardCumulativeDimensionOnVehicle(routes,n,v) with IntNotificationTarget{
@@ -201,11 +202,11 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   for(i <- content2AtEnd) i.setDefiningInvariant(this)
   for(i <- lastPointOfVehicle) i.setDefiningInvariant(this)
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int){
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     toUpdateZonesAndVehicleStartAfter match {
       case None => ;
       case Some((toUpdateZones,vehicleLocation)) =>
-        toUpdateZonesAndVehicleStartAfter = Some((toUpdateZones.insert(id, smartPrepend(0,0,toUpdateZones.getOrElse(id,List.empty[(Int,Int)]))),vehicleLocation))
+        toUpdateZonesAndVehicleStartAfter = Some((toUpdateZones.insert(id, smartPrepend(0L,0L,toUpdateZones.getOrElse(id,List.empty[(Long,Long)]))),vehicleLocation))
     }
     scheduleForPropagation()
   }
@@ -214,7 +215,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     * @param vehicle
     * @return true if changed, false otherwise
     */
-  override def setVehicleContentAtStart(vehicle : Int) : Boolean = {
+  override def setVehicleContentAtStart(vehicle : Long) : Boolean = {
     val newValue1 = content1AtStart(vehicle).value
     val newValue2 = content2AtStart(vehicle).value
 
@@ -235,7 +236,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     * @param node
     * @return true if changed, false otherwise
     */
-  override def setVehicleContentAtNode(prevNode : Int, node : Int) : Boolean = {
+  override def setVehicleContentAtNode(prevNode : Long, node : Long) : Boolean = {
     val oldValue1 = content1AtNode(node).newValue
     val oldValue2 = content2AtNode(node).newValue
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
@@ -249,7 +250,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     }
   }
 
-  override def setVehicleContentAtEnd(vehicle : Int, lastNode : Int){
+  override def setVehicleContentAtEnd(vehicle : Long, lastNode : Long){
     lastPointOfVehicle(vehicle) := lastNode
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
     val (newValue1,newValue2) = op(lastNode,vehicle,content1AtNode(lastNode).newValue,content2AtNode(lastNode).newValue)
@@ -257,7 +258,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
     content2AtEnd(vehicle) := newValue2
   }
 
-  override def setNodesUnrouted(unroutedNodes : Iterable[Int]){
+  override def setNodesUnrouted(unroutedNodes : Iterable[Long]){
     for(node <- unroutedNodes) {
       content1AtNode(node) := defaultVehicleContent1ForUnroutedNodes
       content2AtNode(node) := defaultVehicleContent2ForUnroutedNodes
@@ -267,7 +268,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
   override def toString : String = {
     "ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:" + routes.name + " n:" + n + " v:" + v + " contentName:" + contentName +"){\n" +
-      (0 until v).toList.map((vehicle:Int) =>
+      (0L until v).toList.map((vehicle:Long) =>
       {
         val header = "\tvehicle" + vehicle + " contentAtStart:" + (content1AtStart,content2AtStart) + "\n"
         var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
@@ -275,12 +276,12 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
         while(explorerOpt match{
           case None => //at end of last vehicle
-            val vehicle = v-1
+            val vehicle = v-1L
             acc += "endOfRoute of vehicle" + vehicle + " contentAtEnd:" + (content1AtEnd(vehicle).value,content2AtEnd(vehicle).value) + "\n"
             false
           case Some(explorer) if explorer.value < v =>
             //reached another vehicle
-            val vehicle = explorer.value-1
+            val vehicle = explorer.value-1L
             acc += "endOfRoute of vehicle" + vehicle + " contentAtEnd:" + (content1AtEnd(vehicle).value,content2AtEnd(vehicle).value) + "\n"
             false
           case Some(explorer) if explorer.value >= v =>
@@ -300,7 +301,7 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
   def check(c : Checker,s:IntSequence){
 
     //(fromNode,toNode,content1AtFromNode,content2AtFromNode)=> (content1AtToNode,content2AtToNode)
-    def op2(fromNode:Int,toNode:Int,content:(Int,Int)) = op(fromNode,toNode,content._1,content._2)
+    def op2(fromNode:Long,toNode:Long,content:(Long,Long)) = op(fromNode,toNode,content._1,content._2)
 
     val (nodeToContent,vehicleToContentAtEnd,vehicleLocation) =
       AbstractVehicleCapacity.computeNodeToContentAndVehicleContentAtEndAndVehicleStartPositionsFromScratch(
@@ -313,21 +314,21 @@ class ForwardCumulativeIntegerIntegerDimensionOnVehicle(routes:ChangingSeqValue,
 
     val currentVehicleLocation = this.toUpdateZonesAndVehicleStartAfter.get._2
 
-    for(vehicle <- 0 until v){
+    for(vehicle <- 0L until v){
       c.check(vehicleLocation.startPosOfVehicle(vehicle) == s.positionOfAnyOccurrence(vehicle).get,
         Some("Found start of vehicle(" + vehicle + "):=" + vehicleLocation.startPosOfVehicle(vehicle) +
           " should be :=" + s.positionOfAnyOccurrence(vehicle) +" seq :"+ s.mkString(",")))
       c.check(currentVehicleLocation.startPosOfVehicle(vehicle) == vehicleLocation.startPosOfVehicle(vehicle),Some("x"))
     }
 
-    for(node <- 0 until n){
+    for(node <- 0L until n){
       c.check(nodeToContent(node) == (content1AtNode(node).newValue,content2AtNode(node).newValue),
         Some("Vehicle content at node(" + node + ") at pos : "+ s.positionsOfValue(node)+ " := " +
           (content1AtNode(node).newValue,content2AtNode(node).newValue) +
           " should be :=" + nodeToContent(node)+ " routes:" + s.mkString(",")))
     }
 
-    for(vehicle <- 0 until v){
+    for(vehicle <- 0L until v){
       c.check((content1AtEnd(vehicle).newValue,content2AtEnd(vehicle).newValue) == vehicleToContentAtEnd(vehicle),
         Some("Error on vehicle content at end vehicle:" + vehicle + " contentAtEnd(vehicle).newValue:" +
           (content1AtEnd(vehicle).newValue,content2AtEnd(vehicle).newValue) + " should be:" +  vehicleToContentAtEnd(vehicle)))

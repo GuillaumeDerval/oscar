@@ -31,19 +31,19 @@ import scala.collection.immutable.SortedSet
  * @param cond is a function that selects values to be includes in the output set.
   *             This ''cond'' function cannot depend on any IntVar,
   *             as updates to these IntVars will not trigger propagation of this invariant.
-  *             By default, cond is "_ > 0"
+  *             By default, cond is "_ > 0L"
   * @author renaud.delandtsheer@cetic.be
   * */
-case class Filter(values:Array[IntValue], cond:(Int=>Boolean)=_>0)
-  extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Int])((acc:SortedSet[Int],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
-    values.indices.start to values.indices.end)
+case class Filter(values:Array[IntValue], cond:(Long=>Boolean)=_>0L)
+  extends SetInvariant(values.indices.foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],indice:Int) => if(cond(values(indice).value)){acc+indice}else acc),
+    0 until values.length)
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v),v)
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v:ChangingIntValue,index:Int, OldVal:Int,NewVal:Int){
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
     val OldCond = cond(OldVal)
     val NewCond = cond(NewVal)
     if(OldCond  && !NewCond) this.deleteValue(index)

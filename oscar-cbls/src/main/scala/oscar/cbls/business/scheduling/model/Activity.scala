@@ -14,7 +14,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  * ****************************************************************************
  */
-
+/*
 /**
  * *****************************************************************************
  * Contributors:
@@ -50,7 +50,7 @@ object Activity {
  */
 class Activity(var duration: IntValue, val planning: Planning, val name: String = "",
                shifter: (IntValue, IntValue) => IntValue = (a: IntValue, _) => a) {
-  val ID: Int = planning.addActivity(this)
+  val ID: Long = planning.addActivity(this)
 
 
   duration.domain.restrict(positiveOrNullRange)
@@ -100,7 +100,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   }
 
   def removeNonTightAdditionalPredecessors() {
-    for (iD: Int <- additionalPredecessors.value) {
+    for (iD: Long <- additionalPredecessors.value) {
       if (!potentiallyKilledPredecessors.value.contains(iD)) {
         additionalPredecessors :-= iD
       }
@@ -114,7 +114,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
    * the activity and the resource must be registered to the same planning
    * @param r a resource that the activity uses
    * @param amount the amount of this resource that the activity uses
-   * FIXME potential problem if amount = 0
+   * FIXME potential problem if amount = 0L
    */
   def usesCumulativeResource(r: CumulativeResource, amount: IntValue) {
     Resources = (r, amount) :: Resources
@@ -122,16 +122,16 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   }
 
   def maxDuration = planning.maxDuration
-  val durationMinusOne = duration - 1
+  val durationMinusOne = duration - 1L
 
-  val earliestStartDate: CBLSIntVar = CBLSIntVar(planning.model, 0, 0 to maxDuration,
+  val earliestStartDate: CBLSIntVar = CBLSIntVar(planning.model, 0L, 0L to maxDuration,
     "esd(" + name + ")")
   val earliestEndDate: CBLSIntVar = CBLSIntVar(planning.model,
-    duration.value, -1 to maxDuration, //-1 is used because activity end at "start + duration -1", and duration might be zero
+    duration.value, -1L to maxDuration, //-1L is used because activity end at "start + duration -1L", and duration might be zero
     "eed(" + name + ")")
   earliestEndDate <== earliestStartDate + durationMinusOne
 
-  val latestEndDate: CBLSIntVar = CBLSIntVar(planning.model, maxDuration, 0 to (maxDuration + 2), //idem, we have to do +1 here for the same reason
+  val latestEndDate: CBLSIntVar = CBLSIntVar(planning.model, maxDuration, 0L to (maxDuration + 2L), //idem, we have to do +1L here for the same reason
     "led(" + name + ")")
 
   var staticPredecessorsID:CBLSSetConst = null
@@ -139,7 +139,7 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   val latestStartDate = latestEndDate - durationMinusOne
   var allSucceedingActivities: CBLSSetVar = null
 
-  var additionalPredecessors = new CBLSSetVar(planning.model, SortedSet.empty, 0 to planning.activities.size,
+  var additionalPredecessors = new CBLSSetVar(planning.model, SortedSet.empty, 0L to planning.activities.size,
     "added predecessors of " + name)
   var allPrecedingActivities: SetValue = null
 
@@ -166,34 +166,35 @@ class Activity(var duration: IntValue, val planning: Planning, val name: String 
   def close() {
     if (staticPredecessorsID == null) {
 
-      staticPredecessorsID = CBLSSetConst(SortedSet.empty[Int] ++ staticPredecessors.map((j: Activity) => j.ID))
+      staticPredecessorsID = CBLSSetConst(SortedSet.empty[Long] ++ staticPredecessors.map((j: Activity) => j.ID))
 
       allPrecedingActivities = Union(staticPredecessorsID, additionalPredecessors)
 
-      earliestStartDate <== shifter(Max(planning.earliestEndDates, allPrecedingActivities, -1) + 1, duration)
+      earliestStartDate <== shifter(Max(planning.earliestEndDates, allPrecedingActivities, -1L) + 1L, duration)
 
-      definingPredecessors = ArgMax(planning.earliestEndDates, allPrecedingActivities, -1)
+      definingPredecessors = ArgMax(planning.earliestEndDates, allPrecedingActivities, -1L)
 
       potentiallyKilledPredecessors = Inter(definingPredecessors, additionalPredecessors)
 
-      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0 until planning.activityCount,
+      allSucceedingActivities = new CBLSSetVar(planning.model, SortedSet.empty, 0L until planning.activityCount,
         "succeeding_activities_of_" + name)
 
       latestEndDate <== MinArray(planning.latestStartDates, allSucceedingActivities,
-          planning.maxDuration)-1
+          planning.maxDuration)-1L
     }
   }
 
   def toAsciiArt: String = {
-    def nStrings(n: Int, s: String): String = if (n <= 0) "" else s + nStrings(n - 1, s)
-    def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
+    def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
+    def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
 
-    padToLength(this.name, 20) + ":" +
-      "[" + padToLength("" + this.earliestStartDate.value, 4) + ";" +
-      padToLength("" + this.earliestEndDate.value, 4) + "] " +
-      (if (this.duration.value == 1)
+    padToLength(this.name, 20L) + ":" +
+      "[" + padToLength("" + this.earliestStartDate.value, 4L) + ";" +
+      padToLength("" + this.earliestEndDate.value, 4L) + "] " +
+      (if (this.duration.value == 1L)
         nStrings(this.earliestStartDate.value, " ") + "#\n"
       else
-        nStrings(this.earliestStartDate.value, " ") + "#" + nStrings(this.duration.value - 2, "=") + "#\n")
+        nStrings(this.earliestStartDate.value, " ") + "#" + nStrings(this.duration.value - 2L, "=") + "#\n")
   }
 }
+*/
