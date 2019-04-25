@@ -218,6 +218,7 @@ abstract class GlobalConstraintDefinition[T : Manifest, U:Manifest](routes: Chan
 
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+    println("changes in global : " + changes)
     val updates = digestUpdates(changes)
     updates match{
       case None => for (vehicle <- vehicles){
@@ -417,51 +418,4 @@ class ModifiedValues[@specialized(Long) U](val vehicle : Long,
   }
 }
 
-trait Segment[@specialized T]{}
 
-/**
-  * This represents a subsequence starting at startNode and ending at endNode.
-  * This subsequence was present in the global sequence when the pre-computation was performed
-  * @param startNode the first node of the subsequence
-  * @param startNodeValue the T value that the pre-computation associated with the node "startNode"
-  * @param endNode the last node of the subsequence
-  * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
-  * @tparam T the type of precomputation
-  */
-case class PreComputedSubSequence[@specialized T](startNode:Long,
-                                                      startNodeValue:T,
-                                                      endNode:Long,
-                                                      endNodeValue:T) extends Segment[T]{
-  override def toString: String = {
-    "PreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
-  }
-}
-
-/**
-  * This represents a subsequence starting at startNode and ending at endNode.
-  * This subsequence was not present in the global sequence when the pre-computation was performed, but
-  * the flippedd subsequence obtained by flippig it was present in the global sequence when the pre-computation was performed, but
-  * @param startNode the first node of the subsequence (it was after the endNode when pre-computation ws performed)
-  * @param startNodeValue the T value that the pre-computation associated with the node "startNode"
-  * @param endNode the last node of the subsequence (it was before the endNode when pre-computation ws performed)
-  * @param endNodeValue the T value that the pre-computation associated with the node "endNode"
-  * @tparam T the type of precomputation
-  */
-case class FlippedPreComputedSubSequence[@specialized T](startNode:Long,
-                                                             startNodeValue:T,
-                                                             endNode:Long,
-                                                             endNodeValue:T) extends Segment[T]{
-  override def toString: String = {
-    "FlippedPreComputedSubSequence (StartNode : " + startNode + " - value : " + startNodeValue + " EndNode : " + endNode + " - value " + endNodeValue + ")"
-  }
-}
-
-/**
-  * This represent that a node that was not present in the initial sequence when pre-computation was performed.
-  * @param node
-  */
-case class NewNode[@specialized T](node:Long) extends Segment[T]{
-  override def toString: String = {
-    "NewNode - Node : " + node
-  }
-}

@@ -155,6 +155,8 @@ class RouteLength(routes:ChangingSeqValue,
   }
 
   private def digestUpdates(changes:SeqUpdate):Boolean = {
+    println("changes in route length : " + changes)
+    println("checkpt level : " + this.checkpoint)
     changes match {
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
         //we only consider level 0L; other are not managed.
@@ -171,6 +173,7 @@ class RouteLength(routes:ChangingSeqValue,
         }
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
+        println("checkpointLevel : " + checkpointLevel)
         if(checkpointLevel == 0L) {
           require(checkpoint quickEquals this.checkpoint)
           restoreCheckpoint()

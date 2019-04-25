@@ -329,10 +329,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
         )
       }
     }
+
     if(explorerCache(position) == null) explorerCache(position) = createExplorer()
     explorerCache(position)
-
-
   }
 
   private def internalInsertToValueToInternalPositions(value : Long, internalPosition : Int, valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]]) : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
@@ -839,12 +838,13 @@ class MovedIntSequence(val seq:IntSequence,
 
   val localBijection = MovedIntSequence.bijectionForMove(startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
-  /*private val prevStartPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(startPositionIncluded-1)
+  private val prevStartPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(startPositionIncluded-1)
   private val nextEndPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(endPositionIncluded+1)
   private val prevMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] = if(moveAfterPosition == 0) None else createExplorerAtPosition(moveAfterPosition-1)
   private val nextMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] =
     if(prevMoveAfterPositionCachedExplorer.isDefined) prevMoveAfterPositionCachedExplorer.get.next.get.next
-    else createExplorerAtPosition(moveAfterPosition).get.next*/
+    else createExplorerAtPosition(moveAfterPosition).get.next
+  //private val fromNextVehiclePositionCachedExplorer: Option[Inseq]
 
   override def unorderedContentNoDuplicate : List[Long] = seq.unorderedContentNoDuplicate
 
@@ -861,12 +861,11 @@ class MovedIntSequence(val seq:IntSequence,
 
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    /*println("start : " + startPositionIncluded + " end : " + endPositionIncluded + " move after : " + moveAfterPosition + " asked  : " + position)
     if(position == startPositionIncluded-1) prevStartPositionCachedExplorer
     else if(position == endPositionIncluded+1) nextEndPositionCachedExplorer
     else if(position == moveAfterPosition-1) prevMoveAfterPositionCachedExplorer
     else if(position == moveAfterPosition+1) nextMoveAfterPositionCachedExplorer
-    else*/ createExplorerAtPosition(position)
+    else createExplorerAtPosition(position)
   }
 
   private def createExplorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
@@ -996,9 +995,13 @@ class InsertedIntSequence(seq:IntSequence,
                           val pos:Int)
   extends StackedUpdateIntSequence {
 
-  /*private val prevPosCachedExplorer: Option[IntSequenceExplorer] = if(pos == 0) None else createExplorerAtPosition(pos-1)
+  private val prevPosCachedExplorer: Option[IntSequenceExplorer] = if(pos == 0) None else createExplorerAtPosition(pos-1)
   private val nextPosCachedExplorer: Option[IntSequenceExplorer] =
-    if(prevPosCachedExplorer.isDefined)prevPosCachedExplorer.get.next.get.next else createExplorerAtPosition(pos).get.next*/
+    if(prevPosCachedExplorer.isDefined)prevPosCachedExplorer.get.next.get.next else createExplorerAtPosition(pos).get.next
+  /*private val posNextVehicleCachedExplorer: Option[IntSequenceExplorer] = {
+    var tempExpl = nextPosCachedExplorer
+    while (tempExpl.isDefined && tempExpl.get.value > this.)
+  }*/
 
   override val size : Int = seq.size + 1
 
@@ -1030,10 +1033,9 @@ class InsertedIntSequence(seq:IntSequence,
   }
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    /*println("insert pos : " + pos + " asked  : " + position)
     if(position == pos-1) prevPosCachedExplorer
     else if(position == pos+1) nextPosCachedExplorer
-    else */createExplorerAtPosition(position)
+    else createExplorerAtPosition(position)
   }
 
   private def createExplorerAtPosition(position: Int): Option[IntSequenceExplorer] ={
@@ -1141,8 +1143,8 @@ class RemovedIntSequence(val seq:IntSequence,
                          val positionOfDelete:Int)
   extends StackedUpdateIntSequence{
 
-  //private val prevPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(positionOfDelete-1)
-  //private val nextPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = prevPositionOfDeleteCachedExplorer.get.next.get.next
+  private val prevPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(positionOfDelete-1)
+  private val nextPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = prevPositionOfDeleteCachedExplorer.get.next.get.next
 
 
   val removedValue = seq.valueAtPosition(positionOfDelete).head
@@ -1165,9 +1167,9 @@ class RemovedIntSequence(val seq:IntSequence,
   override val size : Int = seq.size - 1
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-    /*if(position == positionOfDelete-1) prevPositionOfDeleteCachedExplorer
+    if(position == positionOfDelete-1) prevPositionOfDeleteCachedExplorer
     else if(position == positionOfDelete+1) nextPositionOfDeleteCachedExplorer
-    else */createExplorerAtPosition(position)
+    else createExplorerAtPosition(position)
   }
 
   private def createExplorerAtPosition(position : Int) = {

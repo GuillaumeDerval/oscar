@@ -27,11 +27,11 @@ object VRPWithOnlyTimeWindow extends App {
           for(n <- ns){
             for(v <- vs){
               println("Run with " + v + " vehicles and " + n + " nodes.")
-              val res = List.fill(iterations)(
+              val res = List.tabulate(iterations)(it =>
                 procedure match {
-                  case 1 => new VRPWithOnlyTimeWindow(twc, n, v).run1(best)
-                  case 2 => new VRPWithOnlyTimeWindow(twc, n, v).run2(best)
-                  case 3 => new VRPWithOnlyTimeWindow(twc, n, v).run3(best)
+                  case 1 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run1(best)
+                  case 2 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run2(best)
+                  case 3 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run3(best)
                 }).
                 foldLeft(Array[Long](0,0,0,0,0,0,0,0,0,0,0))((acc,item) =>
                   Array(acc(0) + item._1,acc(1) + item._2)).toList.map(_/iterations)
@@ -48,24 +48,25 @@ object VRPWithOnlyTimeWindow extends App {
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2,3)
+  val procedures = List(1)
   // The variations of n values
-  val ns_1 = List(50L, 100L, 200L, 500L, 1000L)
+  val ns_1 = List(100L/*, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
   val vs_2 = List(5L, 10L, 20L, 50L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 10
+  val iterations = 1
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
-class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false){
+class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false, iteration: Int = 0){
   val m = new Store(noCycle = false)
   val penaltyForUnrouted = 10000
+  RoutingMatrixGenerator.random.setSeed(iteration)
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
   var (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix)
@@ -73,6 +74,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
 
   val myVRP =  new VRP(m,n,v)
 
+  var globalConstraintWithLogReduc: Option[TimeWindowConstraintWithLogReduction] = None
   // Distance
   val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 
@@ -123,22 +125,25 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      TimeWindowConstraint(myVRP.routes, n, v,
-        timeWindowExtension.earliestArrivalTimes,
-        timeWindowExtension.latestLeavingTimes,
-        timeWindowExtension.taskDurations,
-        timeMatrix, violations)
+      val smartTimeWindowInvariant =
+        TimeWindowConstraint(myVRP.routes, n, v,
+          timeWindowExtension.earliestArrivalTimes,
+          timeWindowExtension.latestLeavingTimes,
+          timeWindowExtension.taskDurations,
+          timeMatrix, violations)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     } else {
       // Global constraint with log reduction
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
-      TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
-        timeWindowExtension.earliestArrivalTimes,
-        timeWindowExtension.latestLeavingTimes,
-        timeWindowExtension.taskDurations,
-        timeMatrix, violations)
+      val smartTimeWindowInvariant =
+        TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
+          timeWindowExtension.earliestArrivalTimes,
+          timeWindowExtension.latestLeavingTimes,
+          timeWindowExtension.taskDurations,
+          timeMatrix, violations)
+      globalConstraintWithLogReduc = Some(smartTimeWindowInvariant)
       new CascadingObjective(sum(violations),
         totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
@@ -155,12 +160,12 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   }
 
   // Given the relevant predecessors we sort them by distance
-  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,relevantPredecessorsOfNodes(_))(_))
+  val closestRelevantPredecessorsByDistance = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance,(_) => myVRP.nodes)(_))
 
   // InsertPoint neighborhood
   def insertPoint(best: Boolean) = insertPointUnroutedFirst(
     () => myVRP.unrouted.value,
-    ()=> myVRP.kFirst(if (best) n else 20,closestRelevantPredecessorsByDistance(_), postFilter),
+    ()=> myVRP.kFirst(if (best) 20 else n/5,closestRelevantPredecessorsByDistance(_), postFilter),
     myVRP,
     selectInsertionPointBehavior = if(best) Best() else First(),
     neighborhoodName = "InsertUF")
@@ -168,7 +173,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // OnePointMove neighborhood
   def onePtMove(best: Boolean) = onePointMove(
     () => myVRP.routed.value,
-    ()=> myVRP.kFirst(if (best) n else 20,closestRelevantPredecessorsByDistance(_),postFilter),
+    ()=> myVRP.kFirst(if (best) 20 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
     myVRP,
     selectDestinationBehavior = if(best) Best() else First(),
 
@@ -177,14 +182,17 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // ThreeOpt neighborhood
   def threeOptMove(best: Boolean) = threeOpt(
     myVRP.routed,
-    ()=>myVRP.kFirst(if (best) n else 20,closestRelevantPredecessorsByDistance(_),postFilter),
+    ()=>myVRP.kFirst(if (best) 40 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
     myVRP,
     neighborhoodName = "ThreeOpt(k=" + v*2 + ")",
-    selectInsertionPointBehavior = if(best) Best() else First())
+    selectMovedSegmentBehavior = if(best) Best() else First(),
+    selectInsertionPointBehavior = if(best) Best() else First(),
+    selectFlipBehavior = if(best) Best() else First())
 
   // Simple InsertPoint procedure
   def run1(best: Boolean): (Long,Long) ={
     val search = insertPoint(best)
+    search.verbose = 2
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
