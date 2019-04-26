@@ -19,7 +19,7 @@ import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.core.search.{Best, First}
 
-class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
+class SimpleVRPSymModelWithUnroutedPoints(n:Long,v:Long,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Long)
   extends VRP(m,n,v,maxPivot){
 
   val penaltyForUnrouted  = 10000
@@ -27,27 +27,27 @@ class SimpleVRPSymModelWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Ar
   m.registerForPartialPropagation(unrouted)
   m.registerForPartialPropagation(routed)
 
-  val totalDistance = constantRoutingDistance(routes, n, v ,false, symmetricDistance, true)(0)
+  val totalDistance = routeLength(routes, n, v ,false, symmetricDistance, true)(0)
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - length(routes))))
 
   override def toString : String = super.toString +
     "objective: " + obj.value + "\n"
 
-  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes))
+  val closestNeighboursForward = Array.tabulate(n)(DistanceHelper.lazyClosestPredecessorsOfNode(symmetricDistance, (_) => nodes)(_))
 
   def size = routes.value.size
   def nbRouted = size
 }
 
 object VRPSymExample extends App {
-  val n = 1000
-  val v = 10
+  val n = 1000L
+  val v = 10L
   val verbose = 1
   new SimpleVRPSymSolver(n,v,4,verbose)
 }
 
-class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
+class SimpleVRPSymSolver(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Long){
   val routingMatrix = RoutingMatrixGenerator(n,side=1000)
   val symmetricDistanceMatrix = routingMatrix._1
   val pointsPositions = routingMatrix._2
@@ -60,7 +60,7 @@ class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   model.close()
 
   val routeUnroutedPoint =  profile(insertPointUnroutedFirst(myVRP.unrouted,
-    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),
+    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),
     myVRP,
     neighborhoodName = "InsertUF",
     hotRestart = false,
@@ -71,29 +71,29 @@ class SimpleVRPSymSolver(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int){
   //that's why we prefer to block this neighborhood when many nodes are already routed (so few are unrouted, so the filter filters many nodes away)
   val routeUnroutedPoint2 =  profile(insertPointRoutedFirst(
     myVRP.routed,
-    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,(_) => x => !myVRP.isRouted(x)),  //should be the backward ones but this is a symmetric distance so we do not care
+    ()=>myVRP.kFirst(10,myVRP.closestNeighboursForward(_),(_) => x => !myVRP.isRouted(x)),  //should be the backward ones but this is a symmetric distance so we do not care
     myVRP,
     neighborhoodName = "InsertRF")
     guard(() => myVRP.nbRouted < n/2))
 
-  def onePtMove(k:Int) = profile(onePointMove(
+  def onePtMove(k:Long) = profile(onePointMove(
     myVRP.routed,
-    () => myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),
+    () => myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),
     myVRP,
     selectDestinationBehavior = Best()))
 
-  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP))
+  val customTwoOpt = profile(twoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP))
 
-  def customThreeOpt(k:Int, breakSym:Boolean) =
-    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def customThreeOpt(k:Long, breakSym:Boolean) =
+    profile(threeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
   val vlsn1pt = mu[OnePointMoveMove](
-    onePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP),
-    l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),myVRP, hotRestart = false)),
+    onePointMove(myVRP.routed, () => myVRP.kFirst(5,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),myVRP),
+    l => Some(onePointMove(() => List(l.head.newPredecessor).filter(_ >= v), () => myVRP.kFirst(3,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),myVRP, hotRestart = false)),
     intermediaryStops = true,
     maxDepth = 6)
 
-  def segExchange(k:Int) = segmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,(_) => myVRP.isRouted),() => myVRP.vehicles)
+  def segExchange(k:Long) = segmentExchange(myVRP,()=>myVRP.kFirst(k,myVRP.closestNeighboursForward(_),(_) => myVRP.isRouted),() => myVRP.vehicles)
 
   val search =
     (bestSlopeFirst(

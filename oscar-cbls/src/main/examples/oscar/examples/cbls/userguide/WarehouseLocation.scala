@@ -16,7 +16,7 @@
  */
 
 package oscar.examples.cbls.userguide
-
+/*
 import oscar.cbls._
 import oscar.cbls.modeling._
 import oscar.examples.cbls.wlp.WarehouseLocationGenerator
@@ -79,3 +79,4 @@ object WarehouseLocation extends CBLSModel with  App{
 
   println(openWarehouses)
 }
+*/

@@ -17,8 +17,10 @@ package oscar.cbls.business
   ******************************************************************************/
 
 
-import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory}
+import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Point}
+import oscar.cbls.business.geometry.model.GeometryValue
 
 package object geometry {
 
@@ -29,31 +31,47 @@ package object geometry {
 
   val emptyPolygon = factory.createMultiPolygon(Array.empty)
 
-  def createSquare(side:Double):Geometry = {
+  def point(x:Double,y:Double):Point = {
+    new Point(new CoordinateArraySequence(Array(new Coordinate(0,0))), factory)
+  }
+
+  val emptyGeometryValue = new GeometryValue(emptyPolygon)(
+    inputCentreOfOverApproximatingCircle = None,
+    inputOverApproximatingRadius = Some(0))
+
+  def createSquare(side:Double):GeometryValue = {
     val halfSide = side/2
 
-    geometry.factory.createLinearRing(Array(
+    val sq = geometry.factory.createLinearRing(Array(
       new Coordinate(halfSide,halfSide),
       new Coordinate(halfSide,-halfSide),
       new Coordinate(-halfSide,-halfSide),
       new Coordinate(-halfSide,halfSide),
       new Coordinate(halfSide,halfSide))).convexHull()
+
+    new GeometryValue(sq)(
+      inputCentreOfOverApproximatingCircle = Some(point(0,0)),
+      inputOverApproximatingRadius = Some(halfSide * math.sqrt(2.0)))
   }
 
-  def createRectangle(height:Double,width:Double):Geometry = {
+  def createRectangle(height:Double,width:Double):GeometryValue = {
 
     val halfHeight = height /2
     val halfWidth = width/2
 
-    geometry.factory.createLinearRing(Array(
+    val rec = geometry.factory.createLinearRing(Array(
       new Coordinate(halfWidth,halfHeight),
       new Coordinate(halfWidth,-halfHeight),
       new Coordinate(-halfWidth,-halfHeight),
       new Coordinate(-halfWidth,halfHeight),
       new Coordinate(halfWidth,halfHeight))).convexHull()
+
+    new GeometryValue(rec)(
+      inputCentreOfOverApproximatingCircle = Some(point(0,0)),
+      inputOverApproximatingRadius = Some(math.sqrt((halfHeight * halfHeight) + (halfWidth * halfWidth))))
   }
 
-  def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):Geometry = {
+  def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):GeometryValue = {
     println("creating circle ")
     require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")
 
@@ -73,12 +91,18 @@ package object geometry {
     val c1 = factory.createPolygon(allPoints)
 
     if(ensureCorrectSurface){
-      val s1 = c1.getArea
+      val s1 = c1.getArea  //TODO: this is crappy slow; hopefully called only once ?
       val factor = math.sqrt(math.Pi*r*r/s1)
       val scaling = AffineTransformation.scaleInstance(factor,factor)
-      scaling.transform(c1)
+
+      new GeometryValue(scaling.transform(c1))(
+        inputCentreOfOverApproximatingCircle = Some(point(0,0)),
+        inputOverApproximatingRadius = Some(factor * r))
+
     }else{
-      c1
+      new GeometryValue(c1)(
+        inputCentreOfOverApproximatingCircle = Some(point(0,0)),
+        inputOverApproximatingRadius = Some(r))
     }
   }
 }

@@ -64,9 +64,9 @@ class CBLSModel(val verbose:Boolean = false,
   def solution()(implicit s:Store) = s.solution()
 
   def swapVal(a:CBLSIntVar, b:CBLSIntVar)(implicit o:Objective) = o.swapVal(a,b)
-  def assignVal(a: CBLSIntVar, v: Int)(implicit o:Objective) = o.assignVal(a, v)
+  def assignVal(a: CBLSIntVar, v: Long)(implicit o:Objective) = o.assignVal(a, v)
 
-  def CBLSIntVar(value:Int = 0, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, domain,name)
-  def CBLSSetVar(value:SortedSet[Int] = SortedSet.empty, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSetVar(s,value, domain,name)
-//  def CBLSSeqVar(value:Iterable[Int] = List.empty, d:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSeqVar(s,IntSequence(value), d, name)
+  def CBLSIntVar(value:Long = 0L, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSIntVar(s,value, domain,name)
+  def CBLSSetVar(value:SortedSet[Long] = SortedSet.empty, domain:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSetVar(s,value, domain,name)
+//  def CBLSSeqVar(value:Iterable[Long] = List.empty, d:Domain = fullRange, name:String = null)(implicit s:Store) = new CBLSSeqVar(s,IntSequence(value), d, name)
 }

@@ -15,16 +15,14 @@ package oscar.cbls.business.geometry.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Geometry
+import oscar.cbls._
 import oscar.cbls.business.geometry
-import oscar.cbls.{IntValue, Store, Value}
-import oscar.cbls.business.geometry.model.{CBLSGeometryInvariant, GeometryNotificationTarget}
+import oscar.cbls.business.geometry.model._
 import oscar.cbls.core.computation._
-import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 
 
-case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
+case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[GeometryValue])
   extends Invariant with Constraint with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(inner)
@@ -36,12 +34,12 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
 
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    violation := inner.value.difference(outer.value).getArea.toInt
+    violation := inner.value.geometry.difference(outer.value.geometry).getArea.toInt
   }
 
   override def violation(v: Value):IntValue = { if (inner == v || inner == v) violation else 0 }
@@ -49,116 +47,125 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
   override def checkInternals(c: Checker): Unit = {}
 }
 
-class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
+class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue=a.value union b.value)
+    initialValue=new GeometryValue(a.value.geometry union b.value.geometry)())
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := a.value union b.value
+    this := new GeometryValue(a.value.geometry union b.value.geometry)()
   }
 }
 
-case class Intersection(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry], preCheck:Boolean)
+case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue], preCheck:Boolean)
   extends CBLSGeometryInvariant(store:Store,
-    initialValue = if (preCheck && !(a.value.getEnvelope intersects b.value.getEnvelope)) geometry.emptyPolygon else a.value intersection b.value)
+    initialValue =
+      if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
+        geometry.emptyGeometryValue
+      else new GeometryValue(a.value.geometry intersection b.value.geometry)())
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := (if (preCheck && !(a.value.getEnvelope intersects b.value.getEnvelope)) geometry.emptyPolygon else a.value intersection b.value)
+    this :=  (if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
+      geometry.emptyGeometryValue
+    else new GeometryValue(a.value.geometry intersection b.value.geometry)())
   }
 }
 
-class ConvexHull(store:Store,a:AtomicValue[Geometry])
+class ConvexHull(store:Store,a:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue=a.value.convexHull())
+    initialValue = new GeometryValue(a.value.geometry.convexHull())())
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := a.value.convexHull()
+    this := new GeometryValue(a.value.geometry.convexHull())()
   }
 }
 
-case class Area(store:Store,a:AtomicValue[Geometry])
+case class Area(store:Store,a:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = a.value.getArea.toInt,
+    initialValue = a.value.geometry.getArea().toInt,
     initialDomain = 0 to Int.MaxValue)
     with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := a.value.getArea.toInt
+    this :=  a.value.geometry.getArea().toInt
   }
 }
 
-
-case class Length(store:Store,a:AtomicValue[Geometry])
+case class Length(store:Store,a:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = a.value.getEnvelope.getLength.toInt,
+    initialValue = a.value.geometry.getEnvelope.getLength.toInt,
     initialDomain = 0 to Int.MaxValue)
     with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := a.value.getEnvelope.getLength.toInt
+    this := a.value.geometry.getEnvelope.getLength.toInt
   }
 }
 
-class Centroid(store:Store,shape:AtomicValue[Geometry])
+class Centroid(store:Store,shape:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(
-    store, initialValue = shape.value.getCentroid)
-    with GeometryNotificationTarget{
+    store,
+    initialValue = {
+      val c = shape.value.geometry.getCentroid
+      new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
+    }
+  ) with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(shape)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := shape.value.getCentroid
+    val c = shape.value.geometry.getCentroid
+    this := new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
   }
 }
 
-class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[Geometry],pointB:AtomicValue[Geometry])
+class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],pointB:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = pointA.value.getCentroid.distance(pointB.value.getCentroid).toInt,
+    initialValue = pointA.value.geometry.getCentroid.distance(pointA.value.geometry.getCentroid).toInt,
     initialDomain = 0 to Int.MaxValue)
     with GeometryNotificationTarget{
 
@@ -166,31 +173,11 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[Geometry],pointB:A
   this.registerStaticAndDynamicDependency(pointB)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := pointA.value.getCentroid.distance(pointB.value.getCentroid).toInt
+    this := pointA.value.geometry.getCentroid.distance(pointA.value.geometry.getCentroid).toInt
   }
 }
-
-class DistanceBetweenShapes(store:Store,pointA:AtomicValue[Geometry],pointB:AtomicValue[Geometry])
-  extends IntInvariant(
-    initialValue = pointA.value.distance(pointB.value).toInt,
-    initialDomain = 0 to Int.MaxValue)
-    with GeometryNotificationTarget{
-
-  this.registerStaticAndDynamicDependency(pointA)
-  this.registerStaticAndDynamicDependency(pointB)
-  finishInitialization(store)
-
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
-    this.scheduleForPropagation()
-  }
-
-  override def performInvariantPropagation(): Unit = {
-    this := pointA.value.distance(pointB.value).toInt
-  }
-}
-

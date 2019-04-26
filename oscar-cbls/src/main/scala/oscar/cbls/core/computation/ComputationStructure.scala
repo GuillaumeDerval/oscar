@@ -20,6 +20,7 @@
 
 package oscar.cbls.core.computation
 
+import oscar.cbls
 import oscar.cbls.algo.distributedStorage.{DistributedStorageUtility, StorageUtilityManager}
 import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.propagation._
@@ -55,7 +56,9 @@ case class Store(override val verbose:Boolean = false,
   with Bulker with StorageUtilityManager{
 
   assert({System.err.println("You are using a CBLS store with asserts activated. It makes the engine slower. Recompile it with -Xdisable-assertions"); true})
-  if(checker.nonEmpty) System.err.println("OscaR.cbls is running in debug mode. It makes the engine slower.")
+
+  cbls.warning(checker.isEmpty, "OscaR.cbls is running in debug mode. It makes the engine slower.")
+
 
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
@@ -158,7 +161,7 @@ case class Store(override val verbose:Boolean = false,
   /**this checks that invariant i is one that is supposed to do something now
     * used to check that invariants have declared all their controling links to the model
     * */
-  def checkExecutingInvariantOK(i:Invariant):Boolean = {
+  def   checkExecutingInvariantOK(i:Invariant):Boolean = {
     if(i != null){
       if (notifiedInvariant != null && notifiedInvariant != i){
         return false
@@ -419,8 +422,8 @@ trait Invariant extends PropagationElement{
 
   /** this is the propagation method that should be overridden by propagation elements.
     * notice that it is only called in a propagation wave if:
-    * 1: it has been registered for propagation since the last time it was propagated
-    * 2: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
+    * 1L: it has been registered for propagation since the last time it was propagated
+    * 2L: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
     * it only propagates the ones that come in the predecessors of the targeted propagation element
     * overriding this method is optional, so an empty body is provided by default */
   override def performPropagation(){performInvariantPropagation()}
@@ -457,9 +460,9 @@ object InvariantHelper{
     null
   }
 
-  def getMinMaxBounds(variables:Iterable[IntValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBounds(variables:Iterable[IntValue]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v.max) MyMax = v.max
       if (MyMin > v.min) MyMin = v.min
@@ -467,14 +470,9 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRange(variables:Iterable[IntValue]):Range = {
-    val (min,max) = getMinMaxBounds(variables)
-    min to max
-  }
-
-  def getMinMaxBoundsInt(variables:Iterable[Int]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsInt(variables:Iterable[Long]):(Long,Long) = {
+    var MyMax = Long.MinValue
+    var MyMin = Long.MaxValue
     for (v <- variables) {
       if (MyMax < v) MyMax = v
       if (MyMin > v) MyMin = v
@@ -482,24 +480,14 @@ object InvariantHelper{
     (MyMin, MyMax)
   }
 
-  def getMinMaxRangeInt(variables:Iterable[Int]):Range = {
-    val (min,max) = getMinMaxBoundsInt(variables)
-    min to max
-  }
-
-  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Int,Int) = {
-    var MyMax = Int.MinValue
-    var MyMin = Int.MaxValue
+  def getMinMaxBoundsSet(variables:Iterable[SetValue]):(Long,Long) = {
+    var myMax = Long.MinValue
+    var myMin = Long.MaxValue
     for (v <- variables) {
-      if (MyMax < v.max) MyMax = v.max
-      if (MyMin > v.min) MyMin = v.min
+      if (myMax < v.max) myMax = v.max
+      if (myMin > v.min) myMin = v.min
     }
-    (MyMin, MyMax)
-  }
-
-  def getMinMaxRangeSet(variables:Iterable[SetValue]):Range = {
-    val (min,max) = getMinMaxBoundsSet(variables)
-    min to max
+    (myMin, myMax)
   }
 
   def arrayToString[T](a:Array[T]):String =

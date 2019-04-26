@@ -30,7 +30,7 @@ import oscar.cbls.core._
  *                  This value is not the one being put into the output sequence
  * @param orderName a name for the order
  */
-case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="order")
+case class SortSequence(v: SeqValue, sortValue:Long => Long, orderName:String="order")
   extends SeqInvariant(IntSequence.empty(),v.max)
   with SeqNotificationTarget{
 
@@ -55,7 +55,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
    *         It is actually the first value in the sequence starting from position zero that is greater or equal
    *         in case case there is no such value (including empty sequence), it returns None
    */
-  def positionOfSmallestGreaterOrEqual(value:Int)(transformedValue:Int = sortValue(value)):Option[IntSequenceExplorer] = {
+  def positionOfSmallestGreaterOrEqual(value:Long)(transformedValue:Long = sortValue(value)):Option[IntSequenceExplorer] = {
     val sortedSequence:IntSequence = this.value
     if(sortedSequence.isEmpty) {
       None
@@ -85,8 +85,8 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
    * @param secondTransformedValue
    * @return true if firstValue is smaller than secondValue
    */
-  private def isSmaller(firstValue:Int,secondValue:Int)
-                       (firstTransformedValue:Int = sortValue(firstValue),secondTransformedValue:Int = sortValue(secondValue)):Boolean = {
+  private def isSmaller(firstValue:Long,secondValue:Long)
+                       (firstTransformedValue:Long = sortValue(firstValue),secondTransformedValue:Long = sortValue(secondValue)):Boolean = {
 
     assert(firstTransformedValue == sortValue(firstValue))
     assert(secondTransformedValue == sortValue(secondValue))
@@ -96,48 +96,48 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     else firstValue < secondValue
   }
 
-  private def searchPositionOfInsert(seq:IntSequence, value:Int)(transformedValue:Int = sortValue(value)):Int = {
+  private def searchPositionOfInsert(seq:IntSequence, value:Long)(transformedValue:Long = sortValue(value)):Long = {
 
     //the position of insert is the position where the value is the first occurrence
     // in the supposedly sorted sequence such that the value at this position is g value
     //println("searchPositionOfInsert(seq:" + seq + " valueToInsert:" + value + ")")
-    def otherIsSmaller(otherValue:Int):Boolean = {
+    def otherIsSmaller(otherValue:Long):Boolean = {
       !isSmaller(value,otherValue)(firstTransformedValue = transformedValue)
     }
 
     assert(seq.size == seq.toList.size, "size error")
 
-    if(seq.size == 0) {
-      return 0
-    } else if(seq.size == 1) {
+    if(seq.size == 0L) {
+      return 0L
+    } else if(seq.size == 1L) {
       val headValue = seq.head
       if (headValue == value || !otherIsSmaller(seq.head)) {
-        return 0
+        return 0L
       } else {
-        return 1
+        return 1L
       }
     }
 
     val last = seq.last
     if(last == value){
-      return seq.size-1
+      return seq.size-1L
     }else if (otherIsSmaller(last)){
       return seq.size
     }
 
     val first = seq.head
     if(!otherIsSmaller(first) || first == value){
-      return 0
+      return 0L
     }
 
-    var lowerPositionOfInsert = 0
-    var upperPositionOfInsert = seq.size-1
+    var lowerPositionOfInsert = 0L
+    var upperPositionOfInsert = seq.size-1L
 
-    while(lowerPositionOfInsert + 1 < upperPositionOfInsert) {
+    while(lowerPositionOfInsert + 1L < upperPositionOfInsert) {
       assert(isSmaller(seq.valueAtPosition(lowerPositionOfInsert).get,value)(),"expected "+ seq.valueAtPosition(lowerPositionOfInsert).get + " l "+ value)
       assert(isSmaller(value, seq.valueAtPosition(upperPositionOfInsert).get)(),"A")
 
-      val midPosition = (lowerPositionOfInsert + upperPositionOfInsert) / 2
+      val midPosition = (lowerPositionOfInsert + upperPositionOfInsert) / 2L
       val valueAtMidPosition = seq.valueAtPosition(midPosition).get
       if(valueAtMidPosition == value) return midPosition
       if (otherIsSmaller(valueAtMidPosition)) {
@@ -152,14 +152,14 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 
   private val checkpointStack = new SeqCheckpointedValueStack[IntSequence]()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     digestChanges(changes)
     //check(new ErrorChecker(),v.newValue,this.newValue)
   }
 
   private def digestChanges(changes : SeqUpdate){
     changes match {
-      case s@SeqUpdateInsert(value : Int, pos : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         digestChanges(prev)
         //find where the value should be located by dichotomy
         //println("inserting " + value + " into this.newValue:" + this.newValue)
@@ -196,7 +196,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     }
   }
 
-  private def sortSequenceBy(i:IntSequence,by:Int => Int):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
+  private def sortSequenceBy(i:IntSequence,by:Long => Long):IntSequence = IntSequence(i.toList.sortBy(i => (by(i),i)))
 
   override def checkInternals(c: Checker) {
     check(c, v.value,this.value)
@@ -205,7 +205,7 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
     require(out quickEquals this.value)
     c.check(out.toList equals sortSequenceBy(in,sortValue).toList, Some("this.out=" + out.toList + " should be " +sortSequenceBy(in,sortValue).toList))
     /*
-    for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0,1,10)) {
+    for (value <-  if(in.nonEmpty) {in.min to in.max} else List(0L,1L,10L)) {
       val optPositionOfSMallestGE = positionOfSmallestGreaterOrEqual(value)()
       optPositionOfSMallestGE match {
         case None =>
@@ -224,32 +224,32 @@ case class SortSequence(v: SeqValue, sortValue:Int => Int, orderName:String="ord
 object TestSort extends App{
 
   val m = new Store(verbose = false,propagateOnToString = true, checker = Some(new ErrorChecker()))
-  val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
+  val a = new CBLSSeqVar(m,IntSequence(List(1L,2L,3L,5L)), n = "toto")
 
   val sort = SortSequence(a,v => v,"increasing values")
 
   m.close()
   /*
-    println("insertAtPosition(45,3)")
+    println("insertAtPosition(45L,3L)")
 
-    a.insertAtPosition(45,3)
+    a.insertAtPosition(45L,3L)
     m.propagate()
 
-    a.move(1,3,4,false)
+    a.move(1L,3L,4L,false)
     m.propagate()
-    a.insertAtPosition(12,5)
+    a.insertAtPosition(12L,5L)
     m.propagate()
-    a.remove(a.value.positionOfFirstOccurrence(2).head)
+    a.remove(a.value.positionOfFirstOccurrence(2L).head)
     m.propagate()
-    a.move(1,3,4,true)
+    a.move(1L,3L,4L,true)
     m.propagate()
-    a.move(1,3,4,true)
+    a.move(1L,3L,4L,true)
     */
   m.propagate()
 
-  a:= IntSequence(List(56))
+  a:= IntSequence(List(56L))
   m.propagate()
-  a.insertAtPosition(30,0)
+  a.insertAtPosition(30L,0L)
   m.propagate()
   // val checkpoint = a.defineCurrentValueAsCheckpoint(true)
   //println("defined checkpoint " + checkpoint)

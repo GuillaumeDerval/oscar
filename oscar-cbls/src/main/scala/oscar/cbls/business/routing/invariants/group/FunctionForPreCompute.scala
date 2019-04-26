@@ -15,7 +15,7 @@ abstract class FunctionForPreCompute {
 
   def kindOfComputation(fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep]
 
-  def stackInsert(value: Int, pos: Int): FunctionForPreCompute = new InsertStackedFunction(this.commitStackedUpdatesToConcrete(), value, pos)
+  def stackInsert(value: Long, pos: Int): FunctionForPreCompute = new InsertStackedFunction(this.commitStackedUpdatesToConcrete(), value, pos)
 
   def stackDelete(pos: Int): FunctionForPreCompute = new DeleteStackedFunction(this.commitStackedUpdatesToConcrete(), pos)
 
@@ -56,7 +56,7 @@ object ConcreteFunctionForPreCompute {
 class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
                                     val externalPositionOfLastRoutedNode: Int,
                                     val externalPositionOfLastRemovedNodeWithPreCompute: Int,
-                                    val maxValueWithPreCompute: Int)
+                                    val maxValueWithPreCompute: Long)
   extends FunctionForPreCompute{
 
   override def commitStackedUpdatesToConcrete(): ConcreteFunctionForPreCompute = this
@@ -108,11 +108,11 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
   }
 
   private def kindOfComputationOnSegment(pivot: Pivot, fromPosIncluded: Int, toPosIncluded: Int): List[ComputationStep] = {
-    require(0 <= fromPosIncluded && fromPosIncluded <= externalPositionOfLastRoutedNode,
-      "fromPositionInclude(= " + fromPosIncluded + ") should be in [0, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
+    require(0L <= fromPosIncluded && fromPosIncluded <= externalPositionOfLastRoutedNode,
+      "fromPositionInclude(= " + fromPosIncluded + ") should be in [0L, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
 
-    require(0 <= toPosIncluded && toPosIncluded <= externalPositionOfLastRoutedNode,
-      "toPositionInclude(= " + toPosIncluded + ") should be in [0, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
+    require(0L <= toPosIncluded && toPosIncluded <= externalPositionOfLastRoutedNode,
+      "toPositionInclude(= " + toPosIncluded + ") should be in [0L, externalPositionOfLastRoutedNode(= " + externalPositionOfLastRoutedNode + ")]")
 
     require(fromPosIncluded <= toPosIncluded,
       "fromPositionInclude(= " + fromPosIncluded + ") should be <= toPosIncluded(= " +  toPosIncluded + ")")
@@ -147,7 +147,7 @@ class ConcreteFunctionForPreCompute(val fun: PiecewiseLinearFun,
 }
 
 
-class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Int, pos: Int) extends FunctionForPreCompute {
+class InsertStackedFunction(base: ConcreteFunctionForPreCompute, value: Long, pos: Int) extends FunctionForPreCompute {
 
   val fun: PiecewiseLinearFun = base.fun
   val externalPositionOfLastRoutedNode : Int = base.externalPositionOfLastRoutedNode + 1
@@ -271,9 +271,9 @@ class MoveStackedFunction(base: ConcreteFunctionForPreCompute,
 
     val size = externalPositionOfLastRoutedNode + 1
 
-    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0,size[")
-    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0,size(="+size+")[ ")
-    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1,size=" + size+"[ ")
+    require(startPositionIncluded >= 0 && startPositionIncluded < size, "startPositionIncluded should be in [0L,size[")
+    require(endPositionIncluded >= 0 && endPositionIncluded < size, "endPositionIncluded(=" + endPositionIncluded+ ") should be in [0L,size(="+size+")[ ")
+    require(moveAfterPosition >= -1 && moveAfterPosition < size, "moveAfterPosition=" + moveAfterPosition + " should be in [-1L,size=" + size+"[ ")
 
     require(
       moveAfterPosition < startPositionIncluded || moveAfterPosition > endPositionIncluded,

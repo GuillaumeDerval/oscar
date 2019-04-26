@@ -18,7 +18,7 @@ package oscar.cbls.business.scheduling.model
 import oscar.cbls.core.computation.{CBLSSetVar, IntValue}
 
 import scala.collection.immutable.SortedSet
-
+/*
 /**
  * this is an abstract class representing a resource.
  * the purpose is to abstract away conflict identification and other stuff that are specific to each type of resource
@@ -33,7 +33,7 @@ abstract class Resource(planning: Planning, n: String) {
   val name = Option(n) getOrElse s"Resource $ResourceID"
 
   /**The set of activities using this resource at every position*/
-  val use = Array.tabulate(maxDuration + 1)(t => new CBLSSetVar(model, SortedSet.empty, 0 to Int.MaxValue, s"use_amount_${name}_at_time_$t"))
+  val use = Array.tabulate(maxDuration + 1L)(t => new CBLSSetVar(model, SortedSet.empty, 0L to Long.MaxValue, s"use_amount_${name}_at_time_$t"))
 
   /**
    * the level of overshoot of the resource.
@@ -52,20 +52,21 @@ abstract class Resource(planning: Planning, n: String) {
    *
    * @return
    */
-  def worseOverShootTime: Int
+  def worseOverShootTime: Long
 
   /**
    * you need to eject one of these to solve the conflict
    * this can be null if the problem is actually solved in between,
    * or if the problem cannot be solved
    */
-  def conflictingActivities(t: Int): Iterable[Activity]
+  def conflictingActivities(t: Long): Iterable[Activity]
 
   /**
    * these are the activities that you can use for ejecting
    * one of the conflicting activities
    */
-  def baseActivityForEjection(t: Int): Iterable[Activity]
+  def baseActivityForEjection(t: Long): Iterable[Activity]
 
-  def toAsciiArt(headerLength: Int): String
+  def toAsciiArt(headerLength: Long): String
 }
+*/
