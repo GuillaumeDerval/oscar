@@ -1,3 +1,4 @@
+
 package oscar.cbls.business.geometry.invariants
 
 
@@ -16,48 +17,33 @@ package oscar.cbls.business.geometry.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.geom.Point
+import org.locationtech.jts.geom.Geometry
 import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.Store
-import oscar.cbls.business.geometry.model._
+import oscar.cbls.business.geometry.model.{AffineTransformNotificationTarget, CBLSAffineTransformInvariant, CBLSGeometryInvariant, GeometryNotificationTarget}
 import oscar.cbls.core.computation._
 
-class Compose(store:Store,
-              a:ChangingAtomicValue[AffineTransformationValue],
-              b:ChangingAtomicValue[AffineTransformationValue])
+class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:ChangingAtomicValue[AffineTransformation])
   extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
-      new AffineTransformation(a.value.affineTransform compose b.value.affineTransform),
-      (a.value.uniformScalingFactor,b.value.uniformScalingFactor) match{case (Some(x),Some(y)) => Some(x*y); case _ => None}))
+    initialValue = new AffineTransformation(a.value) compose b.value)
     with AffineTransformNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformationValue],
-                                           id: Int,
-                                           oldVal: AffineTransformationValue,
-                                           newVal: AffineTransformationValue): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
-      new AffineTransformation(a.value.affineTransform compose b.value.affineTransform),
-      (a.value.uniformScalingFactor, b.value.uniformScalingFactor)
-      match {
-        case (Some(x), Some(y)) => Some(x * y)
-        case _ => None
-      })
+    this := new AffineTransformation(a.value) compose b.value
   }
 }
 
 class Translation(store:Store,x:IntValue,y:IntValue)
   extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
-      AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble),
-      Some(1.0)))
+    initialValue = AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble))
     with IntNotificationTarget {
 
   setName("Translation")
@@ -73,66 +59,16 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
-      AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble),
-      Some(1.0))
+    this := AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble)
   }
 }
 
-/**
-  * Creates a transformation for a rotation
-  * about the origin
-  * by an angle <i>theta</i>.
-  * Positive angles correspond to a rotation
-  * in the counter-clockwise direction.
-  * @param store
-  * @param theta: the angle of rotation, in t th of degree
-  */
-class RotationAroundZero(store:Store,theta:IntValue, t:Int)
-  extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
-      AffineTransformation.rotationInstance(theta.value * java.lang.Math.PI / (180 * t)),
-      Some(1.0)))
-    with IntNotificationTarget {
-
-  setName("Rotation")
-
-  this.registerStaticAndDynamicDependency(theta)
-  finishInitialization(store)
-
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
-    this.scheduleForPropagation()
-  }
-
-  override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
-      AffineTransformation.rotationInstance(theta.value * java.lang.Math.PI / (180 * t)),
-      Some(1.0))
-  }
-}
-
-class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[GeometryValue])
+class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geometry])
   extends CBLSGeometryInvariant(
     store:Store,
-    initialValue = {
-      a.value.uniformScalingFactor match{
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))()
-        case Some(s) =>
-          val newGeo = a.value.affineTransform.transform(b.value.geometry)
-
-          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match{
-            case None => None
-            case Some(c:Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
-          }
-
-          val newRadius = b.value.inputOverApproximatingRadius match{
-            case None => None
-            case Some(r) => Some(r*s)
-          }
-
-          new GeometryValue(newGeo)(newCentroid,newRadius)
-      }
-    }) with GeometryNotificationTarget with AffineTransformNotificationTarget {
+    initialValue=a.value.transform(b.value))
+    with GeometryNotificationTarget
+    with AffineTransformNotificationTarget{
 
   setName(a + "(" + b + ")")
 
@@ -140,42 +76,15 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
-                                    id: Int,
-                                    oldVal: GeometryValue,
-                                    newVal: GeometryValue): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformationValue],
-                                           id: Int,
-                                           oldVal: AffineTransformationValue,
-                                           newVal: AffineTransformationValue): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := {
-      a.value.uniformScalingFactor match {
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))()
-        case Some(s) =>
-          val newGeo = a.value.affineTransform.transform(b.value.geometry)
-
-          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match {
-            case None => None
-            case Some(c: Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
-          }
-
-          val newRadius = b.value.inputOverApproximatingRadius match {
-            case None => None
-            case Some(r) => Some(r * s)
-          }
-
-          new GeometryValue(newGeo)(newCentroid, newRadius)
-      }
-    }
+    this := a.value.transform(b.value)
   }
 }
-
-
-

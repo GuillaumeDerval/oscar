@@ -245,10 +245,10 @@ package object cbls extends ModelingAPI{
   implicit def longToInt(l:Long):Int = Math.toIntExact(l)
   implicit def intToLong(i:Int):Long = i
 
-  implicit def minMaxCoupleLongLongToDomain(minMaxCouple: (Long,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntIntToDomain(minMaxCouple: (Int,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntLongToDomain(minMaxCouple: (Int,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleLongIntToDomain(minMaxCouple: (Long,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
 
 

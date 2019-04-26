@@ -81,8 +81,8 @@ abstract class ChangingAtomicValue[T](initialValue:T)
 
   final protected def performAtomicPropagation(){
     if(mOldValue!=mNewValue){
-      val old = mOldValue
-      mOldValue = mNewValue  //TODO: the change should be made AFTER the notification
+      val old=mOldValue
+      mOldValue=mNewValue  //TODO: the change should be made AFTER the notification
 
       val dynListElements = getDynamicallyListeningElements
       val headPhantom = dynListElements.headPhantom
@@ -97,7 +97,7 @@ abstract class ChangingAtomicValue[T](initialValue:T)
     }
   }
 
-  def performNotificationToListeningInv(inv:PropagationElement,id:Int,oldVal:T,newVal:T)
+  def performNotificationToListeningInv(inv:PropagationElement,id:Long,oldVal:T,newVal:T)
 
   override def checkInternals(c:Checker){
     c.check(mOldValue == mNewValue)
