@@ -3,6 +3,7 @@ package oscar.cbls.business.routing.invariants
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
+import oscar.cbls._
 
 /**
  * This invariant has no output, only a method to get the vehicle reaching a given position, and a method to get the stat point of a vehicle
@@ -16,36 +17,36 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
   private val vehicleStartStack = new SeqCheckpointedValueStack[VehicleLocation]()
   private var currentVehicleLocation : VehicleLocation = VehicleLocation(v, routes.value.positionOfAnyOccurrence(_).get)
 
-  def startPosOfVehicle(vehicle : Int) : Int = {
+  def startPosOfVehicle(vehicle : Long) : Long = {
     currentVehicleLocation.startPosOfVehicle(vehicle)
   }
 
-  def vehicleReachingPosition(position : Int) : Int = {
+  def vehicleReachingPosition(position : Long) : Long = {
     currentVehicleLocation.vehicleReachingPosition(position)
   }
 
-  def vehicleReachingNode(node: Int) : Option[Int] = {
+  def vehicleReachingNode(node: Long) : Option[Long] = {
     routes.value.positionOfAnyOccurrence(node) match{
       case Some(nodePosition) => Some(vehicleReachingPosition(nodePosition))
       case None => None
     }
   }
 
-  def onSameVehicleOrBothUnrouted(node1:Int,node2:Int): Boolean={
+  def onSameVehicleOrBothUnrouted(node1:Long,node2:Long): Boolean={
     vehicleReachingNode(node1) == vehicleReachingNode(node2)
   }
 
-  def onVehicle(vehicle:Int,node:Int): Boolean = {
+  def onVehicle(vehicle:Long,node:Long): Boolean = {
     vehicleReachingNode(node) contains vehicle
   }
 
-  override def notifySeqChanges(v : ChangingSeqValue, d : Int, changes : SeqUpdate) {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     currentVehicleLocation = digestUpdates(changes)
   }
 
   def digestUpdates(changes : SeqUpdate) : VehicleLocation = {
     changes match {
-      case s@SeqUpdateInsert(value : Int, posOfInsert : Int, prev : SeqUpdate) =>
+      case s@SeqUpdateInsert(value : Long, posOfInsert : Int, prev : SeqUpdate) =>
         digestUpdates(prev).push(s.oldPosToNewPos)
 
       case r@SeqUpdateRemove(pos : Int, prev : SeqUpdate) =>
@@ -61,7 +62,7 @@ class StartPointOfVehicles(routes:ChangingSeqValue,
         currentVehicleLocation
 
       case s@SeqUpdateDefineCheckpoint(prev : SeqUpdate, isStarMode : Boolean, checkpointLevel : Int) =>
-        val previousVehicleStart = if (checkpointLevel == 0) digestUpdates(prev).regularize else digestUpdates(prev)
+        val previousVehicleStart = if (checkpointLevel == 0L) digestUpdates(prev).regularize else digestUpdates(prev)
         vehicleStartStack.defineCheckpoint(prev.newValue, checkpointLevel, previousVehicleStart)
         previousVehicleStart
 

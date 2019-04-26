@@ -19,7 +19,7 @@
  ******************************************************************************/
 
 package oscar.cbls.test.invariants
-
+/*
 import oscar.cbls._
 import oscar.cbls.core.computation.Event
 import oscar.cbls.lib.invariant.minmax._
@@ -87,3 +87,4 @@ object test extends LinearSelectors {
 
   }
 }
+*/

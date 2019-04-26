@@ -24,7 +24,7 @@ package oscar.cbls.algo.dll
 import oscar.cbls.algo.quick.QList
 
 /**this is a mutable data structure that is able to represent sets through doubly-lined lists, with insert
-  * and delete in O(1) through reference
+  * and delete in O(1L) through reference
   * and to update in parallel another set that is a filter of the first one through a specified function
   * the filter can be specified anytime and filtering can be cascaded
   *
@@ -64,7 +64,7 @@ class DelayedPermaFilteredDoublyLinkedList[T <: AnyRef] extends Iterable[T]{
   /**returns the size of the PermaFilteredDLL
     * this is a O(n) method because it is very rarely used.
     * and in this context, we want to keep the memory footprint as small as possible*/
-  override def size ={
+  override def size: Int ={
     var toReturn = 0
     var current = phantom.next
     while(current != phantom){

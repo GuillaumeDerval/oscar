@@ -1,5 +1,5 @@
 package oscar.cbls.business.scheduling.algo
-
+/*
 import oscar.cbls.business.scheduling.algo.CriticalPathFinder.nonSolidCriticalPath
 import oscar.cbls.business.scheduling.model.{Activity, Deadlines, Planning, TotalResourcesOvershootEvaluation, VariableResources}
 import oscar.cbls.core.computation.{Solution, Store, Variable}
@@ -38,13 +38,13 @@ import oscar.cbls.lib.search.LinearSelectors
  * @author yoann.guyot@cetic.be
  */
 class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvershootEvaluation with VariableResources,
-                      temperature: Float = 100,
+                      temperature: Float = 100L,
                       verbose: Boolean = false) extends LinearSelectors {
   val model: Store = planning.model
 
   require(model.isClosed, "model should be closed before TardinessSearch algo can be instantiated")
 
-  var minOvershootValue: Int = 0
+  var minOvershootValue: Long = 0L
   var bestSolution: Solution = null
 
   /**
@@ -53,18 +53,18 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
    * @param maxTrials the max number of iterations of the search
    * @param stable the max number of successive iterations with no improvement
    */
-  def solve(maxTrials: Int,
-            stable: Int,
-            maxLocalIterations: Int = 5,
+  def solve(maxTrials: Long,
+            stable: Long,
+            maxLocalIterations: Long = 5L,
             onlyImprovingMoves: Boolean = true,
             saveCurrentSolution: Boolean = false) = {
     var hasImproved = false
-    if (planning.totalTardiness.value > 0) {
+    if (planning.totalTardiness.value > 0L) {
       if (saveCurrentSolution) {
         bestSolution = model.solution(true)
         minOvershootValue = planning.totalOvershoot.value
       }
-      var nbTrials: Int = 0
+      var nbTrials: Long = 0L
       var continue: Boolean = true
 
       while (nbTrials < maxTrials && continue) {
@@ -89,7 +89,7 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
           }
           precCriticalActivities = criticalActivities
         }
-        nbTrials = nbTrials + 1
+        nbTrials = nbTrials + 1L
       }
 
       if (bestSolution != null) model.restoreSolution(bestSolution)
@@ -101,16 +101,16 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
 
   // a list of (predecessor, activity) with an additional tight dependence
   private def exploreNeighborhood(criticals: List[(Activity, Activity)],
-                                  maxLocalIterations: Int,
+                                  maxLocalIterations: Long,
                                   onlyImproving: Boolean = true) = {
     var hasImproved = false
     var moved = false
-    var i = 0
+    var i = 0L
 
     var criticalsIterator = criticals.iterator
 
     while (!moved
-      && (if (maxLocalIterations > 0) i < maxLocalIterations else true)
+      && (if (maxLocalIterations > 0L) i < maxLocalIterations else true)
       && criticalsIterator.hasNext) {
 
       if (verbose) println("Exploration iteration " + i + ".")
@@ -123,7 +123,7 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
 
       if (verbose) println("gain = " + gain)
 
-      if (gain < 0) {
+      if (gain < 0L) {
         val currentOvershoot = planning.totalOvershoot.value
         if (verbose) println("overshoot = " + minOvershootValue + " -> " + currentOvershoot)
         if (currentOvershoot <= minOvershootValue) {
@@ -152,13 +152,13 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
         if (verbose) println("No move (Swap undone).\n")
       }
 
-      i = i + 1
+      i = i + 1L
     }
 
     hasImproved
   }
 
-  private def swap(from: Activity, to: Activity): (Int, Solution) = {
+  private def swap(from: Activity, to: Activity): (Long, Solution) = {
     val successors = to.allSucceedingActivities.value.toList.map(planning.activityArray(_))
     val successorsPredecessors = successors.map(_.additionalPredecessors)
     val activitiesToSnap:List[Variable] = from.additionalPredecessors :: to.additionalPredecessors :: successorsPredecessors
@@ -188,9 +188,10 @@ class TardinessSearch(planning: Planning with Deadlines with TotalResourcesOvers
       val currentTardiness = planning.totalTardiness.value
       currentTardiness - previousTardiness
     } else {
-      -1
+      -1L
     }
 
     (gain, snapshot)
   }
 }
+*/

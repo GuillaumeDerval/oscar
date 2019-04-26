@@ -106,10 +106,10 @@ object NQueensLinearSelectors extends LinearSelectorClass(true) with StopWatch{
       require(it.value < N, "NQueens seems to diverge: " + it + " N "+ N)
       val oldviolation:Int = c.violation.value
 
-      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Int) => {
-        selectFirstDo(nonTabuQueens.value, (q2:Int) => {
+      selectFirstDo(nonTabuMaxViolQueens.value)((q1:Long) => {
+        selectFirstDo(nonTabuQueens.value, (q2:Long) => {
           q2!=q1 && c.swapVal(queens(q1),queens(q2)) < oldviolation
-        })((q2:Int) => {
+        })((q2:Long) => {
           //println("" + it.value + " swapping " + q1 +"(tabu: " + tabu(q1) + ") and " + q2 +"(tabu: " + tabu(q2) + ")")
           queens(q1) :=: queens(q2)
           tabu(q1) := it.value + tabulength

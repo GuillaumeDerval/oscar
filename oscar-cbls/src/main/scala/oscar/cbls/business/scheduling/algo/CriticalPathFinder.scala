@@ -15,7 +15,7 @@
  * ****************************************************************************
  */
 package oscar.cbls.business.scheduling.algo
-
+/*
 import oscar.cbls.business.scheduling.model.{Activity, Planning}
 import oscar.cbls.lib.search.LinearSelectorClass
 
@@ -77,3 +77,4 @@ object CriticalPathFinder extends LinearSelectorClass {
   }
 
 }
+*/

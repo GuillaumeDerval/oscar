@@ -33,10 +33,10 @@ import oscar.cbls.lib.invariant.logic.IntInt2Int
 import scala.collection.immutable.SortedSet
 
 abstract class MiaxLin(vars: SortedSet[IntValue])
-  extends IntInvariant(initialValue = 0)
+  extends IntInvariant(initialValue = 0L)
   with IntNotificationTarget{
 
-  require(vars.size > 0, "Invariant " + this + " declared with zero vars to max")
+  require(vars.size > 0L, "Invariant " + this + " declared with zero vars to max")
 
   for (v <- vars) registerStaticAndDynamicDependency(v)
   finishInitialization()
@@ -45,18 +45,18 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
     (if (better(intvar.min, acc._1)) intvar.min else acc._1,
       if (better(intvar.max, acc._2)) intvar.max else acc._2)))
 
-  var MiaxCount: Int = 0
+  var MiaxCount: Long = 0L
 
-  def better(a: Int, b: Int): Boolean //true if a is strictly more in the direction of the invariant that b
+  def better(a: Long, b: Long): Boolean //true if a is strictly more in the direction of the invariant that b
 
   private def LoadNewMiax() {
-    var CurrentMiax: Int = vars.head.value
-    MiaxCount = 1
+    var CurrentMiax: Long = vars.head.value
+    MiaxCount = 1L
     vars.foreach(v => {
       if (v.value == CurrentMiax) {
-        MiaxCount += 1
+        MiaxCount += 1L
       } else if (better(v.value, CurrentMiax)) {
-        MiaxCount = 1
+        MiaxCount = 1L
         CurrentMiax = v.value
       }
     })
@@ -65,17 +65,17 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
 
   LoadNewMiax()
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(vars.contains(v), this.toString + " notified for not interesting var")
     val MiaxVal = this.newValue
     if (OldVal == MiaxVal && better(MiaxVal, NewVal)) {
-      MiaxCount -= 1
-      if (MiaxCount == 0) LoadNewMiax() //this is where we pay the price.
+      MiaxCount -= 1L
+      if (MiaxCount == 0L) LoadNewMiax() //this is where we pay the price.
     } else if (better(NewVal, MiaxVal)) {
-      MiaxCount = 1
+      MiaxCount = 1L
       this := NewVal
     } else if (better(MiaxVal, OldVal) && NewVal == MiaxVal) {
-      MiaxCount += 1
+      MiaxCount += 1L
     }
   }
 
@@ -96,7 +96,7 @@ abstract class MiaxLin(vars: SortedSet[IntValue])
  * */
 case class MaxLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
 
-  override def better(a: Int, b: Int): Boolean = a > b
+  override def better(a: Long, b: Long): Boolean = a > b
 }
 
 /**
@@ -109,7 +109,7 @@ case class MaxLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
  * */
 case class MinLin(vars: SortedSet[IntValue]) extends MiaxLin(vars) {
 
-  override def better(a: Int, b: Int): Boolean = a < b
+  override def better(a: Long, b: Long): Boolean = a < b
 }
 
 abstract class Miax(vars: SortedSet[IntValue])
@@ -123,8 +123,8 @@ abstract class Miax(vars: SortedSet[IntValue])
     (if (better(intvar.min, acc._1)) intvar.min else acc._1,
       if (better(intvar.max, acc._2)) intvar.max else acc._2)))
 
-  def ord(v: IntValue): Int
-  def better(a: Int, b: Int): Boolean
+  def ord(v: IntValue): Long
+  def better(a: Long, b: Long): Boolean
 
   val h: BinomialHeapWithMove[IntValue] = new BinomialHeapWithMove[IntValue](ord, vars.size)
 
@@ -132,7 +132,7 @@ abstract class Miax(vars: SortedSet[IntValue])
 
   this := h.getFirst.value
 
-  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
     assert(vars.contains(v), name + " notified for not interesting var")
     h.notifyChange(v)
     this := h.getFirst.value
@@ -156,15 +156,15 @@ abstract class Miax(vars: SortedSet[IntValue])
  * */
 @deprecated("use the MinArray instead", "always")
 case class Min(vars: SortedSet[IntValue]) extends Miax(vars) {
-  assert(vars.size > 0, "Invariant Min declared with zero vars to min")
+  assert(vars.size > 0L, "Invariant Min declared with zero vars to min")
 
-  override def ord(v: IntValue): Int = v.value
+  override def ord(v: IntValue): Long = v.value
 
-  override def better(a: Int, b: Int): Boolean = a < b
+  override def better(a: Long, b: Long): Boolean = a < b
 }
 
 object Min{
-  def apply(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
+  def apply(varss: Array[IntValue], ccond: SetValue = null, default: Long = Long.MaxValue) = MinArray(varss, ccond, default)
 }
 
 /**
@@ -177,15 +177,15 @@ object Min{
  * */
 @deprecated("use the MaxArray instead", "always")
 case class Max(vars: SortedSet[IntValue]) extends Miax(vars) {
-  assert(vars.size > 0, "Invariant Max declared with zero vars to max")
+  assert(vars.size > 0L, "Invariant Max declared with zero vars to max")
 
-  override def ord(v: IntValue): Int = -v.value
+  override def ord(v: IntValue): Long = -v.value
 
-  override def better(a: Int, b: Int): Boolean = a > b
+  override def better(a: Long, b: Long): Boolean = a > b
 }
 
 object Max{
-  def apply(vars: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue) = MaxArray(vars, cond, default)
+  def apply(vars: Array[IntValue], cond: SetValue = null, default: Long = Long.MinValue) = MaxArray(vars, cond, default)
 }
 
 /**
@@ -195,7 +195,7 @@ object Max{
  * @author renaud.delandtsheer@cetic.be
  * */
 case class Max2(a: IntValue, b: IntValue)
-  extends IntInt2Int(a, b, (x: Int, y: Int) => x.max(y), a.min.max(b.min) to a.max.max(b.max))
+  extends IntInt2Int(a, b, (x: Long, y: Long) => x.max(y), Domain(a.min.max(b.min),a.max.max(b.max)))
 
 /**
  * maintains output = Min(a,b)
@@ -204,4 +204,4 @@ case class Max2(a: IntValue, b: IntValue)
  * @author renaud.delandtsheer@cetic.be
  * */
 case class Min2(a: IntValue, b: IntValue)
-  extends IntInt2Int(a, b, (x: Int, y: Int) => x.min(y), a.min.min(b.min) to a.max.min(b.max))
+  extends IntInt2Int(a, b, (x: Long, y: Long) => x.min(y), Domain(a.min.min(b.min) , a.max.min(b.max)))

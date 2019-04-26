@@ -24,10 +24,10 @@ import scala.collection.immutable.SortedSet
  */
 object HotRestart extends App{
 
-  println(new InstrumentedRange(0 to 9) startBy 5)
+  println(new InstrumentedRange(0L to 9L) startBy 5)
 
 
-  val s:SortedSet[Int] = SortedSet(1, 2, 3, 4, 7, 8, 9)
+  val s:SortedSet[Long] = SortedSet(1, 2, 3, 4, 7, 8, 9)
   val it = s.iteratorFrom(7)
   while(it.hasNext) println("next:" + it.next())
 
