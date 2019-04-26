@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.examples.cbls.userguide
-/*
+
 import oscar.cbls._
 
 import scala.util.Random
@@ -61,4 +61,3 @@ object NQueensEasy extends CBLSModel with App{
 
   //println(s.stats)
 }
-*/

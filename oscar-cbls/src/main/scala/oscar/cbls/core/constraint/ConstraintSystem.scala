@@ -35,6 +35,8 @@ import oscar.cbls.lib.invariant.numeric.{ExtendableSum, Prod, Prod2, Sum}
 case class ConstraintSystem(model:Store) extends Constraint with Objective{
   //ConstraintSystems do not act as invariant because everything is subcontracted
 
+  //TODO: remove the distributed storage stuff
+
   model.addToCallBeforeClose(() => this.close())
 
   class GlobalViolationDescriptor(val Violation:ExtendableSum){
@@ -54,11 +56,11 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
   private var VarInConstraints:List[AbstractVariable] = List.empty
   private var VarsWatchedForViolation:List[AbstractVariable] = List.empty
 
-  override def detailedString(short: Boolean, indent:Long = 0L): String = {
+  override def detailedString(short: Boolean, indent:Int = 0): String = {
     val displayedConstraints = (if(short) violatedConstraints
       else PostedConstraints.map(_._1)).sortBy(c => c.violation.value).map(c => c + " " + "viol:" + c.violation.value)
 
-    val displayedConstraintsString = if(displayedConstraints.isEmpty) "None" else ("\n" + nSpace(indent+4L) + displayedConstraints.mkString("\n" + nSpace(indent+4L)))
+    val displayedConstraintsString = if(displayedConstraints.isEmpty) "None" else ("\n" + nSpace(indent+4) + displayedConstraints.mkString("\n" + nSpace(indent+4)))
     val constraintExplanationString = if(short) "violated_constraints" else "all_constraints"
 
     "ConstraintSystem(" + this.Violation + " " + constraintExplanationString + ":" + displayedConstraintsString  + ")"
@@ -150,7 +152,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
         else Prod(List(constraintANDintvar._1.violation,constraintANDintvar._2))
       }) ::: PostedInvariants).setName("violation")
       if(Violation.model==null){
-        assert(PostedConstraints.size==0L,"Null model but has constraints")
+        assert(PostedConstraints.size==0,"Null model but has constraints")
         Violation.model = model
       }
       model.registerForPartialPropagation(Violation)
@@ -175,7 +177,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
           if (model.isClosed) throw new Exception("cannot create new violation after model is closed.")
           //not registered yet
           VarsWatchedForViolation = a :: VarsWatchedForViolation
-          val violationVariable = new ExtendableSum(model, Domain(0L ,Long.MaxValue))
+          val violationVariable = new ExtendableSum(model, 0 to Int.MaxValue)
           violationVariable.setName("global violation of " + a.name)
           a.storeAt(IndexForGlobalViolationINSU, new GlobalViolationDescriptor(violationVariable))
           registerConstrainedVariable(v)
@@ -184,7 +186,9 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
           //already registered
           CPStoredRecord.Violation
         }
-      case _ => 0L
+      case _ =>
+        throw new Error("cannot provide violation for " + v)
+        0
     }
   }
 
@@ -201,7 +205,7 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
     * @return the constraints that are violated, and whose ponderation factor is not zero
     */
   def violatedConstraints:List[Constraint] =
-    PostedConstraints.filter(p => (p._2 == null || p._2.value !=0L) && !p._1.isTrue).map(p => p._1)
+    PostedConstraints.filter(p => (p._2 == null || p._2.value !=0) && !p._1.isTrue).map(p => p._1)
 
   /** To override whenever possible to spot errors in invariants.
     * this will be called for each invariant after propagation is performed.
@@ -214,6 +218,6 @@ case class ConstraintSystem(model:Store) extends Constraint with Objective{
    * It is easy to override it, and perform a smarter propagation if needed.
    * @return the actual objective value.
    */
-  override def value: Long = Violation.value
+  override def value: Int = Violation.value
 }
 

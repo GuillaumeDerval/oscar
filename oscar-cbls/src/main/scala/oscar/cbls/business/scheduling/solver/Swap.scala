@@ -1,5 +1,5 @@
 package oscar.cbls.business.scheduling.solver
-/*
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -20,7 +20,7 @@ package oscar.cbls.business.scheduling.solver
 
 
 /**
- * Created by rdl on 5L/09L/201L4.
+ * Created by rdl on 5/09/2014.
  */
 case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEvaluation,objective:CBLSIntVar, best:Boolean)
   extends EasyNeighborhood(best,objective) {
@@ -54,16 +54,16 @@ case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEva
 
   // a list of (predecessor, activity) with an additional tight dependence
   private def exploreNeighborhood(criticals: List[(Activity, Activity)],
-                                  maxLocalIterations: Long,
+                                  maxLocalIterations: Int,
                                   onlyImproving: Boolean = true) = {
     var hasImproved = false
     var moved = false
-    var i = 0L
+    var i = 0
 
     var criticalsIterator = criticals.iterator
 
     while (!moved
-      && (if (maxLocalIterations > 0L) i < maxLocalIterations else true)
+      && (if (maxLocalIterations > 0) i < maxLocalIterations else true)
       && criticalsIterator.hasNext) {
 
       if (amIVerbose) println("Exploration iteration " + i + ".")
@@ -76,7 +76,7 @@ case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEva
 
       if (amIVerbose) println("gain = " + gain)
 
-      if (gain < 0L) {
+      if (gain < 0) {
         val currentOvershoot = planning.totalOvershoot.value
         if (amIVerbose) println("overshoot = " + minOvershootValue + " -> " + currentOvershoot)
         if (currentOvershoot <= minOvershootValue) {
@@ -105,13 +105,13 @@ case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEva
         if (amIVerbose) println("No move (Swap undone).\n")
       }
 
-      i = i + 1L
+      i = i + 1
     }
 
     hasImproved
   }
 
-  private def swap(from: Activity, to: Activity): (Long, Snapshot) = {
+  private def swap(from: Activity, to: Activity): (Int, Snapshot) = {
     val successors = to.allSucceedingActivities.value.toList.map(planning.activityArray(_))
     val successorsPredecessors = successors.map(_.additionalPredecessors)
     val activitiesToSnap = from.additionalPredecessors :: to.additionalPredecessors :: successorsPredecessors
@@ -141,12 +141,11 @@ case class Swap(planning:Planning with Deadlines with TotalResourcesOvershootEva
       val currentTardiness = planning.totalTardiness.value
       currentTardiness - previousTardiness
     } else {
-      -1L
+      -1
     }
 
     (gain, snapshot)
   }
 }
 
-*/
 */

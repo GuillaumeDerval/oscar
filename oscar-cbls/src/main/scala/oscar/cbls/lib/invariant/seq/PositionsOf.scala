@@ -18,8 +18,6 @@ package oscar.cbls.lib.invariant.seq
 import oscar.cbls._
 import oscar.cbls.core._
 
-import scala.collection.immutable.SortedSet
-
 object PositionsOf{
 
   /**
@@ -37,7 +35,7 @@ object PositionsOf{
    * @param a an integer
    * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
    */
-  def apply(v: SeqValue, a:Long):ChangingSetValue  =
+  def apply(v: SeqValue, a:Int):ChangingSetValue  =
     new PositionsOfConst(v, a)
 }
 
@@ -47,7 +45,7 @@ object PositionsOf{
  * @param a is the value that is to locate in the sequence
  */
 class PositionsOf(v: SeqValue, a:IntValue)
-  extends SetInvariant(v.value.positionsOfValue(a.value).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i) , Domain(0L , DomainHelper.safeAdd(v.max,1L)))
+  extends SetInvariant(v.value.positionsOfValueSet(a.value), 0 to DomainHelper.safeAddMax(v.max,1))
   with SeqNotificationTarget with IntNotificationTarget{
 
   setName("PositionOf(" + a.name + " in " + v.name + ")")
@@ -57,22 +55,20 @@ class PositionsOf(v: SeqValue, a:IntValue)
 
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
     scheduleForPropagation()
   }
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v : ChangingIntValue, id : Int, OldVal : Int, NewVal : Int){
     scheduleForPropagation()
   }
 
   override def performInvariantPropagation() {
-    //this is not incremental, but if we assume a small set of value,
-    // like 0 or one; there is nothing better we can do
-    this := v.value.positionsOfValue(a.value).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i)
+    this := v.value.positionsOfValueSet(a.value)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a.value).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i))
+    c.check(this.value equals v.value.positionsOfValue(a.value))
   }
 }
 
@@ -81,8 +77,8 @@ class PositionsOf(v: SeqValue, a:IntValue)
  * @param v is a SeqValue
  * @param a is the value that is to locate in the sequence
  */
-class PositionsOfConst(v: SeqValue, a:Long)
-  extends SetInvariant(v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i), Domain(0L , DomainHelper.safeAdd(v.max,1L)))
+class PositionsOfConst(v: SeqValue, a:Int)
+  extends SetInvariant(v.value.positionsOfValueSet(a), 0 to DomainHelper.safeAddMax(v.max,1))
   with SeqNotificationTarget{
 
   setName("PositionOf(" + a + " in " + v.name + ")")
@@ -90,16 +86,16 @@ class PositionsOfConst(v: SeqValue, a:Long)
   registerStaticAndDynamicDependency(v)
   finishInitialization()
 
-  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+  override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate) {
     scheduleForPropagation()
   }
 
   override def performInvariantPropagation() {
-    this := v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i)
+    this := v.value.positionsOfValueSet(a)
   }
 
   override def checkInternals(c: Checker) {
-    c.check(this.value equals v.value.positionsOfValue(a).foldLeft(SortedSet.empty[Long])((acc:SortedSet[Long],i:Int) => acc + i))
+    c.check(this.value equals v.value.positionsOfValueSet(a))
   }
 }
 

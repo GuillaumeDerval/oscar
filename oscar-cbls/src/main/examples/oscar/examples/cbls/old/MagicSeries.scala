@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.examples.cbls.old
-/*
+
 import oscar.cbls._
 import oscar.cbls.lib.constraint.{EQ, Exactly}
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
@@ -79,4 +79,3 @@ object MagicSeries extends CBLSModel with App with StopWatch{
   for(i <- range) yield print(magicSeries(i).value + ", ")
   print(")\nin " + it.value + " iterations and " + getWatch + " ms")
 }
-*/

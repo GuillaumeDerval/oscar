@@ -25,7 +25,7 @@ import oscar.cbls.lib.invariant.set.Cardinality
  * @author gael.thouvenin@student.umons.ac.be
  */
 case class Empty(set: SetValue) extends Constraint {
-  private val content = EQ(Cardinality(set), 0L)
+  private val content = EQ(Cardinality(set), 0)
 
   override def violation(v: Value): IntValue = content.violation(v)
 

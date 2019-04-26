@@ -6,7 +6,6 @@ import oscar.cbls.lib.invariant.numeric.Sum2
 import oscar.cbls.modeling.CBLSModel
 import oscar.cbls.util.StopWatch
 
-/*
 
 /**
   * Created by gustavbjordal on 27/05/16.
@@ -53,4 +52,3 @@ object MultiKnapsackTest  extends CBLSModel with StopWatch {
       printViolation()
     }
   }
-*/

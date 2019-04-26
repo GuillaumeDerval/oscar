@@ -22,7 +22,7 @@ package oscar.cbls.core
 
 /** This package proposes the mechanics to model objective functions.
  * It basically offers some neighborhood evaluation methods that use the partial propagation
- * proposed by [[oscar.cbls.core.computation.Store]].
+ * proposed by [[oscar.cbls.invariants.core.computation.Store]].
  * It features the [[oscar.cbls.core.objective.IntVarObjective]] class to model an objective in a problem statement, and
  * the [[oscar.cbls.core.objective.Objective]] to use in other classes.
   * @author renaud.delandtsheer@cetic.be

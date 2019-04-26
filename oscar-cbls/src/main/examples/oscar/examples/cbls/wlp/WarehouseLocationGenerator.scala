@@ -15,6 +15,7 @@ package oscar.examples.cbls.wlp
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
+
 /**
  * Created by rdl on 23/03/2015.
  */
@@ -29,20 +30,20 @@ object WarehouseLocationGenerator {
    * @param weightingForOpeningWarehouseCost cost for openingwarehouse = rand(0,1)*side*weightingForOpeningWarehouseCost
    * @return
    */
-  def apply(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Long],Array[Array[Long]]) = {
+  def apply(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Int],Array[Array[Int]]) = {
     // we put the locations randomly on a square map
     val side = maxXY - minXY
 
-    val costForOpeningWarehouse: Array[Long] =
-      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toLong)
+    val costForOpeningWarehouse: Array[Int] =
+      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toInt)
 
     //we generate te cost distance matrix
-    def randomXY: Long = (minXY + (math.random * side)).toLong
+    def randomXY: Int = (minXY + (math.random * side)).toInt
     def randomPosition = (randomXY, randomXY)
-    val warehousePositions: Array[(Long, Long)] = Array.tabulate(W)(w => randomPosition)
-    val deliveryPositions: Array[(Long, Long)] = Array.tabulate(D)(d => randomPosition)
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    val warehousePositions: Array[(Int, Int)] = Array.tabulate(W)(w => randomPosition)
+    val deliveryPositions: Array[(Int, Int)] = Array.tabulate(D)(d => randomPosition)
+    def distance(from: (Int, Int), to: (Int, Int)) =
+      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
 
     //for each delivery point, the distance to each warehouse
     val distanceCost = Array.tabulate(D)(
@@ -61,20 +62,20 @@ object WarehouseLocationGenerator {
    * @param weightingForOpeningWarehouseCost cost for openingwarehouse = rand(0,1)*side*weightingForOpeningWarehouseCost
    * @return (costForOpeningWarehouse,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances)
    */
-  def problemWithPositions(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Long],Array[Array[Long]],Array[(Long,Long)],Array[(Long,Long)],Array[Array[Long]]) = {
+  def problemWithPositions(W:Int,D:Int,minXY:Int = 0,maxXY:Int = 100, weightingForOpeningWarehouseCost:Int = 3):(Array[Int],Array[Array[Int]],Array[(Int,Int)],Array[(Int,Int)],Array[Array[Int]]) = {
     // we put the locations randomly on a square map
     val side = maxXY - minXY
 
-    val costForOpeningWarehouse: Array[Long] =
-      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toLong)
+    val costForOpeningWarehouse: Array[Int] =
+      Array.tabulate(W)(w => (math.random * side * weightingForOpeningWarehouseCost).toInt)
 
     //we generate te cost distance matrix
-    def randomXY: Long = (minXY + (math.random * side)).toLong
+    def randomXY: Int = (minXY + (math.random * side)).toInt
     def randomPosition = (randomXY, randomXY)
-    val warehousePositions: Array[(Long, Long)] = Array.tabulate(W)(w => randomPosition)
-    val deliveryPositions: Array[(Long, Long)] = Array.tabulate(D)(d => randomPosition)
-    def distance(from: (Long, Long), to: (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toLong
+    val warehousePositions: Array[(Int, Int)] = Array.tabulate(W)(w => randomPosition)
+    val deliveryPositions: Array[(Int, Int)] = Array.tabulate(D)(d => randomPosition)
+    def distance(from: (Int, Int), to: (Int, Int)) =
+      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
 
     //for each delivery point, the distance to each warehouse
     val distanceCost = Array.tabulate(D)(

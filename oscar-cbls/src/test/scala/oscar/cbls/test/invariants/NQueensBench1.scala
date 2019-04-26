@@ -19,7 +19,7 @@
   ******************************************************************************/
 
 package oscar.cbls.test.invariants
-/*
+
 import oscar.cbls._
 import oscar.cbls.lib.constraint.AllDiff
 import oscar.cbls.lib.invariant.logic.SelectLESetQueue
@@ -124,4 +124,3 @@ object NQueensBench1 extends LinearSelectorClass(true) with StopWatch{
     println(padToLength("" + getWatch, 15) + it.value)
   }
 }
-*/

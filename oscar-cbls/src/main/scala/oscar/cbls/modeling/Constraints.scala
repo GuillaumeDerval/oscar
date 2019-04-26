@@ -16,7 +16,6 @@ package oscar.cbls.modeling
 
 import oscar.cbls.core.computation.{IntValue, SetValue}
 import oscar.cbls.lib.constraint._
-import oscar.cbls.lib.invariant.set.BelongsTo
 
 import scala.collection.immutable.SortedMap
 
@@ -28,7 +27,7 @@ trait Constraints {
 
   /**
    * implements v \in set
-    * the violation is 1L if v is not in set, 0L otherwise
+    * the violation is 1 if v is not in set, 0 otherwise
    */
   def belongsTo(v: IntValue, set: SetValue) =  BelongsTo(v, set)
 
@@ -54,7 +53,7 @@ trait Constraints {
     *
      * the violation is the sum for all bounds of the number of missing variables to reach the bound
     */
-  def atLeast(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]) = AtLeast(variables, bounds)
+  def atLeast(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) = AtLeast(variables, bounds)
 
 
 /**Implements the AtMost constraint on IntVar.
@@ -69,7 +68,7 @@ trait Constraints {
   * the number of variable in excess is the max between zero and
   * (the number of variable that have the value of the bound minus the bound).
   */
-  def atMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]) = AtMost(variables, bounds)
+  def atMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) = AtMost(variables, bounds)
 
 
   /**This is the standard bin packing constraint
@@ -95,7 +94,7 @@ trait Constraints {
     *                                                the violation is dependent on whether the variable enforces the predicate; if it enforces it,
     *                                                it is the other definition, if it does not, it is zero
     */
-  def sequence(variables: Array[_ <:IntValue], length:Long, Max:Long, predicate:Array[Boolean],predicateIsToBeConsideredInVarViolation:Boolean = false) =
+  def sequence(variables: Array[_ <:IntValue], length:Int, Max:Int, predicate:Array[Boolean],predicateIsToBeConsideredInVarViolation:Boolean = false) =
     Sequence(variables, length, Max, predicate,predicateIsToBeConsideredInVarViolation)
 
 }

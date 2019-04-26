@@ -38,15 +38,15 @@ import scala.collection.mutable.Queue
  * @author renaud.delandtsheer@cetic.be
  * */
 case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
-  extends SetInvariant(SortedSet.empty[Long], values.indices.start to values.indices.end)
+  extends SetInvariant(SortedSet.empty[Int], values.indices.start to values.indices.end)
   with IntNotificationTarget{
 
   for (v <- values.indices) registerStaticAndDynamicDependency(values(v), v)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val HeapAbove: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => values(i).value, values.size)
-  val HeapBelowOrEqual: BinomialHeapWithMove[Long] = new BinomialHeapWithMove((i: Long) => -values(i).value, values.size)
+  val HeapAbove: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => values(i).value, values.size)
+  val HeapBelowOrEqual: BinomialHeapWithMove[Int] = new BinomialHeapWithMove((i: Int) => -values(i).value, values.size)
 
   for(v <- values.indices){
     if(values(v).value <= boundary.value){
@@ -79,7 +79,7 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, i: Int, OldVal: Int, NewVal: Int) {
     if (v == boundary) {
       //c'est le boundary
       if (NewVal > OldVal) {
@@ -103,10 +103,10 @@ case class SelectLEHeapHeap(values: Array[IntValue], boundary: IntValue)
         Some("values(" + v + ").value (" + values(v).value
           + ") <= boundary.value (" + boundary.value + ")"))
     }
-    var count: Long = 0L
+    var count: Int = 0
     for (v <- values) {
       if (v.value <= boundary.value)
-        count += 1L
+        count += 1
     }
     c.check(count == this.value.size, Some("count (" + count
       + ") == output.value.size (" + this.value.size + ")"))
@@ -135,10 +135,10 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   registerStaticAndDynamicDependency(boundary)
   finishInitialization()
 
-  val QueueAbove: Queue[Long] = new Queue[Long]
+  val QueueAbove: Queue[Int] = new Queue[Int]
 
-  this := SortedSet.empty[Long]
-  val HeapAbove: BinomialHeap[Long] = new BinomialHeap((i: Long) => values(i).value, values.size)
+  this := SortedSet.empty[Int]
+  val HeapAbove: BinomialHeap[Int] = new BinomialHeap((i: Int) => values(i).value, values.size)
   for (v <- values.indices) {
     if (values(v).value <= boundary.value) {
       this.insertValue(v)
@@ -151,7 +151,7 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     if (v == boundary) {
       //c'est le boundary
       assert(NewVal > OldVal, "SelectLESetQueue does not allow boundary to decrease")
@@ -169,11 +169,11 @@ case class SelectLESetQueue[X<:IntValue](values: Array[X], boundary: IntValue)
   }
 
   override def checkInternals(c: Checker) {
-    var count: Long = 0L
+    var count: Int = 0
     for (i <- values.indices) {
       if (values(i).value <= boundary.value) {
         c.check(this.value.contains(i), Some("this.value.contains(" + i + ")"))
-        count += 1L
+        count += 1
       }
     }
     c.check(this.value.size == count,

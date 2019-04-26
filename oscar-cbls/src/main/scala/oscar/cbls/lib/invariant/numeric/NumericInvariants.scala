@@ -70,7 +70,7 @@ trait NumericInvariants{
    * @param min
    * @param max
    */
-  def  bound(x: IntValue, min:Long, max:Long) = Bound(x, min, max)
+  def  bound(x: IntValue, min:Int, max:Int) = Bound(x, min, max)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -86,7 +86,7 @@ trait NumericInvariants{
     *
     * for instance, suppose you represent days starting from zero, and zero is a monday,
     * and you want to round up to the next open day (sa and su are closed day, the correct declaration is:
-    * RoundUpModulo(from,duration,7L,2L,5L)
+    * RoundUpModulo(from,duration,7,2,5)
     *
     * @param from the starting date of the task. it can start later.
     * @param duration the duration of the task.
@@ -95,7 +95,7 @@ trait NumericInvariants{
     * @param shift the first period starts later than zero. it starts at shift. the duration before its start is allowed.
     */
 
-  def roundUpModulo(from: IntValue, duration: IntValue, period: Long, zone: Long, shift: Long) = RoundUpModulo(from: IntValue, duration: IntValue, period: Long, zone: Long, shift: Long)
+  def roundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -105,7 +105,7 @@ trait NumericInvariants{
     * @param duration
     * @param ForbiddenZones
     */
-  def roundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Long, Long)]) = RoundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Long, Long)])
+  def roundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)]) = RoundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)])
 
   /**
    * This invariant implements a step function. Values higher than pivot are mapped to ifval
@@ -117,7 +117,7 @@ trait NumericInvariants{
    * @param thenval the value returned when x > pivot
    * @param elseval the value returned when x <= pivot
    */
-  def step(x:IntValue,pivot:Long = 0L,thenval:Long = 1L,elseval:Long = 0L) = Step(x:IntValue,pivot:Long,thenval:Long ,elseval:Long)
+  def step(x:IntValue,pivot:Int = 0,thenval:Int = 1,elseval:Int = 0) = Step(x:IntValue,pivot:Int,thenval:Int ,elseval:Int)
 
   /** sum(i in cond) vars(i)
     * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.

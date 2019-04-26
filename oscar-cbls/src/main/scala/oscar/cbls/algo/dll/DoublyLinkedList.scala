@@ -21,7 +21,7 @@
 package oscar.cbls.algo.dll
 
 /** This is a mutable data structure allowing insert,
-  * and delete in O(1L) based on a key mechanism
+  * and delete in O(1) based on a key mechanism
   * @author renaud.delandtsheer@cetic.be
   * @tparam T
   */
@@ -34,7 +34,7 @@ class DoublyLinkedList[T] extends Iterable[T]{
   /**returns the size of the PermaFilteredDLL
     * this is a O(n) method because it is very rarely used.
     * and in this context, we want to keep the memory footprint as small as possible*/
-  override def size: Int ={
+  override def size ={
     var toReturn = 0
     var current = phantom.next
     while(current != phantom){

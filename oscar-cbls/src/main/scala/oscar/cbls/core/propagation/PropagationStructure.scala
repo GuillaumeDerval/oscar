@@ -170,7 +170,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     //this performs the sort on Propagation Elements that do not belong to a strongly connected component,
     // plus the strongly connected components, considered as a single node. */
-    var LayerCount:Int = 0
+    var LayerCount = 0
     if (topologicalSort) {
       computePositionsThroughTopologicalSort(ClusteredPropagationComponents)
       executionQueue = new BinomialHeap[PropagationElement](p => p.position, ClusteredPropagationComponents.size)
@@ -201,7 +201,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   /**This computes the position of the clustered PE, that is: the SCC and the PE not belonging to an SCC*/
   private def computePositionsThroughTopologicalSort(ClusteredPropagationComponents: List[PropagationElement]) {
-    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0})
+    var front: List[PropagationElement] = ClusteredPropagationComponents.filter(n => { n.setCounterToPrecedingCount(); n.position == 0 })
     var position = 0 //la position du prochain noeud place.
     while (!front.isEmpty) {
       val n = front.head
@@ -355,7 +355,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     var currentPos = target
     while (currentPos != null) {
-      if (currentPos.head.uniqueID != -1L)
+      if (currentPos.head.uniqueID != -1)
         Track(currentPos.head.uniqueID) = true
       currentPos = currentPos.tail
     }
@@ -364,7 +364,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       val n = ToExplore.head
       ToExplore = ToExplore.tail
       for (nn <- n.getStaticallyListenedElements)
-        if (nn.uniqueID != -1L && !Track(nn.uniqueID)) {
+        if (nn.uniqueID != -1 && !Track(nn.uniqueID)) {
           ToExplore = QList(nn, ToExplore)
           Track(nn.uniqueID) = true
         }
@@ -378,7 +378,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   def checkUniqueID(): Unit = {
     for (p <- getPropagationElements) {
-      require(p.uniqueID != -1L)
+      require(p.uniqueID != -1)
     }
   }
 
@@ -452,7 +452,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       scheduledElements = null
     }
 
-    var previousLayer = 0L
+    var previousLayer = 0
 
     val anythingDone = executionQueue.nonEmpty
 
@@ -555,7 +555,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
     if (StaticGraph && DynamicGraph){
       for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
+        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1) {
           if (e.getDeterminingElement == f){
             //determining element, blue arrow
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
@@ -571,7 +571,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
             }
           }
         }
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
+        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1) {
           if (!e.getStaticallyListenedElements.exists(p => p==f)){
             //in dynamic graph and not in static one because of bulking
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = red]" + "\n"
@@ -580,13 +580,13 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
       }
     }else if (StaticGraph) {
       for (e <- getPropagationElements) {
-        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1L) {
+        for (f <- e.getStaticallyListenedElements if f.uniqueID != -1) {
           ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = black style=dotted]" + "\n"
         }
       }
     }else if (DynamicGraph) {
       for (e <- getPropagationElements) {
-        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1L) {
+        for (f <- e.getDynamicallyListenedElements if f.uniqueID != -1) {
           if (e.getDeterminingElement == f){
             //determining element, blue arrow
             ToReturn += "   " + nodeName(f) + " -> " + nodeName(e) + "[color = blue]" + "\n"
@@ -603,7 +603,7 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 
   /**
    * Builds a dictionary to store data related to the PE.
-   * the dictionary is O(1L), based on an array.
+   * the dictionary is O(1), based on an array.
    * It only works on PE that are registered to this structure.
    * The storage is not initialized, call the initialize to set it to some conventional value.
    * @tparam T the type stored in the data structure
@@ -632,14 +632,14 @@ abstract class PropagationStructure(val verbose: Boolean, val checker: Option[Ch
 }
 
 /**
- * This is a O(1L) dictionary for propagation elements.
+ * This is a O(1) dictionary for propagation elements.
  * It is based on an array, and the keys it support is only the PE that have been reistered
  * to the propagation structure by the time this is instantiated.
  * WARNING: this is not efficient if you do not actually use many of the keys
  * because the instantiated array will be very large compared to your benefits.
  * This might kill cache and RAM for nothing
  *
- * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1L) it is an array, and we allocate the full necessary size
+ * @param MaxNodeID the maximal ID of a node to be stored in the dictionary (since it is O(1) it is an array, and we allocate the full necessary size
  * @tparam T the type stored in this structure
  * @author renaud.delandtsheer@cetic.be
  */
@@ -827,7 +827,7 @@ class StronglyConnectedComponentTopologicalSort(
     }
     scheduledElements = null
 
-    var maxposition: Long = -1L
+    var maxposition: Int = -1
 
     while (!h.isEmpty) {
       val x = h.popFirst()
@@ -1083,7 +1083,7 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
       case ps: PropagationStructure =>
         position = this.getStaticallyListenedElements.count(p => p.schedulingHandler != null)
     }
-    position != 0L
+    position != 0
   }
 
   /**to invoque to force inclusion of the propagation element in the current or next propagation wave. */
@@ -1116,8 +1116,8 @@ class PropagationElement extends BasicPropagationElement with DAGNode {
   /**
    * this is the propagation method that should be overridden by propagation elements.
    * notice that it is only called in a propagation wave if:
-   * 1L: it has been registered for propagation since the last time it was propagated
-   * 2L: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
+   * 1: it has been registered for propagation since the last time it was propagated
+   * 2: it is included in the propagation wave: partial propagation wave do not propagate all propagation elements;
    *    it only propagates the ones that come in the predecessors of the targeted propagation element
    *  overriding this method is optional, so an empty body is provided by default
    */

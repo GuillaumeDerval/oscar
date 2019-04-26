@@ -40,7 +40,7 @@ class ImmutableArray[T:ClassTag](baseValueNeverModified:Array[T],
     if(id >= size) throw new ArrayIndexOutOfBoundsException
     else updates.getOrElse(id,baseValueNeverModified(id))
 
-  def update(id: Long, value: T, fast: Boolean): ImmutableArray[T] = {
+  def update(id: Int, value: T, fast: Boolean): ImmutableArray[T] = {
     val tmp = if(id == size) new ImmutableArray[T](baseValueNeverModified,size+1,updates.insert(id,value))
     else if (id < size) new ImmutableArray[T](baseValueNeverModified,size,updates.insert(id,value))
     else throw new ArrayIndexOutOfBoundsException
@@ -61,5 +61,24 @@ class ImmutableArrayIterator[T](on:ImmutableArray[T])extends Iterator[T]{
     val toReturn = on(nextPos)
     nextPos+=1
     toReturn
+  }
+}
+
+object TestImmutableArray extends App{
+
+  val n = 100
+  val referenceArray = Array.tabulate(n)(id => Random.nextInt(id+1))
+  var immutableArray = ImmutableArray.createAndImportBaseValues(referenceArray)
+
+  for(i <- 1 to 1000){
+    val modifiedId = Random.nextInt(n)
+    val newValue = Random.nextInt(n * (modifiedId+1))
+
+    referenceArray(modifiedId) = newValue
+    immutableArray = immutableArray.update(modifiedId,newValue,Random.nextBoolean())
+
+    for(id <- 0 until n){
+      require(referenceArray(id) == immutableArray(id))
+    }
   }
 }

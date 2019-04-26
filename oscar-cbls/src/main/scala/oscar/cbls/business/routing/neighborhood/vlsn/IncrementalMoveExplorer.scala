@@ -18,11 +18,10 @@
 package oscar.cbls.business.routing.neighborhood.vlsn
 
 import oscar.cbls.Objective
-import oscar.cbls._
 import oscar.cbls.core.search.{Neighborhood, _}
 
 abstract sealed class CachedExploration
-case class CachedAtomicMove(move:Move,delta:Long) extends CachedExploration
+case class CachedAtomicMove(move:Move,delta:Int) extends CachedExploration
 case object CachedAtomicNoMove extends CachedExploration
 case object CacheDirty extends CachedExploration
 
@@ -40,7 +39,7 @@ object CachedExplorations{
             performedMoves:List[Edge],
             v:Int):Option[CachedExplorations] = {
 
-    var dirtyNodes: SortedSet[Long] = SortedSet.empty
+    var dirtyNodes: SortedSet[Int] = SortedSet.empty
     val isDirtyVehicle = Array.fill[Boolean](v)(false)
 
     for (edge: Edge <- performedMoves) {
@@ -73,28 +72,28 @@ object CachedExplorations{
 
     if(isDirtyVehicle.forall(p => p)) None
     else Some(new CachedExplorations(oldGraph: VLSNGraph,
-      dirtyNodes:SortedSet[Long],
+      dirtyNodes:SortedSet[Int],
       isDirtyVehicle: Array[Boolean],
       v: Int))
   }
 }
 
 class CachedExplorations(oldGraph:VLSNGraph,
-                         dirtyNodes:SortedSet[Long], //only for unrouted nodes that were inserted of newly removed
+                         dirtyNodes:SortedSet[Int], //only for unrouted nodes that were inserted of newly removed
                          isDirtyVehicle:Array[Boolean],
                          v:Int) {
 
-  def isDirtyNode(node: Long): Boolean = dirtyNodes.contains(node)
+  def isDirtyNode(node: Int): Boolean = dirtyNodes.contains(node)
 
   //TODO: use arrays for O(1) access?
-  var cachedInsertNoEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //unroute,targetVehicle
-  var cachedInsertWithEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //movedNode, ejectedNode
-  var cachedMoveNoEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty //node,vehicle
-  var cachedMoveWithEject: SortedMap[(Long, Long), CachedAtomicMove] = SortedMap.empty
-  var cachedRemove: SortedMap[(Long), CachedAtomicMove] = SortedMap.empty
+  var cachedInsertNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //unroute,targetVehicle
+  var cachedInsertWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //
+  var cachedMoveNoEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty //node,vehicle
+  var cachedMoveWithEject: SortedMap[(Int, Int), CachedAtomicMove] = SortedMap.empty
+  var cachedRemove: SortedMap[(Int), CachedAtomicMove] = SortedMap.empty
 
-  var size = 0L
-  var dirtyEdge = 0L
+  var size = 0
+  var dirtyEdge = 0
 
   //TODO: on peut en fait sauver beaucoup plus
   //pour les moves avec eject: on peut sauver les moves si le target vehicle est clean et que le source node est clean (on doit pas regarder le vehicle source)
@@ -109,37 +108,37 @@ class CachedExplorations(oldGraph:VLSNGraph,
       case InsertNoEject =>
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedInsertNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
-          size += 1L
+          size += 1
         }else{
-          dirtyEdge += 1L
+          dirtyEdge += 1
         }
       case InsertWithEject =>
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedInsertWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
-          size += 1L
+          size += 1
         }else{
-          dirtyEdge += 1L
+          dirtyEdge += 1
         }
       case MoveNoEject =>
         if(!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedMoveNoEject += (fromNode.representedNode, toNode.vehicle) -> CachedAtomicMove(edge)
-          size += 1L
+          size += 1
         }else{
-          dirtyEdge += 1L
+          dirtyEdge += 1
         }
       case MoveWithEject =>
         if (!isDirtyNode(fromNode.representedNode) && !isDirtyVehicle(toNode.vehicle)) {
           cachedMoveWithEject += (fromNode.representedNode, toNode.representedNode) -> CachedAtomicMove(edge)
-          size += 1L
+          size += 1
         }else{
-          dirtyEdge += 1L
+          dirtyEdge += 1
         }
       case Remove =>
         if(!isDirtyVehicle(fromNode.vehicle)) {
           cachedRemove += fromNode.representedNode -> CachedAtomicMove(edge)
-          size += 1L
+          size += 1
         }else{
-          dirtyEdge += 1L
+          dirtyEdge += 1
         }
       case _ => ; // non cachable
     }
@@ -148,8 +147,8 @@ class CachedExplorations(oldGraph:VLSNGraph,
   //println("cacheSize:" + size)
   //println("dirtyEdges:" + dirtyEdge)
 
-  def getInsertOnVehicleNoRemove(unroutedNodeToInsert: Long,
-                                 targetVehicleForInsertion: Long): CachedExploration = {
+  def getInsertOnVehicleNoRemove(unroutedNodeToInsert: Int,
+                                 targetVehicleForInsertion: Int): CachedExploration = {
     if (!isDirtyNode(unroutedNodeToInsert) && !isDirtyVehicle(targetVehicleForInsertion)) {
       cachedInsertNoEject.getOrElse((unroutedNodeToInsert, targetVehicleForInsertion), CachedAtomicNoMove)
     } else {
@@ -157,9 +156,9 @@ class CachedExplorations(oldGraph:VLSNGraph,
     }
   }
 
-  def getInsertOnVehicleWithRemove(unroutedNodeToInsert: Long,
-                                   targetVehicleForInsertion: Long,
-                                   removedNode: Long): CachedExploration = {
+  def getInsertOnVehicleWithRemove(unroutedNodeToInsert: Int,
+                                   targetVehicleForInsertion: Int,
+                                   removedNode: Int): CachedExploration = {
     if (!isDirtyNode(unroutedNodeToInsert) && !isDirtyVehicle(targetVehicleForInsertion)) {
       cachedInsertWithEject.getOrElse((unroutedNodeToInsert, removedNode), CachedAtomicNoMove)
     } else {
@@ -167,7 +166,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
     }
   }
 
-  def getMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle: Long, targetVehicle: Long): CachedExploration = {
+  def getMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicle: Int): CachedExploration = {
     if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle)) {
       cachedMoveNoEject.getOrElse((routingNodeToMove, targetVehicle), CachedAtomicNoMove)
     } else {
@@ -175,7 +174,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
     }
   }
 
-  def getMoveToVehicleWithRemove(routingNodeToMove: Long, fromVehicle: Long, targetVehicle: Long, removedNode: Long): CachedExploration = {
+  def getMoveToVehicleWithRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicle: Int, removedNode: Int): CachedExploration = {
     if (!isDirtyNode(routingNodeToMove) && !isDirtyVehicle(targetVehicle)) {
       cachedMoveWithEject.getOrElse((routingNodeToMove, removedNode), CachedAtomicNoMove)
     } else {
@@ -183,7 +182,7 @@ class CachedExplorations(oldGraph:VLSNGraph,
     }
   }
 
-  def getRemoveNode(removedNode: Long, fromVehicle: Long): CachedExploration = {
+  def getRemoveNode(removedNode: Int, fromVehicle: Int): CachedExploration = {
     if (!isDirtyVehicle(fromVehicle)) {
       cachedRemove.getOrElse(removedNode, CachedAtomicNoMove)
     } else {
@@ -193,15 +192,15 @@ class CachedExplorations(oldGraph:VLSNGraph,
 }
 
 class IncrementalMoveExplorerAlgo(v:Int,
-                                  vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
-                                  unroutedNodesToInsert:Iterable[Long],
-                                  nodeToRelevantVehicles:Map[Long,Iterable[Long]],
+                                  vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+                                  unroutedNodesToInsert:Iterable[Int],
+                                  nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-                                  targetVehicleNodeToInsertNeighborhood:Long => Long => Neighborhood,
-                                  targetVehicleNodeToMoveNeighborhood:Long => Long => Neighborhood,
-                                  nodeToRemoveNeighborhood:Long => Neighborhood,
+                                  targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+                                  targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
+                                  nodeToRemoveNeighborhood:Int => Neighborhood,
 
-                                  removeAndReInsert:Long => () => Unit,
+                                  removeAndReInsert:Int => () => Unit,
                                   useDirectInsert:Boolean,
 
                                   vehicleToObjectives:Array[Objective],
@@ -211,15 +210,15 @@ class IncrementalMoveExplorerAlgo(v:Int,
                                   cached:CachedExplorations
                                  )
   extends MoveExplorerAlgo(v:Int,
-    vehicleToRoutedNodes:SortedMap[Long,Iterable[Long]],
-    unroutedNodesToInsert:Iterable[Long],
-    nodeToRelevantVehicles:Map[Long,Iterable[Long]],
+    vehicleToRoutedNodes:SortedMap[Int,Iterable[Int]],
+    unroutedNodesToInsert:Iterable[Int],
+    nodeToRelevantVehicles:Map[Int,Iterable[Int]],
 
-    targetVehicleNodeToInsertNeighborhood:Long => Long => Neighborhood,
-    targetVehicleNodeToMoveNeighborhood:Long => Long => Neighborhood,
-    nodeToRemoveNeighborhood:Long => Neighborhood,
+    targetVehicleNodeToInsertNeighborhood:Int => Int => Neighborhood,
+    targetVehicleNodeToMoveNeighborhood:Int => Int => Neighborhood,
+    nodeToRemoveNeighborhood:Int => Neighborhood,
 
-    removeAndReInsert:Long => () => Unit,
+    removeAndReInsert:Int => () => Unit,
     useDirectInsert,
 
     vehicleToObjectives:Array[Objective],
@@ -227,9 +226,9 @@ class IncrementalMoveExplorerAlgo(v:Int,
     globalObjective:Objective){
 
 
-  override def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Long, targetVehicleForInsertion: Long, nCached:Boolean): (Move, Long) = {
+  override def evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert: Int, targetVehicleForInsertion: Int, nCached:Boolean): (Move, Int) = {
     cached.getInsertOnVehicleNoRemove(unroutedNodeToInsert,targetVehicleForInsertion) match{
-      case CachedAtomicMove(move:Move,delta:Long) =>
+      case CachedAtomicMove(move:Move,delta:Int) =>
         assert(super.evaluateInsertOnVehicleNoRemove(unroutedNodeToInsert, targetVehicleForInsertion,false)._2 == delta)
         (move,delta)
       case CachedAtomicNoMove =>
@@ -240,9 +239,9 @@ class IncrementalMoveExplorerAlgo(v:Int,
     }
   }
 
-  override def evaluateInsertOnVehicleWithRemove(unroutedNodeToInsert: Long, targetVehicleForInsertion: Long, removedNode: Long, correctedGlobalInit: Long,nCached:Boolean): (Move, Long) = {
+  override def evaluateInsertOnVehicleWithRemove(unroutedNodeToInsert: Int, targetVehicleForInsertion: Int, removedNode: Int, correctedGlobalInit: Int,nCached:Boolean): (Move, Int) = {
     cached.getInsertOnVehicleWithRemove(unroutedNodeToInsert,targetVehicleForInsertion,removedNode) match {
-      case CachedAtomicMove(move: Move, delta: Long) =>
+      case CachedAtomicMove(move: Move, delta: Int) =>
         assert(super.evaluateInsertOnVehicleWithRemove(unroutedNodeToInsert, targetVehicleForInsertion, removedNode, correctedGlobalInit,false)._2 == delta)
         (move, delta)
       case CachedAtomicNoMove =>
@@ -253,25 +252,25 @@ class IncrementalMoveExplorerAlgo(v:Int,
     }
   }
 
-  override def evaluateMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle:Long, targetVehicle: Long,nCached:Boolean): (Move, Long) = {
-    cached.getMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle: Long, targetVehicle: Long) match{
-      case CachedAtomicMove(move: Move, delta: Long) =>
-        assert(super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle:Long, targetVehicle: Long,false)._2 == delta)
+  override def evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicle: Int,nCached:Boolean): (Move, Int) = {
+    cached.getMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicle: Int) match{
+      case CachedAtomicMove(move: Move, delta: Int) =>
+        assert(super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicle: Int,false)._2 == delta)
         (move, delta)
       case CachedAtomicNoMove =>
-        assert(super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle:Long, targetVehicle: Long,false) == null,
+        assert(super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicle: Int,false) == null,
           s"evaluateMoveToVehicleNoRemove(routingNodeToMove:$routingNodeToMove, fromVehicle:$fromVehicle, targetVehicle:$targetVehicle) super:" +
-            super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle:Long, targetVehicle: Long,false))
+            super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicle: Int,false))
         null
       case CacheDirty =>
-        super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Long, fromVehicle:Long, targetVehicle: Long,true)
+        super.evaluateMoveToVehicleNoRemove(routingNodeToMove: Int, fromVehicle:Int, targetVehicle: Int,true)
     }
   }
 
-  override def evaluateMoveToVehicleWithRemove(routingNodeToMove: Long, fromVehicle: Long, targetVehicleID: Long, removedNode: Long,nCached:Boolean): (Move, Long) = {
+  override def evaluateMoveToVehicleWithRemove(routingNodeToMove: Int, fromVehicle: Int, targetVehicleID: Int, removedNode: Int,nCached:Boolean): (Move, Int) = {
 
     cached.getMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, removedNode) match{
-      case CachedAtomicMove(move: Move, delta: Long) =>
+      case CachedAtomicMove(move: Move, delta: Int) =>
         assert(super.evaluateMoveToVehicleWithRemove(routingNodeToMove, fromVehicle, targetVehicleID, removedNode,false)._2 == delta)
         (move, delta)
       case CachedAtomicNoMove =>
@@ -283,9 +282,9 @@ class IncrementalMoveExplorerAlgo(v:Int,
     }
   }
 
-  override def evaluateRemove(routingNodeToRemove: Long, fromVehicle: Long): (Move, Long) = {
+  override def evaluateRemove(routingNodeToRemove: Int, fromVehicle: Int): (Move, Int) = {
     cached.getRemoveNode(routingNodeToRemove,fromVehicle) match{
-      case CachedAtomicMove(move: Move, delta: Long) =>
+      case CachedAtomicMove(move: Move, delta: Int) =>
         assert(super.evaluateRemove(routingNodeToRemove, fromVehicle)._2 == delta)
         (move, delta)
       case CachedAtomicNoMove =>

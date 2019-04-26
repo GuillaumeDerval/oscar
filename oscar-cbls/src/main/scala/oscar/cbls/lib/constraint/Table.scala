@@ -19,14 +19,13 @@
 
 package oscar.cbls.lib.constraint
 
-import oscar.cbls.core.{ChangingIntValue, IntNotificationTarget, Invariant}
+import oscar.cbls.core.computation._
 import oscar.cbls.core.constraint.Constraint
 import oscar.cbls.core.propagation.Checker
 import oscar.cbls.lib.invariant.logic.{IntElement, IntElementNoVar}
 import oscar.cbls.lib.invariant.minmax.ArgMin
 import oscar.cbls.lib.invariant.numeric.{Dist, Step}
 import oscar.cbls.lib.invariant.set.TakeAny
-import oscar.cbls._
 
 
 /**
@@ -39,8 +38,7 @@ import oscar.cbls._
   * @author gustav.bjordal@it.uu.se
   */
 
-case class Table(variables: Array[IntValue], table:Array[Array[Long]])
-  extends Invariant with Constraint with IntNotificationTarget{
+case class Table(variables: Array[IntValue], table:Array[Array[Int]]) extends Invariant with Constraint with IntNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(variables)
   registerConstrainedVariables(variables)
@@ -50,8 +48,8 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
 
   val rowViolation:Array[CBLSIntVar] = Array.tabulate(table.size)( i => {
     val tmp = CBLSIntVar(this.model,
-                         table(i).zip(variables).foldLeft(0L)((acc, p) => acc + (if (p._1 == p._2.value) 0L else 1L)),
-                         //table(i).zip(variables).foldLeft(0L)((acc, p) => acc + Math.abs(p._1 - p._2.value)),
+                         table(i).zip(variables).foldLeft(0)((acc, p) => acc + (if (p._1 == p._2.value) 0 else 1)),
+                         //table(i).zip(variables).foldLeft(0)((acc, p) => acc + Math.abs(p._1 - p._2.value)),
                          0 to table.size)
     tmp.setDefiningInvariant(this)
     tmp
@@ -60,10 +58,10 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
 
   val minViolatingRows = ArgMin(rowViolation.asInstanceOf[Array[IntValue]])
 
-  val aMinViolatingRow = TakeAny(minViolatingRows,0L)
+  val aMinViolatingRow = TakeAny(minViolatingRows,0)
 
   val variableViolation:Array[IntValue] = Array.tabulate(variables.length)( i =>
-    Step(Dist(variables(i), IntElementNoVar(aMinViolatingRow, table.map(_(i)))), 0L,1L,0L)
+    Step(Dist(variables(i), IntElementNoVar(aMinViolatingRow, table.map(_(i)))), 0,1,0)
   )
   /** returns the violation associated with variable v in this constraint
     * all variables that are declared as constraint should have an associated violation degree.
@@ -72,10 +70,10 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     * */
   override def violation(v: Value): IntValue = {
     val variablesIndex = variables.indexOf(v)
-    if(variablesIndex >= 0L){
+    if(variablesIndex >= 0){
       variableViolation(variablesIndex)
     }else{
-      0L
+      0
     }
   }
   val minViolation = IntElement(aMinViolatingRow,rowViolation.asInstanceOf[Array[IntValue]])//MinArray(rowViolation.asInstanceOf[Array[IntValue]])
@@ -91,21 +89,21 @@ case class Table(variables: Array[IntValue], table:Array[Array[Long]])
     c.check(minViolation.value == rowViolation.map(_.value).min, Some("Min violation is not min"))
     c.check(rowViolation(aMinViolatingRow.value).value == minViolation.value,Some("Min row is wrong"))
     for(i <- variables.indices){
-      c.check(variableViolation(i).value == ( if(variables(i).value == table(aMinViolatingRow.value)(i)) 0L else 1L), Some("Violation is not correct"))
+      c.check(variableViolation(i).value == ( if(variables(i).value == table(aMinViolatingRow.value)(i)) 0 else 1), Some("Violation is not correct"))
     }
   }
 
  @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int): Unit = {
    assert(OldVal != NewVal)
    for(r <- table.indices) {
      val row = table(r)
      //rowViolation(r) :+= Math.abs(NewVal-row(index))-Math.abs(OldVal-row(index))
 
      if(row(index) == OldVal){
-       rowViolation(r) :+= 1L
+       rowViolation(r) :+= 1
      }else if(row(index) == NewVal){
-       rowViolation(r) :-= 1L
+       rowViolation(r) :-= 1
      }
    }
   }

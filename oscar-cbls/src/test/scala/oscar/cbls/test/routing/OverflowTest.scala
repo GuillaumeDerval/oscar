@@ -1,5 +1,5 @@
 package oscar.cbls.test.routing
-/*
+
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 
@@ -47,9 +47,9 @@ object OverflowTest extends App{
 
   explore1(1,List(() => {
     explore1(4,List(() =>
-      explore1(3,List(checkPartial))))
+      explore1(3,List(() => checkPartial()))))
     explore1(2,List(() =>
-      explore1(3,List(checkTotal))))
+      explore1(3,List(() => checkTotal()))))
   }))
 
   route.move(1,1,9,false)
@@ -58,10 +58,9 @@ object OverflowTest extends App{
 
 
   explore1(3,List(
-    () => explore1(2,List(checkPartial)),
-    () => explore1(3,List(checkTotal)))
+    () => explore1(2,List(() => checkPartial())),
+    () => explore1(3,List(() => checkTotal())))
   )
   route.move(1,1,9,false)
 
 }
-*/

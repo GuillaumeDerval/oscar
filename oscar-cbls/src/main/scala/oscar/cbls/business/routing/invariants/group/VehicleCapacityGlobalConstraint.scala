@@ -1,22 +1,20 @@
 package oscar.cbls.lib.invariant.routing.capa.stagequentinmeurisse
-/*
+
 import oscar.cbls.algo.rb.{RedBlackTreeMap, RedBlackTreeMapExplorer}
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group.PreComputeInvariant
 import oscar.cbls.core.computation.{CBLSIntVar, ChangingSeqValue}
 import oscar.cbls.core.propagation.Checker
 
-*/
+
 /**
   * @author Quentin Meurisse
-  *
-  *
-
+  */
 object VehicleCapacityGlobalConstraint {
   def apply(routes: ChangingSeqValue,
             v: Int,
-            deltaAtNode: Array[Long],
-            maxCapacity: Long,
+            deltaAtNode: Array[Int],
+            maxCapacity: Int,
             violation: Array[CBLSIntVar],
             contentAtEndOfVehicleRoute: Array[CBLSIntVar]): VehicleCapacityGlobalConstraint =
     new VehicleCapacityGlobalConstraint(routes, v, deltaAtNode, maxCapacity, violation, contentAtEndOfVehicleRoute)
@@ -24,8 +22,8 @@ object VehicleCapacityGlobalConstraint {
 
 class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
                                       v: Int,
-                                      deltaAtNode: Array[Long],
-                                      maxCapacity: Long,
+                                      deltaAtNode: Array[Int],
+                                      maxCapacity: Int,
                                       violation: Array[CBLSIntVar],
                                       contentAtEndOfVehicleRoute: Array[CBLSIntVar])
   extends PreComputeInvariant[PreComputeClass, SavedValuesAtCheckpoint](routes, v) {
@@ -36,8 +34,8 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
   contentAtEndOfVehicleRoute.foreach(_.setDefiningInvariant(this))
 
 
-  def addToReachCount(level: Long, addTo: RedBlackTreeMap[Long]): RedBlackTreeMap[Long] = {
-    addTo.insert(level, addTo.getOrElse(level, 0L) + 1L)
+  def addToReachCount(level: Int, addTo: RedBlackTreeMap[Int]): RedBlackTreeMap[Int] = {
+    addTo.insert(level, addTo.getOrElse(level, 0) + 1)
   }
 
   /**
@@ -49,16 +47,16 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     * @param maxValueIncluded
     * @return
     */
-  def computeIntegralInBoundsAbove(fromFunction: RedBlackTreeMap[Long], toFunction: RedBlackTreeMap[Long], minValueIncluded: Long, maxValueIncluded: Long): Long = {
+  def computeIntegralInBoundsAbove(fromFunction: RedBlackTreeMap[Int], toFunction: RedBlackTreeMap[Int], minValueIncluded: Int, maxValueIncluded: Int): Int = {
     //the integral goes from high to low values
 
     @inline
-    def stepIntegral(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Long]], nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Long]],
-                     positionOfIntegrator: Long, width: Long, acc: Long,
-                     deltaWidth: Long, pivotValue: Long): Long = {
+    def stepIntegral(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Int]], nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Int]],
+                     positionOfIntegrator: Int, width: Int, acc: Int,
+                     deltaWidth: Int, pivotValue: Int): Int = {
       if (pivotValue > maxValueIncluded) {
         //this pivot is still above the integration box
-        require(acc == 0L)
+        require(acc == 0)
         computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt, nextPositionOnToOpt, pivotValue, width + deltaWidth, acc)
       } else {
         //this pivot is below or equal to the maxValueIncluded
@@ -69,21 +67,21 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
             acc + (valueAboveIncluded - pivotValue) * width)
         } else {
           //add a square and finish
-          acc + (valueAboveIncluded - minValueIncluded + 1L) * width
+          acc + (valueAboveIncluded - minValueIncluded + 1) * width
         }
       }
     }
 
 
-    def computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Long]],
-                                            nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Long]],
-                                            positionOfIntegrator: Long, width: Long, acc: Long): Long = {
+    def computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Int]],
+                                            nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Int]],
+                                            positionOfIntegrator: Int, width: Int, acc: Int): Int = {
       (nextPositionOnFromOpt, nextPositionOnToOpt) match {
         case (None, None) =>
           if (positionOfIntegrator >= maxValueIncluded) {
-            acc + width * (maxValueIncluded - minValueIncluded + 1L)
+            acc + width * (maxValueIncluded - minValueIncluded + 1)
           } else if (positionOfIntegrator >= minValueIncluded) {
-            acc + width * (positionOfIntegrator - minValueIncluded + 1L)
+            acc + width * (positionOfIntegrator - minValueIncluded + 1)
           } else {
             acc
           }
@@ -112,11 +110,11 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
       }
     }
 
-    computeIntegralInBoundsOptFromOptTo(fromFunction.biggestPosition, toFunction.biggestPosition, Long.MaxValue, 0L, 0L)
+    computeIntegralInBoundsOptFromOptTo(fromFunction.biggestPosition, toFunction.biggestPosition, Int.MaxValue, 0, 0)
   }
 
   /**
-    * compute the area between maxValueIncluded + 1L and (toFunction(x) - fromFunction(x)) for x in [minValueIncluded, maxValueIncluded]
+    * compute the area between maxValueIncluded + 1 and (toFunction(x) - fromFunction(x)) for x in [minValueIncluded, maxValueIncluded]
     *
     * @param fromFunction
     * @param toFunction
@@ -125,14 +123,14 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     * @return
     */
 
-  def computeIntegralInBoundsUnder(fromFunction: RedBlackTreeMap[Long], toFunction: RedBlackTreeMap[Long], minValueIncluded: Long, maxValueIncluded: Long): Long = {
+  def computeIntegralInBoundsUnder(fromFunction: RedBlackTreeMap[Int], toFunction: RedBlackTreeMap[Int], minValueIncluded: Int, maxValueIncluded: Int): Int = {
     // the integral goes from low to high values
     @inline
-    def stepIntegral(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Long]], nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Long]],
-                     positionOfIntegrator: Long, width: Long, acc: Long,
-                     deltaWidth: Long, pivotValue: Long): Long = {
+    def stepIntegral(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Int]], nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Int]],
+                     positionOfIntegrator: Int, width: Int, acc: Int,
+                     deltaWidth: Int, pivotValue: Int): Int = {
       if (pivotValue < minValueIncluded) {
-        require(acc == 0L)
+        require(acc == 0)
         computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt, nextPositionOnToOpt, pivotValue, width + deltaWidth, acc)
       } else {
         val valueUnderIncluded = if (positionOfIntegrator < minValueIncluded) minValueIncluded else positionOfIntegrator
@@ -140,20 +138,20 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
           computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt, nextPositionOnToOpt, pivotValue, width + deltaWidth,
             acc + (pivotValue - valueUnderIncluded) * width)
         } else {
-          acc + (maxValueIncluded - valueUnderIncluded + 1L) * width
+          acc + (maxValueIncluded - valueUnderIncluded + 1) * width
         }
       }
     }
 
-    def computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Long]],
-                                            nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Long]],
-                                            positionOfIntegrator: Long, width: Long, acc: Long): Long = {
+    def computeIntegralInBoundsOptFromOptTo(nextPositionOnFromOpt: Option[RedBlackTreeMapExplorer[Int]],
+                                            nextPositionOnToOpt: Option[RedBlackTreeMapExplorer[Int]],
+                                            positionOfIntegrator: Int, width: Int, acc: Int): Int = {
       (nextPositionOnFromOpt, nextPositionOnToOpt) match {
         case (None, None) =>
           if (positionOfIntegrator <= minValueIncluded) {
-            acc + width * (maxValueIncluded - minValueIncluded + 1L)
+            acc + width * (maxValueIncluded - minValueIncluded + 1)
           } else if (positionOfIntegrator <= maxValueIncluded) {
-            acc + width * (maxValueIncluded - positionOfIntegrator + 1L)
+            acc + width * (maxValueIncluded - positionOfIntegrator + 1)
           } else {
             acc
           }
@@ -182,7 +180,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
       }
     }
 
-    computeIntegralInBoundsOptFromOptTo(fromFunction.smallestPosition, toFunction.smallestPosition, Long.MinValue, 0L, 0L)
+    computeIntegralInBoundsOptFromOptTo(fromFunction.smallestPosition, toFunction.smallestPosition, Int.MinValue, 0, 0)
   }
 
   /**
@@ -191,10 +189,10 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     * @param vehicle
     * @return (the violation of the vehicle; the content of the vehicle when returning to its home)
     */
-  def computeViolationFromScratchNoPrecompute(seq: IntSequence, vehicle: Long): (Long, Long) = {
+  def computeViolationFromScratchNoPrecompute(seq: IntSequence, vehicle: Int): (Int, Int) = {
     var currentContent = deltaAtNode(vehicle)
     var viol = if (currentContent > maxCapacity) currentContent - maxCapacity // violation at start node
-    else 0L
+    else 0
     var explorerOpt = seq.explorerAtAnyOccurrence(vehicle).head.next
 
     while (explorerOpt match {
@@ -205,7 +203,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
           //continuing the same vehicle
           currentContent = currentContent + deltaAtNode(node)
           if (currentContent > maxCapacity) {
-            //overshoot, add to violation, 1L hop
+            //overshoot, add to violation, 1 hop
             viol += (currentContent - maxCapacity)
           }
           explorerOpt = explorer.next
@@ -218,11 +216,11 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     (viol, currentContent)
   }
 
-  override def neutralElement: PreComputeClass = SumOfPreCompute(0L, 0L)
+  override def neutralElement: PreComputeClass = SumOfPreCompute(0, 0)
 
   def isNeutralElement(x: PreComputeClass): Boolean = {
     x match {
-      case SumOfPreCompute(0L, 0L) => true
+      case SumOfPreCompute(0, 0) => true
       case _ => false
     }
   }
@@ -238,7 +236,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
     val a =
       if (isNeutralElement(x))
-        PreComputeContainer(None, None, 0L)
+        PreComputeContainer(None, None, 0)
       else
         x.asInstanceOf[PreComputeContainer]
     val b = y.asInstanceOf[PreComputeContainer]
@@ -254,15 +252,15 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
       val fromNode = a.prevNodeAtCheckpoint0
       val toNode = b.prevNodeAtCheckpoint0.get
       val integralFrom = fromNode match {
-        case None => RedBlackTreeMap.empty[Long]
+        case None => RedBlackTreeMap.empty[Int]
         case Some(node) =>
           a.node match {
-            case None => RedBlackTreeMap.empty[Long]
-            case Some(n) if n < v => RedBlackTreeMap.empty[Long]
-            case Some(n) if n >= v => preComputedValues(n).asInstanceOf[PreComputeContainer].rb
+            case None => RedBlackTreeMap.empty[Int]
+            case Some(n) if n < v => RedBlackTreeMap.empty[Int]
+            case Some(n) if n >= v => preComputes(n).asInstanceOf[PreComputeContainer].rb
           }
       }
-      val integralTo = preComputedValues(toNode).asInstanceOf[PreComputeContainer].rb
+      val integralTo = preComputes(toNode).asInstanceOf[PreComputeContainer].rb
 
       DeltaOfPreComputeForFlippedSegment(integralFrom, integralTo, deltaOfContent, b.contentAtNodeAtCheckpoint)
     }
@@ -286,7 +284,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
           computeIntegralInBoundsAbove(
             fromRB,
             toRB,
-            maxCapacity - diffOfContentOnSegmentSinceCheckpoint + 1L,
+            maxCapacity - diffOfContentOnSegmentSinceCheckpoint + 1,
             toRB.biggestPosition.get.key)
 
         SumOfPreCompute(a.totalViolation + violationOnSegment, a.totalContent + deltaOfContent)
@@ -298,7 +296,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
             fromRB,
             toRB,
             toRB.smallestPosition.get.key,
-            a.totalContent + contentAtPrevNode - maxCapacity - 1L)
+            a.totalContent + contentAtPrevNode - maxCapacity - 1)
 
         SumOfPreCompute(a.totalViolation + violationOnSegment, a.totalContent + deltaOfContent)
 
@@ -309,7 +307,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
         while ( {
           val currentNode = explorer.value
           content += deltaAtNode(currentNode)
-          if (content - maxCapacity > 0L)
+          if (content - maxCapacity > 0)
             viol += (content - maxCapacity)
           if (currentNode == toNode) false
           else {
@@ -322,7 +320,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     toReturn
   }
 
-  override def nodesToPreCompute(fromNode: Long, toNode: Long): PreComputeClass = DeltaFromScratch(fromNode, toNode)
+  override def nodesToPreCompute(fromNode: Int, toNode: Int): PreComputeClass = DeltaFromScratch(fromNode, toNode)
 
 
   override def computeAndAffectOutputFromScratch(seq: IntSequence) = {
@@ -334,18 +332,18 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     }
   }
 
-  override def computeAndAffectOutputWithPreCompute(value: PreComputeClass, vehicle: Long) = {
+  override def computeAndAffectOutputWithPreCompute(value: PreComputeClass, vehicle: Int) = {
     val newValue = value.asInstanceOf[SumOfPreCompute]
     violation(vehicle) := newValue.totalViolation
     contentAtEndOfVehicleRoute(vehicle) := newValue.totalContent
   }
 
-  override def restoreValueAtCheckpoint(value: SavedValuesAtCheckpoint, checkpointLevel: Long) = {
+  override def restoreValueAtCheckpoint(value: SavedValuesAtCheckpoint, checkpointLevel: Int) = {
     for (vehicle <- changedVehiclesSinceCheckpoint0.indicesAtTrue) {
       violation(vehicle) := value.violationAtCheckpoint(vehicle)
       contentAtEndOfVehicleRoute(vehicle) := value.contentAtEndOfVehicleRouteAtCheckpoint(vehicle)
     }
-    if (checkpointLevel == 0L)
+    if (checkpointLevel == 0)
       changedVehiclesSinceCheckpoint0.all = false
   }
 
@@ -355,11 +353,11 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
     SavedValuesAtCheckpoint(currentViolation, currentContentAtEnd)
   }
 
-  override def doPreComputeAtCheckpoint0(vehicle: Long,checkpointValue:IntSequence) = {
+  override def doPreComputeAtCheckpoint0(vehicle: Int,checkpointValue:IntSequence) = {
     val explorerAtVehicleStart = checkpointValue.explorerAtAnyOccurrence(vehicle).head
     val contentAtStart = deltaAtNode(vehicle)
-    val preComputeAtStart = PreComputeContainer(Some(vehicle),None, contentAtStart,RedBlackTreeMap(List((contentAtStart, 1L))))
-    preComputedValues(vehicle) = preComputeAtStart
+    val preComputeAtStart = PreComputeContainer(Some(vehicle),None, contentAtStart,RedBlackTreeMap(List((contentAtStart, 1))))
+    preComputes(vehicle) = preComputeAtStart
 
     var explorerOpt = explorerAtVehicleStart.next
     var prevNode = vehicle
@@ -370,7 +368,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
         val node = explorer.value
         if (node >= v) {
           //continuing the same vehicle
-          val preComputeAtPrev = preComputedValues(prevNode).asInstanceOf[PreComputeContainer]
+          val preComputeAtPrev = preComputes(prevNode).asInstanceOf[PreComputeContainer]
 
           val contentAtNode = preComputeAtPrev.contentAtNodeAtCheckpoint + deltaAtNode(node)
 
@@ -378,7 +376,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
           val preComputeAtNode = PreComputeContainer(Some(node), Some(prevNode), contentAtNode,rbAtNode)
 
-          preComputedValues(node) = preComputeAtNode
+          preComputes(node) = preComputeAtNode
 
           prevNode = node
           explorerOpt = explorer.next
@@ -400,11 +398,11 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
 
   override def toString: String = {
     "VehicleCapacity(routes: " + routes.name + " n: " + n + " v: " + v + " maxCapacity: " + maxCapacity + "){\n" +
-      (0L until v).toList.map((vehicle: Long) => {
+      (0 until v).toList.map((vehicle: Int) => {
         val header = "\tvehicle" + vehicle + " contentAtVehicleEnd: " + contentAtEndOfVehicleRoute(vehicle).newValue + " totalViolation: " + violation(vehicle).newValue + "\n"
         var explorerOpt = routes.value.explorerAtAnyOccurrence(vehicle).get.next
         var contentAtNode = deltaAtNode(vehicle)
-        var acc: String = "\tnode: " + f"$vehicle%-7Ld" + "\t" + "deltaAtNode: " + f"${deltaAtNode(vehicle)}%-4Ld" + "\t" + "contentAtNode: " + f"$contentAtNode%-4Ld" + (if (contentAtNode > maxCapacity) "\t" + "violation:" + (contentAtNode - maxCapacity) else "") + "\n"
+        var acc: String = "\tnode: " + f"$vehicle%-7d" + "\t" + "deltaAtNode: " + f"${deltaAtNode(vehicle)}%-4d" + "\t" + "contentAtNode: " + f"$contentAtNode%-4d" + (if (contentAtNode > maxCapacity) "\t" + "violation:" + (contentAtNode - maxCapacity) else "") + "\n"
         var currentRoute = Array(vehicle)
         while (explorerOpt match {
           case None => //at end of last vehicle
@@ -415,7 +413,7 @@ class VehicleCapacityGlobalConstraint(routes: ChangingSeqValue,
           case Some(explorer) if explorer.value >= v =>
             val node = explorer.value
             contentAtNode += deltaAtNode(node)
-            acc += "\tnode: " + f"$node%-7Ld" + "\t" + "deltaAtNode: " + f"${deltaAtNode(node)}%-4Ld" + "\t" + "contentAtNode: " + f"$contentAtNode%-4Ld" + (if (contentAtNode > maxCapacity) "\t" + "violation: " + (contentAtNode - maxCapacity) else "") + "\n"
+            acc += "\tnode: " + f"$node%-7d" + "\t" + "deltaAtNode: " + f"${deltaAtNode(node)}%-4d" + "\t" + "contentAtNode: " + f"$contentAtNode%-4d" + (if (contentAtNode > maxCapacity) "\t" + "violation: " + (contentAtNode - maxCapacity) else "") + "\n"
             explorerOpt = explorer.next
             currentRoute = currentRoute :+ node
             true
@@ -439,10 +437,10 @@ abstract class PreComputeClass
   * @param contentAtNodeAtCheckpoint
   * @param rb RedBlackTreeMap used to compute the integral
   */
-case class PreComputeContainer(node: Option[Long],
-                               prevNodeAtCheckpoint0: Option[Long],
-                               contentAtNodeAtCheckpoint: Long,
-                               rb: RedBlackTreeMap[Long] = RedBlackTreeMap.empty[Long]) extends PreComputeClass
+case class PreComputeContainer(node: Option[Int],
+                               prevNodeAtCheckpoint0: Option[Int],
+                               contentAtNodeAtCheckpoint: Int,
+                               rb: RedBlackTreeMap[Int] = RedBlackTreeMap.empty[Int]) extends PreComputeClass
 
 /**
   * This class is used to not define a minus operator between two red-black tree.
@@ -450,18 +448,18 @@ case class PreComputeContainer(node: Option[Long],
   */
 abstract class DeltaOfPreCompute extends PreComputeClass
 
-case class DeltaOfPreComputeForSegment(fromRB: RedBlackTreeMap[Long],
-                                       toRB: RedBlackTreeMap[Long],
-                                       deltaOfContent: Long,
-                                       contentAtPrevNode: Long) extends DeltaOfPreCompute
+case class DeltaOfPreComputeForSegment(fromRB: RedBlackTreeMap[Int],
+                                       toRB: RedBlackTreeMap[Int],
+                                       deltaOfContent: Int,
+                                       contentAtPrevNode: Int) extends DeltaOfPreCompute
 
-case class DeltaOfPreComputeForFlippedSegment(fromRB: RedBlackTreeMap[Long],
-                                              toRB: RedBlackTreeMap[Long],
-                                              deltaOfContent: Long,
-                                              contentAtToNode: Long) extends DeltaOfPreCompute
+case class DeltaOfPreComputeForFlippedSegment(fromRB: RedBlackTreeMap[Int],
+                                              toRB: RedBlackTreeMap[Int],
+                                              deltaOfContent: Int,
+                                              contentAtToNode: Int) extends DeltaOfPreCompute
 
-case class DeltaFromScratch(fromNode: Long,
-                            toNode: Long) extends DeltaOfPreCompute
+case class DeltaFromScratch(fromNode: Int,
+                            toNode: Int) extends DeltaOfPreCompute
 
 /**
   * Like for minus, we don't define a plus between red-black tree.
@@ -469,8 +467,8 @@ case class DeltaFromScratch(fromNode: Long,
   * @param totalViolation
   * @param totalContent
   */
-case class SumOfPreCompute(totalViolation: Long, totalContent: Long) extends PreComputeClass
+case class SumOfPreCompute(totalViolation: Int, totalContent: Int) extends PreComputeClass
 
 
-case class SavedValuesAtCheckpoint(violationAtCheckpoint: Array[Long],
-                                   contentAtEndOfVehicleRouteAtCheckpoint: Array[Long])*/
+case class SavedValuesAtCheckpoint(violationAtCheckpoint: Array[Int],
+                                   contentAtEndOfVehicleRouteAtCheckpoint: Array[Int])

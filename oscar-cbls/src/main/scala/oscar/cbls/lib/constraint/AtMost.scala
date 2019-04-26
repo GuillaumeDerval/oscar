@@ -38,17 +38,17 @@ import scala.collection.immutable.SortedMap
   *               We use a map to ensure that there is no two bounds on the same value.
   * @author renaud.delandtsheer@cetic.be
   */
-case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]) extends Constraint {
-   assert(variables.size < Long.MaxValue)
+case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Int, IntValue]) extends Constraint {
+   assert(variables.size < Int.MaxValue)
 
   registerConstrainedVariables(variables)
   registerConstrainedVariables(bounds.values)
 
   private val countInvariant = DenseCount.makeDenseCount(variables.toArray)
-  private val offset:Long = countInvariant.offset
+  private val offset:Int = countInvariant.offset
   private val valueCount = countInvariant.counts //v => #occurrence of v+offset in variables
 
-  private val noViolation:IntValue = 0L
+  private val noViolation:IntValue = 0
   private val violationByVal:Array[IntValue] = Array.tabulate(valueCount.length)(_ => noViolation)
 
   for((value,bound) <- bounds){
@@ -86,9 +86,9 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]
   }
 
   override def checkInternals(c: Checker) {
-    var checkBounds:SortedMap[Long, Long] = SortedMap.empty
-    for(i <- bounds.keys) checkBounds += ((i,0L))
-    for (v <- variables) if (checkBounds.isDefinedAt(v.value)) checkBounds += ((v.value,checkBounds(v.value) +1L))
+    var checkBounds:SortedMap[Int, Int] = SortedMap.empty
+    for(i <- bounds.keys) checkBounds += ((i,0))
+    for (v <- variables) if (checkBounds.isDefinedAt(v.value)) checkBounds += ((v.value,checkBounds(v.value) +1))
 
     for (v <- variables){
       /*The violation of a variable is zero if its value is not the one of a bound.
@@ -96,15 +96,15 @@ case class AtMost(variables:Iterable[IntValue], bounds:SortedMap[Long, IntValue]
         */
       val violationOfV = violation(v)
       val expectedViolation =
-        if (checkBounds.isDefinedAt(v.value)) 0L.max(checkBounds(v.value) - bounds(v.value).value)
-        else 0L
+        if (checkBounds.isDefinedAt(v.value)) 0.max(checkBounds(v.value) - bounds(v.value).value)
+        else 0
       c.check(violationOfV.value == expectedViolation, Some("" + violationOfV + " == expectedViolation (" + expectedViolation + ")"))
     }
 
     /*The violation of the constraint is the sum on all bound of the number of variable that are in excess.
       * the number of variable in excess is the max between zero and
       * (the number of variable that have the value of the bound minus the bound).*/
-    var summedViolation = 0L
+    var summedViolation = 0
     for(i <- bounds.keys){
       if (checkBounds(i) > bounds(i).value) summedViolation += (checkBounds(i) - bounds(i).value)
     }

@@ -20,7 +20,7 @@
 
 
 package oscar.examples.cbls.old
-/*
+
 import oscar.cbls._
 import oscar.cbls.lib.search.LinearSelectorClass
 import oscar.cbls.util.StopWatch
@@ -96,4 +96,3 @@ object PigeonHoles extends LinearSelectorClass with StopWatch {
     println("run time: "+ getWatchString)
   }
 }
-*/

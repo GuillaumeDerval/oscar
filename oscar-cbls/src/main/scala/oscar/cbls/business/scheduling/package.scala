@@ -17,7 +17,7 @@
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-/*
+
 package oscar.cbls.business
 
 /**
@@ -36,4 +36,3 @@ package oscar.cbls.business
 package object scheduling {
 
 }
-*/

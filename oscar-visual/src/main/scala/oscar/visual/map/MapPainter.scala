@@ -104,6 +104,7 @@ class MapPainter(map : VisualMap) extends Painter[JXMapViewer] {
             
             
 		}
+		
 
 		
 

@@ -44,10 +44,9 @@ object WareHouseLocationVisu extends App with StopWatch{
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
-  val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) =
-    WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
+  val (costForOpeningWarehouse1,distanceCost,warehousePositions,deliveryPositions,warehouseToWarehouseDistances) = WarehouseLocationGenerator.problemWithPositions(W,D,0,1000,3)
 
-    val costForOpeningWarehouse =  Array.fill[Long](W)(1000)
+    val costForOpeningWarehouse =  Array.fill(W)(1000)
 
   val m = Store() //checker = Some(new ErrorChecker()))
 
@@ -59,6 +58,7 @@ object WareHouseLocationVisu extends App with StopWatch{
 
   val distanceToNearestOpenWarehouseLazy = Array.tabulate(D)(d =>
     new MinConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse,maxDiameter = 2))
+
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouseLazy) + Sum(costForOpeningWarehouse, openWarehouses))
 
@@ -108,7 +108,7 @@ object WareHouseLocationVisu extends App with StopWatch{
   maxDepth = width,
   intermediaryStops = true)
 
-  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Long] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
+  def swapsK(k:Int,openWarehoueseTocConsider:()=>Iterable[Int] = openWarehouses) = SwapsNeighborhood(warehouseOpenArray,
     searchZone1 = openWarehoueseTocConsider,
     searchZone2 = () => (firstWareHouse,_) => kNearestClosedWarehouses(firstWareHouse,k),
     name = "Swap" + k + "Nearest",
@@ -133,7 +133,7 @@ object WareHouseLocationVisu extends App with StopWatch{
       if(this.getWatch > lastDisplay + displayDelay) {
         visual.redraw(openWarehouses.value)
         lastDisplay = this.getWatch}
-    }) showObjectiveFunction(obj)
+    })
 
   neighborhood.verbose = 2
 

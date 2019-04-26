@@ -31,12 +31,12 @@ import scala.collection.immutable.{SortedSet, SortedMap}
  * @author renaud.delandtsheer@cetic.be
  */
 trait ElementInvariants{
-  /** if (ifVar >0L) then thenVar else elveVar
+  /** if (ifVar >0) then thenVar else elveVar
     * @param ifVar the condition (IntVar)
-    * @param thenVar the returned value if ifVar > 0L
-    * @param elseVar the returned value if ifVar <= 0L
+    * @param thenVar the returned value if ifVar > 0
+    * @param elseVar the returned value if ifVar <= 0
     * */
-  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Long = 0L) = IntITE(ifVar, thenVar, elseVar, pivot)
+  def intITE(ifVar:IntValue, thenVar:IntValue, elseVar:IntValue, pivot: Int = 0) = IntITE(ifVar, thenVar, elseVar, pivot)
 
   /** inputarray[index]
     * @param inputarray is an array of IntVar
@@ -57,25 +57,25 @@ trait ElementInvariants{
 
   /**
    * inputarray[index]
-   * @param inputArray is an array of Long
+   * @param inputArray is an array of int
    * @param index is the index accessing the array
    * @author renaud.delandtsheer@cetic.be
    * */
-  def constantIntElement(index: IntValue, inputArray: Array[Long]) = ConstantIntElement(index, inputArray)
+  def constantIntElement(index: IntValue, inputArray: Array[Int]) = ConstantIntElement(index, inputArray)
 }
 
 trait ClusterInvariants {
 
-  def makeSparseCluster(values : Array[IntValue], clusters : Iterable[Long]) = Cluster.makeSparse(values, clusters)
+  def makeSparseCluster(values : Array[IntValue], clusters : Iterable[Int]) = Cluster.makeSparse(values, clusters)
 
   def makeDenseCluster(values : Array[IntValue]) = Cluster.makeDense(values)
 
-  def makeDenseClusterAssumingMinMax(values : Array[IntValue], themin : Long, themax : Long) = Cluster.makeDenseAssumingMinMax(values, themin, themax)
+  def makeDenseClusterAssumingMinMax(values : Array[IntValue], themin : Int, themax : Int) = Cluster.makeDenseAssumingMinMax(values, themin, themax)
 
   /** maintains a cluster of the indexes of array:  cluster(j) = {i in index of values | values[i] == j}
     * This is considered as a sparse cluster because Cluster is a map and must not cover all possibles values of the values in the array ''values''
     * */
-  def sparseCluster(values : Array[IntValue], Clusters : SortedMap[Long, CBLSSetVar]) = SparseCluster(values, Clusters)
+  def sparseCluster(values : Array[IntValue], Clusters : SortedMap[Int, CBLSSetVar]) = SparseCluster(values, Clusters)
 
   /** Maintains a cluster of the indexes of array: cluster(j) = {i in index of values | values[i] == j}
     * This is considered as a dense cluster because Cluster is an array and must cover all the possibles values of the values in the array ''values''
@@ -139,13 +139,13 @@ trait SetInvariants{
     * @param from
     * @param default
     */
-  def takeAny(from:SetValue,  default:Long) = TakeAny(from:SetValue,  default:Long)
+  def takeAny(from:SetValue,  default:Int) = TakeAny(from:SetValue,  default:Int)
 
   /** Sum(i in on)(fun(i))
     * @param on is the set of integers to add
-    * @param fun is an optional function Long -> Long to apply before summing elements. It is expected not to rely on any variable of the model.
+    * @param fun is an optional function Int -> Int to apply before summing elements. It is expected not to rely on any variable of the model.
     * */
-  def setSum(on:SetValue, fun:(Long => Long) = (a:Long) => a) = SetSum(on, fun)
+  def setSum(on:SetValue, fun:(Int => Int) = (a:Int) => a) = SetSum(on, fun)
 
   /** PRod(i in on)(fun(i))
     * @param on is the set of integers to multiply
@@ -165,8 +165,8 @@ trait CumulativeInvariants{
    * @param profile the usage profile of the resource maintained to profile(time) <== sum(task.amount | task.start <= time <= t.start+t.duration)
    * @param active the tasks that are active maintained to active(time) <== (task.indices | task.start <= time <= t.start+t.duration)
    */
-  def cumulative(indices:Array[Long], start:Array[IntValue], duration:Array[IntValue], amount:Array[IntValue], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
-    Cumulative(indices:Array[Long], start, duration, amount, profile, active)
+  def cumulative(indices:Array[Int], start:Array[IntValue], duration:Array[IntValue], amount:Array[IntValue], profile:Array[CBLSIntVar], active:Array[CBLSSetVar])  =
+    Cumulative(indices:Array[Int], start, duration, amount, profile, active)
 
   /**
    * Maintains a resource usage profile.
@@ -191,24 +191,24 @@ trait FilterInvariants{
     * @param cond is a function that selects values to be includes in the output set.
     * This ''cond'' function cannot depend on any IntVar, as updates to these IntVars will not trigger propagation of this invariant.
     */
-  def filter(values:Array[IntValue], cond:(Long=>Boolean) = _ != 0L) = Filter(values:Array[IntValue], cond:(Long=>Boolean))
+  def filter(values:Array[IntValue], cond:(Int=>Boolean) = _ != 0) = Filter(values:Array[IntValue], cond:(Int=>Boolean))
 }
 
 
 trait HelperInvariants{
-  /** This is a helper to define an invariant from an Long -> Long function.
+  /** This is a helper to define an invariant from an Int -> Int function.
     * Ths invariant is not incremental, so it should only be used for very simple functions.
     * it maintains output = fun(a)
     * @param a the parameter of the function
     * @param fun the function to maintain, it is supposed not to listen to any variable in the model
     * @param domain the expected domain of the output
-    * @param cached set to true to have a cache of size 1L, zero to have no cache. cache can provide speedup if fun is time-consuming
+    * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
     * @author renaud.delandtsheer@cetic.be
     * */
-  def int2Int(a:IntValue, fun:Long => Long, domain:Domain = fullRange,cached:Boolean = false)
+  def int2Int(a:IntValue, fun:Int => Int, domain:Domain = fullRange,cached:Boolean = false)
   = new Int2Int(a, fun, domain,cached)
 
-  /** This is a helper to define an invariant from an Long x Long -> Long function.
+  /** This is a helper to define an invariant from an Int x Int -> Int function.
     * Ths invariant is not incremental, so this should only be used for very simple functions.
     * it maintains output = fun(a,b)
     * @param a the first parameter of the function
@@ -217,10 +217,10 @@ trait HelperInvariants{
     * @param domain the expected domain of the output
     * @author renaud.delandtsheer@cetic.be
     * */
-  def intInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Domain = fullRange) =
+  def intInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange) =
     new IntInt2Int(a, b, fun, domain)
 
-  /** This is a helper to define an invariant from an Long x Long -> Long function.
+  /** This is a helper to define an invariant from an Int x Int -> Int function.
     * Ths invariant is not incremental, so this should only be used for very simple functions.
     * it maintains output = fun(a,b) The difference with [[oscar.cbls.lib.invariant.logic.IntInt2Int]] is that this one performs the computation only after both variables have been updated.
     * @param a the first parameter of the function
@@ -229,7 +229,7 @@ trait HelperInvariants{
     * @param domain the expected domain of the output
     * @author renaud.delandtsheer@cetic.be
     * */
-  def lazyIntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Domain = fullRange)
+  def lazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain = fullRange)
   = new LazyIntInt2Int(a, b, fun, domain)
 }
 
@@ -300,7 +300,7 @@ trait CountInvariants {
   /**
    * Author: Jean-Noël Monette
    */
-  def sparseCount(values: Array[IntValue], counts: Map[Long,CBLSIntVar]) = SparseCount(values, counts)
+  def sparseCount(values: Array[IntValue], counts: Map[Int,CBLSIntVar]) = SparseCount(values, counts)
 }
 
 trait SeqInvariants {
@@ -314,7 +314,7 @@ trait SeqInvariants {
    * @param maxHistorySize the max history size for the create variable
    * @return a changing seq value that is maintained as teh concatenation of a and b
    */
-  def concatenate(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Long = 4L, maxHistorySize : Long = 20L) : SeqValue = {
+  def concatenate(a : SeqValue, b : SeqValue, maxPivotPerValuePercent : Int = 4, maxHistorySize : Int = 20) : SeqValue = {
     (a, b) match {
       case (ac : CBLSSeqConst, bc : CBLSSeqConst) =>
         CBLSSeqConst(IntSequence(ac.value ++ bc.value))
@@ -340,11 +340,11 @@ trait SeqInvariants {
    * @param maxPivotPerValuePercent
    * @param maxHistorySize
    */
-  def flipSequence(v : SeqValue, maxPivotPerValuePercent : Long = 10L, maxHistorySize : Long = 10L) =
+  def flipSequence(v : SeqValue, maxPivotPerValuePercent : Int = 10, maxHistorySize : Int = 10) =
     Flip(v : SeqValue, maxPivotPerValuePercent, maxHistorySize)
 
   /**
-   * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any Long value)
+   * #(v) (cardinality, or length (since a SeqValue can only contain at most one instance of any int value)
    * @param v is a SeqValue, containing a number of values, to count
    * @author renaud.delandtsheer@cetic.be
    */
@@ -352,11 +352,20 @@ trait SeqInvariants {
 
   /**
    * @param seq a sequence of integers
+   * @param mapArray an array that is taken as a function (it cannot be modified after this call)
+   * @return a sequence where the value at any position p is equal to mapArray(seq(p))
+   */
+  def map(seq : ChangingSeqValue, mapArray : Array[Int]) : MapConstantFun = {
+    new MapConstantFun(seq, mapArray, InvariantHelper.getMinMaxBoundsInt(mapArray)._2)
+  }
+
+  /**
+   * @param seq a sequence of integers
    * @param transform a function to apply to each value occuring in the sequence (it cannot be modified after this call)
    * @return a sequence where the value at any position p is equal to transform(seq(p))
    */
-  def map(seq : ChangingSeqValue, transform : Long => Long, maxTransform : Long) =
-    new MapConstantFun(seq : ChangingSeqValue, transform : Long => Long, maxTransform : Long)
+  def map(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int) =
+    new MapConstantFun(seq : ChangingSeqValue, transform : Int => Int, maxTransform : Int)
 
   /**
    * @param seq a sequence of integers
@@ -387,7 +396,7 @@ trait SeqInvariants {
    * @param a an integer
    * @return a ChangingSetValue that is maintained as the set of position in v where the value is a
    */
-  def positionsOf(v : SeqValue, a : Long) = new PositionsOfConst(v, a)
+  def positionsOf(v : SeqValue, a : Int) = new PositionsOfConst(v, a)
 
   /**
    * precedence assumes that number can occur only once in the sequence
@@ -402,7 +411,7 @@ trait SeqInvariants {
    * @param beforeAfter
    * @author renaud.delandtsheer@cetic.be
    */
-  def precedence(seq : ChangingSeqValue, beforeAfter : List[(Long, Long)]) =
+  def precedence(seq : ChangingSeqValue, beforeAfter : List[(Int, Int)]) =
     Precedence(seq, beforeAfter)
 
 
@@ -414,7 +423,7 @@ trait SeqInvariants {
    * @param f is a function that is applied to every value in f prior to the sum
    * @author renaud.delandtsheer@cetic.be
    */
-  def seqSum(v : SeqValue, f : (Long => Long) = (a : Long) => a) = SeqSum(v, f)
+  def seqSum(v : SeqValue, f : (Int => Int) = (a : Int) => a) = SeqSum(v, f)
 
   /**
    * maintains a sorted sequence out of a non-sorted one.
@@ -426,7 +435,7 @@ trait SeqInvariants {
    *                  This value is not the one being put into the output sequence
    * @param orderName a name for the order
    */
-  def sortSequence(v : SeqValue, sortValue : Long => Long, orderName : String = "order")
+  def sortSequence(v : SeqValue, sortValue : Int => Int, orderName : String = "order")
   = SortSequence(v, sortValue, orderName)
 
 
@@ -454,7 +463,7 @@ trait NumericInvariants{
     * @param cond is the condition for selecting variables in the array of summed ones, cannot be null
     * @author renaud.delandtsheer@cetic.be
     * */
-  //def sumConstants(vars: Array[Long], cond: SetValue) = SumConstants(vars, cond)
+  //def sumConstants(vars: Array[Int], cond: SetValue) = SumConstants(vars, cond)
 
   val sum = oscar.cbls.lib.invariant.numeric.Sum
 
@@ -499,7 +508,7 @@ trait NumericInvariants{
    * @param min
    * @param max
    */
-  def  bound(x: IntValue, min:Long, max:Long) = Bound(x, min, max)
+  def  bound(x: IntValue, min:Int, max:Int) = Bound(x, min, max)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -515,7 +524,7 @@ trait NumericInvariants{
     *
     * for instance, suppose you represent days starting from zero, and zero is a monday,
     * and you want to round up to the next open day (sa and su are closed day, the correct declaration is:
-    * RoundUpModulo(from,duration,7L,2L,5L)
+    * RoundUpModulo(from,duration,7,2,5)
     *
     * @param from the starting date of the task. it can start later.
     * @param duration the duration of the task.
@@ -524,7 +533,7 @@ trait NumericInvariants{
     * @param shift the first period starts later than zero. it starts at shift. the duration before its start is allowed.
     */
 
-  def roundUpModulo(from: IntValue, duration: IntValue, period: Long, zone: Long, shift: Long) = RoundUpModulo(from: IntValue, duration: IntValue, period: Long, zone: Long, shift: Long)
+  def roundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int) = RoundUpModulo(from: IntValue, duration: IntValue, period: Int, zone: Int, shift: Int)
 
   /**Maintains output to the smallest value such that
     * output >= from
@@ -534,7 +543,7 @@ trait NumericInvariants{
     * @param duration
     * @param ForbiddenZones
     */
-  def roundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Long, Long)]) = RoundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Long, Long)])
+  def roundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)]) = RoundUpCustom(from: IntValue, duration: IntValue, ForbiddenZones: List[(Int, Int)])
 
   /**
    * This invariant implements a step function. Values higher than pivot are mapped to ifval
@@ -546,7 +555,7 @@ trait NumericInvariants{
    * @param thenval the value returned when x > pivot
    * @param elseval the value returned when x <= pivot
    */
-  def step(x:IntValue,pivot:Long = 0L,thenval:Long = 1L,elseval:Long = 0L) = Step(x:IntValue,pivot:Long,thenval:Long ,elseval:Long)
+  def step(x:IntValue,pivot:Int = 0,thenval:Int = 1,elseval:Int = 0) = Step(x:IntValue,pivot:Int,thenval:Int ,elseval:Int)
 
   /** sum(i in cond) vars(i)
     * This invariant might modify vars array by cloning some variables to ensure that each variable only appears once.
@@ -577,7 +586,7 @@ trait MinMaxInvariants{
     * @param default is the value returned when cond is empty
     * update is O(log(n))
     * */
-  def argMax(vars: Array[IntValue], cond: SetValue = null,default:Long = Long.MinValue) = ArgMax(vars, cond,default)
+  def argMax(vars: Array[IntValue], cond: SetValue = null,default:Int = Int.MinValue) = ArgMax(vars, cond,default)
 
 
   /** Maintains {i in indices of (varss Inter cond) | varss[i] == min(varss(i in indices of (varss Inter cond))}
@@ -586,7 +595,7 @@ trait MinMaxInvariants{
     * @param default is the value returned when cond is empty
     * update is O(log(n))
     * */
-  def argMin(varss: Array[IntValue], ccond: SetValue = null, default:Long = Long.MaxValue) = ArgMin(varss, ccond, default)
+  def argMin(varss: Array[IntValue], ccond: SetValue = null, default:Int = Int.MaxValue) = ArgMin(varss, ccond, default)
 
   /** maintains output = Max(a,b)
     * where output, a, and b are an IntVar
@@ -605,14 +614,14 @@ trait MinMaxInvariants{
     * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
     * update is O(log(n))
     * */
-  def maxNaive(varss: Array[IntValue], ccond: SetValue = null, default: Long = Long.MinValue) = MaxArray(varss, ccond, default)
+  def maxNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MinValue) = MaxArray(varss, ccond, default)
 
   /** Maintains Min(Var(i) | i in cond)
     * @param varss is an array of IntVar, which can be bulked
     * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
     * update is O(log(n))
     * */
-  def minNaive(varss: Array[IntValue], ccond: SetValue = null, default: Long = Long.MaxValue) = MinArray(varss, ccond, default)
+  def minNaive(varss: Array[IntValue], ccond: SetValue = null, default: Int = Int.MaxValue) = MinArray(varss, ccond, default)
 
   /** maintains output = Min(v)
     * where
@@ -621,7 +630,7 @@ trait MinMaxInvariants{
     * @param default is the default value if v is empty
     * update is O(log(n))
     * */
-  def minSet(v: SetValue, default: Long = Long.MaxValue) = MinSet(v, default)
+  def minSet(v: SetValue, default: Int = Int.MaxValue) = MinSet(v, default)
 
   /** maintains output = Max(v)
     * where
@@ -630,7 +639,7 @@ trait MinMaxInvariants{
     * @param default is the default value if v is empty
     * update is O(log(n))
     * */
-  def maxSet(v: SetValue, default: Long = Long.MinValue) = MaxSet(v, default)
+  def maxSet(v: SetValue, default: Int = Int.MinValue) = MaxSet(v, default)
 
 
   /**
@@ -640,16 +649,16 @@ trait MinMaxInvariants{
    * update is O(log(n))
    * @author renaud.delandtsheer@cetic.be
    * */
-  def maxConstArray(varss: Array[Long], ccond: SetValue, default: Long = Long.MinValue) = MaxConstArray(varss, ccond, default)
+  def maxConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MinValue) = MaxConstArray(varss, ccond, default)
 
   /**
    * Maintains Min(Var(i) | i in cond)
-   * @param varss is an array of Long
+   * @param varss is an array of Int
    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
    * update is O(log(n))
    * @author renaud.delandtsheer@cetic.be
    * */
-  def minConstArray(varss: Array[Long], ccond: SetValue, default: Long = Long.MaxValue) = MinConstArray(varss, ccond, default)
+  def minConstArray(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue) = MinConstArray(varss, ccond, default)
 
   /**
    * Maintains Max(Var(i) | i in cond)
@@ -662,10 +671,10 @@ trait MinMaxInvariants{
    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
    * @param default the value if ccond is empty
    * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
-   * update is O(log(n)), faster (O(1L) if you do updates and backtracks
+   * update is O(log(n)), faster (O(1) if you do updates and backtracks
    * @author renaud.delandtsheer@cetic.be
    * */
-  def maxConstArrayLazy(varss: Array[Long], ccond: SetValue, default: Long = Long.MaxValue, maxBackLogSize:Long = 10L) =
+  def maxConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = 10) =
     MaxConstArrayLazy(varss, ccond, default, maxBackLogSize)
 
 
@@ -676,14 +685,14 @@ trait MinMaxInvariants{
    * when there is an update, it is first checked against the TODO-list, for cancellation.
    * if the update does not impact the output, it is postponed
    * if it affects the output, it is performed
-   * @param varss is an array of Long
+   * @param varss is an array of Int
    * @param ccond is the condition, supposed fully acceptant if not specified (must be specified if varss is bulked)
    * @param default the value if ccond is empty
    * @param maxBackLogSize is the maximal number of postponed updates (TODOlist is handled as a FIFO)
-   * update is O(log(n)), faster (O(1L) if you do updates and backtracks
+   * update is O(log(n)), faster (O(1) if you do updates and backtracks
    * @author renaud.delandtsheer@cetic.be
    * */
-  def minConstArrayLazy(varss: Array[Long], ccond: SetValue, default: Long = Long.MaxValue, maxBackLogSize:Long = Long.MaxValue)
+  def minConstArrayLazy(varss: Array[Int], ccond: SetValue, default: Int = Int.MaxValue, maxBackLogSize:Int = Int.MaxValue)
   = MinConstArrayLazy(varss, ccond, default, maxBackLogSize)
 
   /**
@@ -694,8 +703,8 @@ trait MinMaxInvariants{
    * @param condSet
    * @param default
    * @param maxDiameter is the maximal number of values in condSet that are monitored in the set, must be >=1.
-   *                    the actual diameter is kept between 1L and tis value, lazily
+   *                    the actual diameter is kept between 1 and tis value, lazily
    */
-  def minConstArrayValueWise(constArray: Array[Long], condSet: SetValue, default: Long, maxDiameter:Long = 2L) =
+  def minConstArrayValueWise(constArray: Array[Int], condSet: SetValue, default: Int, maxDiameter:Int = 2) =
     new MinConstArrayValueWise(constArray, condSet, default, maxDiameter)
 }

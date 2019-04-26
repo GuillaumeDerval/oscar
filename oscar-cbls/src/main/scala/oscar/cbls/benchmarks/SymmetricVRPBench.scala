@@ -26,15 +26,15 @@ import oscar.cbls.util.StopWatch
 
 import scala.util.Random
 
-class MySimpleRoutingWithUnroutedPoints(n:Long,v:Long,symmetricDistance:Array[Array[Long]],m:Store, maxPivot:Long)
+class MySimpleRoutingWithUnroutedPoints(n:Int,v:Int,symmetricDistance:Array[Array[Int]],m:Store, maxPivot:Int)
   extends VRP(n,v,m,maxPivot)
   with TotalConstantDistance with ClosestNeighbors with RoutedAndUnrouted{
 
   setSymmetricDistanceMatrix(symmetricDistance)
 
-  override protected def getDistance(from : Long, to : Long) : Long = symmetricDistance(from)(to)
+  override protected def getDistance(from : Int, to : Int) : Int = symmetricDistance(from)(to)
 
-  val penaltyForUnrouted  = 10000L
+  val penaltyForUnrouted  = 10000
 
   val obj = Objective(totalDistance + (penaltyForUnrouted*(n - Length(routes))))
 
@@ -47,29 +47,29 @@ class MySimpleRoutingWithUnroutedPoints(n:Long,v:Long,symmetricDistance:Array[Ar
 
 object SymmetricVRPBench extends App {
 
-  val n = 1000L
-  val v = 10L
+  val n = 1000
+  val v = 10
 
-  val verbose = 0L
-  val maxPivotPerValuePercent = 4L
-  new TSPRoutePointsS(1000L,100L,4L,verbose)
+  val verbose = 0
+  val maxPivotPerValuePercent = 4
+  new TSPRoutePointsS(1000,100,4,verbose)
   System.gc()
 
-  val nbTrials = 10L
+  val nbTrials = 10
 
   println()
   print("n\tv\tpercent")
-  for ( _ <- 1L to nbTrials) {
+  for ( _ <- 1 to nbTrials) {
     print("\ttime")
   }
   println
 
 
-  for(n <- 1000L to 5000L by 2000L){
-    for(v <- List(100L)){
-      for (maxPivotPerValuePercent <- List(0L,1L,2L,3L,4L,5L,20L)) {
+  for(n <- 1000 to 5000 by 2000){
+    for(v <- List(100)){
+      for (maxPivotPerValuePercent <- List(0,1,2,3,4,5,20)) {
         print(n + "\t" + v + "\t" + maxPivotPerValuePercent + "\t")
-        for ( _ <- 1L to nbTrials){
+        for ( _ <- 1 to nbTrials){
           new TSPRoutePointsS(n, v, maxPivotPerValuePercent, verbose)
           print("\t")
           System.gc()
@@ -80,7 +80,7 @@ object SymmetricVRPBench extends App {
   }
 }
 
-class TSPRoutePointsS(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Long) extends StopWatch{
+class TSPRoutePointsS(n:Int,v:Int,maxPivotPerValuePercent:Int, verbose:Int) extends StopWatch{
 
   val symmetricDistanceMatrix = RoutingMatrixGenerator(n)._1
 
@@ -93,23 +93,23 @@ class TSPRoutePointsS(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Long) 
 
   model.close()
 
-  val routeUnroutdPoint =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10L,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
+  val routeUnroutdPoint =  Profile(InsertPointUnroutedFirst(myVRP.unrouted,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,neighborhoodName = "InsertUF"))
 
   //TODO: using post-filters on k-nearest is probably crap
-  val routeUnroutdPoint2 =  Profile(InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10L,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2L))
+  val routeUnroutdPoint2 =  Profile(InsertPointRoutedFirst(myVRP.routed,()=>myVRP.kFirst(10,myVRP.closestNeighboursForward,x => !myVRP.isRouted(x)),myVRP,neighborhoodName = "InsertRF")  guard(() => myVRP.size < n/2))
 
-  def onePtMove(k:Long) = Profile(OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  def onePtMove(k:Int) = Profile(OnePointMove(myVRP.routed, () => myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 
-  val twoOpt = Profile(TwoOpt(myVRP.routed, ()=>myVRP.kFirst(20L,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
+  val twoOpt = Profile(TwoOpt(myVRP.routed, ()=>myVRP.kFirst(20,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP))
 
-  def threeOpt(k:Long, breakSym:Boolean) = Profile(ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
+  def threeOpt(k:Int, breakSym:Boolean) = Profile(ThreeOpt(myVRP.routed, ()=>myVRP.kFirst(k,myVRP.closestNeighboursForward,myVRP.isRouted), myVRP,breakSymmetry = breakSym, neighborhoodName = "ThreeOpt(k=" + k + ")"))
 
-  val search = BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10L),twoOpt, threeOpt(10L,true))) exhaust threeOpt(20L,true)
+  val search = BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, onePtMove(10),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
-  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10L) guard (() => myVRP.unrouted.value.size != 0L)),10L)) exhaust BestSlopeFirst(List(onePtMove(20L),twoOpt, threeOpt(10L,true))) exhaust threeOpt(20L,true)
+  // val search = (new RoundRobin(List(routeUnroutdPoint2,onePtMove(10) guard (() => myVRP.unrouted.value.size != 0)),10)) exhaust BestSlopeFirst(List(onePtMove(20),twoOpt, threeOpt(10,true))) exhaust threeOpt(20,true)
 
   search.verbose = verbose
-  //search.verboseWithExtraInfo(1L, ()=> "" + myVRP)
+  //search.verboseWithExtraInfo(1, ()=> "" + myVRP)
 
   search.doAllMoves(obj=myVRP.obj)
 
@@ -117,16 +117,16 @@ class TSPRoutePointsS(n:Long,v:Long,maxPivotPerValuePercent:Long, verbose:Long) 
 }
 
 object RoutingMatrixGenerator {
-  val random = new Random(0L)
+  val random = new Random(0)
 
-  def apply(N : Long, side : Long = 1000L) : (Array[Array[Long]], Array[(Long, Long)]) = {
+  def apply(N : Int, side : Int = 1000) : (Array[Array[Int]], Array[(Int, Int)]) = {
 
     //we generate te cost distance matrix
-    def randomXY : Long = (random.nextFloat() * side).toInt
-    val pointPosition : Array[(Long, Long)] = Array.tabulate(N)( _ => (randomXY, randomXY))
+    def randomXY : Int = (random.nextFloat() * side).toInt
+    val pointPosition : Array[(Int, Int)] = Array.tabulate(N)( _ => (randomXY, randomXY))
 
-    def distance(from : (Long, Long), to : (Long, Long)) =
-      math.sqrt(math.pow(from._1 - to._1, 2L) + math.pow(from._2 - to._2, 2L)).toInt
+    def distance(from : (Int, Int), to : (Int, Int)) =
+      math.sqrt(math.pow(from._1 - to._1, 2) + math.pow(from._2 - to._2, 2)).toInt
 
     //for each delivery point, the distance to each warehouse
     (Array.tabulate(N)(

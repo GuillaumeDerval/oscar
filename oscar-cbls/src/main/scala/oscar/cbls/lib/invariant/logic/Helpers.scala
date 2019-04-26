@@ -25,16 +25,16 @@ import oscar.cbls._
 import oscar.cbls.core._
 
 
-/** This is a helper to define an invariant from an Long -> Long function.
+/** This is a helper to define an invariant from an Int -> Int function.
   * Ths invariant is not incremental, so it should only be used for very simple functions.
   * it maintains output = fun(a)
   * @param a the parameter of the function
   * @param fun the function to maintain, it is supposed not to listen to any variable in the model
   * @param domain the expected domain of the output
-  * @param cached set to true to have a cache of size 1L, zero to have no cache. cache can provide speedup if fun is time-consuming
+  * @param cached set to true to have a cache of size 1, zero to have no cache. cache can provide speedup if fun is time-consuming
   * @author renaud.delandtsheer@cetic.be
   * */
-class Int2Int(a:IntValue, fun:Long => Long, domain:Domain,cached:Boolean = false)
+class Int2Int(a:IntValue, fun:Int => Int, domain:Domain,cached:Boolean = false)
   extends IntInvariant(fun(a.value),domain)
     with IntNotificationTarget{
 
@@ -42,11 +42,11 @@ class Int2Int(a:IntValue, fun:Long => Long, domain:Domain,cached:Boolean = false
   finishInitialization()
 
   this := fun(a.value)
-  var cachedIn:Long = a.value
-  var cachedOut:Long = this.newValue
+  var cachedIn:Int = a.value
+  var cachedOut:Int = this.newValue
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     assert(v == a)
     if(cached){
       if(NewVal == cachedIn) {
@@ -69,7 +69,7 @@ class Int2Int(a:IntValue, fun:Long => Long, domain:Domain,cached:Boolean = false
   }
 }
 
-/** This is a helper to define an invariant from an Long x Long -> Long function.
+/** This is a helper to define an invariant from an Int x Int -> Int function.
   * Ths invariant is not incremental, so this should only be used for very simple functions.
   * it maintains output = fun(a,b)
   * @param a the first parameter of the function
@@ -78,7 +78,7 @@ class Int2Int(a:IntValue, fun:Long => Long, domain:Domain,cached:Boolean = false
   * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Domain)
+class IntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain)
   extends IntInvariant(fun(a.value,b.value),domain)
   with IntNotificationTarget{
 
@@ -86,7 +86,7 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Doma
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     this := fun(a.value,b.value)
   }
 
@@ -95,7 +95,7 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Doma
   }
 }
 
-/** This is a helper to define an invariant from an Long x Long -> Long function.
+/** This is a helper to define an invariant from an Int x Int -> Int function.
   * Ths invariant is not incremental, so this should only be used for very simple functions.
   * it maintains output = fun(a,b) The difference with [[oscar.cbls.lib.invariant.logic.IntInt2Int]] is that this one performs the computation only after both variables have been updated.
   * @param a the first parameter of the function
@@ -104,7 +104,7 @@ class IntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Doma
   * @param domain the expected domain of the output
   * @author renaud.delandtsheer@cetic.be
   * */
-class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:Domain)
+class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Int, Int) => Int), domain:Domain)
   extends IntInvariant(fun(a.value,b.value),domain)
   with IntNotificationTarget{
 
@@ -112,7 +112,7 @@ class LazyIntInt2Int(a:IntValue, b:IntValue, fun:((Long, Long) => Long), domain:
   finishInitialization()
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, id:Int, OldVal: Int, NewVal: Int) {
     scheduleForPropagation()
   }
 

@@ -17,12 +17,12 @@ package oscar.cbls.algo.quick
 import scala.language.implicitConversions
 
 class QList[@specialized T](val head:T, val tail:QList[T] = null){
-  def size:Long = {
+  def size:Int = {
     var curr = this.tail
-    var toReturn = 1L
+    var toReturn = 1
     while(curr != null){
       curr = curr.tail
-      toReturn += 1L
+      toReturn += 1
     }
     toReturn
   }
@@ -42,17 +42,6 @@ class QList[@specialized T](val head:T, val tail:QList[T] = null){
 
 object QList{
 
-  def append[T](l:Iterable[T],q:QList[T]):QList[T] = {
-    val it = l.toIterator
-
-    var toReturn = q
-    while(it.hasNext){
-      toReturn = QList(it.next,toReturn)
-    }
-    toReturn
-  }
-
-
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
 
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
@@ -69,16 +58,6 @@ object QList{
   def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
     if(q == null) null
     else q.qMap(fun)
-  }
-
-  def qFold[T,@specialized(Long)X](q:QList[T],accF:(X,T) => X,initX:X):X = {
-    var l = q
-    var acc = initX
-    while(l != null){
-      acc = accF(acc,l.head)
-      l = l.tail
-    }
-    acc
   }
 }
 

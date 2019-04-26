@@ -15,53 +15,15 @@ package oscar.cbls.business.geometry.model
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.locationtech.jts.algorithm.MinimumBoundingCircle
-import org.locationtech.jts.geom.impl.CoordinateArraySequence
-import org.locationtech.jts.geom.{Coordinate, Geometry, Point}
+import org.locationtech.jts.geom.Geometry
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
-class GeometryValue(val geometry:Geometry)(
-  var inputCentreOfOverApproximatingCircle:Option[Point] = None,
-  var inputOverApproximatingRadius:Option[Double] = None) {
-
-  def computeEnclosingCircle(): Unit ={
-    val algo = new MinimumBoundingCircle(geometry)
-    inputCentreOfOverApproximatingCircle = Some(new Point(new CoordinateArraySequence(Array(algo.getCentre)),geometry.getFactory))
-    inputOverApproximatingRadius = Some(algo.getRadius)
-  }
-  //une value dérivée est soit:
-  // donnée
-  // Calculée à partir de geometry
-  //on ne considère pas le cas de calculé à partir des va leurs d'origines; on doit alors juste la doner en entrée.
-
-  def centerOfOverApproximatingCircle:Point = inputCentreOfOverApproximatingCircle match{
-    case Some(c) => c
-    case None =>
-      computeEnclosingCircle()
-      inputCentreOfOverApproximatingCircle.get
-  }
-
-  def distance(x1:Double,y1:Double,x2:Double,y2:Double):Double = {
-    Math.sqrt(Math.pow(x1-x2,2.0) + Math.pow(y1 - y2,2.0))
-  }
-  def overApproximatingRadius:Double = inputOverApproximatingRadius match{
-    case Some(r) => r
-    case None =>
-      computeEnclosingCircle()
-      inputOverApproximatingRadius.get
-  }
-
-  def mightOverlapBasedOnOverApproximatingValues(other:GeometryValue):Boolean = {
-    (centerOfOverApproximatingCircle distance other.centerOfOverApproximatingCircle) <= (overApproximatingRadius + other.overApproximatingRadius)
-  }
-}
-
 class CBLSGeometryVar(store: Store,
-                      initialValue: GeometryValue,
+                      initialValue: Geometry,
                       givenName: String = null)
-  extends CBLSAtomicVar[GeometryValue](store: Store,
+  extends CBLSAtomicVar[Geometry](store: Store,
     initialValue,
     givenName: String ){
 
@@ -75,22 +37,20 @@ class CBLSGeometryVar(store: Store,
     clone
   }
 
-  def <== (g: ChangingAtomicValue[GeometryValue]): Unit ={
+  def <== (g: ChangingAtomicValue[Geometry]): Unit ={
     new IdentityGeometry(this, g)
   }
 
-
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
-
 }
 
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[GeometryValue])
+class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Geometry])
   extends Invariant with GeometryNotificationTarget{
 
   registerStaticAndDynamicDependency(fromValue)
@@ -100,7 +60,7 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
   toValue := fromValue.value
 
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     toValue := newVal
   }
 
@@ -110,18 +70,18 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
 }
 
 trait GeometryNotificationTarget{
-  def notifyGeometryChange(a:ChangingAtomicValue[GeometryValue],id:Int,oldVal:GeometryValue,newVal:GeometryValue)
+  def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
 }
 
-class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
-  extends CBLSAtomicConst[GeometryValue](value){
+class CBLSGeometryConst(store:Store, override val value:Geometry, givenName:String = "")
+  extends CBLSAtomicConst[Geometry](value){
   override def name = if (givenName == null) value.toString else givenName
   override def toString:String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSGeometryInvariant(store:Store,
-                            initialValue:GeometryValue)
-  extends AtomicInvariant[GeometryValue](initialValue){
+                            initialValue:Geometry)
+  extends AtomicInvariant[Geometry](initialValue){
 
   def createClone:CBLSGeometryVar = {
     val clone = new CBLSGeometryVar(
@@ -133,12 +93,8 @@ class CBLSGeometryInvariant(store:Store,
     clone
   }
 
-
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
 }
-
-
-

@@ -17,16 +17,7 @@ package oscar.cbls.business.geometry.invariants
   ******************************************************************************/
 
 
-import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
-import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator
-import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
-import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
-import oscar.cbls.algo.magicArray.IterableMagicBoolArray
-import oscar.cbls.business.geometry.model.{CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
-import oscar.cbls.core.IntInvariant
-import oscar.cbls.core.computation.ChangingAtomicValue
-
-import scala.collection.immutable.SortedMap
+import org.locationtech.jts.geom.{Geometry, GeometryCollection, Polygon}
 
 object Overlap {
 
@@ -76,76 +67,5 @@ object Overlap {
         val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
         components.flatMap(extractShapes)
     }
-  }
-}
-
-
-class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
-  extends IntInvariant
-    with GeometryNotificationTarget{
-
-  registerStaticAndDynamicDependencyArrayIndex(shapes)
-  finishInitialization()
-
-  //index in array => index in geometry, for fast overlap computation
-  var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
-  var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
-  scheduleForPropagation()
-
-  val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
-  this := 0
-
-  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
-                                    id: Int,
-                                    oldVal: GeometryValue,
-                                    newVal: GeometryValue): Unit = {
-    changedShapesToCheck(id) = true
-    geometryIndexes(id) = null
-    scheduleForPropagation()
-  }
-
-  override def performInvariantPropagation(): Unit = {
-    for(shapeIDToCheck <- changedShapesToCheck.indicesAtTrue){
-      for(otherID <- 0 until shapeIDToCheck){
-        val newOverlap = computeOverlapViolation(shapes(shapeIDToCheck).value,shapeIDToCheck,shapes(otherID).value,otherID)
-        val oldOverlap = recordedOverlap(shapeIDToCheck)(otherID)
-        recordedOverlap(shapeIDToCheck)(otherID) = newOverlap
-        this :+= (newOverlap - oldOverlap)
-      }
-    }
-    changedShapesToCheck.all = false
-  }
-
-  private def computeOverlapViolation(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Int = {
-    if(! (shape1 mightOverlapBasedOnOverApproximatingValues shape2)) return 0
-
-    if(geometryIndexes(id1) != null){
-      if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
-    }else if (geometryIndexes(id2) != null){
-      if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
-    }else{
-      //create an index for the biggest shape
-      if(shape1.geometry.getNumPoints > shape2.geometry.getNumPoints){
-        geometryIndexes(id1) = PreparedGeometryFactory.prepare(shape1.geometry)
-        if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
-      }else{
-        geometryIndexes(id2) = PreparedGeometryFactory.prepare(shape2.geometry)
-        if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
-      }
-    }
-
-    //There is an overlap, so we quantify it; we measure some penetration,
-    //which is faster to compute than the overlap area
-    //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
-    (shape1.overApproximatingRadius
-      + shape1.overApproximatingRadius
-      - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
-      - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
-  }
-
-  private val ptDist = new PointPairDistance()
-  private def computeDistance(shape1:Geometry,point:Point):Double = {
-    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist)
-    ptDist.getDistance()
   }
 }

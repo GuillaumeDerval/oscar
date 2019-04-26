@@ -1,5 +1,5 @@
 package oscar.cbls.test.routing
-/*
+
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 
@@ -74,4 +74,3 @@ object OverflowTest2 extends App{
 
 }
 
-*/

@@ -20,7 +20,7 @@
 
 
 package oscar.examples.cbls.old
-/*
+
 import java.awt.Color
 
 import javax.swing.border.LineBorder
@@ -300,4 +300,3 @@ lazy val Problem36:Array[Int]=Array(
 0,0,7,18,34,36,0,19,0,9,17,24,8,0,13,0,15,0,14,0,0,26,0,0,4,10,22,11,16,0,0,21,0,27,0,35)
 
 }
-*/

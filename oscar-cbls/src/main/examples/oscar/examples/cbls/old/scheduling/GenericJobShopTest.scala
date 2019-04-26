@@ -36,7 +36,7 @@ package oscar.examples.cbls.old.scheduling
  *     This code has been initially developed by CETIC www.cetic.be
  *         by Renaud De Landtsheer
  ******************************************************************************/
-/*
+
 import oscar.cbls._
 import oscar.cbls.business.scheduling._
 import oscar.cbls.business.scheduling.model.{Activity, CumulativeResource, Planning}
@@ -112,4 +112,3 @@ object GenericJobShopTest extends StopWatch with App {
   println("run time: " + getWatch)
   println(planning.toAsciiArt)
 }
-*/

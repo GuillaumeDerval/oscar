@@ -1,24 +1,22 @@
 package oscar.cbls.invariants.lib.logic
 
-import oscar.cbls.core.{ChangingIntValue, IntNotificationTarget, Invariant }
+import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.Checker
-import oscar.cbls._
-import oscar.cbls.core.computation.InvariantHelper
 
 /**
-  * Created by gustavbjordal on 27L/05L/1L6.
+  * Created by gustavbjordal on 27/05/16.
   */
-case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Long]) extends Invariant with IntNotificationTarget{
+case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Int]) extends Invariant with IntNotificationTarget{
   for (v <- items.indices)
     registerStaticAndDynamicDependency(items(v),v)
 
   finishInitialization()
 
   private val (minVal,maxVal) = InvariantHelper.getMinMaxBounds(items)
-  assert(minVal==0L)
-  private val maxLoad = itemsizes.foldLeft(0L)((acc,l) => acc+ l)
+  assert(minVal==0)
+  private val maxLoad = itemsizes.foldLeft(0)((acc,l) => acc+ l)
 
-  val binLoad = Array.tabulate(maxVal+1L)(i => CBLSIntVar(this.model,0L, Domain(0L , maxLoad), "bin_"+i))
+  val binLoad = Array.tabulate(maxVal+1)(i => CBLSIntVar(this.model,0, 0 to maxLoad, "bin_"+i))
   for( b <- binLoad){
     b.setDefiningInvariant(this)
   }
@@ -35,7 +33,7 @@ case class BinPackingLoad(items: Array[IntValue], itemsizes: Array[Long]) extend
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
     binLoad(OldVal) :-= itemsizes(id)
     binLoad(NewVal) :+= itemsizes(id)
   }

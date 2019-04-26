@@ -27,7 +27,7 @@ object MagicBoolArray {
    * @return a Magical Array Of Boolean or null if length is less than zero
    */
   def apply(n:Int,initVal:Boolean = false):MagicBoolArray ={
-    require(n >= 0L, "cannot create magic array of negative size")
+    require(n >= 0, "cannot create magic array of negative size")
     new MagicBoolArray(n,initVal)
   }
 }
@@ -40,12 +40,11 @@ object MagicBoolArray {
  */
 class MagicBoolArray(val length:Int,initVal:Boolean = false){
 
-  private[this] val threshold:Long = Long.MaxValue-10L
+  private[this] val threshold:Int = Int.MaxValue-10
 
-  // Made public for testing purposes
-  var global:Long = 1L
+  private[this] var global:Int = 1
 
-  private[this] val internalArray:Array[Long] = Array.fill[Long](length)(if(initVal) 1L else 0L)
+  private[this] val internalArray:Array[Int] = Array.fill[Int](length)(if(initVal) 1 else 0)
 
   val indices = 0 until length
 
@@ -57,10 +56,10 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @note in O(1) // trivial
    */
   def update(id:Int, value:Boolean):Boolean = {
-    assert(id<length && 0L<=id)
+    assert(id<length && 0<=id)
     val oldInternalArray = internalArray(id)
     if(value) internalArray(id)=global
-    else internalArray(id)=global-1L
+    else internalArray(id)=global-1
     oldInternalArray>=global
   }
 
@@ -71,7 +70,7 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
    * @note complexity is O(1)
    */
   def apply(id:Int): Boolean ={
-    require(0L<=id && id<length, "got id:" + id + "length:" + length)
+    require(0<=id && id<length, "got id:" + id + "length:" + length)
     internalArray(id)>=global
   }
 
@@ -82,31 +81,31 @@ class MagicBoolArray(val length:Int,initVal:Boolean = false){
   def all_= (value:Boolean): Unit ={
     if(value) {
       if (Math.abs(global) == threshold) {
-        global = 0L
+        global = 0
         resetArray()
       } else {
-        global = -Math.abs(global)-1L
+        global = -Math.abs(global)-1
       }
     }else{
       if(Math.abs(global)==threshold){
-        global = 1L
+        global = 1
         resetArray()
       }else{
-        global = Math.abs(global)+1L
+        global = Math.abs(global)+1
       }
     }
   }
+
+  def all:Boolean = ???
 
   @inline
   private [this] def resetArray(){
     var i = internalArray.length
     while(i > 0){
       i -= 1
-      internalArray(i) = 0L
+      internalArray(i) = 0
     }
   }
-
-  def all:Boolean = ???
 
   /**
    * Creates a new iterator over the indexes of elements which value is true.

@@ -26,7 +26,7 @@ import scala.collection.Iterator
 
 /**Circular set is a dedicated data structure to represent set of integers in an efficient way
  * although the memory footprint will not be efficient at all
- * stores elements from 0L to size-1L
+ * stores elements from 0 to size-1
  * ensure that the maxsize is not so big because it consumes O(maxsize) memory.
   * @author renaud.delandtsheer@cetic.be
   * @author gael.thouvenin@student.umons.ac.be
@@ -110,12 +110,12 @@ class CircularIntSet(val maxsize:Int) extends scala.collection.mutable.SortedSet
         next(sortedValues.last) = sortedValues.head
         handle = sortedValues.head
 
-      case _ if size > 0L => handle = sortedValues.head
+      case _ if size > 0 => handle = sortedValues.head
     }
     inserted = false
   }
 
-  override def size: Int = sizevar
+  override def size:Int = sizevar
 
   def contains(elem: Int): Boolean = this.containsvar(elem)
 

@@ -34,18 +34,18 @@ import scala.collection.immutable.SortedSet
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MinValue)
+case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue)
   extends MiaxArray(varss, cond, varss.map(_.min).min) {
 
-  override def Ord(v: IntValue): Long = -v.value
+  override def Ord(v: IntValue): Int = -v.value
 
   override def ExtremumName: String = "Max"
 
   //More precise bounds
   override def performBulkComputation(bulkedVar: Array[IntValue]) =
     if (cond == null){
-      (bulkedVar.foldLeft(Long.MinValue)((acc, intvar) => if (intvar.min > acc) intvar.min else acc),
-        bulkedVar.foldLeft(Long.MinValue)((acc, intvar) => if (intvar.max > acc) intvar.max else acc))
+      (bulkedVar.foldLeft(Int.MinValue)((acc, intvar) => if (intvar.min > acc) intvar.min else acc),
+        bulkedVar.foldLeft(Int.MinValue)((acc, intvar) => if (intvar.max > acc) intvar.max else acc))
     }else super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker) {
@@ -63,18 +63,18 @@ case class MaxArray(varss: Array[IntValue], cond: SetValue = null, default: Long
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Long = Long.MaxValue)
+case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Int = Int.MaxValue)
   extends MiaxArray(varss, cond, varss.map(_.max).max) {
 
-  override def Ord(v: IntValue): Long = v.value
+  override def Ord(v: IntValue): Int = v.value
 
   override def ExtremumName: String = "Min"
 
   //More precise bounds
   override def performBulkComputation(bulkedVar: Array[IntValue]) =
     if (cond == null){
-      (bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => if (intvar.min < acc) intvar.min else acc),
-        bulkedVar.foldLeft(Long.MaxValue)((acc, intvar) => if (intvar.max < acc) intvar.max else acc))
+      (bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => if (intvar.min < acc) intvar.min else acc),
+        bulkedVar.foldLeft(Int.MaxValue)((acc, intvar) => if (intvar.max < acc) intvar.max else acc))
     }else super.performBulkComputation(bulkedVar)
 
   override def checkInternals(c: Checker) {
@@ -93,7 +93,7 @@ case class MinArray(varss: Array[IntValue], cond: SetValue = null, default: Long
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-abstract class MiaxArray(vars: Array[IntValue], cond: SetValue, default: Long)
+abstract class MiaxArray(vars: Array[IntValue], cond: SetValue, default: Int)
   extends IntInvariant with Bulked[IntValue, Domain]
   with VaryingDependencies
   with IntNotificationTarget
@@ -111,7 +111,7 @@ with SetNotificationTarget{
    * since the value of the bulkcomputationResult depends on the presence or absence of cond,
    * we register two bcr, so that you can join the correct bulk whataver happens.
    */
-  restrictDomain(bulkRegister(vars,if (cond == null) 0L else 1L).union(default))
+  restrictDomain(bulkRegister(vars,if (cond == null) 0 else 1).union(default))
 
   if (cond != null) {
     for (i <- cond.value) {
@@ -131,7 +131,7 @@ with SetNotificationTarget{
     InvariantHelper.getMinMaxBounds(bulkedVar)
 
   def ExtremumName: String
-  def Ord(v: IntValue): Long
+  def Ord(v: IntValue): Int
 
   if (h.isEmpty) {
     this := default
@@ -140,18 +140,18 @@ with SetNotificationTarget{
   }
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     //mettre a jour le heap
     h.notifyChange(index)
     this := vars(h.getFirst).value
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(v == cond)
     keyForRemoval(value) = registerDynamicDependency(vars(value), value)
 
@@ -160,7 +160,7 @@ with SetNotificationTarget{
     this := vars(h.getFirst).value
   }
 
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(v == cond)
 
     keyForRemoval(value).performRemove()

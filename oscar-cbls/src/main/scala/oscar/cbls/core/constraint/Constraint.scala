@@ -22,6 +22,7 @@ package oscar.cbls.core.constraint
 
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation._
+import oscar.cbls.lib.invariant.numeric.Step
 
 case class NamedConstraint(name:String, baseConstraint:Constraint) extends Constraint{
   /** returns the violation associated with variable v in this constraint
@@ -76,7 +77,7 @@ trait Constraint{
 
   /**facility to check that the constraint is enforced
     * */
-  final def isTrue: Boolean = (violation.value == 0L)
+  final def isTrue: Boolean = (violation.value == 0)
 
   /**the variables that are constrained by the constraint.
    * This should be read only. If you want to declare more constrained variables,
@@ -112,6 +113,5 @@ trait Constraint{
     for (vv <- v){registerConstrainedVariable(vv)}
   }
 
-  //TODO this is never called
   def checkInternals(c: Checker) {}
 }

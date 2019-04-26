@@ -29,7 +29,7 @@ object ConflictSearch {
 
   /**Computes a minimal conflict over a list of thinks.
    *Implements the famous quickXplain algorithm in a generic way
-   *[Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001L]
+   *[Ulrich Junker and F Valbonne, QuickXPlain: Conflict Detection for Arbitrary Constraint Propagation Algorithms, 2001]
    * and proposes a faster implementation in case that additional operations can be performed on the state
    *
    * @param init the initial S, typically empty

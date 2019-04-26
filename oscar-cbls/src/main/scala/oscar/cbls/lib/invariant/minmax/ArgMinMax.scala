@@ -36,10 +36,10 @@ import scala.collection.immutable.SortedSet
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class ArgMax(vars: Array[IntValue], cond: SetValue = null, default: Long = Long.MinValue)
+case class ArgMax(vars: Array[IntValue], cond: SetValue = null, default: Int = Int.MinValue)
   extends ArgMiax(vars, cond, default) {
 
-  override def ord(v: Long): Long = -v
+  override def ord(v: Int): Int = -v
 }
 
 /**
@@ -50,10 +50,10 @@ case class ArgMax(vars: Array[IntValue], cond: SetValue = null, default: Long = 
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-case class ArgMin[X <: IntValue](vars: Array[X], cond: SetValue = null, default: Long = Long.MaxValue)
+case class ArgMin[X <: IntValue](vars: Array[X], cond: SetValue = null, default: Int = Int.MaxValue)
   extends ArgMiax(vars, cond, default) {
 
-  override def ord(v: Long): Long = v
+  override def ord(v: Int): Int = v
 }
 
 /**
@@ -64,7 +64,7 @@ case class ArgMin[X <: IntValue](vars: Array[X], cond: SetValue = null, default:
  * update is O(log(n))
  * @author renaud.delandtsheer@cetic.be
  * */
-abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: Long)
+abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: Int)
   extends SetInvariant(initialDomain = vars.indices.start to vars.indices.last)
   with Bulked[X, Unit]
   with VaryingDependencies
@@ -99,20 +99,20 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
     }
   }
 
-  def ord(v: Long): Long
+  def ord(v: Int): Int
 
   val firsts = h.getFirsts
-  this := firsts.foldLeft(SortedSet.empty[Long])((acc, index) => acc + index)
+  this := firsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
   var miax = if (firsts.isEmpty) default else vars(h.getFirst).value
 
   @inline
-  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Long, NewVal: Long) {
+  override def notifyIntChanged(v: ChangingIntValue, index: Int, OldVal: Int, NewVal: Int) {
     //mettre a jour le heap
     h.notifyChange(index)
 
     if (vars(h.getFirst).value != miax) {
       miax = vars(h.getFirst).value
-      this := h.getFirsts.foldLeft(SortedSet.empty[Long])((acc, index) => acc + index)
+      this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
     } else if (OldVal == miax) {
       this.deleteValue(index)
       if (this.newValue.isEmpty) {
@@ -132,13 +132,13 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
     }
   }
 
-  override def notifySetChanges(v: ChangingSetValue, id: Int, addedValues: Iterable[Long], removedValues: Iterable[Long], oldValue: SortedSet[Long], newValue: SortedSet[Long]): Unit = {
+  override def notifySetChanges(v: ChangingSetValue, d: Int, addedValues: Iterable[Int], removedValues: Iterable[Int], oldValue: SortedSet[Int], newValue: SortedSet[Int]) : Unit = {
     for (added <- addedValues) notifyInsertOn(v: ChangingSetValue, added)
     for(deleted <- removedValues) notifyDeleteOn(v: ChangingSetValue, deleted)
   }
 
   @inline
-  def notifyInsertOn(v: ChangingSetValue, value: Long) {
+  def notifyInsertOn(v: ChangingSetValue, value: Int) {
     assert(v == cond && cond != null)
     keyForRemoval(value) = registerDynamicDependency(vars(value), value)
 
@@ -147,7 +147,7 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
 
     if (vars(h.getFirst).value != miax) {
       miax = vars(h.getFirst).value
-      this := h.getFirsts.foldLeft(SortedSet.empty[Long])((acc, index) => acc + index)
+      this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
     } else if (vars(value).value == miax) {
       this.insertValue(value)
       miax = vars(h.getFirst).value
@@ -155,7 +155,7 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
   }
 
   @inline
-  def notifyDeleteOn(v: ChangingSetValue, value: Long) {
+  def notifyDeleteOn(v: ChangingSetValue, value: Int) {
     assert(v == cond && cond != null)
 
     keyForRemoval(value).performRemove()
@@ -166,10 +166,10 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
 
     if (h.isEmpty) {
       miax = default
-      this := SortedSet.empty[Long]
+      this := SortedSet.empty[Int]
     } else if (vars(h.getFirst).value != miax) {
       miax = vars(h.getFirst).value
-      this := h.getFirsts.foldLeft(SortedSet.empty[Long])((acc, index) => acc + index)
+      this := h.getFirsts.foldLeft(SortedSet.empty[Int])((acc, index) => acc + index)
     } else if (vars(value).value == miax) {
       this.deleteValue(value)
       if (this.newValue.isEmpty) {
@@ -183,13 +183,13 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
   }
 
   override def checkInternals(c: Checker) {
-    var count: Long = 0L
+    var count: Int = 0
     for (i <- vars.indices) {
       if (cond == null || (cond != null && cond.value.contains(i))) {
         if (vars(i).value == miax) {
           c.check(this.value.contains(i),
             Some("this.value.contains(" + i + ")"))
-          count += 1L
+          count += 1
         } else {
           c.check(ord(miax) < ord(vars(i).value),
             Some("Ord(" + miax + ") < Ord(vars(" + i + ").value ("
@@ -198,7 +198,7 @@ abstract class ArgMiax[X <: IntValue](vars: Array[X], cond: SetValue, default: L
       }
     }
     c.check(this.value.size == count, Some("this.value.size == count"))
-    h.checkInternals()
+    h.checkInternals(c: Checker)
     c.check(h.getFirsts.length == this.value.size, Some("h.getFirsts.length == this.value.size"))
     if (cond != null)
       c.check(this.value.subsetOf(cond.value), Some("this.newValue.subsetOf(cond.newValue)"))

@@ -16,11 +16,11 @@
   */
 package oscar.visual
 
-import java.awt.{BorderLayout, Color, Graphics, Graphics2D}
+import java.awt.{Color, Graphics, Graphics2D}
 import java.awt.event.{MouseEvent, MouseListener, MouseMotionListener}
 import java.awt.geom.{AffineTransform, Point2D}
-
 import javax.swing.{JPanel, SwingUtilities}
+
 import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
 
 import scala.collection.mutable.Queue
@@ -30,7 +30,7 @@ import scala.collection.mutable.Queue
   *
   *  Contains and draws VisualShapes.
   */
-class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel(new BorderLayout()) {
+class VisualDrawing(flipped: Boolean, scalable: Boolean) extends JPanel {
 
   setBackground(Color.white)
 

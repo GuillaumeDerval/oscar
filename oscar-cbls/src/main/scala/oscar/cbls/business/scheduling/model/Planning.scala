@@ -15,7 +15,7 @@
  * ****************************************************************************
  */
 package oscar.cbls.business.scheduling.model
-/*
+
 /**
  * *****************************************************************************
  * Contributors:
@@ -36,35 +36,35 @@ import oscar.cbls.lib.invariant.numeric.Sum
  * @author renaud.delandtsheer@cetic.be
  */
 @deprecated("the whole scheduling package is deprecated and will be fully reworked","4.0")
-class Planning(val model: Store, val maxDuration: Long) {
+class Planning(val model: Store, val maxDuration: Int) {
 
   var isClosed = false
 
   var resources: List[Resource] = List.empty
-  var resourceCount: Long = 0L
+  var resourceCount: Int = 0
   /**called by resources registers it in the planning, returns an ID, which is the one of the resource*/
-  def addResource(r: Resource): Long = {
+  def addResource(r: Resource): Int = {
     resources = r :: resources
-    resourceCount += 1L
-    resourceCount - 1L
+    resourceCount += 1
+    resourceCount - 1
   }
 
   var superActivity = false
   def isThereAnySuperActitity = superActivity
   var activities: List[Activity] = List.empty
-  var activityCount: Long = 0L
+  var activityCount: Int = 0
   /**called by activities registers it in the planning, returns an ID, which is the one of the activity*/
-  def addActivity(j: Activity): Long = {
+  def addActivity(j: Activity): Int = {
     activities = j :: activities
-    activityCount += 1L
-    activityCount - 1L
+    activityCount += 1
+    activityCount - 1
   }
 
   var earliestStartDates: Array[CBLSIntVar] = null
   var earliestEndDates: Array[CBLSIntVar] = null
   var latestStartDates: Array[IntValue] = null
 
-  val makeSpan = CBLSIntVar(model, 0L, 0L to maxDuration, "makeSpan")
+  val makeSpan = CBLSIntVar(model, 0, 0 to maxDuration, "makeSpan")
   var earliestOvershotResources: CBLSSetVar = null
   var worseOvershotResource: SetValue = null
 
@@ -83,7 +83,7 @@ class Planning(val model: Store, val maxDuration: Long) {
     if (isClosed) return
     isClosed = true
     val activitiesNoSentinel = activities
-    sentinelActivity = new Activity(0L, this, "sentinelActivity")
+    sentinelActivity = new Activity(0, this, "sentinelActivity")
     sentinelActivity.latestEndDate := maxDuration
 
     for (a <- activitiesNoSentinel) {
@@ -129,8 +129,8 @@ class Planning(val model: Store, val maxDuration: Long) {
   override def toString: String = toAsciiArt
 
   def toAsciiArt: String = {
-    def nStrings(N: Long, C: String): String = if (N <= 0L) "" else "" + C + nStrings(N - 1L, C)
-    def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
+    def nStrings(N: Int, C: String): String = if (N <= 0) "" else "" + C + nStrings(N - 1, C)
+    def padToLength(s: String, l: Int) = (s + nStrings(l, " ")).substring(0, l)
     val activityList =
       activities.filter(_ != sentinelActivity).sortWith((a, b) =>
         a.earliestStartDate.value < b.earliestStartDate.value)
@@ -156,7 +156,7 @@ class Planning(val model: Store, val maxDuration: Long) {
   }
 
   def resourceUsage: String = {
-    resources.map(_.toAsciiArt(20L)).mkString
+    resources.map(_.toAsciiArt(20)).mkString
   }
   /**
    * Checks that a dependence from --> to can be added to the graph,
@@ -323,9 +323,9 @@ trait EarliestStartDate extends Planning {
    * Note: It seems that using an Activity (instead of a NonMoveableActivity)
    * saves scheduling engine performances.
    */
-  def addEarliestStartDate(task: Activity, earliestStartDate: Long,
+  def addEarliestStartDate(task: Activity, earliestStartDate: Int,
                            nameOfOwner: String = "") {
-    if (earliestStartDate > 0L) {
+    if (earliestStartDate > 0) {
       val esdTaskName = "ESD_task_of_" + nameOfOwner
       val esdTask = new Activity(earliestStartDate, this, esdTaskName)
       task.addStaticPredecessor(esdTask)
@@ -340,7 +340,7 @@ trait EarliestStartDate extends Planning {
  */
 trait Deadlines extends Planning {
   var activitiesWithDeadlines: List[ActivityWithDeadline] = List.empty
-  val totalTardiness = CBLSIntVar(model, 0L, name = "Total tardiness")
+  val totalTardiness = CBLSIntVar(model, 0, name = "Total tardiness")
 
   model.addToCallBeforeClose(() => closeDeadlines())
 
@@ -368,7 +368,7 @@ trait VariableResources extends Planning {
    * indexed by the scheduler's unit.
    */
   val resourceRestrictionTasks: Array[List[NonMoveableActivity]] =
-    Array.fill(maxDuration + 1L)(List())
+    Array.fill(maxDuration + 1)(List())
 
   /**
    * One should use this function to add a variable resource
@@ -382,7 +382,7 @@ trait VariableResources extends Planning {
    *    availabilities(t % availabilities.size)
    * @author yoann.guyot@cetic.be
    */
-  def postVariableResource(availabilities: Array[Long],
+  def postVariableResource(availabilities: Array[Int],
                            name: String = null): VariableResource = {
     VariableResource(this, availabilities, name)
   }
@@ -393,7 +393,7 @@ trait VariableResources extends Planning {
  * @author yoann.guyot@cetic.be
  */
 trait TotalResourcesOvershootEvaluation extends Planning {
-  val totalOvershoot = CBLSIntVar(model, 0L, name = "Total resources overshoot")
+  val totalOvershoot = CBLSIntVar(model, 0, name = "Total resources overshoot")
   
   model.addToCallBeforeClose(() => setTotalOvershoot())
 
@@ -405,4 +405,3 @@ trait TotalResourcesOvershootEvaluation extends Planning {
     totalOvershoot <== Sum(overshootArray)
   }
 }
-*/

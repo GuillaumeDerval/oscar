@@ -22,7 +22,7 @@
  ******************************************************************************/
 
 package oscar.examples.cbls.old.scheduling
-/*
+
 import oscar.cbls._
 import oscar.cbls.business.scheduling.model._
 import oscar.cbls.business.scheduling.model.CumulativeResource
@@ -94,4 +94,3 @@ object ReaganPray extends App {
                        |1        | +++++++++++++++++++++++++
   */
 }
-*/

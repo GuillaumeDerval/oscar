@@ -25,7 +25,7 @@ package oscar.cbls.util
   * */
 trait StopWatch {
 
-  private var starttime:Long = 0L
+  private var starttime:Long = 0
 
   /**starts or resets the stopwatch*/
   def startWatch(){
@@ -35,20 +35,20 @@ trait StopWatch {
   /**returns the time elapsed since the last call to startWatch.
    * time is wall clock time in milliseconds
    */
-  def getWatch:Long = (System.nanoTime() - starttime)/(1000L*1000L)
+  def getWatch:Long = (System.nanoTime() - starttime)/(1000*1000)
 
   /**returns a string describing the time elapsed since last startWatch
    * formatted for humans: hh:mm:ss:ms
    */
   def getWatchString:String = {
     val ms1 = getWatch
-    val s1 :Long= ms1 / 1000L
-    val m1 :Long= s1 / 60L
-    val h : Long = m1 / 60L
+    val s1 :Long= ms1 / 1000
+    val m1 :Long= s1 / 60
+    val h : Long = m1 / 60
 
-    val m :Long= m1 - 60L*h
-    val s :Long= s1 - 60L*m1
-    val ms:Long = ms1 - 1000L*s1
+    val m :Long= m1 - 60*h
+    val s :Long= s1 - 60*m1
+    val ms:Long = ms1 - 1000*s1
 
     h + ":" + m + ":" + s + " & " + ms + "ms"
   }

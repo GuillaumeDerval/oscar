@@ -16,8 +16,9 @@ package oscar.examples.cbls.wlp
   ******************************************************************************/
 
 import oscar.cbls._
-import oscar.cbls.core.search.Best
+import oscar.cbls.core.search.{Best, Move}
 import oscar.cbls.lib.invariant.logic.{Filter, SelectLESetQueue}
+import oscar.cbls.lib.invariant.minmax.MinConstArray
 import oscar.cbls.lib.invariant.numeric.Sum
 import oscar.cbls.lib.search.neighborhoods.{AssignMove, AssignNeighborhood}
 
@@ -32,12 +33,12 @@ import scala.language.postfixOps
 object WarehouseLocationTabu extends App{
 
   //the number of warehouses
-  val W:Int = 50
+  val W:Int = 15
 
   //the number of delivery points
-  val D:Int = 600
+  val D:Int = 150
 
-  println("WarehouseLocationTabu(W:" + W + ", D:" + D + ")")
+  println("WarehouseLocation(W:" + W + ", D:" + D + ")")
   //the cost per delivery point if no location is open
   val defaultCostForNoOpenWarehouse = 10000
 
@@ -50,12 +51,12 @@ object WarehouseLocationTabu extends App{
   val openWarehouses = Filter(warehouseOpenArray).setName("openWarehouses")
 
   val distanceToNearestOpenWarehouse = Array.tabulate(D)(d =>
-    minConstArrayValueWise(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
+    MinConstArray(distanceCost(d), openWarehouses, defaultCostForNoOpenWarehouse).setName("distance_for_delivery_" + d))
 
   val obj = Objective(Sum(distanceToNearestOpenWarehouse) + Sum(costForOpeningWarehouse, openWarehouses))
 
   // we handle the tabu through invariants.
-  // they are completely dissociated from the rest of the model in this case.
+  // notice that they are completely dissociated from the rest of the model in this case.
   val TabuArray = Array.tabulate(W)(w => CBLSIntVar(m,0))
   val It = CBLSIntVar(m)
   val nonTabuWarehouses = SelectLESetQueue(TabuArray,It).setName("non tabu warehouses")
@@ -67,32 +68,19 @@ object WarehouseLocationTabu extends App{
   // *the update of the tabu and iteration count
   // *the stop criterion based on maxMoves since last improvement over obj
   // *the protection of the objectiveFunction
-  val tabuTenure = W/5
-
-  //TODO: this does not work at all.
-
-  val switchWithTabuNeighborhood = (
-    AssignNeighborhood(
-      warehouseOpenArray,
-      "SwitchWarehouseTabu",
-      searchZone = nonTabuWarehouses, //select non tabu warehouses only
-      selectIndiceBehavior = Best(),
-      hotRestart = false) //we do not need hot restart since looking for best
-    afterMoveOnMove((a:AssignMove) => {
-      //update the tabu mechanics
+  val tabuTenure = 3
+  val switchWithTabuNeighborhood = (AssignNeighborhood(warehouseOpenArray, "SwitchWarehouseTabu",
+    searchZone = nonTabuWarehouses,selectIndiceBehavior = Best(),selectValueBehavior = Best())
+    afterMoveOnMove {a:AssignMove =>
     TabuArray(a.id) := It.value + tabuTenure
-    It :+= 1
-      println(nonTabuWarehouses)
-  })
-    acceptAll()
-    maxMoves W withoutImprovementOver obj
-    saveBestAndRestoreOnExhaust obj
-    showObjectiveFunction obj)
+    It :+= 1} acceptAll() maxMoves W withoutImprovementOver obj saveBest obj restoreBestOnExhaust)
 
-  switchWithTabuNeighborhood.verbose = 2
+  switchWithTabuNeighborhood.verbose = 1
 
   //all moves are accepted because the neighborhood returns the best found move, and tabu might degrade obj.
   switchWithTabuNeighborhood.doAllMoves(obj=obj)
 
   println(openWarehouses)
 }
+
+

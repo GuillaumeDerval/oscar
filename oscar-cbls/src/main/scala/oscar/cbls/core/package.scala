@@ -1,7 +1,7 @@
 package oscar.cbls
 
 /**
- * Created by rdl on 11L-09L-1L7.
+ * Created by rdl on 11-09-17.
  */
 package object core {
 
@@ -17,7 +17,7 @@ package object core {
 
   type Bulked[A<: Value,B] = oscar.cbls.core.computation.Bulked[A,B]
 
-  //Long types
+  //Int types
   type IntInvariant = oscar.cbls.core.computation.IntInvariant
   type ChangingIntValue = oscar.cbls.core.computation.ChangingIntValue
   type IntNotificationTarget = oscar.cbls.core.computation.IntNotificationTarget

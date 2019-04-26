@@ -81,8 +81,8 @@ abstract class ChangingAtomicValue[T](initialValue:T)
 
   final protected def performAtomicPropagation(){
     if(mOldValue!=mNewValue){
-      val old = mOldValue
-      mOldValue = mNewValue  //TODO: the change should be made AFTER the notification
+      val old=mOldValue
+      mOldValue=mNewValue  //TODO: the change should be made AFTER the notification
 
       val dynListElements = getDynamicallyListeningElements
       val headPhantom = dynListElements.headPhantom
@@ -107,9 +107,9 @@ abstract class ChangingAtomicValue[T](initialValue:T)
     setValue(v)
   }
 
-  def compare(that: ChangingAtomicValue[T]): Long = {
-    assert(this.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
-    assert(that.uniqueID != -1L, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+  def compare(that: ChangingAtomicValue[T]): Int = {
+    assert(this.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
+    assert(that.uniqueID != -1, "cannot compare non-registered PropagationElements this: [" + this + "] that: [" + that + "]")
     this.uniqueID - that.uniqueID
   }
 }
@@ -165,7 +165,7 @@ class CBLSAtomicConst[T](override val value:T)
 }
 
 object CBLSAtomicConst{
-  //def apply(a:Long) = new CBLSIntConst(a)
+  //def apply(a:Int) = new CBLSIntConst(a)
   def apply[T](a:T) = {
     new CBLSAtomicConst[T](a)
   }
@@ -174,7 +174,7 @@ object CBLSAtomicConst{
 /** this is a special case of invariant that has a single output variable, that is an IntVar
   * @author renaud.delandtsheer@cetic.be
   */
-abstract class AtomicInvariant[T](initialValue:T = 0L)
+abstract class AtomicInvariant[T](initialValue:T = 0)
   extends ChangingAtomicValue[T](initialValue)
     with Invariant{
 

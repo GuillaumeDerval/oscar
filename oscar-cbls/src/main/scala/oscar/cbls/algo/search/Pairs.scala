@@ -16,7 +16,7 @@ package oscar.cbls.algo.search
   ******************************************************************************/
 
 /**
- * Created by rdl on 04L-12L-1L5.
+ * Created by rdl on 04-12-15.
  */
 object Pairs {
 

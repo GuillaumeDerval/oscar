@@ -25,15 +25,14 @@ import scala.collection.Iterator
  ******************************************************************************/
 
 /**This class is a faster version of a heap, where several items stored in it have same index.
- * The heap is actually made of an array,
- * storing lists containing items with same position.
+ * The heap is actually made of an array, storing lists containing items with same position.
  * A binomial heap is maintained to record the lowest position in the heap.
  * This is more efficient if it often occurs that elements have the same position.
  * keys is assumed to start at zero.
   *
   * @author renaud.delandtsheer@cetic.be
  */
-class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
+class AggregatedBinomialHeapQList[@specialized T](GetKey:T => Int,val maxPosition:Int) extends AbstractHeap[T] {
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
@@ -56,7 +55,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
       b.insert(position)
       empty = false
     }else{
-      //this is the desired branch, as it is O(1L)
+      //this is the desired branch, as it is O(1)
       a(position) = QList(elem, otherWithSamePosition)
     }
   }
@@ -66,7 +65,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
   override def popFirsts:List[T] = throw new Error("too inefficient")
 
   override def isEmpty:Boolean = empty
-  override def size: Int = throw new Error("too inefficient")
+  override def size = throw new Error("too inefficient")
 
   override def getFirst: T = a(b.getFirst).head
 
@@ -83,7 +82,7 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
   }
 
   override def iterator: Iterator[T] = {
-    var acc:List[T] = List()
+    var acc:List[T] = null
     for (position <- b){
       var curr = a(position)
         while(curr != null){
@@ -104,13 +103,13 @@ class AggregatedBinomialHeapQList[T](GetKey:T => Int,val maxPosition:Int) extend
   *
   * @author renaud.delandtsheer@cetic.be
   */
-class AggregatedBinomialHeapArrayList[T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
+class AggregatedBinomialHeapArrayList[@specialized T](GetKey:T => Int,val maxPosition:Int, initialSizeForArrayList:Int = 10)(implicit val X:Manifest[T]) extends AbstractHeap[T] {
 
   private[this] val b = new BinomialHeap[Int](a => a, maxPosition)
 
   private[this] val a:Array[QArrayList[T]] = Array.tabulate (maxPosition)(_ => new QArrayList[T](initialSizeForArrayList))
 
-  private[this] var msize:Long = 0
+  private[this] var msize:Int = 0
 
   /**makes the datastruct empty*/
   def dropAll(){

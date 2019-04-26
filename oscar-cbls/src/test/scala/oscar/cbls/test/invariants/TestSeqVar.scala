@@ -15,7 +15,6 @@ package oscar.cbls.test.invariants
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import org.scalatest.{FunSuite, Matchers}
 import oscar.cbls._
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.core.propagation.ErrorChecker
@@ -26,39 +25,52 @@ import scala.collection.immutable.SortedSet
 /**
  * Created by rdl on 18-05-16.
  */
-class TestSeqVar extends FunSuite with Matchers {
+object TestSeqVar extends App{
 
-  test("CBLSSeqVar is coherent"){
-    val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
-    val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
+  val m = new Store(verbose = true,propagateOnToString = true, checker = Some(new ErrorChecker()))
+  val a = new CBLSSeqVar(m,IntSequence(List(1,2,3,5)), n = "toto")
 
-    val size1 = Length(a.createClone())
-    val size2 = Length(a)
-    val pos2 = PositionsOf(a, 2)
-    val content = Content(a)
+  val size1 = Length(a.createClone())
+  val size2 = Length(a)
+  val pos2 = PositionsOf(a, 2)
+  val content = Content(a)
+  m.registerForPartialPropagation(size2)
+  m.close()
 
-    m.registerForPartialPropagation(size2)
-    m.close()
+  println(m.stats)
 
-    a.insertAtPosition(45,3)
-    size2.value should be(5)
+  println(size2)
+//  println(content)
 
-    val checkpoint = a.defineCurrentValueAsCheckpoint(true)
+  println("insertAtPosition(45,3)")
 
-    a.move(1,3,4,false)
-    a.insertAtPosition(12,5)
-    a.remove(a.value.positionOfFirstOccurrence(2).head)
-    a.move(1,3,4,true)
-    a.move(1,3,4,true)
+  a.insertAtPosition(45,3)
+  require(size2.value == 5, "size2 " + size2 + " should==5 " + a.toStringNoPropagate)
 
-    size2.value should be(5)
+  val checkpoint = a.defineCurrentValueAsCheckpoint(true)
+  println("defined checkpoint " + checkpoint)
+  println("insert&Move")
 
-    a.rollbackToTopCheckpoint(checkpoint)
+  a.move(1,3,4,false)
+  a.insertAtPosition(12,5)
+  a.remove(a.value.positionOfFirstOccurrence(2).head)
+  a.move(1,3,4,true)
+  a.move(1,3,4,true)
 
-    size2.value should be(5)
-    content.value.toList should be(List(1,2,3,5,45))
-    a.value should be(checkpoint)
-    size1.value should be(size2.value)
-  }
+  println(size2)
+  println(content)//fail ici
+  println(a)
+  println(pos2)
+
+  require(5 == size2.value)
+
+  println("\n\n")
+  a.rollbackToTopCheckpoint(checkpoint)
+  require(size2.value == 5, "size2 " + size2 + " should==5 " + a.toStringNoPropagate)
+  require(content.value equals SortedSet(1,2,3,5,45))
+  println(content)
+  require(a.value equals checkpoint)
+  println(pos2)
+  require(size1.value == size2.value)
 }
 

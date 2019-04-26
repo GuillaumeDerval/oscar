@@ -13,7 +13,7 @@
  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
  ******************************************************************************/
 package oscar.examples.cbls.old.scheduling
-/*
+
 import oscar.cbls._
 import oscar.cbls.business.scheduling.model.Activity
 import oscar.cbls.business.scheduling.model.Planning
@@ -82,4 +82,3 @@ object Steelworks extends App {
 
 }
 
-*/
