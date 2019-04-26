@@ -37,7 +37,7 @@ case class IsWithin(inner:AtomicValue[Geometry], outer:AtomicValue[Geometry])
   override val violation = new CBLSIntVar(model,0,0 to Int.MaxValue)
 
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -59,7 +59,7 @@ class Union(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geometry])
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -77,7 +77,7 @@ case class Intersection(store:Store,a:AtomicValue[Geometry],b:AtomicValue[Geomet
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -94,7 +94,7 @@ class ConvexHull(store:Store,a:AtomicValue[Geometry])
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -112,7 +112,7 @@ case class Area(store:Store,a:AtomicValue[Geometry])
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -131,7 +131,7 @@ case class Length(store:Store,a:AtomicValue[Geometry])
   this.registerStaticAndDynamicDependency(a)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -148,7 +148,7 @@ class Centroid(store:Store,shape:AtomicValue[Geometry])
   this.registerStaticAndDynamicDependency(shape)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -167,7 +167,7 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[Geometry],pointB:A
   this.registerStaticAndDynamicDependency(pointB)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -186,7 +186,7 @@ class DistanceBetweenShapes(store:Store,pointA:AtomicValue[Geometry],pointB:Atom
   this.registerStaticAndDynamicDependency(pointB)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 

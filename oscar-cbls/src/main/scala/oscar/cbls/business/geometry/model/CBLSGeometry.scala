@@ -42,7 +42,7 @@ class CBLSGeometryVar(store: Store,
     new IdentityGeometry(this, g)
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
@@ -61,7 +61,7 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
   toValue := fromValue.value
 
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     toValue := newVal
   }
 
@@ -71,7 +71,7 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
 }
 
 trait GeometryNotificationTarget{
-  def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Int,oldVal:Geometry,newVal:Geometry)
+  def notifyGeometryChange(a:ChangingAtomicValue[Geometry],id:Long,oldVal:Geometry,newVal:Geometry)
 }
 
 class CBLSGeometryConst(store:Store, override val value:Geometry, givenName:String = "")
@@ -94,7 +94,7 @@ class CBLSGeometryInvariant(store:Store,
     clone
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }

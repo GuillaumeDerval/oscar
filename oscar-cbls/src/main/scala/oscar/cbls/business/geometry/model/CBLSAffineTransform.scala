@@ -48,7 +48,7 @@ class CBLSAffineTransformVar(store: Store,
     new IdentityAffineTransformation(this, g)
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)
   }
@@ -67,7 +67,7 @@ class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:Cha
   toValue := fromValue.value
 
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     toValue := newVal
   }
 
@@ -77,7 +77,7 @@ class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:Cha
 }
 
 trait AffineTransformNotificationTarget{
-  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformation],id:Int,oldVal:AffineTransformation,newVal:AffineTransformation)
+  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformation],id:Long,oldVal:AffineTransformation,newVal:AffineTransformation)
 }
 
 
@@ -101,7 +101,7 @@ class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
     clone
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)
   }

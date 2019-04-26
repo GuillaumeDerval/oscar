@@ -32,7 +32,7 @@ class Compose(store:Store,a:ChangingAtomicValue[AffineTransformation],b:Changing
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -54,7 +54,7 @@ class Translation(store:Store,x:IntValue,y:IntValue)
 
   override def toString: String = "Translation"
 
-  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Int, NewVal: Int): Unit = {
+  override def notifyIntChanged(v: ChangingIntValue, id: Int, OldVal: Long, NewVal: Long): Unit = {
     this.scheduleForPropagation()
   }
 
@@ -76,11 +76,11 @@ class Apply(store:Store,a:AtomicValue[AffineTransformation],b:AtomicValue[Geomet
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
-  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Int, oldVal: Geometry, newVal: Geometry): Unit = {
+  override def notifyGeometryChange(a: ChangingAtomicValue[Geometry], id: Long, oldVal: Geometry, newVal: Geometry): Unit = {
     this.scheduleForPropagation()
   }
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Int, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
     this.scheduleForPropagation()
   }
 
