@@ -18,15 +18,13 @@ package oscar.cbls.business.geometry.invariants
 
 
 import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
-import org.locationtech.jts.algorithm.locate.IndexedPointInAreaLocator
 import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
 import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
+
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
-import oscar.cbls.business.geometry.model.{CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
+import oscar.cbls.business.geometry.model._
 import oscar.cbls.core.IntInvariant
 import oscar.cbls.core.computation.ChangingAtomicValue
-
-import scala.collection.immutable.SortedMap
 
 object Overlap {
 
@@ -90,10 +88,12 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
   //index in array => index in geometry, for fast overlap computation
   var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
   var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
-  scheduleForPropagation()
 
+  //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
   val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
   this := 0
+
+  scheduleForPropagation()
 
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
                                     id: Int,
@@ -143,8 +143,8 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
       - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
   }
 
-  private val ptDist = new PointPairDistance()
   private def computeDistance(shape1:Geometry,point:Point):Double = {
+    val ptDist = new PointPairDistance()
     DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist)
     ptDist.getDistance()
   }

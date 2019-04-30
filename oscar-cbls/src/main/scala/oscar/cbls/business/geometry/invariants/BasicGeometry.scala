@@ -159,7 +159,7 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
 
   override def performInvariantPropagation(): Unit = {
     val c = shape.value.geometry.getCentroid
-    this := new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
+    this := new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius = Some(0.0))
   }
 }
 

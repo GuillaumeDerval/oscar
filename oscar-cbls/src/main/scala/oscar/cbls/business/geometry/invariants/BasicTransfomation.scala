@@ -111,6 +111,8 @@ class RotationAroundZero(store:Store,theta:IntValue, t:Int)
   }
 }
 
+
+
 class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(
     store:Store,

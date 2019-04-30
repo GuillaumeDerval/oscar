@@ -17,7 +17,7 @@ package oscar.cbls.business.geometry.model
 
 import org.locationtech.jts.algorithm.MinimumBoundingCircle
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
-import org.locationtech.jts.geom.{Coordinate, Geometry, Point}
+import org.locationtech.jts.geom.{Geometry, Point}
 import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
