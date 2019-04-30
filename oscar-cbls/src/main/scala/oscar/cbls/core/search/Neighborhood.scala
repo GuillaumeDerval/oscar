@@ -125,13 +125,6 @@ abstract class Neighborhood(name:String = null) {
 
   override def toString: String = (if(name == null) this.getClass.getSimpleName else name)
 
-  //TODO: ajouter un niveau qui montre les exhausted
-  /**
-   * verbosity: 0L: none
-   * 1L: moves
-   * 2L: moves + failed searches
-   * 3L: moves + explored neighbors
-   */
   var _verbose: Int = 0
   def verbose: Int = _verbose
   def verbose_=(i: Int) {
@@ -538,7 +531,7 @@ abstract class EasyNeighborhoodMultiLevel[M<:Move](neighborhoodName:String=null)
     oldObj = initialObj
     this.acceptanceCriterion = acceptanceCriterion
     toReturnMove = null
-    bestNewObj = Long.MaxValue //initialObj //because we do not want "no move" to be considered as an actual move.
+    bestNewObj = initialObj //Long.MaxValue // //because we do not want "no move" to be considered as an actual move.
     this.obj = if (printExploredNeighbors) new LoggingObjective(obj) else obj
     if (printExploredNeighborhoods)
       println(neighborhoodNameToString + ": start exploration")

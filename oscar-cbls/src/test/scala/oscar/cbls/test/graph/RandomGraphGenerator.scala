@@ -109,7 +109,7 @@ object RandomGraphGenerator {
     (1,RemoveFromSetMove(bench.genIntSetVar(),0L,0L)),
     (1,RollMove(bench.genIntVars(),0L,0L)),
     (1,ShiftMove(0L,0L,0L,null,0L)),
-    (1,SwapMove(null,null,0,0,0))
+    (1,SwapMove(null,null,0,0,false,0))
   )
 
   val nodeTypeGen :Gen[VLSNSNodeType.Value] = Gen.frequency(
