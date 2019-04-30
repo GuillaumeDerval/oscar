@@ -2,7 +2,7 @@ package oscar.cbls.lib.search.combinators
 
 import oscar.cbls._
 import oscar.cbls.core.objective.{CascadingObjective, FunctionObjective, Objective}
-import oscar.cbls.core.search._
+import oscar.cbls.core.search.{NoMoveFound, _}
 
 import scala.language.postfixOps
 
@@ -114,7 +114,7 @@ class GeneralizedLocalSearch(a: Neighborhood,
 
   override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
 
-    println("GLS getMove currentWeightOfObj:" + currentWeightOfObj)
+    //println("GLS getMove currentWeightOfObj:" + currentWeightOfObj)
     if (currentWeightOfObj > 0) {
       //it is still a soft constraint
       val initValueOFConstaint = additionalConstraint.value
@@ -122,11 +122,11 @@ class GeneralizedLocalSearch(a: Neighborhood,
         //we are going GeneralizedLocalSearch, but the strong constraint is fine,
         //we can swith to a string constraint
         currentWeightOfObj = 0
-        println("GLS getMove, strong constraints are fine, so switching to Strong (it:" + it + ")")
+        //println("GLS getMove, strong constraints are fine, so switching to Strong (it:" + it + ")")
         return getMove(obj, initialObj, acceptanceCriterion)
       }
 
-      println("GLS getMove, soft constraint currentWeightOfObj:" + currentWeightOfObj + " initValueOFConstaint:" + initValueOFConstaint)
+      //println("GLS getMove, soft constraint currentWeightOfObj:" + currentWeightOfObj + " initValueOFConstaint:" + initValueOFConstaint)
 
       a.getMove(
         new FunctionObjective(() => {
@@ -137,7 +137,7 @@ class GeneralizedLocalSearch(a: Neighborhood,
         (maxValueForWeighting * initValueOFConstaint) + (currentWeightOfObj * initialObj),
         acceptanceCriterion) match {
         case NoMoveFound =>
-          println("NoMoveFound")
+          //println("NoMoveFound")
 
           //it's time to change the weighting?
           if (initValueOFConstaint == 0 || currentWeightOfObj == 1) {
@@ -153,7 +153,7 @@ class GeneralizedLocalSearch(a: Neighborhood,
             this.getMove(obj, initialObj, acceptanceCriterion)
           }
         case m: MoveFound =>
-          println("MoveFound " + m)
+          //println("MoveFound " + m)
           //a move was found,
           //we decrease the weighting anyway, s othe next iteration will be more directed towards target
 
@@ -163,21 +163,36 @@ class GeneralizedLocalSearch(a: Neighborhood,
           MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
       }
     } else if (currentWeightOfObj == 0) {
+      //strong constraint
 
-      println("GLS getMove, strong constraint; violation should be zero")
       val constraintViolation = additionalConstraint.value
-
+      //println("GLS getMove, strong constraint; violation should be zero: is:" + constraintViolation)
       if (constraintViolation != 0) {
-        System.err.println("GLS getMove, error stuff")
+        //println("violation is not zero, so we only optimize on the violation")
+
+        //System.err.println("GLS getMove, error stuff")
         //there is a problem; we are supposed to deal with enforced constraints here, so we reset the counter
         //we have a problem; there is a violation and we cannot go smaller, so temporarily, we forget the obj at all
-        this.getMove(additionalConstraint, constraintViolation, acceptanceCriterion)
+        a.getMove(additionalConstraint, constraintViolation, acceptanceCriterion) match{
+          case NoMoveFound => NoMoveFound
+          case m: MoveFound =>
+            //println("MoveFound " + m)
+            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
+        }
+
       } else {
         //great, we can just post it as a strong constraint
-        a.getMove(new CascadingObjective(additionalConstraint, obj), initialObj, acceptanceCriterion)
+        a.getMove(new CascadingObjective(additionalConstraint, obj), initialObj, acceptanceCriterion) match{
+          case NoMoveFound => NoMoveFound
+          case m: MoveFound =>
+            //println("MoveFound " + m)
+            MoveFound(new MoveWithOtherObj(m.m, Long.MaxValue))
+        }
       }
     } else {
-      assert(false, "should not happen")
+      //solving violation, forget about obj
+
+      require(false, "should not happen")
       null
     }
   }
