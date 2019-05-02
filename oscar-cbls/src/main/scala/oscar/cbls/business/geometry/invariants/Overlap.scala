@@ -20,7 +20,7 @@ package oscar.cbls.business.geometry.invariants
 import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
 import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
 import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
-
+import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry.model._
 import oscar.cbls.core.IntInvariant
@@ -78,7 +78,11 @@ object Overlap {
 }
 
 
-class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
+/**
+  * @param shapes
+  * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
+  */
+class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
   extends IntInvariant
     with GeometryNotificationTarget{
 
@@ -86,12 +90,32 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
   finishInitialization()
 
   //index in array => index in geometry, for fast overlap computation
-  var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
-  var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+
+  if(preComputeAll){
+    for(id <- shapes.indices) computeAndReturnIndex(id)
+  }
+
+  private var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+
+  private def computeAndReturnIndex(id:Int):PreparedGeometry = {
+    geometryIndexes(id) = PreparedGeometryFactory.prepare(shapes(id).value.geometry)
+    geometryIndexes(id)
+  }
 
   //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
-  val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
+  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
   this := 0
+
+
+  //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
+  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
+    val v = CBLSIntVar(model,name="violation of overlap of shape " + id)
+    v.setDefiningInvariant(this)
+    v
+  })
+
+  def violation(shapeID:Int):IntValue = overlapByShape(shapeID)
 
   scheduleForPropagation()
 
@@ -111,6 +135,8 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
         val oldOverlap = recordedOverlap(shapeIDToCheck)(otherID)
         recordedOverlap(shapeIDToCheck)(otherID) = newOverlap
         this :+= (newOverlap - oldOverlap)
+        overlapByShape(shapeIDToCheck) :+= (newOverlap - oldOverlap)
+        overlapByShape(otherID) :+= (newOverlap - oldOverlap)
       }
     }
     changedShapesToCheck.all = false
@@ -126,11 +152,9 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
     }else{
       //create an index for the biggest shape
       if(shape1.geometry.getNumPoints > shape2.geometry.getNumPoints){
-        geometryIndexes(id1) = PreparedGeometryFactory.prepare(shape1.geometry)
-        if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
+        if(computeAndReturnIndex(id1).disjoint(shape2.geometry)) return 0
       }else{
-        geometryIndexes(id2) = PreparedGeometryFactory.prepare(shape2.geometry)
-        if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
+        if(computeAndReturnIndex(id2).disjoint(shape1.geometry)) return 0
       }
     }
 
@@ -149,3 +173,5 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar])
     ptDist.getDistance()
   }
 }
+
+
