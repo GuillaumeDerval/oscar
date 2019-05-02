@@ -61,6 +61,7 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
     }
   }
 
+  /*
   test("Mouthuy with deterministic values"){
 
     val nbNodes = 6
@@ -97,6 +98,8 @@ class MouthuyTestSuite extends FunSuite with Matchers with GeneratorDrivenProper
 
     cycle shouldBe defined
   }
+
+*/
 
   val genVlsn: Gen[VLSNGraph] = for{
     nbNodes <- Gen.choose(10,20)
