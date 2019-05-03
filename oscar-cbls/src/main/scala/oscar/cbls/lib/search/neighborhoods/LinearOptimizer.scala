@@ -26,13 +26,15 @@ import oscar.cbls.lib.invariant.numeric.Sum2
   */
 abstract class LinearOptimizer{
   /**
-    * the method that linear selectors must implement.
+    * This is the method that linear selectors must implement.
     * it performs a search and has not other interface than this one.
     *
-    * @param obj a function to evaluate a value; it returns an objective (BEWARE this is time consuming!)
-    * @param maxValue the maximal value to explore. the min is zero.
-    * @param objAtZero the objective value at zero
-    * @param shouldStop poll this at each iteration, and stop if it returns true
+    * @param startPos the starting position in the search
+    * @param startObj the starting objective value
+    * @param minValue the minimal value to explore
+    * @param maxValue the maximal value to explore
+    * @param obj a function to evaluate a value; it returns an objective value (BEWARE this is time consuming!)
+    * @return a value in the range (minValue,maxValue) and the objective value associated
     */
   def search(startPos: Long,
              startObj: Long,
@@ -42,11 +44,11 @@ abstract class LinearOptimizer{
 
   def carryOnTo(b:LinearOptimizer) = new CarryOnTo(this,b)
 
-  def andThen(b:LinearOptimizer) = new AndThen(this,b)
+  def andThen(b:LinearOptimizer) = AndThen(this,b)
 
-  def restrictBounds(newMinValue:Long, newMaxValue:Long) =  new RestrictBounds(this, newMinValue:Long, newMaxValue:Long)
+  def restrictBounds(newMinValue:Long, newMaxValue:Long) = RestrictBounds(this, newMinValue:Long, newMaxValue:Long)
 
-  def restrictSlide(maxIncrease:Long, maxDecrease:Long) = new RestrictSlide(this, maxIncrease:Long, maxDecrease:Long)
+  def restrictSlide(maxIncrease:Long, maxDecrease:Long) = RestrictSlide(this, maxIncrease:Long, maxDecrease:Long)
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
@@ -119,7 +121,7 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
   override def toString: String = "Exhaustive(step:" + step + ")"
 }
 
-class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptimizer{
+class NarrowingStepSlide(dividingRatio:Long, minStep: Long) extends LinearOptimizer {
 
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
@@ -127,7 +129,7 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
       search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
   }
 
-  def generateSteps(maxStepSize:Long):List[Long] = {
+  private def generateSteps(maxStepSize:Long):List[Long] = {
     if(maxStepSize <= minStep) List(minStep)
     else if(maxStepSize < dividingRatio) List(1L)
     else  maxStepSize :: generateSteps(maxStepSize/dividingRatio)
@@ -135,7 +137,7 @@ class NarrowingStepSlide(dividingRatio:Long, minStep: Long)  extends LinearOptim
 }
 
 
-class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false)  extends LinearOptimizer{
+class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean = false) extends LinearOptimizer {
 
   override def toString: String = "NarrowingExhaustive(dividingRatio:" + dividingRatio + " minStep:" + minStep + ")"
 
@@ -151,7 +153,7 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean
         //we have to do one search, with minStep, and return
         val localExhaustiveSearch = new Exhaustive(step = minStep, skipInitial = true, maxIt = Long.MaxValue)
         localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
-      }else {
+      }else{
         val localExhaustiveSearch = new Exhaustive(step = step, skipInitial = true, maxIt = Long.MaxValue)
         val (newVal, newObj) = localExhaustiveSearch.search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
         if (isLazy) {
@@ -161,12 +163,11 @@ class NarrowingExhaustive(dividingRatio:Long, minStep: Long = 1,isLazy : Boolean
             (newVal,newObj)
         }
         else
-           this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
+          this.search(newVal: Long, newObj, minValue max (newVal - step), maxValue min (newVal + step), obj: Long => Long)
       }
     }
   }
 }
-
 
 class TryExtremes() extends LinearOptimizer {
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
@@ -179,7 +180,7 @@ class TryExtremes() extends LinearOptimizer {
   override def toString: String = "TryExtremes()"
 }
 
-class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Boolean,maxIt:Long)
+class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Boolean, maxIt:Long)
   extends LinearOptimizer{
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
 
@@ -359,13 +360,86 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
   }
 }
 
+class ModuloOptimizer(modulo: Long) extends LinearOptimizer {
+  /**
+    * This is the method that linear selectors must implement.
+    * it performs a search and has not other interface than this one.
+    *
+    * @param startPos the starting position in the search
+    * @param startObj the starting objective value
+    * @param minValue the minimal value to explore
+    * @param maxValue the maximal value to explore
+    * @param obj      a function to evaluate a value; it returns an objective value (BEWARE this is time consuming!)
+    * @return a value in the range (minValue,maxValue) and the objective value associated
+    */
+  override def search(startPos: Long,
+                      startObj: Long,
+                      minValue: Long,
+                      maxValue: Long,
+                      obj: Long => Long): (Long, Long) = {
+    // The search takes two directions from startPos:
+    // Forward, from startPos to maxValue
+    // Backward, from startPos to minValue
+    var moveFW = true
+    var xFW = startPos
+    var itFW = 1L
+    var xFWmod = itFW % modulo
+    var xBW = startPos
+    var itBW = 1L
+    var xBWmod = modulo - (itBW % modulo)
+    var currentX = startPos
+    var currentXMod = 0L
+    var currentObj = startObj
+    var bestX = currentX
+    var bestXmod = 0L
+    var bestObj = currentObj
+    while ((xFW <= maxValue) || (minValue <= xBW)) {
+      if (moveFW) {
+        xFW = startPos + itFW
+        if (xFW <= maxValue) {
+          currentX = xFW
+          currentXMod = itFW % modulo
+          currentObj = obj(xFW)
+        }
+        itFW += 1
+      } else {
+        xBW = startPos - itBW
+        if (minValue <= xBW) {
+          currentX = xBW
+          currentXMod = (modulo - (itBW % modulo)) % modulo
+          currentObj = obj(xBW)
+        }
+        itBW += 1
+      }
+      // Checking optimality
+      if (currentObj < bestObj) {
+        bestObj = currentObj
+        bestX = currentX
+        bestXmod = currentXMod
+      }
+      // Looking for changing search direction
+      if (xFW > maxValue) {
+        moveFW = false
+      } else if (minValue > xBW) {
+        moveFW = true
+      } else {
+        moveFW = !moveFW
+      }
+    }
+    // Return the value modulo
+    (bestXmod, bestObj)
+  }
+
+  override def toString: String = s"Modulo($modulo)"
+}
+
 object TestRN extends App{
 
   def f1:Long => Long = x => {x*x - 150L*x + 5090L}
   def f2:Long => Long = x => {-150L*x + 5090L}
   def f3:Long => Long = x => {(math.cos(x)*500L).toLong - 150L*x + 5090L}
 
-  val f = f3
+  val f = f1
   val maxIt = 100L
 
   def eval(l:LinearOptimizer): Unit ={
@@ -384,6 +458,7 @@ object TestRN extends App{
   eval(new Exhaustive(step = 50L, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step = 1L, maxIt: Long)))
   eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step=1L, maxIt: Long))
   eval(new NarrowingExhaustive(100L, minStep = 1))
+  eval(new ModuloOptimizer(450))
 
 }
 
