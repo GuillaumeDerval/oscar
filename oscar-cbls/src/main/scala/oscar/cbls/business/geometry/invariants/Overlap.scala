@@ -169,7 +169,7 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
 
   private def computeDistance(shape1:Geometry,point:Point):Double = {
     val ptDist = new PointPairDistance()
-    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist)
+    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
     ptDist.getDistance()
   }
 }
