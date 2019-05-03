@@ -54,7 +54,9 @@ case class GeometryValue(val geometry:Geometry)(
   }
 
   def mightOverlapBasedOnOverApproximatingValues(other:GeometryValue):Boolean = {
-    (centerOfOverApproximatingCircle distance other.centerOfOverApproximatingCircle) <= (overApproximatingRadius + other.overApproximatingRadius)
+    val toReturn = (centerOfOverApproximatingCircle distance other.centerOfOverApproximatingCircle) <= (overApproximatingRadius + other.overApproximatingRadius)
+    println("mightOverlapBasedOnOverApproximatingValues returned " + toReturn)
+    toReturn
   }
 }
 

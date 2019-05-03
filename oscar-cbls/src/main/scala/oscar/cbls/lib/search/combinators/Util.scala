@@ -68,9 +68,14 @@ class Name(a: Neighborhood, val name: String) extends NeighborhoodCombinator(a) 
    * @return an improving move
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if(printExploredNeighborhoods) println(name + ": start exploration")
     a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
-      case NoMoveFound => NoMoveFound
-      case MoveFound(m) => NamedMove(m, name)
+      case NoMoveFound =>
+        if(printExploredNeighborhoods) println(name + ": NoMoveFound")
+        NoMoveFound
+      case MoveFound(m) =>
+        if(printExploredNeighborhoods) println(name + ": MoveFound:" + m)
+        NamedMove(m, name)
     }
   }
 
@@ -94,9 +99,14 @@ class ChainableName[MoveType <: Move](a: Neighborhood with SupportForAndThenChai
    * @return an improving move
    */
   override def getMove(obj: Objective, initialObj:Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
+    if(printExploredNeighborhoods) println(name + ": start exploration")
     a.getMove(obj, initialObj:Long, acceptanceCriterion) match {
-      case NoMoveFound => NoMoveFound
-      case MoveFound(m) => NamedMove(m, name)
+      case NoMoveFound =>
+        if(printExploredNeighborhoods) println(name + ": NoMoveFound")
+        NoMoveFound
+      case MoveFound(m) =>
+        if(printExploredNeighborhoods) println(name + ": MoveFound:" + m)
+        NamedMove(m, name)
     }
   }
 

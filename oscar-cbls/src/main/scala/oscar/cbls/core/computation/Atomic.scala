@@ -81,8 +81,8 @@ abstract class ChangingAtomicValue[T](initialValue:T)
 
   final protected def performAtomicPropagation(){
     if(mOldValue!=mNewValue){
-      val old = mOldValue
-      mOldValue = mNewValue  //TODO: the change should be made AFTER the notification
+      val old=mOldValue
+      mOldValue=mNewValue  //TODO: the change should be made AFTER the notification
 
       val dynListElements = getDynamicallyListeningElements
       val headPhantom = dynListElements.headPhantom

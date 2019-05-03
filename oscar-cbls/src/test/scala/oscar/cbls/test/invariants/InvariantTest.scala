@@ -351,12 +351,12 @@ class InvariantTests extends FunSuite with Checkers {
   }
 
   test("SubSequence"){
-    val bench = new InvBench(verbose,List(PlusOne(),Shuffle()))
+    val bench = new InvBench(verbose, List(PlusOne(),Shuffle()))
     val maxsize = 25
     val seqVar = bench.genIntSeqVar(maxsize)
     val index = scala.util.Random.nextInt(seqVar.value.size)
-    val length = scala.util.Random.nextInt(seqVar.value.size - index)
-    SubSequence(seqVar,index,length)
+    val length = scala.util.Random.nextInt(seqVar.value.size - index) + 1
+    SubSequence(seqVar, index, length)
     bench.run()
   }
 

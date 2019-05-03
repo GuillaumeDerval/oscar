@@ -7,15 +7,14 @@ import xerial.sbt.Pack._
 import sbtunidoc.Plugin._
 import java.util.Date
 
-
 object OscarBuild extends Build {
 
-  lazy val PerfTest = config("perf") extend(Test)
+  lazy val PerfTest = config("perf") extend Test
 
   object BuildSettings {
     val buildOrganization = "oscar"
     val buildVersion = "4.0.0-SNAPSHOT"
-    val buildScalaVersion = "2.12.4"
+    val buildScalaVersion = "2.12.8"
     val buildSbtVersion= "0.13.12"
 
 
@@ -102,7 +101,6 @@ object OscarBuild extends Build {
   import Resolvers._
   import UnidocKeys._
 
-
   def ceticSpecificSettings = {
     if(Option(System.getProperty("cetic")).isDefined) Seq(
       publishTo := {
@@ -116,7 +114,7 @@ object OscarBuild extends Build {
         ("REVISION_ID", System.getProperty("REVISION_ID")),
         ("REVISION_URL", ("https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID")) ),
         ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
-        ("BUILD_DATE", new Date().toString())
+        ("BUILD_DATE", new Date().toString)
       )
     )
     else Seq()
@@ -246,7 +244,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cbls"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarCbls,oscarFzn,oscarFznCp)
   )
 
@@ -255,7 +253,7 @@ object OscarBuild extends Build {
     base = file("oscar-fzn-cp"),
     settings =
       commonSettings ++
-      Seq(libraryDependencies ++= testDeps),
+        Seq(libraryDependencies ++= testDeps),
     dependencies = Seq(oscarCp,oscarFzn)
   )
 
