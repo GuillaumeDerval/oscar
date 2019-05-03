@@ -58,8 +58,10 @@ class StrictInclusion(innerShape:CBLSGeometryVar, outerShape:CBLSGeometryConst, 
         this := ptDist.getDistance().toLong
       }else{
         //the longest distance between the centre of the shape and all points of the other shape
-        this := MaxDistance.computeDistance(innerShape.value.geometry, outerShape.value.centerOfOverApproximatingCircle.getCoordinate).toLong
+        this := MaxDistance.computeDistance(innerShape.value.geometry, outerShape.value.centerOfOverApproximatingCircle.getCoordinate).getDistance.toLong
       }
     }
   }
 }
+
+

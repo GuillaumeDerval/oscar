@@ -20,7 +20,7 @@ package oscar.cbls.business
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Point}
-import oscar.cbls.business.geometry.model.GeometryValue
+import oscar.cbls.business.geometry.model.{CBLSGeometryConst, CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
 
 package object geometry {
 
@@ -105,4 +105,14 @@ package object geometry {
         inputOverApproximatingRadius = Some(r))
     }
   }
+
+  type CBLSGeometryConst = oscar.cbls.business.geometry.model.CBLSGeometryConst
+  final val CBLSGeometryConst = oscar.cbls.business.geometry.model.CBLSGeometryConst
+
+  type CBLSGeometryVar = oscar.cbls.business.geometry.model.CBLSGeometryVar
+  final val CBLSGeometryVar = oscar.cbls.business.geometry.model.CBLSGeometryVar
+
+  type GeometryValue = oscar.cbls.business.geometry.model.GeometryValue
+  final val GeometryValue = oscar.cbls.business.geometry.model.GeometryValue
+
 }

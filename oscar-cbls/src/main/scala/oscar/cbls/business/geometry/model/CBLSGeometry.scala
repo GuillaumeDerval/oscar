@@ -22,7 +22,7 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
-class GeometryValue(val geometry:Geometry)(
+case class GeometryValue(val geometry:Geometry)(
   var inputCentreOfOverApproximatingCircle:Option[Point] = None,
   var inputOverApproximatingRadius:Option[Double] = None) {
 
@@ -58,7 +58,7 @@ class GeometryValue(val geometry:Geometry)(
   }
 }
 
-class CBLSGeometryVar(store: Store,
+case class CBLSGeometryVar(store: Store,
                       initialValue: GeometryValue,
                       givenName: String = null)
   extends CBLSAtomicVar[GeometryValue](store: Store,
@@ -113,7 +113,7 @@ trait GeometryNotificationTarget{
   def notifyGeometryChange(a:ChangingAtomicValue[GeometryValue],id:Int,oldVal:GeometryValue,newVal:GeometryValue)
 }
 
-class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
+case class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
   extends CBLSAtomicConst[GeometryValue](value){
   override def name = if (givenName == null) value.toString else givenName
   override def toString:String = if (givenName == null) value.toString else givenName
