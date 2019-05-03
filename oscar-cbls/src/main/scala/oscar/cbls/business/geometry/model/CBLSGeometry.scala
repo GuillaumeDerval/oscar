@@ -55,7 +55,6 @@ case class GeometryValue(val geometry:Geometry)(
 
   def mightOverlapBasedOnOverApproximatingValues(other:GeometryValue):Boolean = {
     val toReturn = (centerOfOverApproximatingCircle distance other.centerOfOverApproximatingCircle) <= (overApproximatingRadius + other.overApproximatingRadius)
-    println("mightOverlapBasedOnOverApproximatingValues returned " + toReturn)
     toReturn
   }
 }
@@ -135,13 +134,8 @@ class CBLSGeometryInvariant(store:Store,
     clone
   }
 
-
-
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
   }
 }
-
-
-

@@ -23,8 +23,8 @@ import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
 import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry.model._
-import oscar.cbls.core.IntInvariant
-import oscar.cbls.core.computation.ChangingAtomicValue
+import oscar.cbls.core.{IntInvariant, Invariant}
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
 
 object Overlap {
 
@@ -82,12 +82,14 @@ object Overlap {
   * @param shapes
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
   */
-class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
-  extends IntInvariant
-    with GeometryNotificationTarget{
+class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeAll:Boolean = true)
+  extends Invariant with GeometryNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(shapes)
   finishInitialization()
+
+  val output = CBLSIntVar(model,name="violation of NoOverlapPenetration")
+  output.setDefiningInvariant(this)
 
   //index in array => index in geometry, for fast overlap computation
   private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
@@ -103,9 +105,9 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
     geometryIndexes(id)
   }
 
-  //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
-  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id-1)(0))
-  this := 0
+  //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
+  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
+  output := 0
 
 
   //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
@@ -130,11 +132,11 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
 
   override def performInvariantPropagation(): Unit = {
     for(shapeIDToCheck <- changedShapesToCheck.indicesAtTrue){
-      for(otherID <- 0 until shapeIDToCheck){
+      for(otherID <- shapes.indices if !changedShapesToCheck(otherID) || otherID < shapeIDToCheck){
         val newOverlap = computeOverlapViolation(shapes(shapeIDToCheck).value,shapeIDToCheck,shapes(otherID).value,otherID)
-        val oldOverlap = recordedOverlap(shapeIDToCheck)(otherID)
-        recordedOverlap(shapeIDToCheck)(otherID) = newOverlap
-        this :+= (newOverlap - oldOverlap)
+        val oldOverlap = recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID)
+        recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID) = newOverlap
+        output :+= (newOverlap - oldOverlap)
         overlapByShape(shapeIDToCheck) :+= (newOverlap - oldOverlap)
         overlapByShape(otherID) :+= (newOverlap - oldOverlap)
       }
@@ -142,7 +144,7 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
     changedShapesToCheck.all = false
   }
 
-  private def computeOverlapViolation(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Int = {
+  private def computeOverlapViolation(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Long = {
     if(! (shape1 mightOverlapBasedOnOverApproximatingValues shape2)) return 0
 
     if(geometryIndexes(id1) != null){
@@ -162,9 +164,9 @@ class NoOverlapPenetration(shapes:Array[CBLSGeometryVar], preComputeAll:Boolean)
     //which is faster to compute than the overlap area
     //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
     (shape1.overApproximatingRadius
-      + shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius
       - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
-      - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toInt
+      - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toLong
   }
 
   private def computeDistance(shape1:Geometry,point:Point):Double = {

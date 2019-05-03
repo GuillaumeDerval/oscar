@@ -29,7 +29,7 @@ import scala.util.Random
   */
 object ColorGenerator {
   def generateRandomColors(number:Int,alpha:Int = 255): Array[Color] ={
-    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256)))
+    Array.fill(number)(new Color(Random.nextInt(256),Random.nextInt(256),Random.nextInt(256),alpha))
   }
 
   /**

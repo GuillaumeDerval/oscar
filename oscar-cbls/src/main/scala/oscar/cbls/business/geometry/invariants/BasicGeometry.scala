@@ -18,7 +18,8 @@ package oscar.cbls.business.geometry.invariants
 import oscar.cbls._
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
-import oscar.cbls.core.computation._
+import oscar.cbls.core._
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
 import oscar.cbls.core.propagation.Checker
 
 
@@ -65,24 +66,22 @@ class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue
   }
 }
 
-case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue], preCheck:Boolean)
-  extends CBLSGeometryInvariant(store:Store,
-    initialValue =
-      if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
-        geometry.emptyGeometryValue
-      else new GeometryValue(a.value.geometry intersection b.value.geometry)())
+case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue])
+  extends CBLSGeometryInvariant(store:Store,geometry.emptyGeometryValue)
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
   this.registerStaticAndDynamicDependency(b)
   finishInitialization(store)
 
+  performInvariantPropagation()
+
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue], id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     this.scheduleForPropagation()
   }
 
   override def performInvariantPropagation(): Unit = {
-    this :=  (if (preCheck && (a.value mightOverlapBasedOnOverApproximatingValues b.value))
+    this :=  (if (!(a.value mightOverlapBasedOnOverApproximatingValues b.value))
       geometry.emptyGeometryValue
     else new GeometryValue(a.value.geometry intersection b.value.geometry)())
   }
@@ -107,8 +106,8 @@ class ConvexHull(store:Store,a:AtomicValue[GeometryValue])
 
 case class Area(store:Store,a:AtomicValue[GeometryValue])
   extends IntInvariant(
-    initialValue = a.value.geometry.getArea().toInt,
-    initialDomain = 0 to Int.MaxValue)
+    initialValue = a.value.geometry.getArea().toLong,
+    initialDomain = Domain(0L,Long.MaxValue))
     with GeometryNotificationTarget{
 
   this.registerStaticAndDynamicDependency(a)
@@ -119,7 +118,7 @@ case class Area(store:Store,a:AtomicValue[GeometryValue])
   }
 
   override def performInvariantPropagation(): Unit = {
-    this :=  a.value.geometry.getArea().toInt
+    this :=  a.value.geometry.getArea().toLong
   }
 }
 
