@@ -181,3 +181,4 @@ class DistanceBetweenCentroids(store:Store,pointA:AtomicValue[GeometryValue],poi
     this := pointA.value.geometry.getCentroid.distance(pointA.value.geometry.getCentroid).toInt
   }
 }
+

@@ -103,7 +103,7 @@ class CBLSAffineTransformInvariant(initialValue:AffineTransformationValue)
     clone <== this
     clone
   }
-
+ 
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformationValue, newVal: AffineTransformationValue): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)

@@ -116,3 +116,4 @@ package object geometry {
   final val GeometryValue = oscar.cbls.business.geometry.model.GeometryValue
 
 }
+

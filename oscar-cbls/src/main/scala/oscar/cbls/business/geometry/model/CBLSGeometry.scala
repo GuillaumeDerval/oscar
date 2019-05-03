@@ -134,6 +134,7 @@ class CBLSGeometryInvariant(store:Store,
   }
 
 
+
   override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: GeometryValue, newVal: GeometryValue): Unit = {
     val target = inv.asInstanceOf[GeometryNotificationTarget]
     target.notifyGeometryChange(this,id,oldVal,newVal)
