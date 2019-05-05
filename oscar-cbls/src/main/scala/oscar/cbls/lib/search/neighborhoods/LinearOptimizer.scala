@@ -379,52 +379,46 @@ class ModuloOptimizer(modulo: Long) extends LinearOptimizer {
                       obj: Long => Long): (Long, Long) = {
     // The search takes two directions from startPos:
     // Forward, from startPos to maxValue
-    // Backward, from startPos to minValue
-    var moveFW = true
-    var xFW = startPos
-    var itFW = 1L
-    var xFWmod = itFW % modulo
-    var xBW = startPos
-    var itBW = 1L
-    var xBWmod = modulo - (itBW % modulo)
+    // Backward, from startPos back to minValue
     var currentX = startPos
     var currentXMod = 0L
     var currentObj = startObj
     var bestX = currentX
     var bestXmod = 0L
     var bestObj = currentObj
-    while ((xFW <= maxValue) || (minValue <= xBW)) {
-      if (moveFW) {
-        xFW = startPos + itFW
-        if (xFW <= maxValue) {
-          currentX = xFW
-          currentXMod = itFW % modulo
-          currentObj = obj(xFW)
-        }
-        itFW += 1
-      } else {
-        xBW = startPos - itBW
-        if (minValue <= xBW) {
-          currentX = xBW
-          currentXMod = (modulo - (itBW % modulo)) % modulo
-          currentObj = obj(xBW)
-        }
-        itBW += 1
-      }
+    // First loop: forward exploration
+    var xFW = startPos
+    var itFW = 1L
+    var xFWmod = itFW % modulo
+    while ((startPos + itFW) <= maxValue) {
+      xFW = startPos + itFW
+      currentX = xFW
+      currentXMod = itFW % modulo
+      currentObj = obj(xFW)
       // Checking optimality
       if (currentObj < bestObj) {
         bestObj = currentObj
         bestX = currentX
         bestXmod = currentXMod
       }
-      // Looking for changing search direction
-      if (xFW > maxValue) {
-        moveFW = false
-      } else if (minValue > xBW) {
-        moveFW = true
-      } else {
-        moveFW = !moveFW
+      itFW += 1
+    }
+    // Second loop: backward exploration
+    var xBW = startPos
+    var itBW = 1L
+    var xBWmod = modulo - (itBW % modulo)
+    while ((startPos - itBW) >= minValue) {
+      xBW = startPos - itBW
+      currentX = xBW
+      currentXMod = (modulo - (itBW % modulo)) % modulo
+      currentObj = obj(xBW)
+      // Checking optimality
+      if (currentObj < bestObj) {
+        bestObj = currentObj
+        bestX = currentX
+        bestXmod = currentXMod
       }
+      itBW += 1
     }
     // Return the value modulo
     (bestXmod, bestObj)
@@ -439,7 +433,7 @@ object TestRN extends App{
   def f2:Long => Long = x => {-150L*x + 5090L}
   def f3:Long => Long = x => {(math.cos(x)*500L).toLong - 150L*x + 5090L}
 
-  val f = f1
+  val f = f3
   val maxIt = 100L
 
   def eval(l:LinearOptimizer): Unit ={
@@ -458,7 +452,7 @@ object TestRN extends App{
   eval(new Exhaustive(step = 50L, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step = 1L, maxIt: Long)))
   eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step=1L, maxIt: Long))
   eval(new NarrowingExhaustive(100L, minStep = 1))
-  eval(new ModuloOptimizer(450))
+  eval(new ModuloOptimizer(360))
 
 }
 
