@@ -49,6 +49,8 @@ abstract class LinearOptimizer{
   def restrictBounds(newMinValue:Long, newMaxValue:Long) = RestrictBounds(this, newMinValue:Long, newMaxValue:Long)
 
   def restrictSlide(maxIncrease:Long, maxDecrease:Long) = RestrictSlide(this, maxIncrease:Long, maxDecrease:Long)
+
+  def modulo(modulo: Long, overlapPercentage:Int = 100) = new ModuloOptimizer(modulo, overlapPercentage,  baseOptimizer = this)
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
@@ -360,7 +362,52 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
   }
 }
 
-class ModuloOptimizer(modulo: Long) extends LinearOptimizer {
+class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:LinearOptimizer) extends LinearOptimizer {
+
+  require(overlapPercentage <= 100, "overlapPercentage should be < 100, got " + overlapPercentage)
+  require(overlapPercentage >= 0, "overlapPercentage should be >=0 , got " + overlapPercentage)
+
+  /**
+    * This is the method that linear selectors must implement.
+    * it performs a search and has not other interface than this one.
+    *
+    * @param startPos the starting position in the search
+    * @param startObj the starting objective value
+    * @param minValue the minimal value to explore
+    * @param maxValue the maximal value to explore
+    * @param obj a function to evaluate a value; it returns an objective value (BEWARE this is time consuming!)
+    * @return a value in the range (minValue,maxValue) and the objective value associated
+    */
+  override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
+
+    //halfwidth spans on both sides of startPOs
+    val halfWidth: Long = ((modulo.toFloat * (50 + overlapPercentage)) / 100).toLong //TODO: roundUp!!
+
+    def valToModulo(v: Long): Long = {
+      if (v > maxValue) v - modulo
+      else if (v < minValue) v + modulo
+      else v
+    }
+
+    val (newVal,newObj) = baseOptimizer.search(
+      startPos,
+      startObj,
+      minValue = startPos - halfWidth,
+      maxValue = startPos + halfWidth,
+      obj = (v: Long) => obj({
+        val x = valToModulo(v)
+        require(x <= maxValue)
+        require(minValue <= x)
+        x
+      })
+    )
+
+    (valToModulo(newVal),newObj)
+  }
+}
+
+
+class ModuloOptimizerExhaustive(modulo: Long) extends LinearOptimizer {
   /**
     * This is the method that linear selectors must implement.
     * it performs a search and has not other interface than this one.
