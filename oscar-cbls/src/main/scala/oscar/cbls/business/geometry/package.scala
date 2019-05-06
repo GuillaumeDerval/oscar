@@ -72,7 +72,6 @@ package object geometry {
   }
 
   def createCircle(r:Double,nbEdges:Int = 16, ensureCorrectSurface:Boolean = true):GeometryValue = {
-    println("creating circle ")
     require(nbEdges >=4,"a circle is hard to approximate with less than four edges...")
 
     val pointRotation = AffineTransformation.rotationInstance((2*math.Pi)/nbEdges)
