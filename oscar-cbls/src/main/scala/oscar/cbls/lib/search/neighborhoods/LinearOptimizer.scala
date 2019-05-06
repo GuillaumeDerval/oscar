@@ -380,8 +380,13 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:L
     */
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
 
-    //halfwidth spans on both sides of startPOs
-    val halfWidth: Long = ((modulo.toFloat * (50 + overlapPercentage)) / 100).toLong //TODO: roundUp!!
+    require(modulo <= (maxValue - minValue))
+
+    // Halfwidth spans on both sides of startPOs
+    val modTimes = modulo*(50+overlapPercentage)
+    val modDiv = modTimes / 100
+    val roundUp = if ((modTimes % 100) == 0) 0 else 1
+    val halfWidth = modDiv + roundUp
 
     def valToModulo(v: Long): Long = {
       if (v > maxValue) v - modulo
@@ -404,6 +409,8 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:L
 
     (valToModulo(newVal),newObj)
   }
+
+  override def toString: String = s"Modulo($modulo, $overlapPercentage, $baseOptimizer)"
 }
 
 
@@ -471,7 +478,7 @@ class ModuloOptimizerExhaustive(modulo: Long) extends LinearOptimizer {
     (bestXmod, bestObj)
   }
 
-  override def toString: String = s"Modulo($modulo)"
+  override def toString: String = s"ModuloExhaustive($modulo)"
 }
 
 object TestRN extends App{
@@ -480,7 +487,7 @@ object TestRN extends App{
   def f2:Long => Long = x => {-150L*x + 5090L}
   def f3:Long => Long = x => {(math.cos(x)*500L).toLong - 150L*x + 5090L}
 
-  val f = f3
+  val f = f1
   val maxIt = 100L
 
   def eval(l:LinearOptimizer): Unit ={
@@ -499,7 +506,7 @@ object TestRN extends App{
   eval(new Exhaustive(step = 50L, maxIt = maxIt) andThen (new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step = 1L, maxIt: Long)))
   eval(new TryExtremes() carryOnTo new NewtonRaphsonMinimize(1L, maxIt: Long) carryOnTo new Slide(step=1L, maxIt: Long))
   eval(new NarrowingExhaustive(100L, minStep = 1))
-  eval(new ModuloOptimizer(360))
+  eval(new ModuloOptimizer(360, baseOptimizer = new NewtonRaphsonMinimize(1, maxIt)))
 
 }
 
