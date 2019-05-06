@@ -174,11 +174,12 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeA
       (computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
         + computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle))).toLong
 */
-    (shape1.overApproximatingRadius
+    val v = (shape1.overApproximatingRadius
       + shape2.overApproximatingRadius -
       (computeDistanceNegIfInside(shape1.geometry,id1,shape2.centerOfOverApproximatingCircle)
         + computeDistanceNegIfInside(shape2.geometry,id2,shape1.centerOfOverApproximatingCircle))).toLong
 
+    v*v
   }
 
   private def computeDistanceNegIfInside(shape1:Geometry,id1:Int,point:Point):Double = {
