@@ -27,7 +27,7 @@ class Compose(store:Store,
               b:ChangingAtomicValue[AffineTransformationValue])
   extends CBLSAffineTransformInvariant(
     initialValue = new AffineTransformationValue(
-      new AffineTransformation(a.value.affineTransform compose b.value.affineTransform),
+      new AffineTransformation(new AffineTransformation(a.value.affineTransform) compose b.value.affineTransform),
       (a.value.uniformScalingFactor,b.value.uniformScalingFactor) match{case (Some(x),Some(y)) => Some(x*y); case _ => None}))
     with AffineTransformNotificationTarget {
 
@@ -44,7 +44,7 @@ class Compose(store:Store,
 
   override def performInvariantPropagation(): Unit = {
     this := new AffineTransformationValue(
-      new AffineTransformation(a.value.affineTransform compose b.value.affineTransform),
+      new AffineTransformation(new AffineTransformation(a.value.affineTransform) compose b.value.affineTransform),
       (a.value.uniformScalingFactor, b.value.uniformScalingFactor)
       match {
         case (Some(x), Some(y)) => Some(x * y)
@@ -88,7 +88,7 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   * @param store
   * @param theta: the angle of rotation, in t th of degree
   */
-class RotationAroundZero(store:Store,theta:IntValue, t:Int)
+class RotationAroundZero(store:Store,theta:IntValue, t:Int = 1)
   extends CBLSAffineTransformInvariant(
     initialValue = new AffineTransformationValue(
       AffineTransformation.rotationInstance(theta.value * java.lang.Math.PI / (180 * t)),
