@@ -105,6 +105,11 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeA
     geometryIndexes(id)
   }
 
+  private def returnIndexComputeIfNeeded(id:Int):PreparedGeometry = {
+    if(geometryIndexes(id)!= null) geometryIndexes(id)
+    else computeAndReturnIndex(id)
+  }
+
   //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
   private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
   output := 0
@@ -152,8 +157,8 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeA
     }else if (geometryIndexes(id2) != null){
       if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
     }else{
-      //create an index for the biggest shape
-      if(shape1.geometry.getNumPoints > shape2.geometry.getNumPoints){
+      //create an index for the smallest shape
+      if(shape1.geometry.getNumPoints < shape2.geometry.getNumPoints){
         if(computeAndReturnIndex(id1).disjoint(shape2.geometry)) return 0
       }else{
         if(computeAndReturnIndex(id2).disjoint(shape1.geometry)) return 0
@@ -163,10 +168,30 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeA
     //There is an overlap, so we quantify it; we measure some penetration,
     //which is faster to compute than the overlap area
     //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
+    /*
     (shape1.overApproximatingRadius
-      + shape2.overApproximatingRadius
-      - computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
-      - computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)).toLong
+      + shape2.overApproximatingRadius -
+      (computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
+        + computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle))).toLong
+*/
+    (shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius -
+      (computeDistanceNegIfInside(shape1.geometry,id1,shape2.centerOfOverApproximatingCircle)
+        + computeDistanceNegIfInside(shape2.geometry,id2,shape1.centerOfOverApproximatingCircle))).toLong
+
+  }
+
+  private def computeDistanceNegIfInside(shape1:Geometry,id1:Int,point:Point):Double = {
+
+    val containsPt = if(geometryIndexes(id1) == null){
+      shape1.contains(point)
+    }else{
+      geometryIndexes(id1).contains(point)
+    }
+
+    val d = computeDistance(shape1:Geometry,point:Point)
+
+    if(containsPt) -d else d
   }
 
   private def computeDistance(shape1:Geometry,point:Point):Double = {
