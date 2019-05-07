@@ -50,7 +50,7 @@ abstract class LinearOptimizer{
 
   def restrictSlide(maxIncrease:Long, maxDecrease:Long) = RestrictSlide(this, maxIncrease:Long, maxDecrease:Long)
 
-  def modulo(modulo: Long, overlapPercentage:Int = 100) = new ModuloOptimizer(modulo, overlapPercentage,  baseOptimizer = this)
+  def modulo(modulo: Long, overlapPercentage:Int = 99) = new ModuloOptimizer(modulo, overlapPercentage,  baseOptimizer = this)
 }
 
 class CarryOnTo(a:LinearOptimizer, b:LinearOptimizer) extends LinearOptimizer{
@@ -362,9 +362,10 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
   }
 }
 
-class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:LinearOptimizer) extends LinearOptimizer {
+class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 99, baseOptimizer:LinearOptimizer)
+  extends LinearOptimizer {
 
-  require(overlapPercentage <= 100, "overlapPercentage should be < 100, got " + overlapPercentage)
+  require(overlapPercentage <= 99, "overlapPercentage should be < 99, got " + overlapPercentage)
   require(overlapPercentage >= 0, "overlapPercentage should be >=0 , got " + overlapPercentage)
 
   /**
@@ -382,11 +383,9 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:L
 
     require(modulo <= (maxValue - minValue))
 
-    // Halfwidth spans on both sides of startPOs
-    val modTimes = modulo*(50+overlapPercentage)
-    val modDiv = modTimes / 100
-    val roundUp = if ((modTimes % 100) == 0) 0 else 1
-    val halfWidth = modDiv + roundUp
+    // Halfwidth spans on both sides of startPos
+    val halfWidth:Long = scala.math.ceil(modulo.toFloat * (0.5 + (overlapPercentage / 200))).toLong
+
 
     def valToModulo(v: Long): Long = {
       if (v > maxValue) v - modulo
@@ -402,7 +401,9 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:L
       obj = (v: Long) => obj({
         val x = valToModulo(v)
         require(x <= maxValue)
-        require(minValue <= x)
+        if(minValue > x) {
+          require(minValue <= x, "minValue:" + minValue + " should be <= x:" + x)
+        }
         x
       })
     )
@@ -411,74 +412,6 @@ class ModuloOptimizer(modulo: Long, overlapPercentage:Int = 100, baseOptimizer:L
   }
 
   override def toString: String = s"Modulo($modulo, $overlapPercentage, $baseOptimizer)"
-}
-
-
-class ModuloOptimizerExhaustive(modulo: Long) extends LinearOptimizer {
-  /**
-    * This is the method that linear selectors must implement.
-    * it performs a search and has not other interface than this one.
-    *
-    * @param startPos the starting position in the search
-    * @param startObj the starting objective value
-    * @param minValue the minimal value to explore
-    * @param maxValue the maximal value to explore
-    * @param obj      a function to evaluate a value; it returns an objective value (BEWARE this is time consuming!)
-    * @return a value in the range (minValue,maxValue) and the objective value associated
-    */
-  override def search(startPos: Long,
-                      startObj: Long,
-                      minValue: Long,
-                      maxValue: Long,
-                      obj: Long => Long): (Long, Long) = {
-    // The search takes two directions from startPos:
-    // Forward, from startPos to maxValue
-    // Backward, from startPos back to minValue
-    var currentX = startPos
-    var currentXMod = 0L
-    var currentObj = startObj
-    var bestX = currentX
-    var bestXmod = 0L
-    var bestObj = currentObj
-    // First loop: forward exploration
-    var xFW = startPos
-    var itFW = 1L
-    var xFWmod = itFW % modulo
-    while ((startPos + itFW) <= maxValue) {
-      xFW = startPos + itFW
-      currentX = xFW
-      currentXMod = itFW % modulo
-      currentObj = obj(xFW)
-      // Checking optimality
-      if (currentObj < bestObj) {
-        bestObj = currentObj
-        bestX = currentX
-        bestXmod = currentXMod
-      }
-      itFW += 1
-    }
-    // Second loop: backward exploration
-    var xBW = startPos
-    var itBW = 1L
-    var xBWmod = modulo - (itBW % modulo)
-    while ((startPos - itBW) >= minValue) {
-      xBW = startPos - itBW
-      currentX = xBW
-      currentXMod = (modulo - (itBW % modulo)) % modulo
-      currentObj = obj(xBW)
-      // Checking optimality
-      if (currentObj < bestObj) {
-        bestObj = currentObj
-        bestX = currentX
-        bestXmod = currentXMod
-      }
-      itBW += 1
-    }
-    // Return the value modulo
-    (bestXmod, bestObj)
-  }
-
-  override def toString: String = s"ModuloExhaustive($modulo)"
 }
 
 object TestRN extends App{

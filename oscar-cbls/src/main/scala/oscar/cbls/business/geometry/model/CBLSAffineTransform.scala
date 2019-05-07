@@ -1,4 +1,3 @@
-
 package oscar.cbls.business.geometry.model
 
 /*******************************************************************************
@@ -21,16 +20,20 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
+
+class AffineTransformationValue(val affineTransform:AffineTransformation,
+                                val uniformScalingFactor:Option[Double]){
+}
+
 /**
-  *
   * @param store
   * @param initialValue is the initial value of the variable
   * @param givenName
   */
 class CBLSAffineTransformVar(store: Store,
-                             initialValue: AffineTransformation,
+                             initialValue: AffineTransformationValue,
                              givenName: String = null)
-  extends CBLSAtomicVar[AffineTransformation](store: Store,
+  extends CBLSAtomicVar[AffineTransformationValue](store: Store,
     initialValue,
     givenName: String ){
 
@@ -44,11 +47,11 @@ class CBLSAffineTransformVar(store: Store,
     clone
   }
 
-  def <== (g: ChangingAtomicValue[AffineTransformation]): Unit ={
+  def <== (g: ChangingAtomicValue[AffineTransformationValue]): Unit ={
     new IdentityAffineTransformation(this, g)
   }
 
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformationValue, newVal: AffineTransformationValue): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)
   }
@@ -57,7 +60,7 @@ class CBLSAffineTransformVar(store: Store,
 /** an invariant that is the identity function
   * @author renaud.delandtsheer@cetic.be
   */
-class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:ChangingAtomicValue[AffineTransformation])
+class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:ChangingAtomicValue[AffineTransformationValue])
   extends Invariant with AffineTransformNotificationTarget{
 
   registerStaticAndDynamicDependency(fromValue)
@@ -67,7 +70,7 @@ class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:Cha
   toValue := fromValue.value
 
 
-  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformation], id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+  override def notifyAffineTransformChange(a: ChangingAtomicValue[AffineTransformationValue], id: Int, oldVal: AffineTransformationValue, newVal: AffineTransformationValue): Unit = {
     toValue := newVal
   }
 
@@ -77,7 +80,7 @@ class IdentityAffineTransformation(toValue:CBLSAffineTransformVar, fromValue:Cha
 }
 
 trait AffineTransformNotificationTarget{
-  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformation],id:Long,oldVal:AffineTransformation,newVal:AffineTransformation)
+  def notifyAffineTransformChange(a:ChangingAtomicValue[AffineTransformationValue],id:Int,oldVal:AffineTransformationValue,newVal:AffineTransformationValue)
 }
 
 
@@ -88,8 +91,8 @@ class CBLSAffineTransformConst(store:Store, override val value:AffineTransformat
   override def toString:String = if (givenName == null) value.toString else givenName
 }
 
-class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
-  extends AtomicInvariant[AffineTransformation](initialValue){
+class CBLSAffineTransformInvariant(initialValue:AffineTransformationValue)
+  extends AtomicInvariant[AffineTransformationValue](initialValue){
 
   def createClone:CBLSAffineTransformVar = {
     val clone = new CBLSAffineTransformVar(
@@ -100,8 +103,8 @@ class CBLSAffineTransformInvariant(initialValue:AffineTransformation)
     clone <== this
     clone
   }
-
-  override def performNotificationToListeningInv(inv: PropagationElement, id: Long, oldVal: AffineTransformation, newVal: AffineTransformation): Unit = {
+ 
+  override def performNotificationToListeningInv(inv: PropagationElement, id: Int, oldVal: AffineTransformationValue, newVal: AffineTransformationValue): Unit = {
     val target = inv.asInstanceOf[AffineTransformNotificationTarget]
     target.notifyAffineTransformChange(this,id,oldVal,newVal)
   }

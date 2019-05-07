@@ -1,5 +1,4 @@
 package oscar.cbls.visual.geometry
-
 import java.awt.Color
 
 import javax.swing.JPanel
@@ -14,9 +13,11 @@ object GeometryDrawingTypes extends Enumeration{
 }
 
 
+//TODO: putôt donner une règle de conversion en option
+//conversionDataForRealMapDisplay(originPoint:(Double,Double), )
 object GeometryDrawing {
   def apply(relevantDistances: List[(Int,Int)],
-            geometryDrawingType: GeometryDrawingTypes.Value,
+            geometryDrawingType: GeometryDrawingTypes.Value = GeometryDrawingTypes.Simple,
             area: Option[List[(Int,Int)]] = None,
             pointOfOrigin: Option[(Double, Double)] = None): JPanel with GeometryDrawingTrait ={
     geometryDrawingType match{
@@ -32,3 +33,6 @@ object GeometryDrawing {
     }
   }
 }
+
+
+

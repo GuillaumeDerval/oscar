@@ -1,4 +1,3 @@
-
 package oscar.cbls.business.geometry.invariants
 
 
@@ -18,7 +17,14 @@ package oscar.cbls.business.geometry.invariants
   ******************************************************************************/
 
 
-import org.locationtech.jts.geom.{Geometry, GeometryCollection, Polygon}
+import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
+import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
+import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
+import oscar.cbls.{CBLSIntVar, IntValue}
+import oscar.cbls.algo.magicArray.IterableMagicBoolArray
+import oscar.cbls.business.geometry.model._
+import oscar.cbls.core.{IntInvariant, Invariant}
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
 
 object Overlap {
 
@@ -70,3 +76,131 @@ object Overlap {
     }
   }
 }
+
+
+/**
+  * @param shapes
+  * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
+  */
+class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeAll:Boolean = true)
+  extends Invariant with GeometryNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(shapes)
+  finishInitialization()
+
+  val output = CBLSIntVar(model,name="violation of NoOverlapPenetration")
+  output.setDefiningInvariant(this)
+
+  //index in array => index in geometry, for fast overlap computation
+  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+
+  if(preComputeAll){
+    for(id <- shapes.indices) computeAndReturnIndex(id)
+  }
+
+  private var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+
+  private def computeAndReturnIndex(id:Int):PreparedGeometry = {
+    geometryIndexes(id) = PreparedGeometryFactory.prepare(shapes(id).value.geometry)
+    geometryIndexes(id)
+  }
+
+  private def returnIndexComputeIfNeeded(id:Int):PreparedGeometry = {
+    if(geometryIndexes(id)!= null) geometryIndexes(id)
+    else computeAndReturnIndex(id)
+  }
+
+  //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
+  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
+  output := 0
+
+
+  //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
+  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
+    val v = CBLSIntVar(model,name="violation of overlap of shape " + id)
+    v.setDefiningInvariant(this)
+    v
+  })
+
+  def violation(shapeID:Int):IntValue = overlapByShape(shapeID)
+
+  scheduleForPropagation()
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
+                                    id: Int,
+                                    oldVal: GeometryValue,
+                                    newVal: GeometryValue): Unit = {
+    changedShapesToCheck(id) = true
+    geometryIndexes(id) = null
+    scheduleForPropagation()
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    for(shapeIDToCheck <- changedShapesToCheck.indicesAtTrue){
+      for(otherID <- shapes.indices if !changedShapesToCheck(otherID) || otherID < shapeIDToCheck){
+        val newOverlap = computeOverlapViolation(shapes(shapeIDToCheck).value,shapeIDToCheck,shapes(otherID).value,otherID)
+        val oldOverlap = recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID)
+        recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID) = newOverlap
+        output :+= (newOverlap - oldOverlap)
+        overlapByShape(shapeIDToCheck) :+= (newOverlap - oldOverlap)
+        overlapByShape(otherID) :+= (newOverlap - oldOverlap)
+      }
+    }
+    changedShapesToCheck.all = false
+  }
+
+  private def computeOverlapViolation(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Long = {
+    if(! (shape1 mightOverlapBasedOnOverApproximatingValues shape2)) return 0
+
+    if(geometryIndexes(id1) != null){
+      if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
+    }else if (geometryIndexes(id2) != null){
+      if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
+    }else{
+      //create an index for the smallest shape
+      if(shape1.geometry.getNumPoints < shape2.geometry.getNumPoints){
+        if(computeAndReturnIndex(id1).disjoint(shape2.geometry)) return 0
+      }else{
+        if(computeAndReturnIndex(id2).disjoint(shape1.geometry)) return 0
+      }
+    }
+
+    //There is an overlap, so we quantify it; we measure some penetration,
+    //which is faster to compute than the overlap area
+    //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
+    /*
+    (shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius -
+      (computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
+        + computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle))).toLong
+*/
+    val v = (shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius -
+      (computeDistanceNegIfInside(shape1.geometry,id1,shape2.centerOfOverApproximatingCircle)
+        + computeDistanceNegIfInside(shape2.geometry,id2,shape1.centerOfOverApproximatingCircle))).toLong
+
+    v*v
+  }
+
+  private def computeDistanceNegIfInside(shape1:Geometry,id1:Int,point:Point):Double = {
+
+    val containsPt = if(geometryIndexes(id1) == null){
+      shape1.contains(point)
+    }else{
+      geometryIndexes(id1).contains(point)
+    }
+
+    val d = computeDistance(shape1:Geometry,point:Point)
+
+    if(containsPt) -d else d
+  }
+
+  private def computeDistance(shape1:Geometry,point:Point):Double = {
+    val ptDist = new PointPairDistance()
+    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
+    ptDist.getDistance()
+  }
+}
+
+
+
