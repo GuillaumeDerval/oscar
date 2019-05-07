@@ -8,18 +8,21 @@ import oscar.cbls.business.geometry.invariants._
 import oscar.cbls.business.geometry.model.{CBLSGeometryConst, GeometryValue}
 import oscar.cbls.core.computation.{AtomicValue, IntValue}
 import oscar.cbls.core.search.{ConstantMovesNeighborhood, EvaluableCodedMove}
+import oscar.cbls.lib.search.LinearSelectors
 import oscar.cbls.lib.search.combinators.{Atomic, BestSlopeFirst, Profile}
 import oscar.cbls.lib.search.neighborhoods._
 import oscar.cbls.visual.geometry.{GeometryDrawing, GeometryDrawingTypes}
 import oscar.cbls.visual.{ColorGenerator, SingleFrameWindow}
 import oscar.cbls.{CBLSIntVar, Objective, Store, atomic, longToInt}
 
+import scala.util.Random
+
 /**
   * this demo tries to pack a set of shapes within a rectangle
   * in such a way that there is no overlap between these shapes.
   * it proceeds through local search (although a more symbolic insertion-based technique would be more efficient
   */
-object TestGeometryPackingRot extends App{
+object TestGeometryPackingRot extends App with LinearSelectors{
 
   val store = Store()
 
@@ -300,13 +303,25 @@ object TestGeometryPackingRot extends App{
       swapAndGradient,
       moveOneShapeYAndThenX).map(Profile(_)),
     refresh=nbShapes*10))
-    onExhaustRestartAfter(
-    RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length/5, name = "smallRandomize"),
-    maxRestartWithoutImprovement = 1,
+    onExhaustRestartAfterJump(
+    {
+      //this is the randomization procedure
+      for(i <- Random.shuffle(flattenedCoordArray.indices.toList).take(flattenedCoordArray.length/5)){
+        flattenedCoordArray(i).randomize()
+      }
+    },
+    randomizationName = "smallRandomize",
+    maxRestartWithoutImprovement = 2,
     restartFromBest = true,
     obj=obj)
-    onExhaustRestartAfter (
-    RandomizeNeighborhood(flattenedCoordArray, () => flattenedCoordArray.length, name = "fullRandomize"),
+    onExhaustRestartAfterJump(
+    {
+      //this is the randomization procedure
+      for(i <- flattenedCoordArray.indices.toList){
+        flattenedCoordArray(i).randomize()
+      }
+    },
+    randomizationName = "fullRandomize",
     maxRestartWithoutImprovement = 5,
     restartFromBest = true,
     obj=obj)

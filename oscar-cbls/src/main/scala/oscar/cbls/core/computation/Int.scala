@@ -22,6 +22,7 @@ package oscar.cbls.core.computation
 
 import oscar.cbls._
 import oscar.cbls.core.propagation.Checker
+import oscar.util.RandomGenerator
 
 import scala.collection.mutable.{Map => MMap}
 import scala.language.implicitConversions
@@ -250,6 +251,10 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   }
 
   def <==(i: IntValue) {IdentityInt(this,i)}
+
+  def randomize(): Unit ={
+    this := this.min + RandomGenerator.nextInt(this.max - this.min)
+  }
 }
 
 object CBLSIntVar{
