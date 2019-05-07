@@ -85,7 +85,7 @@ class Edge(val id:Int,
   def toDOT(g:ConditionalGraph):String = {
     conditionID match{
       case None => "n" + nodeIDA + " -- " + "n" + nodeIDB + "[label= \"" + length + "\"];"
-      case Some(c) => "n" + nodeIDA + " -- " + "n" + nodeIDB + "[label= \"" + length + "\ncond=" + c + "\"];"
+      case Some(c) => "n" + nodeIDA + " -- " + "n" + nodeIDB + "[label= \"" + length + "\ncond=" + c + "\" color=red];"
     }
   }
 }
