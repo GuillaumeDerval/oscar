@@ -21,12 +21,13 @@ import java.awt.{Color, Shape}
 
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
+import org.locationtech.jts.geom.util.{AffineTransformation, GeometryTransformer}
 import oscar.cbls.business.geometry.invariants.Overlap
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualLine, VisualRectangle, VisualShape}
+import oscar.visual.shapes.{VisualArrow, VisualLine, VisualRectangle, VisualShape}
 
 
-class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)])
+class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int = 960, windowHeight: Int = 960, pointShift: Option[() => (Double,Double)] = None)
   extends VisualDrawing(false,false) with GeometryDrawingTrait {
 
   class VisualShapeConcrete(d: VisualDrawing, s: Shape) extends VisualShape(d) {
@@ -41,15 +42,17 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)])
     super.addShape(shape,false)
   }
 
+  this.setSize(windowWidth, windowHeight)
+
   //TODO: il manque un zoom et un scroll!!!
   //TODO: on ne voit pas le border!!
   /**
-    *
-    * @param boundingBoxOn
     * @param shapes shape,bordercolor,innercolor,toltipText
     */
-  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]) ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None, shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]) ={
     super.clear(false)
+
+    val w = new ShapeWriter()
 
     val (minX,maxX,minY,maxY) = boundingBoxOn match {
       case None =>
@@ -64,22 +67,31 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)])
           b.getCoordinates.map(c => c.y).max)
     }
 
-    val width = maxX - minX
-    val height = maxY - minY
+    val drawingWidth = (maxX - minX).toInt
+    val drawingHeight = (maxY - minY).toInt
 
-    val border = new VisualRectangle(this, new Rectangle2D.Double(
-      minX,
-      minY,
-      width,
-      height))
+    val (scaleOriginX,scaleOriginY) = pointShift.getOrElse(() => (0.0,0.0))()
+    val scaling = Math.max((windowWidth.toDouble-(scaleOriginX*2))/drawingWidth,(windowHeight.toDouble-(2.0*scaleOriginY))/drawingHeight)
+    val scaleTransform = AffineTransformation.scaleInstance(scaling,scaling)
+    val translateTransform = AffineTransformation.translationInstance(scaleOriginX,scaleOriginY)
+
+    val border =
+      if(boundingBoxOn.isEmpty)
+        new VisualRectangle(this, new Rectangle2D.Double(
+          coordToPixel((minX.toInt,0), drawingWidth, drawingHeight)._1,
+          coordToPixel((0,minY.toInt), drawingWidth, drawingHeight)._2,
+          coordToPixel((drawingWidth,0), drawingWidth, drawingHeight)._1,
+          coordToPixel((0,drawingHeight), drawingWidth, drawingHeight)._2))
+      else
+        new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(boundingBoxOn.get))))
 
     border.fill = false
     border.border = true
+    border.borderWidth = 3
     border.outerCol = Color.black
 
-    val w = new ShapeWriter()
     for((geometry,borderColOpt,innerColOpt,toolTipText) <- shapes){
-      val s = new VisualShapeConcrete(this, w.toShape(geometry))
+      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry))))
 
       borderColOpt match{
         case None =>
@@ -102,14 +114,14 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)])
     paintSomeHoles(shapes.map(_._1))
 
     for((fromID,toID) <- relevantDistances){
-      val (x1,y1) = centers(fromID)
-      val (x2,y2) = centers(toID)
+      val (x1,y1) = coordToPixel(centers(fromID), drawingWidth, drawingHeight)
+      val (x2,y2) = coordToPixel(centers(toID), drawingWidth, drawingHeight)
 
-      val line = new VisualLine(this, new Line2D.Double(
+      val line = new VisualArrow(this, new Line2D.Double(
         x1,
         y1,
         x2,
-        y2))
+        y2),5)
       line.dashed = false
       line.innerCol = Color.BLUE
     }
@@ -122,35 +134,21 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)])
 
     val hh = Overlap.freeSpacesIn(s.tail, s.head).toArray
 
-    val areas = hh.map(_.getArea)
-    val maxArea = areas.max
-
-    val transparentGreen = new Color(0,255,0,100)
     for(i <- hh.indices){
       val h = hh(i)
-
-      /*val s = new VisualShapeConcrete(this, w.toShape(h))
-      s.fill = true
-
-      s.innerCol = transparentGreen
-      s.border = true
-      s.outerCol = transparentGreen
-            s.toolTip = "hole_" + i
-
-      */
-      /*
-      if(areas(i) == maxArea){
-        s.innerCol = Color.RED
-      }else{
-        s.innerCol = Color.BLUE
-      }*/
-
-
       val center = h.getCentroid
       val centroidPoint = new VisualShapeConcrete(this, w.toShape(center))
       centroidPoint.fill = true
       centroidPoint.innerCol = Color.BLACK
     }
+  }
+
+  private def coordToPixel(coord: (Int,Int), drawingWidth: Int, drawingHeight: Int): (Int,Int) ={
+    val (shiftX,shiftY): (Double, Double)= if(pointShift.isDefined)pointShift.get.apply() else (0,0)
+    val scaling = Math.max((windowWidth.toDouble-(shiftX*2))/drawingWidth,(windowHeight.toDouble-(shiftY*2))/drawingHeight)
+    val x = ((coord._1.toDouble*scaling) + shiftX).toInt
+    val y = ((coord._2.toDouble*scaling) + shiftY).toInt
+    (x,y)
   }
 
 }

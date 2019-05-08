@@ -3,85 +3,108 @@ package oscar.cbls.visual.geometry
 import java.awt.Color
 
 import org.jdesktop.swingx.mapviewer.{DefaultTileFactory, GeoPosition, TileFactoryInfo}
+import org.jxmapviewer.OSMTileFactoryInfo
 import org.locationtech.jts.geom.Geometry
-import oscar.visual.map.VisualMap
+import oscar.visual.map.{MapWaypoint, VisualMap}
 
 class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
-                               area: List[(Int, Int)],
-                               geometryDrawing: SimpleGeometryDrawing) extends VisualMap() with GeometryDrawingTrait {
+                               area: List[(Int, Int)], windowWidth: Int = 960, windowHeight: Int = 960) extends VisualMap() with GeometryDrawingTrait {
 
   val areaGeoCoords: List[GeoPosition] = area.map(p => convertDistToGeoCoords(p._1, p._2))
 
-  val tfRouting = new DefaultTileFactory(info)
-  viewer.setTileFactory(tfRouting)
-  viewer.setZoom(defineInitialZoom)
-  viewer.setAddressLocation(centerOfMap())
-  viewer.setName("Routing Map")
-  viewer.setPreferredSize(new java.awt.Dimension(screensize.width / 2, screensize.height / 2))
-  add(viewer)
-
-  //geometryDrawing.setOpaque(false)
-  geometryDrawing.setBackground(new Color(0,0,0,0))
-  add(geometryDrawing)
-
-  val (minLatitude,maxLatitude,minLongitude,maxLongitude) =
-    (areaGeoCoords.map(c => c.getLatitude).min,
-      areaGeoCoords.map(c => c.getLatitude).max,
-      areaGeoCoords.map(c => c.getLongitude).min,
-      areaGeoCoords.map(c => c.getLongitude).max)
-
-  drawAreaBorder()
-
-  private def drawAreaBorder(): Unit ={
-    var previousCoord: Option[GeoPosition] = None
-    for (aCoord <- areaGeoCoords){
-      if(previousCoord.isDefined)
-        createLine((previousCoord.get.getLatitude,previousCoord.get.getLongitude),
-          (aCoord.getLatitude, aCoord.getLongitude), Color.black)
-      previousCoord = Some(aCoord)
+  val maxZoom = 20
+  val geometryDrawingInfo: TileFactoryInfo = new TileFactoryInfo(1, maxZoom-1, maxZoom,
+    256, true, true, // tile size is 256 and x/y orientation is normal
+    "http://tile.openstreetmap.org",
+    "x", "y", "z") {
+    override def getTileUrl(x: Int, y: Int, zoo: Int) = {
+      val zoom = maxZoom - zoo
+      this.baseURL + "/" + zoom + "/" + x + "/" + y + ".png"
     }
-    if(previousCoord.isDefined)
-      createLine((previousCoord.get.getLatitude,previousCoord.get.getLongitude),
-        (areaGeoCoords.head.getLatitude,areaGeoCoords.head.getLongitude), Color.black)
   }
 
   /**
-    * @return the center of the bounding box of the problem
+    * Define the center of map base on the area geographic coordinates
+    * @return
     */
-  private def centerOfMap(): GeoPosition ={
+  def centerOfMap: GeoPosition = {
+    val (minLatitude,maxLatitude,minLongitude,maxLongitude) =
+      (areaGeoCoords.map(c => c.getLatitude).min,
+        areaGeoCoords.map(c => c.getLatitude).max,
+        areaGeoCoords.map(c => c.getLongitude).min,
+        areaGeoCoords.map(c => c.getLongitude).max)
     new GeoPosition(
-      maxLatitude - minLatitude,
-      maxLongitude - minLongitude)
+      (maxLatitude + minLatitude)/2,
+      (maxLongitude + minLongitude)/2)
+  }
+
+  /**
+    * Define the top left geographic coordinate.
+    * It's needed to adjust the overlapping simple geometry drawing
+    */
+  lazy val topLeftGeoPosition: GeoPosition = {
+    val (minLatitude,maxLatitude,minLongitude,maxLongitude) =
+      (areaGeoCoords.map(c => c.getLatitude).min,
+        areaGeoCoords.map(c => c.getLatitude).max,
+        areaGeoCoords.map(c => c.getLongitude).min,
+        areaGeoCoords.map(c => c.getLongitude).max)
+      new GeoPosition(maxLatitude,minLongitude)
+  }
+
+  val tfRouting = new DefaultTileFactory(geometryDrawingInfo)
+  viewer.setTileFactory(tfRouting)
+  viewer.setZoom(defineInitialZoom)
+  viewer.setAddressLocation(centerOfMap)
+  viewer.setName("Geometry Drawing")
+  viewer.setPreferredSize(new java.awt.Dimension(windowWidth, windowHeight))
+  this.setOpaque(true)
+
+  def topLeftPointShiftInPixel(): (Double,Double) ={
+    createWaypoint(topLeftGeoPosition.getLatitude,topLeftGeoPosition.getLongitude)
+    val topLeftPointInPixel = viewer.convertGeoPositionToPoint(topLeftGeoPosition)
+    (topLeftPointInPixel.getX, topLeftPointInPixel.getY)
   }
 
   /**
     * This method compute the initial zoom needed to fit the are location
     * @return the initial zoom level
     */
-  private def defineInitialZoom(): Int ={
-    val positionsAtZoom1 = areaGeoCoords.map(g => tf.geoToPixel(g,1))
-    val xs = positionsAtZoom1.map(_.getX)
-    val ys = positionsAtZoom1.map(_.getY)
-    val maxDist = Math.max(xs.max - xs.min,ys.max - ys.min)
-    var zoom = 0
-    while(maxDist/Math.pow(2,zoom) > 960)
+  private def defineInitialZoom: Int ={
+    val minLatGeoCoord = areaGeoCoords.minBy(_.getLatitude)
+    val maxLatGeoCoord = areaGeoCoords.maxBy(_.getLatitude)
+    val minLongGeoCoord = areaGeoCoords.minBy(_.getLongitude)
+    val maxLongGeoCoord = areaGeoCoords.maxBy(_.getLongitude)
+    val farthestGeoCoords =
+      if(tfRouting.geoToPixel(maxLatGeoCoord,1).getY - tfRouting.geoToPixel(minLatGeoCoord,1).getY >
+        tfRouting.geoToPixel(maxLongGeoCoord,1).getX - tfRouting.geoToPixel(minLongGeoCoord,1).getX)
+        List(minLatGeoCoord,maxLatGeoCoord)
+      else
+        List(minLongGeoCoord,maxLongGeoCoord)
+
+
+    def isZoomAdjusted(zoom: Int): Boolean ={
+      val pixelPosAtZoom = farthestGeoCoords.map(g =>  tfRouting.geoToPixel(g,zoom))
+      val xs = pixelPosAtZoom.map(_.getX)
+      val ys = pixelPosAtZoom.map(_.getY)
+      val maxDistAtZoom = Math.max(xs.max - xs.min,ys.max - ys.min)
+      maxDistAtZoom < windowWidth
+    }
+    var zoom = 1
+    while(!isZoomAdjusted(zoom))
       zoom += 1
-    zoom+1
+    zoom
   }
 
   private def convertDistToGeoCoords(xFromOrigin: Int, yFromOrigin: Int): GeoPosition ={
     val oneLatDegreKM = 111.19
-    val R = 6371
+    val R = 111.321
 
-    val centerLat = (yFromOrigin.toDouble/(oneLatDegreKM*100000))+pointOfOrigin._1
-    val centerLong = (xFromOrigin.toDouble/(R*Math.cos((centerLat+pointOfOrigin._1)/2)*100000))+pointOfOrigin._1
-    new GeoPosition(centerLat, centerLong)
+    val lat = pointOfOrigin._1 - (yFromOrigin.toDouble/(oneLatDegreKM*100000))
+    val long = pointOfOrigin._2 + (xFromOrigin.toDouble/(R*Math.cos(Math.toRadians(lat+pointOfOrigin._1)/2)*100000))
+    new GeoPosition(lat, long)
   }
 
   def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]): Unit ={
-    println(geometryDrawing.getBackground)
-    println(geometryDrawing.isOpaque)
-    geometryDrawing.drawShapes(boundingBoxOn,shapes,centers)
   }
 }
 
