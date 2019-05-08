@@ -50,7 +50,7 @@ case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[Geometry
 
 class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue=new GeometryValue(a.value.geometry union b.value.geometry)())
+    initialValue=new GeometryValue(a.value.geometry union b.value.geometry))
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
@@ -62,7 +62,7 @@ class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new GeometryValue(a.value.geometry union b.value.geometry)()
+    this := new GeometryValue(a.value.geometry union b.value.geometry)
   }
 }
 
@@ -83,13 +83,13 @@ case class Intersection(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[G
   override def performInvariantPropagation(): Unit = {
     this :=  (if (!(a.value mightOverlapBasedOnOverApproximatingValues b.value))
       geometry.emptyGeometryValue
-    else new GeometryValue(a.value.geometry intersection b.value.geometry)())
+    else new GeometryValue(a.value.geometry intersection b.value.geometry))
   }
 }
 
 class ConvexHull(store:Store,a:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue = new GeometryValue(a.value.geometry.convexHull())())
+    initialValue = new GeometryValue(a.value.geometry.convexHull()))
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
@@ -100,7 +100,7 @@ class ConvexHull(store:Store,a:AtomicValue[GeometryValue])
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new GeometryValue(a.value.geometry.convexHull())()
+    this := new GeometryValue(a.value.geometry.convexHull())
   }
 }
 
@@ -145,7 +145,10 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
     store,
     initialValue = {
       val c = shape.value.geometry.getCentroid
-      new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius= Some(0.0))
+      new GeometryValue(
+        c,
+        inputCentreOfOverApproximatingCircle = Some(c),
+        inputOverApproximatingRadius= Some(0.0))
     }
   ) with GeometryNotificationTarget{
 
@@ -158,7 +161,10 @@ class Centroid(store:Store,shape:AtomicValue[GeometryValue])
 
   override def performInvariantPropagation(): Unit = {
     val c = shape.value.geometry.getCentroid
-    this := new GeometryValue(c)(inputCentreOfOverApproximatingCircle = Some(c), inputOverApproximatingRadius = Some(0.0))
+    this := new GeometryValue(
+      c,
+      inputCentreOfOverApproximatingCircle = Some(c),
+      inputOverApproximatingRadius = Some(0.0))
   }
 }
 

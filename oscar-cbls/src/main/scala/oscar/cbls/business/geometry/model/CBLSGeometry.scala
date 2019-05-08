@@ -22,9 +22,9 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
-case class GeometryValue(val geometry:Geometry)(
-  private var inputCentreOfOverApproximatingCircle:Option[Point] = None,
-  private var inputOverApproximatingRadius:Option[Double] = None) {
+case class GeometryValue(val geometry:Geometry,
+                         private var inputCentreOfOverApproximatingCircle:Option[Point] = None,
+                         private var inputOverApproximatingRadius:Option[Double] = None) {
 
   private def computeEnclosingCircle(): Unit ={
     val algo = new MinimumBoundingCircle(geometry)
@@ -62,8 +62,8 @@ case class GeometryValue(val geometry:Geometry)(
 }
 
 case class CBLSGeometryVar(store: Store,
-                      initialValue: GeometryValue,
-                      givenName: String = null)
+                           initialValue: GeometryValue,
+                           givenName: String = null)
   extends CBLSAtomicVar[GeometryValue](store: Store,
     initialValue,
     givenName: String ){
@@ -116,15 +116,10 @@ trait GeometryNotificationTarget{
   def notifyGeometryChange(a:ChangingAtomicValue[GeometryValue],id:Int,oldVal:GeometryValue,newVal:GeometryValue)
 }
 
-object CBLSGeometryConst{
-  def apply (store:Store, geometry:Geometry, givenName:String=""):CBLSGeometryConst = {
-    new CBLSGeometryConst(store:Store, new GeometryValue(geometry)(), givenName)
-  }
-}
-
 
 case class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
   extends CBLSAtomicConst[GeometryValue](value){
+
   override def name = if (givenName == null) value.toString else givenName
   override def toString:String = if (givenName == null) value.toString else givenName
 }
