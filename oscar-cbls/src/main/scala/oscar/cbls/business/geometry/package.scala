@@ -35,7 +35,8 @@ package object geometry {
     new Point(new CoordinateArraySequence(Array(new Coordinate(0,0))), factory)
   }
 
-  val emptyGeometryValue = new GeometryValue(emptyPolygon)(
+  val emptyGeometryValue = new GeometryValue(
+    emptyPolygon,
     inputCentreOfOverApproximatingCircle = None,
     inputOverApproximatingRadius = Some(0))
 
@@ -49,7 +50,8 @@ package object geometry {
       new Coordinate(-halfSide,halfSide),
       new Coordinate(halfSide,halfSide))).convexHull()
 
-    new GeometryValue(sq)(
+    new GeometryValue(
+      sq,
       inputCentreOfOverApproximatingCircle = Some(point(0,0)),
       inputOverApproximatingRadius = Some(halfSide * math.sqrt(2.0)))
   }
@@ -66,7 +68,8 @@ package object geometry {
       new Coordinate(-halfWidth,halfHeight),
       new Coordinate(halfWidth,halfHeight))).convexHull()
 
-    new GeometryValue(rec)(
+    new GeometryValue(
+      rec,
       inputCentreOfOverApproximatingCircle = Some(point(0,0)),
       inputOverApproximatingRadius = Some(math.sqrt((halfHeight * halfHeight) + (halfWidth * halfWidth))))
   }
@@ -94,12 +97,14 @@ package object geometry {
       val factor = math.sqrt(math.Pi*r*r/s1)
       val scaling = AffineTransformation.scaleInstance(factor,factor)
 
-      new GeometryValue(scaling.transform(c1))(
+      new GeometryValue(
+        scaling.transform(c1),
         inputCentreOfOverApproximatingCircle = Some(point(0,0)),
         inputOverApproximatingRadius = Some(factor * r))
 
     }else{
-      new GeometryValue(c1)(
+      new GeometryValue(
+        c1,
         inputCentreOfOverApproximatingCircle = Some(point(0,0)),
         inputOverApproximatingRadius = Some(r))
     }

@@ -118,7 +118,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
     store:Store,
     initialValue = {
       a.value.uniformScalingFactor match{
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))()
+        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
@@ -132,7 +132,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
             case Some(r) => Some(r*s)
           }
 
-          new GeometryValue(newGeo)(newCentroid,newRadius)
+          new GeometryValue(newGeo,newCentroid,newRadius)
       }
     }) with GeometryNotificationTarget with AffineTransformNotificationTarget {
 
@@ -159,7 +159,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
   override def performInvariantPropagation(): Unit = {
     this := {
       a.value.uniformScalingFactor match {
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))()
+        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
@@ -173,7 +173,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
             case Some(r) => Some(r * s)
           }
 
-          new GeometryValue(newGeo)(newCentroid, newRadius)
+          new GeometryValue(newGeo,newCentroid, newRadius)
       }
     }
   }
