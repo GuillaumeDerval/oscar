@@ -23,10 +23,10 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 case class GeometryValue(val geometry:Geometry)(
-  var inputCentreOfOverApproximatingCircle:Option[Point] = None,
-  var inputOverApproximatingRadius:Option[Double] = None) {
+  private var inputCentreOfOverApproximatingCircle:Option[Point] = None,
+  private var inputOverApproximatingRadius:Option[Double] = None) {
 
-  def computeEnclosingCircle(): Unit ={
+  private def computeEnclosingCircle(): Unit ={
     val algo = new MinimumBoundingCircle(geometry)
     inputCentreOfOverApproximatingCircle = Some(new Point(new CoordinateArraySequence(Array(algo.getCentre)),geometry.getFactory))
     inputOverApproximatingRadius = Some(algo.getRadius)
@@ -36,6 +36,7 @@ case class GeometryValue(val geometry:Geometry)(
   // Calculée à partir de geometry
   //on ne considère pas le cas de calculé à partir des va leurs d'origines; on doit alors juste la doner en entrée.
 
+  def centerOfOverApproximatingCircleOpt:Option[Point] = inputCentreOfOverApproximatingCircle
   def centerOfOverApproximatingCircle:Point = inputCentreOfOverApproximatingCircle match{
     case Some(c) => c
     case None =>
@@ -43,9 +44,10 @@ case class GeometryValue(val geometry:Geometry)(
       inputCentreOfOverApproximatingCircle.get
   }
 
-  def distance(x1:Double,y1:Double,x2:Double,y2:Double):Double = {
+  private def distance(x1:Double,y1:Double,x2:Double,y2:Double):Double = {
     Math.sqrt(Math.pow(x1-x2,2.0) + Math.pow(y1 - y2,2.0))
   }
+  def overApproximatingRadiusOpt:Option[Double] = inputOverApproximatingRadius
   def overApproximatingRadius:Double = inputOverApproximatingRadius match{
     case Some(r) => r
     case None =>
@@ -113,6 +115,13 @@ class IdentityGeometry(toValue:CBLSGeometryVar, fromValue:ChangingAtomicValue[Ge
 trait GeometryNotificationTarget{
   def notifyGeometryChange(a:ChangingAtomicValue[GeometryValue],id:Int,oldVal:GeometryValue,newVal:GeometryValue)
 }
+
+object CBLSGeometryConst{
+  def apply (store:Store, geometry:Geometry, givenName:String=""):CBLSGeometryConst = {
+    new CBLSGeometryConst(store:Store, new GeometryValue(geometry)(), givenName)
+  }
+}
+
 
 case class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
   extends CBLSAtomicConst[GeometryValue](value){

@@ -279,7 +279,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       _>1,
       stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
-  val displayDelay:Long = (1000.toLong * 1000 * 1000 * 0.01).toLong //0,05 seconds
+  val displayDelay:Long = (1000.toLong * 1000 * 1000 * 1.01).toLong //1,01 seconds
   var lastDisplay = System.nanoTime()
 
   val search = (Profile(BestSlopeFirst(
@@ -309,6 +309,9 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       for(i <- Random.shuffle(flattenedCoordArray.indices.toList).take(flattenedCoordArray.length/5)){
         flattenedCoordArray(i).randomize()
       }
+      for(i <- Random.shuffle(rotationArray.indices.toList).take(rotationArray.length/5)){
+        if(rotationArray(i) != null) rotationArray(i).randomize()
+      }
     },
     randomizationName = "smallRandomize",
     maxRestartWithoutImprovement = 2,
@@ -320,9 +323,12 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       for(i <- flattenedCoordArray.indices.toList){
         flattenedCoordArray(i).randomize()
       }
+      for(i <- rotationArray.indices.toList){
+        if(rotationArray(i) != null) rotationArray(i).randomize()
+      }
     },
     randomizationName = "fullRandomize",
-    maxRestartWithoutImprovement = 5,
+    maxRestartWithoutImprovement = 10,
     restartFromBest = true,
     obj=obj)
     afterMove {
