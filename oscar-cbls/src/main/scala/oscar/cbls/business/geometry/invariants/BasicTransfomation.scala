@@ -122,12 +122,12 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
-          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match{
+          val newCentroid = b.value.centerOfOverApproximatingCircleOpt match{
             case None => None
             case Some(c:Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
           }
 
-          val newRadius = b.value.inputOverApproximatingRadius match{
+          val newRadius = b.value.overApproximatingRadiusOpt match{
             case None => None
             case Some(r) => Some(r*s)
           }
@@ -163,12 +163,12 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
-          val newCentroid = b.value.inputCentreOfOverApproximatingCircle match {
+          val newCentroid = b.value.centerOfOverApproximatingCircleOpt match {
             case None => None
             case Some(c: Point) => Some(a.value.affineTransform.transform(c).asInstanceOf[Point])
           }
 
-          val newRadius = b.value.inputOverApproximatingRadius match {
+          val newRadius = b.value.overApproximatingRadiusOpt match {
             case None => None
             case Some(r) => Some(r * s)
           }
