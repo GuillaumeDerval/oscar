@@ -20,7 +20,6 @@ package oscar.cbls.business
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Point}
-import oscar.cbls.business.geometry.model.{CBLSGeometryConst, CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
 
 package object geometry {
 
@@ -61,7 +60,7 @@ package object geometry {
     val halfHeight = height /2
     val halfWidth = width/2
 
-    var rec = geometry.factory.createLinearRing(Array(
+    val rec = geometry.factory.createLinearRing(Array(
       new Coordinate(halfWidth,halfHeight),
       new Coordinate(halfWidth,-halfHeight),
       new Coordinate(-halfWidth,-halfHeight),

@@ -22,6 +22,7 @@ import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory
 import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
 import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
+import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
 import oscar.cbls.core.{IntInvariant, Invariant}
 import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
@@ -37,6 +38,19 @@ object Overlap {
     }
     extractHoles(acc)
   }
+
+  private def extractHoles(g:Geometry):List[Geometry] = {
+    g match {
+      case poly: Polygon =>
+        val holesArray = Array.tabulate(poly.getNumInteriorRing)(i => poly.getInteriorRingN(i))
+        holesArray.toList
+      case m: GeometryCollection =>
+        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
+        components.flatMap(extractHoles)
+    }
+  }
+
+  // ///////////////////////////////////////////////////////
 
   def centroidsOfFreeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[(Int,Int)] = {
     val frees = freeSpacesIn(s:Iterable[Geometry], outer:Geometry):Iterable[Geometry]
@@ -55,17 +69,6 @@ object Overlap {
 
     extractShapes(acc)
   }
-
-  private def extractHoles(g:Geometry):List[Geometry] = {
-    g match {
-      case poly: Polygon =>
-        val holesArray = Array.tabulate(poly.getNumInteriorRing)(i => poly.getInteriorRingN(i))
-        holesArray.toList
-      case m: GeometryCollection =>
-        val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
-        components.flatMap(extractHoles)
-    }
-  }
   private def extractShapes(g:Geometry):List[Geometry] = {
     g match {
       case poly: Polygon =>
@@ -74,6 +77,73 @@ object Overlap {
         val components = Array.tabulate(m.getNumGeometries)(i => m.getGeometryN(i)).toList
         components.flatMap(extractShapes)
     }
+  }
+
+  def centersOfFreeSpaces(s:Iterable[Geometry], outer:Geometry, nbSteps1D:Int):Iterable[(Long,Long)] = {
+    var acc = outer
+    var t = s
+
+    while(t.nonEmpty){
+      acc = acc difference t.head
+      t = t.tail
+    }
+
+    val zone = acc
+    val indexedZone = PreparedGeometryFactory.prepare(zone)
+    //we search for point within zone o a grid such that no immediate neighbors on the grid ius closer to the shape.
+
+    val boundingBox = zone.getEnvelope()
+    val coordinates = boundingBox.getCoordinates()
+    val minX = coordinates(0).x.toLong
+    val minY = coordinates(0).y.toLong
+    val maxX = coordinates(2).x.toLong
+    val maxY = coordinates(2).y.toLong
+
+    val stepX = (maxX - minX) / nbSteps1D
+    val stepY = (maxY - minY) / nbSteps1D
+
+    val xs = Array.tabulate(nbSteps1D+1)(xid => minX + stepX * xid)
+    val ys = Array.tabulate(nbSteps1D+1)(yid => minY + stepY * yid)
+
+    val distancesArray:Array[Array[Long]] = Array.tabulate(nbSteps1D+1)(_ => Array.fill(nbSteps1D+1)(-1L))
+
+    for(xId <- 0 to nbSteps1D){
+      for(yId <- 0 to nbSteps1D){
+        val pt = geometry.point(xs(xId),ys(yId))
+        if(indexedZone.contains(pt)){
+          //it contains it :-)
+          distancesArray(xId)(yId) = computeDistance(zone,pt).toLong
+        }
+      }
+    }
+
+    for(xId <- 0 to nbSteps1D){
+      for(yId <- 0 to nbSteps1D){
+        val valueXm1 = if(xId > 0) distancesArray(xId-1)(yId) else -1
+        val valueXp1 = if(xId < nbSteps1D) distancesArray(xId+1)(yId) else -1
+        val valueYm1 = if(yId > 0) distancesArray(xId)(yId-1) else -1
+        val valueYp1 = if(yId < nbSteps1D) distancesArray(xId)(yId+1) else -1
+
+        val biggestNeighbor:Long = List(valueXm1,valueXp1,valueYm1,valueYp1).max
+        if(distancesArray(xId)(yId) < biggestNeighbor) {
+          distancesArray(xId)(yId) = -1
+        }
+      }
+    }
+
+    xs.indices.flatMap(xId =>
+      ys.indices.flatMap(yId =>
+        if (distancesArray(xId)(yId) != -1) {
+          Some(xs(xId), ys(yId))
+        } else None
+      )
+    )
+  }
+
+  private def computeDistance(shape1:Geometry,point:Point):Double = {
+    val ptDist = new PointPairDistance()
+    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
+    ptDist.getDistance()
   }
 }
 

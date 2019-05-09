@@ -21,7 +21,9 @@ class Drawing (title: String,
   }
   SingleFrameWindow.show(drawing, title, backgroundPanel = background)
 
-  def drawShapes(boundingBoxOn:Option[Geometry] = None, shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]): Unit ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,
+                 shapes:List[(Geometry,Option[Color],Option[Color],String)],
+                 centers:List[(Int,Int)]): Unit ={
     drawing.drawShapes(boundingBoxOn,shapes,centers)
   }
 }

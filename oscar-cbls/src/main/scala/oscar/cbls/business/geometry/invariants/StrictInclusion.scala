@@ -5,14 +5,15 @@ import org.locationtech.jts.geom.prep.PreparedGeometryFactory
 import oscar.cbls.business.geometry.algo.MaxDistance
 import oscar.cbls.business.geometry.model.{CBLSGeometryConst, CBLSGeometryVar, GeometryNotificationTarget, GeometryValue}
 import oscar.cbls.core.IntInvariant
-import oscar.cbls.core.computation.ChangingAtomicValue
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
+import oscar.cbls.lib.search.combinators.Atomic
 
 /**
   *
   * @param innerShape
   * @param outerShape
   */
-class StrictInclusion(innerShape:CBLSGeometryVar, outerShape:CBLSGeometryConst, violationIsDistanceBetweenCenters:Boolean)
+class StrictInclusion(innerShape:AtomicValue[GeometryValue], outerShape:CBLSGeometryConst, violationIsDistanceBetweenCenters:Boolean)
   extends IntInvariant
     with GeometryNotificationTarget{
 
@@ -32,7 +33,7 @@ class StrictInclusion(innerShape:CBLSGeometryVar, outerShape:CBLSGeometryConst, 
                                     id: Int,
                                     oldVal: GeometryValue,
                                     newVal: GeometryValue): Unit = {
-    require(id == 1)
+    require(id == 0)
 
     scheduleForPropagation()
   }
