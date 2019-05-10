@@ -31,7 +31,7 @@ package object geometry {
   val emptyPolygon = factory.createMultiPolygon(Array.empty)
 
   def point(x:Double,y:Double):Point = {
-    new Point(new CoordinateArraySequence(Array(new Coordinate(0,0))), factory)
+    new Point(new CoordinateArraySequence(Array(new Coordinate(x,y))), factory)
   }
 
   val emptyGeometryValue = new GeometryValue(

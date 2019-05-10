@@ -22,6 +22,7 @@ import java.awt.{Color, Shape}
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
 import org.locationtech.jts.geom.util.{AffineTransformation, GeometryTransformer}
+import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants.Overlap
 import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualLine, VisualRectangle, VisualShape}
@@ -111,7 +112,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
       s.toolTip = toolTipText
     }
 
-    paintSomeHoles(shapes.map(_._1))
+    //paintSomeHoles(shapes.map(_._1), scaleTransform, translateTransform)
 
     for((fromID,toID) <- relevantDistances){
       val (x1,y1) = coordToPixel(centers(fromID), drawingWidth, drawingHeight)
@@ -129,17 +130,20 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
     repaint()
   }
 
-  def paintSomeHoles(s:List[Geometry]): Unit ={
+  def paintSomeHoles(s:List[Geometry],scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
     val w = new ShapeWriter()
 
-    val hh = Overlap.freeSpacesIn(s.tail, s.head).toArray
+    val centers = Overlap.centersOfFreeSpaces(s.tail, s.head,100).toArray
 
-    for(i <- hh.indices){
-      val h = hh(i)
-      val center = h.getCentroid
-      val centroidPoint = new VisualShapeConcrete(this, w.toShape(center))
+
+    for(center <- centers){
+      val centroidPoint = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.point(center._1,center._2)))))
       centroidPoint.fill = true
       centroidPoint.innerCol = Color.BLACK
+      centroidPoint.borderWidth = 10
+      centroidPoint.border = true
+      centroidPoint.outerCol = Color.BLACK
+
     }
   }
 

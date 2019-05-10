@@ -20,6 +20,7 @@ package oscar.cbls.business.geometry.invariants
 import org.locationtech.jts.algorithm.distance.{DistanceToPoint, PointPairDistance}
 import org.locationtech.jts.geom.prep.{PreparedGeometry, PreparedGeometryFactory}
 import org.locationtech.jts.geom.{Geometry, GeometryCollection, Point, Polygon}
+import oscar.cbls.algo.heap.BinomialHeap
 import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry
@@ -80,24 +81,25 @@ object Overlap {
   }
 
   def centersOfFreeSpaces(s:Iterable[Geometry], outer:Geometry, nbSteps1D:Int):Iterable[(Long,Long)] = {
-    var acc = outer
-    var t = s
+    var acc = s.head
 
-    while(t.nonEmpty){
-      acc = acc difference t.head
-      t = t.tail
+    for(shape <- s.tail){
+      acc = acc union shape
     }
 
-    val zone = acc
-    val indexedZone = PreparedGeometryFactory.prepare(zone)
-    //we search for point within zone o a grid such that no immediate neighbors on the grid ius closer to the shape.
+    val filledIn = acc
+    val indexedZoneFilled = PreparedGeometryFactory.prepare(filledIn)
+    val indexedOuter = PreparedGeometryFactory.prepare(outer)
 
-    val boundingBox = zone.getEnvelope()
+    //we search for point within zone on a grid such that no immediate neighbors on the grid ius closer to the shape.
+
+    val boundingBox = outer.getEnvelope()
     val coordinates = boundingBox.getCoordinates()
     val minX = coordinates(0).x.toLong
     val minY = coordinates(0).y.toLong
     val maxX = coordinates(2).x.toLong
     val maxY = coordinates(2).y.toLong
+
 
     val stepX = (maxX - minX) / nbSteps1D
     val stepY = (maxY - minY) / nbSteps1D
@@ -105,35 +107,47 @@ object Overlap {
     val xs = Array.tabulate(nbSteps1D+1)(xid => minX + stepX * xid)
     val ys = Array.tabulate(nbSteps1D+1)(yid => minY + stepY * yid)
 
-    val distancesArray:Array[Array[Long]] = Array.tabulate(nbSteps1D+1)(_ => Array.fill(nbSteps1D+1)(-1L))
+    val distancesArray:Array[Array[Double]] = Array.tabulate(nbSteps1D+1)(_ => Array.fill(nbSteps1D+1)(0))
+    val allValidPointsHeap = new BinomialHeap[(Int,Int)]({case (xId,yId) => distancesArray(xId)(yId).abs.toInt}, xs.length * ys.length)
 
     for(xId <- 0 to nbSteps1D){
       for(yId <- 0 to nbSteps1D){
+
         val pt = geometry.point(xs(xId),ys(yId))
-        if(indexedZone.contains(pt)){
+        if(indexedOuter.covers(pt) && ! indexedZoneFilled.covers(pt)){
           //it contains it :-)
-          distancesArray(xId)(yId) = computeDistance(zone,pt).toLong
+          //commputes the min distance to any edge of the zone
+          distancesArray(xId)(yId) = computeDistance(filledIn,pt) min computeDistance(outer,pt)
+          allValidPointsHeap.insert((xId,yId))
         }
       }
     }
 
-    for(xId <- 0 to nbSteps1D){
-      for(yId <- 0 to nbSteps1D){
-        val valueXm1 = if(xId > 0) distancesArray(xId-1)(yId) else -1
-        val valueXp1 = if(xId < nbSteps1D) distancesArray(xId+1)(yId) else -1
-        val valueYm1 = if(yId > 0) distancesArray(xId)(yId-1) else -1
-        val valueYp1 = if(yId < nbSteps1D) distancesArray(xId)(yId+1) else -1
+    while(! allValidPointsHeap.isEmpty){
+      val (xId,yId) = allValidPointsHeap.popFirst()
 
-        val biggestNeighbor:Long = List(valueXm1,valueXp1,valueYm1,valueYp1).max
-        if(distancesArray(xId)(yId) < biggestNeighbor) {
-          distancesArray(xId)(yId) = -1
+      val myValue = distancesArray(xId)(yId)
+      require(myValue > -1)
+
+      var biggestNeighborDistance:Double = 0
+
+      for(x <- xId-2 to xId+2 if 0 < x && x < nbSteps1D){
+        for(y <- yId-2 to yId+2 if 0 < y && y < nbSteps1D && !(x == xId && y == yId)){
+          val myD = distancesArray(x)(y).abs
+          if(myD > biggestNeighborDistance){
+            biggestNeighborDistance = myD
+          }
         }
+      }
+
+      if(myValue < biggestNeighborDistance) {
+        distancesArray(xId)(yId) = - myValue
       }
     }
 
     xs.indices.flatMap(xId =>
       ys.indices.flatMap(yId =>
-        if (distancesArray(xId)(yId) != -1) {
+        if (distancesArray(xId)(yId) > 0) {
           Some(xs(xId), ys(yId))
         } else None
       )

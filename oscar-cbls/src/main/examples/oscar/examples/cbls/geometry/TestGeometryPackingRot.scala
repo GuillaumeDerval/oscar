@@ -218,7 +218,9 @@ object TestGeometryPackingRot extends App with LinearSelectors{
     () => {
       val allShapes = placedShapes.map(_.value)
 
-      val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
+      //val holes:Iterable[(Int,Int)] = Overlap.centroidsOfFreeSpacesIn(allShapes.map(_.geometry),outerFrame)
+
+      val holes:Iterable[(Long,Long)] = Overlap.centersOfFreeSpaces(allShapes.map(_.geometry),outerFrame, 100)
 
       allShapes.indices.flatMap(shapeID => {
 
@@ -279,7 +281,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
       _>1,
       stopAsSoonAsAcceptableMoves=true))) name "swap&Gradient"
 
-  val displayDelay:Long = (1000.toLong * 1000 * 1000 * 0.01).toLong //1,01 seconds
+  val displayDelay:Long = (1000.toLong * 1000 * 1000 * 1.01).toLong //1,01 seconds
   var lastDisplay = System.nanoTime()
 
   val search = (Profile(BestSlopeFirst(
