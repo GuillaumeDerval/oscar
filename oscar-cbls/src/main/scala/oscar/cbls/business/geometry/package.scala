@@ -19,7 +19,7 @@ package oscar.cbls.business
 
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
-import org.locationtech.jts.geom.{Coordinate, GeometryFactory, Point}
+import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory, Point}
 
 package object geometry {
 
@@ -38,6 +38,13 @@ package object geometry {
     emptyPolygon,
     inputCentreOfOverApproximatingCircle = None,
     inputOverApproximatingRadius = Some(0))
+
+  def createLine(x1:Long,y1:Long,x2:Long,y2:Long):Geometry = {
+    geometry.factory.createLineString(Array(
+      new Coordinate(x1,y1),
+      new Coordinate(x2,y2)
+    ))
+  }
 
   def createSquare(side:Double):GeometryValue = {
     val halfSide = side/2

@@ -133,7 +133,7 @@ object TestGeometryPackingRot extends App with LinearSelectors{
           None,
           Some(colorsIt.next),
           overlapPenetrationPerShape(circleID).toString)).toList.reverse,
-      centers = coordArray.toList.map(xy => (longToInt(xy._1.value),longToInt(xy._2.value))))
+      centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
 
   updateDisplay()

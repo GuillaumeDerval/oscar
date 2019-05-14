@@ -48,6 +48,7 @@ class ObjectiveFunctionDisplay(title: String)
     val at = (getWatch - startinAt).toDouble/1000
 
     //TODO: this is a bit slow isnt'it?
+    //TODO: it fails with integer overflows!!
     if(yDom.getUpperBound < value.toDouble)
       yDom = Range.inclusive(0L,upper(value))
     if(xDom.getUpperBound < at)

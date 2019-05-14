@@ -28,8 +28,12 @@ import oscar.visual.VisualDrawing
 import oscar.visual.shapes.{VisualArrow, VisualLine, VisualRectangle, VisualShape}
 
 
-class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int = 960, windowHeight: Int = 960, pointShift: Option[() => (Double,Double)] = None)
-  extends VisualDrawing(false,false) with GeometryDrawingTrait {
+class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
+                            windowWidth: Int = 960,
+                            windowHeight: Int = 960,
+                            pointShift: Option[() => (Double,Double)] = None) //TODO: pointShift:(Double,Double) = (0,0) ce serait nettement plus simple.
+  extends VisualDrawing(false,false)
+    with GeometryDrawingTrait {
 
   class VisualShapeConcrete(d: VisualDrawing, s: Shape) extends VisualShape(d) {
 
@@ -50,7 +54,9 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
   /**
     * @param shapes shape,bordercolor,innercolor,toltipText
     */
-  def drawShapes(boundingBoxOn:Option[Geometry] = None, shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]) ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,
+                 shapes:List[(Geometry,Option[Color],Option[Color],String)],
+                 centers:List[(Long,Long)]) ={
     super.clear(false)
 
     val w = new ShapeWriter()
@@ -115,16 +121,11 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
     //paintSomeHoles(shapes.map(_._1), scaleTransform, translateTransform)
 
     for((fromID,toID) <- relevantDistances){
-      val (x1,y1) = coordToPixel(centers(fromID), drawingWidth, drawingHeight)
-      val (x2,y2) = coordToPixel(centers(toID), drawingWidth, drawingHeight)
-
-      val line = new VisualArrow(this, new Line2D.Double(
-        x1,
-        y1,
-        x2,
-        y2),5)
-      line.dashed = false
-      line.innerCol = Color.BLUE
+      val (x1,y1) = centers(fromID)
+      val (x2,y2) = centers(toID)
+      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.createLine(x1:Long,y1:Long,x2:Long,y2:Long)))))
+      s.innerCol = Color.BLUE
+      s.dashed = false
     }
 
     repaint()
@@ -134,7 +135,6 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
     val w = new ShapeWriter()
 
     val centers = Overlap.centersOfFreeSpaces(s.tail, s.head,100).toArray
-
 
     for(center <- centers){
       val centroidPoint = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.point(center._1,center._2)))))
@@ -147,7 +147,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
     }
   }
 
-  private def coordToPixel(coord: (Int,Int), drawingWidth: Int, drawingHeight: Int): (Int,Int) ={
+  private def coordToPixel(coord: (Long,Long), drawingWidth: Int, drawingHeight: Int): (Int,Int) ={
     val (shiftX,shiftY): (Double, Double)= if(pointShift.isDefined)pointShift.get.apply() else (0,0)
     val scaling = Math.max((windowWidth.toDouble-(shiftX*2))/drawingWidth,(windowHeight.toDouble-(shiftY*2))/drawingHeight)
     val x = ((coord._1.toDouble*scaling) + shiftX).toInt

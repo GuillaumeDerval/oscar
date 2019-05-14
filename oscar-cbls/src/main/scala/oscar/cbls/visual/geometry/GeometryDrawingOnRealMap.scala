@@ -8,7 +8,11 @@ import org.locationtech.jts.geom.Geometry
 import oscar.visual.map.{MapWaypoint, VisualMap}
 
 class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
-                               area: List[(Int, Int)], windowWidth: Int = 960, windowHeight: Int = 960) extends VisualMap() with GeometryDrawingTrait {
+                               area: List[(Int, Int)],
+                               windowWidth: Int = 960,
+                               windowHeight: Int = 960)
+  extends VisualMap()
+    with GeometryDrawingTrait {
 
   val areaGeoCoords: List[GeoPosition] = area.map(p => convertDistToGeoCoords(p._1, p._2))
 
@@ -96,7 +100,7 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     zoom
   }
 
-  private def convertDistToGeoCoords(xFromOrigin: Int, yFromOrigin: Int): GeoPosition ={
+  private def convertDistToGeoCoords(xFromOrigin: Long, yFromOrigin: Long): GeoPosition ={
     val oneLatDegreKM = 111.19
     val R = 111.321
 
@@ -105,7 +109,9 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     new GeoPosition(lat, long)
   }
 
-  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)]): Unit ={
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,
+                 shapes:List[(Geometry,Option[Color],Option[Color],String)],
+                 centers:List[(Long,Long)]): Unit ={
   }
 }
 

@@ -40,7 +40,7 @@ case class GradientComponent(variable:CBLSIntVar,
       "maxStep:" + maxStep + "," +
       "minStep:" + minStep + ")"
 
-  def takeStep(step:Int): Unit ={
+  def takeStep(step:Long): Unit ={
     variable := initValue + (step / slope).toLong
   }
 

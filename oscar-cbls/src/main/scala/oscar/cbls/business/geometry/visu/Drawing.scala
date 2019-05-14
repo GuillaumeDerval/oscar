@@ -23,7 +23,7 @@ class Drawing (title: String,
 
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],
-                 centers:List[(Int,Int)]): Unit ={
+                 centers:List[(Long,Long)]): Unit ={
     drawing.drawShapes(boundingBoxOn,shapes,centers)
   }
 }

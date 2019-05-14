@@ -107,7 +107,7 @@ object TestGeometryPackingMinDistance extends App{
           None,
           Some(colorsIt.next),
           overlapPerShape(circleID).toString)).toList,
-      centers = coordArray.toList.map(xy => (longToInt(xy._1.value),longToInt(xy._2.value))))
+      centers = coordArray.toList.map(xy => (xy._1.value,xy._2.value)))
   }
 
   updateDisplay()

@@ -5,7 +5,9 @@ import javax.swing.JPanel
 import org.locationtech.jts.geom.Geometry
 
 trait GeometryDrawingTrait{
-  def drawShapes(boundingBoxOn:Option[Geometry] = None,shapes:List[(Geometry,Option[Color],Option[Color],String)],centers:List[(Int,Int)])
+  def drawShapes(boundingBoxOn:Option[Geometry] = None,
+                 shapes:List[(Geometry,Option[Color],Option[Color],String)],
+                 centers:List[(Long,Long)])
 }
 
 object GeometryDrawingTypes extends Enumeration{
