@@ -71,10 +71,10 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)], windowWidth: Int 
     val drawingWidth = (maxX - minX).toInt
     val drawingHeight = (maxY - minY).toInt
 
-    val (scaleOriginX,scaleOriginY) = pointShift.getOrElse(() => (0.0,0.0))()
-    val scaling = Math.max((windowWidth.toDouble-(scaleOriginX*2))/drawingWidth,(windowHeight.toDouble-(2.0*scaleOriginY))/drawingHeight)
+    val (realMapScaleX,realMapScaleY) = pointShift.getOrElse(() => (0.0,0.0))()
+    val scaling = Math.min((windowWidth.toDouble-(realMapScaleX*2.0))/drawingWidth,(windowHeight.toDouble-(2.0*realMapScaleY))/drawingHeight)
     val scaleTransform = AffineTransformation.scaleInstance(scaling,scaling)
-    val translateTransform = AffineTransformation.translationInstance(scaleOriginX,scaleOriginY)
+    val translateTransform = AffineTransformation.translationInstance(realMapScaleX,realMapScaleY)
 
     val border =
       if(boundingBoxOn.isEmpty)

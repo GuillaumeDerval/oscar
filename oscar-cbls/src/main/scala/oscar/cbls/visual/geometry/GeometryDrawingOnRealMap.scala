@@ -43,11 +43,9 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     * It's needed to adjust the overlapping simple geometry drawing
     */
   lazy val topLeftGeoPosition: GeoPosition = {
-    val (minLatitude,maxLatitude,minLongitude,maxLongitude) =
-      (areaGeoCoords.map(c => c.getLatitude).min,
-        areaGeoCoords.map(c => c.getLatitude).max,
-        areaGeoCoords.map(c => c.getLongitude).min,
-        areaGeoCoords.map(c => c.getLongitude).max)
+    val (maxLatitude,minLongitude) =
+      (areaGeoCoords.map(c => c.getLatitude).max,
+        areaGeoCoords.map(c => c.getLongitude).min)
       new GeoPosition(maxLatitude,minLongitude)
   }
 
@@ -60,7 +58,6 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
   this.setOpaque(true)
 
   def topLeftPointShiftInPixel(): (Double,Double) ={
-    createWaypoint(topLeftGeoPosition.getLatitude,topLeftGeoPosition.getLongitude)
     val topLeftPointInPixel = viewer.convertGeoPositionToPoint(topLeftGeoPosition)
     (topLeftPointInPixel.getX, topLeftPointInPixel.getY)
   }
@@ -74,20 +71,24 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     val maxLatGeoCoord = areaGeoCoords.maxBy(_.getLatitude)
     val minLongGeoCoord = areaGeoCoords.minBy(_.getLongitude)
     val maxLongGeoCoord = areaGeoCoords.maxBy(_.getLongitude)
-    val farthestGeoCoords =
+    val farthestAwayGeoCoords =
       if(tfRouting.geoToPixel(maxLatGeoCoord,1).getY - tfRouting.geoToPixel(minLatGeoCoord,1).getY >
         tfRouting.geoToPixel(maxLongGeoCoord,1).getX - tfRouting.geoToPixel(minLongGeoCoord,1).getX)
-        List(minLatGeoCoord,maxLatGeoCoord)
+        List(new GeoPosition(minLatGeoCoord.getLatitude,minLatGeoCoord.getLongitude),
+          new GeoPosition(maxLatGeoCoord.getLatitude,maxLatGeoCoord.getLongitude))
       else
-        List(minLongGeoCoord,maxLongGeoCoord)
-
+        List(new GeoPosition(minLongGeoCoord.getLatitude,minLongGeoCoord.getLongitude),
+          new GeoPosition(maxLongGeoCoord.getLatitude,maxLongGeoCoord.getLongitude))
 
     def isZoomAdjusted(zoom: Int): Boolean ={
-      val pixelPosAtZoom = farthestGeoCoords.map(g =>  tfRouting.geoToPixel(g,zoom))
+      // Convert to pixle position in whole map with the specified zoom level
+      val pixelPosAtZoom = farthestAwayGeoCoords.map(g =>  tfRouting.geoToPixel(g,zoom))
       val xs = pixelPosAtZoom.map(_.getX)
       val ys = pixelPosAtZoom.map(_.getY)
       val maxDistAtZoom = Math.max(xs.max - xs.min,ys.max - ys.min)
-      maxDistAtZoom < windowWidth
+
+      // We want the structure to be clearly visible
+      maxDistAtZoom*1.1 < windowWidth
     }
     var zoom = 1
     while(!isZoomAdjusted(zoom))
