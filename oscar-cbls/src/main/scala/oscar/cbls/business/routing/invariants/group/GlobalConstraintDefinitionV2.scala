@@ -8,8 +8,8 @@ import oscar.cbls.core._
 
 import scala.collection.immutable.{HashMap, Stack}
 import scala.collection.mutable
-/*
-class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSeqValue, v: Int)
+
+abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
 
   val n = routes.maxValue+1L
@@ -17,11 +17,18 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
 
   val preComputedValues: Array[T] = new Array[T](n)
   val vehicleValues : Array[U] = new Array[U](v)
+  var vehicleValuesAtLevel0 : Array[U] = new Array[U](v)
   var checkpointAtLevel0: IntSequence = _
-  val changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, true)
-  var changedVehiclesSinceLastApplyUpdate = new IterableMagicBoolArray(v,false)
+  var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, true)
+  //var changedVehiclesSinceLastApplyUpdate = new IterableMagicBoolArray(v,false)
+  var checkpointLevel: Int = -1
+  val savedDataAtCheckPointLevel: mutable.Map[Int,(Option[List[Array[ListSegments]]], VehicleLocation, IterableMagicBoolArray)] = new mutable.HashMap
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
+
+  registerStaticAndDynamicDependency(routes)
+
+  finishInitialization()
 
   def outputVariables:Iterable[Variable]
 
@@ -71,17 +78,20 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
   def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence):U
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
+    //println("changes : " + changes)
     digestUpdates(changes) match{
       case None => for (vehicle <- vehicles){
         assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
       }
-      case Some(x) if checkpointLevel =>
+      case Some(x) if this.checkpointLevel == -1 =>
         for (vehicle <- vehicles){
           assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
         }
-      case Some(x) => x.last.foreach(vehicleSegments =>
-        if(vehicleSegments.segments.length > 1)
-          computeVehicleValue(vehicleSegments.vehicle,vehicleSegments.segments,changes.newValue,preComputedValues)
+      case Some(x) =>
+        x.head.foreach(vehicleSegments =>
+          if (changedVehiclesSinceCheckpoint0(vehicleSegments.vehicle))
+            vehicleValues(vehicleSegments.vehicle) = computeVehicleValue(vehicleSegments.vehicle, vehicleSegments.segments, changes.newValue, preComputedValues)
+        )
     }
   }
 
@@ -89,24 +99,46 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
     changes match {
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
         val newRoute = changes.newValue
-
         val prevUpdateSegments = digestUpdates(prev)
-        // If false it means that we had an assign value update => not incremental => from scratch
-        if (prevUpdateSegments.isEmpty) {
-          computeAndAssignVehiclesValueFromScratch(changes.newValue)
+
+        if(checkpointLevel == 0){
+          checkpointAtLevel0 = newRoute
+          changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
+            performPreCompute(vehicle,newRoute,preComputedValues)
+            vehicleValuesAtLevel0(vehicle) = vehicleValues(vehicle)
+          })
+          changedVehiclesSinceCheckpoint0.all_=(false)
         }
 
-        changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(performPreCompute(_, newRoute, preComputedValues))
-        prevUpdateSegments
+        // If false it means that we had an assign value update => not incremental => from scratch
+        val segmentsAtCheckPoint = if (prevUpdateSegments.isEmpty || this.checkpointLevel < 0) {
+          computeAndAssignVehiclesValueFromScratch(changes.newValue)
+          Some(List(Array.tabulate(v)(vehicle => {
+            val lastNodeOfVehicle =
+              if(vehicle < v-1) newRoute.valueAtPosition(vehicleSearcher.startPosOfVehicle(vehicle+1)-1).get
+              else newRoute.valueAtPosition(newRoute.size-1).get
+            ListSegments(List(PreComputedSubSequence(vehicle, preComputedValues(vehicle), lastNodeOfVehicle, preComputedValues(lastNodeOfVehicle))),vehicle)
+          })))
+        } else {
+          prevUpdateSegments
+        }
+
+        this.checkpointLevel = checkpointLevel
+
+        savedDataAtCheckPointLevel(checkpointLevel) = (segmentsAtCheckPoint,vehicleSearcher,changedVehiclesSinceCheckpoint0)
+        segmentsAtCheckPoint
+
+
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
         if(checkpointLevel == 0L) {
-          require(checkpoint quickEquals this.checkpoint)
-          restoreCheckpoint()
-          true
-        }else{
-          digestUpdates(r.howToRollBack)
+          require(checkpoint quickEquals this.checkpointAtLevel0)
+          for(vehicle <- 0 until v) vehicleValues(vehicle) = vehicleValuesAtLevel0(vehicle)
         }
+        val (segments, vehicleSearcherAtCheckpointLevel, changedVehiclesSinceCheckpoint) = savedDataAtCheckPointLevel(checkpointLevel)
+        vehicleSearcher = vehicleSearcherAtCheckpointLevel
+        changedVehiclesSinceCheckpoint0 = changedVehiclesSinceCheckpoint
+        segments
 
       case sui@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         val prevUpdateSegments = digestUpdates(prev)
@@ -114,15 +146,16 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
         else {
           val prevRoutes = prev.newValue
           val lastPrevUpdateSegments = prevUpdateSegments.get.head
-          val newPrevUpdateSegments = Array.tabulate(n)(lastPrevUpdateSegments)
+          val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
           vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
           val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos)
+          changedVehiclesSinceCheckpoint0(impactedVehicle) = true
 
-          newPrevUpdateSegments(impactedVehicle) = newPrevUpdateSegments(impactedVehicle).insertSegments(List(NewNode(value)),pos,prevRoutes)
+          // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
+          newPrevUpdateSegments(impactedVehicle) = newPrevUpdateSegments(impactedVehicle).insertSegments(List(NewNode(value)),pos-1,prevRoutes)
           Some(newPrevUpdateSegments :: prevUpdateSegments.get)
         }
-
 
       case sum@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
         val prevUpdateSegments = digestUpdates(prev)
@@ -130,11 +163,13 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
         else {
           val prevRoutes = prev.newValue
           val lastPrevUpdateSegments = prevUpdateSegments.get.head
-          val newPrevUpdateSegments = Array.tabulate(n)(lastPrevUpdateSegments)
+          val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
-          vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
           val fromVehicle = vehicleSearcher.vehicleReachingPosition(fromIncluded)
-          val toVehicle = vehicleSearcher.vehicleReachingPosition(toVehicle)
+          val toVehicle = vehicleSearcher.vehicleReachingPosition(after)
+          vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
+          changedVehiclesSinceCheckpoint0(fromVehicle) = true
+          changedVehiclesSinceCheckpoint0(toVehicle) = true
 
           val (newFromVehicleListSegment, removedSegments) = newPrevUpdateSegments(fromVehicle).removeSegments(fromIncluded, toIncluded, prevRoutes)
           newPrevUpdateSegments(fromVehicle) = newFromVehicleListSegment
@@ -151,23 +186,27 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
         else {
           val prevRoutes = prev.newValue
           val lastPrevUpdateSegments = prevUpdateSegments.get.head
-          val newPrevUpdateSegments = Array.tabulate(n)(lastPrevUpdateSegments)
+          val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
-          val vehicle = vehicleSearcher.vehicleReachingPosition(position)
-          newPrevUpdateSegments(vehicle) = newPrevUpdateSegments(vehicle).removeSegments(position,position,prevRoutes)._1
+          val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
           vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
+          changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+
+          newPrevUpdateSegments(impactedVehicle) = newPrevUpdateSegments(impactedVehicle).removeSegments(position,position,prevRoutes)._1
+
           Some(newPrevUpdateSegments :: prevUpdateSegments.get)
         }
 
       case SeqUpdateLastNotified(value:IntSequence) =>
         require(value quickEquals routes.value)
-        changedVehiclesSinceLastApplyUpdate.all_=(false)
+        //changedVehiclesSinceLastApplyUpdate.all_=(false)
         Some(List(Array.tabulate(v)(vehicle => {
           val lastNodeOfVehicle =
             if(vehicle < v-1) value.valueAtPosition(vehicleSearcher.startPosOfVehicle(vehicle+1)-1).get
             else value.valueAtPosition(value.size-1).get
           ListSegments(List(PreComputedSubSequence(vehicle, preComputedValues(vehicle), lastNodeOfVehicle, preComputedValues(lastNodeOfVehicle))),vehicle)
         })))
+
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
     }
@@ -175,6 +214,18 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
 
   private def computeAndAssignVehiclesValueFromScratch(newSeq: IntSequence): Unit ={
     vehicles.foreach(v => assignVehicleValue(v, computeVehicleValueFromScratch(v, newSeq)))
+  }
+
+  private def preComputedToString():String = {
+    "[" + preComputedValues.indices.map(i => "\n\t" + i + ":" + preComputedValues(i)).mkString("") + "\n]"
+  }
+
+  override def checkInternals(c : Checker): Unit = {
+    for (v <- vehicles){
+      require(computeVehicleValueFromScratch(v,routes.value).equals(vehicleValues(v)),
+        "For Vehicle " + v + " : " + computeVehicleValueFromScratch(v,routes.value) + " " +
+          vehicleValues(v) + " " + routes + "\n" + preComputedToString())
+    }
   }
 
 
@@ -194,53 +245,83 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
       val (fromImpactedSegment, segmentsBeforeFromImpactedSegment) = findImpactedSegment(from,routes)
       val (toImpactedSegment, segmentsBeforeToImpactedSegment) = findImpactedSegment(to,routes,segments.drop(segmentsBeforeFromImpactedSegment.length))
       // nodeBeforeFrom is always defined because it's at worst a vehicle node
-      val nodeBeforeFrom = routes.explorerAtPosition(from - 1)
+      val nodeBeforeFrom = routes.explorerAtPosition(from - 1).get.value
+      val fromNode = routes.explorerAtPosition(from).get.value
+      val toNode = routes.explorerAtPosition(to).get.value
       val nodeAfterTo = routes.explorerAtPosition(to + 1)
 
-      val (x1,x2) = fromImpactedSegment.splitAtNode(nodeBeforeFrom.get.value,from,preComputedValues(nodeBeforeFrom.get.value),preComputedValues(from))
-      if(fromImpactedSegment == toImpactedSegment)
-        if(nodeAfterTo.isEmpty) {
-          val newListSegments = ListSegments(segmentsBeforeFromImpactedSegment ::: x1.get :: Nil, vehicle)
-          val removedSegments = List(x2.get)
-          (newListSegments,removedSegments)
-        } else {
-          val (y1, y2) = x2.get.splitAtNode(to, nodeAfterTo.get.value, preComputedValues(to), preComputedValues(nodeAfterTo.get.value))
-          val segmentsAfterToImpactedSegment =
-            segments.drop(
-              segmentsBeforeFromImpactedSegment.length +    // Segments before the removed one
-              1                                             // The impacted segment (same for from and to)
-            )
-          val newListSegments = ListSegments(
-            segmentsBeforeFromImpactedSegment ::: x1.get :: y2.get :: segmentsAfterToImpactedSegment,
-            vehicle)
-          val removedSegments = List(y1.get)
-          (newListSegments,removedSegments)
-        }
-      else{
-        if(nodeAfterTo.isEmpty) {
-          val newListSegments = ListSegments(segmentsBeforeFromImpactedSegment ::: x1.get :: Nil, vehicle)
-          val removedSegments = x2.get :: segmentsBeforeToImpactedSegment.drop(1) ::: List(toImpactedSegment)
-          (newListSegments,removedSegments)
-        } else {
-          val (y1, y2) = toImpactedSegment.splitAtNode(to, nodeAfterTo.get.value, preComputedValues(to), preComputedValues(nodeAfterTo.get.value))
-          val segmentsAfterToImpactedSegment =
-            segments.drop(
-              segmentsBeforeFromImpactedSegment.length +    // Segments before the removed one
-                2 +                                         // The two impacted segments
-                segmentsBeforeToImpactedSegment.length - 1  // Segments between the two impacted segments (which includes fromImpactedSegment)
-            )
-          val newListSegments = ListSegments(
-            segmentsBeforeFromImpactedSegment ::: x1.get :: y2.get :: segmentsAfterToImpactedSegment,
-            vehicle)
-          val removedSegments = x2.get :: segmentsBeforeToImpactedSegment.drop(1) ::: List(y1.get)
-          (newListSegments,removedSegments)
-        }
+      //Split the first impacted segment at from node
+      val (fromImpactedSegment_1,fromImpactedSegment_2) = fromImpactedSegment.splitAtNode(nodeBeforeFrom,fromNode,preComputedValues(nodeBeforeFrom),preComputedValues(fromNode))
 
+      // 1° The removed segment is included in one segment
+      if(fromImpactedSegment == toImpactedSegment){
+        // The left-remaining part of the initial segment
+        val (leftResidue: Option[Segment[T]], leftCuttedInitialSegment: Option[Segment[T]]) =
+          fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode))
+        // The right-remaining part of the initial segment
+        val (removedSegment: Option[Segment[T]], rightResidue: Option[Segment[T]]) =
+          if(nodeAfterTo.isDefined)
+            leftCuttedInitialSegment.get.splitAtNode(toNode, nodeAfterTo.get.value, preComputedValues(toNode), preComputedValues(nodeAfterTo.get.value))
+          else
+            (leftCuttedInitialSegment, None)
+
+        val segmentsAfterToImpactedSegment =
+          segments.drop(
+            segmentsBeforeFromImpactedSegment.length +    // Segments before the removed one
+              1                                             // The impacted segment (same for from and to)
+          )
+
+        val newListSegment =
+          ListSegments(
+            segmentsBeforeFromImpactedSegment :::
+              (if(leftResidue.isDefined) List(leftResidue.get) else Nil) :::
+              (if(rightResidue.isDefined) List(rightResidue.get) else Nil) :::
+              segmentsAfterToImpactedSegment,
+            vehicle)
+        (newListSegment, List(removedSegment.get))
+      } else {
+        // The left-remaining part of the initial from segment
+        val (leftResidue: Option[Segment[T]], leftCuttedInitialFromSegment: Option[Segment[T]]) =
+          fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode))
+        // The right-remaining part of the initial to segment
+        val (rightCuttedInitialToSegment: Option[Segment[T]], rightResidue: Option[Segment[T]]) =
+          if(nodeAfterTo.isDefined)
+            toImpactedSegment.splitAtNode(toNode, nodeAfterTo.get.value, preComputedValues(toNode), preComputedValues(nodeAfterTo.get.value))
+          else
+            (toImpactedSegment, None)
+
+        val segmentsAfterToImpactedSegment =
+          segments.drop(
+            segmentsBeforeFromImpactedSegment.length +    // Segments before the removed one
+              2 +                                         // The two impacted segments
+              segmentsBeforeToImpactedSegment.length - 1  // Segments between the two impacted segments (which includes fromImpactedSegment)
+          )
+
+        // We keep the segments between from impacted and to impacted
+        val segmentsBetweenFromAndToImpactedSegments =
+          segments.slice(
+            segmentsBeforeFromImpactedSegment.length + 1,
+            segmentsBeforeFromImpactedSegment.length + segmentsBeforeToImpactedSegment.length)
+
+        val newListSegment =
+          ListSegments(
+            segmentsBeforeFromImpactedSegment :::
+              (if(leftResidue.isDefined) List(leftResidue.get) else Nil) :::
+              (if(rightResidue.isDefined) List(rightResidue.get) else Nil) :::
+            segmentsAfterToImpactedSegment,
+            vehicle)
+
+        val removedSegments =
+          leftCuttedInitialFromSegment.get ::
+            segmentsBetweenFromAndToImpactedSegments :::
+            rightCuttedInitialToSegment.get :: Nil
+
+        (newListSegment, removedSegments)
       }
     }
 
     /**
-      * Insert a list of segments after the specified position
+      * Insert a list of segments at the specified position
       * @param segmentsToInsert
       * @param afterPosition
       * @return
@@ -251,16 +332,22 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
       val newSegments = segments.foldLeft(List[Segment[T]]())(
         (acc, currentSegment) => {
           if (currentSegment == impactedSegment) {
-            // We need to split the impacted segment in two and insert the new Segment between those two sub segment
             val insertAfterNode = routes.explorerAtPosition(afterPosition).get.value
-            val insertBeforeNode = routes.explorerAtPosition(afterPosition + 1).get.value
-            val (segmentBeforeInsertion, segmentAfterInsertion) =
-              currentSegment.splitAtNode(insertBeforeNode, insertAfterNode, preComputedValues(insertBeforeNode), preComputedValues(insertAfterNode))
+            val insertBeforeNode = routes.explorerAtPosition(afterPosition+1)
 
-            if(segmentAfterInsertion.nonEmpty)
-              segmentAfterInsertion.get :: segmentsToInsert ::: segmentBeforeInsertion.get :: acc
-            else
-              segmentsToInsert ::: segmentBeforeInsertion.get :: acc
+            // We need to split the impacted segment in two and insert the new Segment between those two sub segment
+            val (leftResidue: Option[Segment[T]], rightResidue: Option[Segment[T]]) =
+              // If we are at the end of a vehicle route, we don't split the route
+              if(insertBeforeNode.isDefined && insertBeforeNode.get.value >= v)
+                impactedSegment.splitAtNode(insertAfterNode,insertBeforeNode.get.value,
+                  preComputedValues(insertAfterNode),preComputedValues(insertBeforeNode.get.value))
+              else
+                (Some(impactedSegment),None)
+
+            (if(rightResidue.isDefined) List(rightResidue.get) else Nil) :::
+              segmentsToInsert :::
+              (if(leftResidue.isDefined) List(leftResidue.get) else Nil) :::
+              acc
           } else {
             currentSegment :: acc
           }
@@ -303,9 +390,13 @@ class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSe
           nodePos == pos
       }
     }
+
+    override def toString: String ={
+      "Segments of vehicle " + vehicle + " : " + segments.mkString(", ")
+    }
   }
 
-}*/
+}
 
 trait Segment[@specialized T]{
   /**
@@ -391,8 +482,8 @@ case class NewNode[@specialized T](node:Long) extends Segment[T]{
   }
 
   override def splitAtNode(beforeSplitNode: Int, splitNode: Int, valueBeforeSplitNode: T, valueAtSplitNode: T): (Option[Segment[T]],Option[Segment[T]]) = {
-    require(splitNode == node)
-    (None,Some(this))
+    require(beforeSplitNode == node)
+    (Some(this), None)
   }
 
   override def flip(): Segment[T] = {

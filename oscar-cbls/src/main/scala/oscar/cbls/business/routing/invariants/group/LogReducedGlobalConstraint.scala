@@ -172,7 +172,7 @@ object LogReducedFlippedPreComputedSubSequence {
     * @tparam U the output type of the algorithms, that you need to assign to the output variables
     */
   abstract class LogReducedGlobalConstraint[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Long)
-    extends GlobalConstraintDefinition[VehicleAndPosition,U](routes,v){
+    extends GlobalConstraintDefinitionV2[VehicleAndPosition,U](routes,v){
 
     /**
       * this method delivers the value of the node

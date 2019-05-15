@@ -412,10 +412,8 @@ class SeqUpdateRollBackToCheckpoint(val checkpointValue:IntSequence,howToRollBac
   //TODO: there might still be overflows during howToRollBack?!
   private var reversedInstructions:SeqUpdate = null
   def howToRollBack:SeqUpdate = {
-    println("reversed instructions : " + reversedInstructions)
     if (reversedInstructions != null) reversedInstructions
     else {
-      println("htrb : " + howToRollBackFct())
       reversedInstructions = howToRollBackFct()
       reversedInstructions
     }

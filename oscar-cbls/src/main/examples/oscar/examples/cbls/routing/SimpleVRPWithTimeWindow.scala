@@ -6,6 +6,8 @@ import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, 
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
+import scala.collection.immutable.HashMap
+
 /**
   * Created by fg on 12/05/17.
   */
@@ -13,7 +15,7 @@ import oscar.cbls.lib.constraint.EQ
 object SimpleVRPWithTimeWindow extends App{
   val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val v = 10
-  val n = 50
+  val n = 500
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
@@ -21,6 +23,11 @@ object SimpleVRPWithTimeWindow extends App{
   val (earliestArrivalTimes, latestLeavingTimes, taskDurations, maxWaitingDurations) = RoutingMatrixGenerator.generateFeasibleTimeWindows(n,v,travelDurationMatrix,listOfChains)
 
   val myVRP =  new VRP(m,n,v)
+
+  //println("earliest arrival time : " + earliestArrivalTimes.zipWithIndex.map(x => x._2 -> x._1).toList)
+  //println("latest leaving time : " + latestLeavingTimes.zipWithIndex.map(x => x._2 -> x._1).toList)
+  //println("task duration: " + taskDurations.zipWithIndex.map(x => x._2 -> x._1).toList)
+
 
   // Distance
   val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
@@ -40,8 +47,9 @@ object SimpleVRPWithTimeWindow extends App{
   val timeWindowExtension = timeWindows(Some(earliestArrivalTimes), None, None, Some(latestLeavingTimes), taskDurations, None)
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
+  //println("travel durations: \n" + timeMatrix.zipWithIndex.map(from => from._2 -> from._1.zipWithIndex.map(to => "" + to._2 + " : " + to._1).mkString(", ")).mkString("\n"))
   val smartTimeWindowInvariant =
-    TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
+    TimeWindowConstraint(myVRP.routes, n, v,
       earliestArrivalTimes,
       latestLeavingTimes,
       taskDurations,
@@ -188,7 +196,7 @@ object SimpleVRPWithTimeWindow extends App{
   //val search = (BestSlopeFirst(List(routeUnroutdPoint2, routeUnroutdPoint, vlsn1pt)))
 
 
-  search.verbose = 4
+  search.verbose = 1
   //search.verboseWithExtraInfo(2, ()=> "" + myVRP)
 
 

@@ -247,7 +247,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
         Profile(swapsK(20)
           dynAndThen((s:SwapMove) => AssignNeighborhood(edgeConditionArray, searchZone = ()=>warehousesPairToTwiceApartBridges(s.idI min s.idJ)(s.idI max s.idJ), name ="FastSwitchConditionsCombined"))
           guard(() => openWarehouses.value.size >= 5)
-          name "fastCombined"),
+          name "fastCombined")
         //Profile(SwapsNeighborhood(warehouseOpenArray, "SwapWarehouses") guard(() => openWarehouses.value.size >= 5))
       ),refresh = W/10)
 
@@ -257,7 +257,7 @@ object WarehouseAndBridgeLocation extends App with StopWatch{
       onExhaustRestartAfter(RandomizeNeighborhood(warehouseOpenArray, () => W/5,"Randomize1"), 4, obj, restartFromBest = true)
 
       //we set it after the restart because it is really slow; it subsumes the fast search, but it does not often find anything anyway, so better gain time
-      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined"), //we set a minimal size because the KNearest is very expensive if the size is small
+      exhaust Profile((swapsK(20) andThen AssignNeighborhood(edgeConditionArray, "SwitchConditionsCombined")) guard(() => openWarehouses.value.size >= 5) name "combined") //we set a minimal size because the KNearest is very expensive if the size is small
 
     ) afterMove(
     if(lastDisplay + displayDelay <= this.getWatch){ //} && obj.value < bestDisplayedObj) {

@@ -104,7 +104,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
                             latestLeavingTime: Array[Long],
                             travelTimeMatrix: Array[Array[Long]],
                             violations: Array[CBLSIntVar]
-                           ) extends GlobalConstraintDefinition[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
+                           ) extends GlobalConstraintDefinitionV2[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
@@ -219,9 +219,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           vExplorer = elem.next
       }
     }
-
     performPreComputeOnRoute(route)
     performPreComputeOnRoute(route.reverse)
+    //println("Result : " + preComputedVals.zipWithIndex.map(x => "" + x._2 + (if(x._1 != null) x._1.mkString(", ") else "")).mkString("\n"))
   }
 
   /**
@@ -253,7 +253,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       }
       else leaveTimeAtSegment
     }
-
+    //println("Using : " + preComputedVals.map(x => x.mkString(", ")).mkString("\n"))
     val arrivalTimeAtDepot = arrivalAtDepot(segments.toIterator)
     arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
