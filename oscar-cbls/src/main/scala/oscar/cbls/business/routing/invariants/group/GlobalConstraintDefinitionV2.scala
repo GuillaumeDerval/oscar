@@ -22,7 +22,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, true)
   //var changedVehiclesSinceLastApplyUpdate = new IterableMagicBoolArray(v,false)
   var checkpointLevel: Int = -1
-  val savedDataAtCheckPointLevel: mutable.Map[Int,(Option[List[Array[ListSegments]]], VehicleLocation, IterableMagicBoolArray)] = new mutable.HashMap
+  val savedDataAtCheckPointLevel: mutable.Map[Int,(Option[Array[ListSegments]], VehicleLocation, IterableMagicBoolArray)] = new mutable.HashMap
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
@@ -89,13 +89,13 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         }
       case Some(x) =>
         changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
-          val segments = x.head(vehicle).segments
+          val segments = x(vehicle).segments
           vehicleValues(vehicle) = computeVehicleValue(vehicle, segments, changes.newValue, preComputedValues)
         })
     }
   }
 
-  private def digestUpdates(changes:SeqUpdate): Option[List[Array[ListSegments]]] = {
+  private def digestUpdates(changes:SeqUpdate): Option[Array[ListSegments]] = {
     changes match {
       case SeqUpdateDefineCheckpoint(prev,isStarMode,checkpointLevel) =>
         val newRoute = changes.newValue
@@ -113,12 +113,12 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         // If false it means that we had an assign value update => not incremental => from scratch
         val segmentsAtCheckPoint = if (prevUpdateSegments.isEmpty || this.checkpointLevel < 0) {
           computeAndAssignVehiclesValueFromScratch(changes.newValue)
-          Some(List(Array.tabulate(v)(vehicle => {
+          Some(Array.tabulate(v)(vehicle => {
             val lastNodeOfVehicle =
               if(vehicle < v-1) newRoute.valueAtPosition(vehicleSearcher.startPosOfVehicle(vehicle+1)-1).get
               else newRoute.valueAtPosition(newRoute.size-1).get
             ListSegments(List(PreComputedSubSequence(vehicle, preComputedValues(vehicle), lastNodeOfVehicle, preComputedValues(lastNodeOfVehicle))),vehicle)
-          })))
+          }))
         } else {
           prevUpdateSegments
         }
@@ -145,7 +145,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         if(prevUpdateSegments.isEmpty) None
         else {
           val prevRoutes = prev.newValue
-          val lastPrevUpdateSegments = prevUpdateSegments.get.head
+          val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
           vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
@@ -154,7 +154,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
           // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
           newPrevUpdateSegments(impactedVehicle) = newPrevUpdateSegments(impactedVehicle).insertSegments(List(NewNode(value)),pos-1,prevRoutes)
-          Some(newPrevUpdateSegments :: prevUpdateSegments.get)
+          Some(newPrevUpdateSegments)
         }
 
       case sum@SeqUpdateMove(fromIncluded : Int, toIncluded : Int, after : Int, flip : Boolean, prev : SeqUpdate) =>
@@ -162,7 +162,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         if(prevUpdateSegments.isEmpty) None
         else {
           val prevRoutes = prev.newValue
-          val lastPrevUpdateSegments = prevUpdateSegments.get.head
+          val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
           val fromVehicle = vehicleSearcher.vehicleReachingPosition(fromIncluded)
@@ -177,7 +177,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
             newPrevUpdateSegments(toVehicle) = newPrevUpdateSegments(toVehicle).insertSegments(removedSegments.map(_.flip), after, prevRoutes)
           else
             newPrevUpdateSegments(toVehicle) = newPrevUpdateSegments(toVehicle).insertSegments(removedSegments, after, prevRoutes)
-          Some(newPrevUpdateSegments :: prevUpdateSegments.get)
+          Some(newPrevUpdateSegments)
         }
 
       case sur@SeqUpdateRemove(position : Int, prev : SeqUpdate) =>
@@ -185,7 +185,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         if(prevUpdateSegments.isEmpty) None
         else {
           val prevRoutes = prev.newValue
-          val lastPrevUpdateSegments = prevUpdateSegments.get.head
+          val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
           val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
@@ -194,18 +194,18 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
           newPrevUpdateSegments(impactedVehicle) = newPrevUpdateSegments(impactedVehicle).removeSegments(position,position,prevRoutes)._1
 
-          Some(newPrevUpdateSegments :: prevUpdateSegments.get)
+          Some(newPrevUpdateSegments)
         }
 
       case SeqUpdateLastNotified(value:IntSequence) =>
         require(value quickEquals routes.value)
         //changedVehiclesSinceLastApplyUpdate.all_=(false)
-        Some(List(Array.tabulate(v)(vehicle => {
+        Some(Array.tabulate(v)(vehicle => {
           val lastNodeOfVehicle =
             if(vehicle < v-1) value.valueAtPosition(vehicleSearcher.startPosOfVehicle(vehicle+1)-1).get
             else value.valueAtPosition(value.size-1).get
           ListSegments(List(PreComputedSubSequence(vehicle, preComputedValues(vehicle), lastNodeOfVehicle, preComputedValues(lastNodeOfVehicle))),vehicle)
-        })))
+        }))
 
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
@@ -249,9 +249,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       val fromNode = routes.explorerAtPosition(from).get.value
       val toNode = routes.explorerAtPosition(to).get.value
       val nodeAfterTo = routes.explorerAtPosition(to + 1)
-
-      //Split the first impacted segment at from node
-      val (fromImpactedSegment_1,fromImpactedSegment_2) = fromImpactedSegment.splitAtNode(nodeBeforeFrom,fromNode,preComputedValues(nodeBeforeFrom),preComputedValues(fromNode))
 
       // 1° The removed segment is included in one segment
       if(fromImpactedSegment == toImpactedSegment){

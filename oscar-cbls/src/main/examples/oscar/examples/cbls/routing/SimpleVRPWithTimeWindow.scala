@@ -13,9 +13,9 @@ import scala.collection.immutable.HashMap
   */
 
 object SimpleVRPWithTimeWindow extends App{
-  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
-  val v = 10
-  val n = 500
+  val m = new Store(noCycle = false, checker = Some(new ErrorChecker))
+  val v = 5
+  val n = 200
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,symmetricDistance)
