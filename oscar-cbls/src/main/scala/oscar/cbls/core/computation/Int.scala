@@ -114,6 +114,15 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
     }
   }
 
+  def adjustToDomain(v:Long):Long = {
+    (v max this.min) min this.max
+  }
+  def adjustToDomainModulo(v:Long):Long = {
+    val modVal = domain.max - domain.min
+    val adjusted = (v - domain.min) % modVal
+    adjusted + domain.min
+  }
+
   override def value: Long = {
     if (model == null) return mNewValue
     val propagating = model.propagating
@@ -218,6 +227,14 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
 
   override def :=(v: Long) {
     setValue(v)
+  }
+
+  def assignWithAdjust (v: Long) {
+    setValue(adjustToDomain(v))
+  }
+
+  def assignWithModuloAdjust (v: Long) {
+    setValue(adjustToDomainModulo(v))
   }
 
   override def :+=(v: Long) {

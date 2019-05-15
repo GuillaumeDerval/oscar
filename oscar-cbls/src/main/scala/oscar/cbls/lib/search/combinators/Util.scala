@@ -172,13 +172,13 @@ class OverrideObjective(a: Neighborhood, overridingObjective: Objective) extends
  */
 case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends NeighborhoodCombinator(a){
 
-  var nbCalls = 0L
-  var nbFound = 0L
-  var totalGain:Double = 0L
-  var totalTimeSpentMoveFound:Long = 0L
-  var totalTimeSpentNoMoveFound:Long = 0L
+  var nbCalls:Long = 0
+  var nbFound:Long = 0
+  var totalGain:Double = 0
+  var totalTimeSpentMoveFound:Long = 0
+  var totalTimeSpentNoMoveFound:Long = 0
 
-  def totalTimeSpent = totalTimeSpentMoveFound + totalTimeSpentNoMoveFound
+  def totalTimeSpent:Long = totalTimeSpentMoveFound + totalTimeSpentNoMoveFound
 
   override def resetStatistics(){
     resetThisStatistics()
@@ -186,11 +186,11 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
   }
 
   def resetThisStatistics() {
-    nbCalls = 0L
-    nbFound = 0L
-    totalGain = 0L
-    totalTimeSpentMoveFound = 0L
-    totalTimeSpentNoMoveFound = 0L
+    nbCalls = 0
+    nbFound = 0
+    totalGain = 0
+    totalTimeSpentMoveFound = 0
+    totalTimeSpentNoMoveFound = 0
   }
 
   /**
@@ -219,10 +219,10 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
     }
   }
 
-  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toInt
-  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toInt
+  def gainPerCall:String = if(nbCalls ==0L) "NA" else "" + (totalGain / nbCalls).toLong
+  def callDuration:String = if(nbCalls == 0L ) "NA" else "" + (totalTimeSpent / nbCalls).toLong
   //gain in obj/s
-  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toInt
+  def slope:String = if(totalTimeSpent == 0L) "NA" else "" + (1000L * totalGain.toDouble / totalTimeSpent.toDouble).toLong
 
   def avgTimeSpendNoMove:String = if(nbCalls - nbFound == 0L) "NA" else "" + (totalTimeSpentNoMoveFound / (nbCalls - nbFound))
   def avgTimeSpendMove:String = if(nbFound == 0L) "NA" else "" + (totalTimeSpentMoveFound / nbFound)
@@ -233,15 +233,15 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 
   def collectThisProfileStatistics:String =
     padToLength("" + a,31L) + " " +
-      padToLength("" + nbCalls,6L) + " " +
-      padToLength("" + nbFound,6L) + " " +
-      padToLength("" + totalGain.toInt,8L) + " " +
-      padToLength("" + totalTimeSpent,12L) + " " +
-      padToLength("" + gainPerCall,8L) + " " +
-      padToLength("" + callDuration,12L)+ " " +
-      padToLength("" + slope,11L)+ " " +
-      padToLength("" + avgTimeSpendNoMove,13L)+ " " +
-      padToLength("" + avgTimeSpendMove,12L)+ " " +
+      padToLength("" + nbCalls.toInt,10) + " " +
+      padToLength("" + nbFound.toInt,10) + " " +
+      padToLength("" + totalGain.toLong,20) + " " +
+      padToLength("" + totalTimeSpent,12) + " " +
+      padToLength("" + gainPerCall,20) + " " +
+      padToLength("" + callDuration,12)+ " " +
+      padToLength("" + slope,20)+ " " +
+      padToLength("" + avgTimeSpendNoMove,14)+ " " +
+      padToLength("" + avgTimeSpendMove,11)+ " " +
       totalTimeSpentNoMoveFound
 
   private def padToLength(s: String, l: Long) = {
@@ -266,7 +266,7 @@ case class Profile(a:Neighborhood,ignoreInitialObj:Boolean = false) extends Neig
 object Profile{
   private def padToLength(s: String, l: Long) = (s + nStrings(l, " ")).substring(0L, l)
   private def nStrings(n: Long, s: String): String = if (n <= 0L) "" else s + nStrings(n - 1L, s)
-  def statisticsHeader: String = padToLength("Neighborhood",30L) + "  calls  found  sumGain  sumTime(ms)  avgGain  avgTime(ms)  slope(-/s)  avgTimeNoMove avgTimeMove  wastedTime"
+  def statisticsHeader: String = padToLength("Neighborhood",30L) + "  calls      found      sumGain              sumTime(ms)  avgGain              avgTime(ms)  slope(-/s)           avgTimeNoMove  avgTimeMove wastedTime"
   def selectedStatisticInfo(i:Iterable[Profile]) = {
     (statisticsHeader :: i.toList.map(_.collectThisProfileStatistics)).mkString("\n")
   }
