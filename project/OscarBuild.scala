@@ -13,10 +13,9 @@ object OscarBuild extends Build {
 
   object BuildSettings {
     val buildOrganization = "oscar"
-    val buildVersion = "4.0.0-SNAPSHOT"
+    val buildVersion = "4.1.0-CMI-SNAPSHOT"
     val buildScalaVersion = "2.12.8"
-    val buildSbtVersion= "0.13.12"
-
+    val buildSbtVersion= "0.13.18"
 
     lazy val commonSettings = Defaults.defaultSettings ++  jacoco.settings ++ Seq(
       organization := buildOrganization,
@@ -112,7 +111,7 @@ object OscarBuild extends Build {
       },
       packageOptions += Package.ManifestAttributes(
         ("REVISION_ID", System.getProperty("REVISION_ID")),
-        ("REVISION_URL", ("https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID")) ),
+        ("REVISION_URL", "https://bitbucket.org/oscarlib/oscar/commits/"+System.getProperty("REVISION_ID") ),
         ("JENKINS_BUILD_ID", System.getProperty("BUILD_ID")),
         ("BUILD_DATE", new Date().toString)
       )
