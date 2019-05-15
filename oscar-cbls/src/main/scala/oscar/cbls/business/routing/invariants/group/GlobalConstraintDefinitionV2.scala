@@ -88,10 +88,10 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
         }
       case Some(x) =>
-        x.head.foreach(vehicleSegments =>
-          if (changedVehiclesSinceCheckpoint0(vehicleSegments.vehicle))
-            vehicleValues(vehicleSegments.vehicle) = computeVehicleValue(vehicleSegments.vehicle, vehicleSegments.segments, changes.newValue, preComputedValues)
-        )
+        changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
+          val segments = x.head(vehicle).segments
+          vehicleValues(vehicle) = computeVehicleValue(vehicle, segments, changes.newValue, preComputedValues)
+        })
     }
   }
 
