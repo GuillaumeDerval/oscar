@@ -32,7 +32,7 @@ object Domain{
   def empty:Domain = Domain(0L to 0L)
 
   implicit def rangeToDomain(r:Range):Domain = {
-    if (r.isEmpty) DomainRange(0,0) //we put something or it crashes.
+    if (r.isEmpty) Domain(0, 0) //we put something or it crashes.
     else DomainRange(r.start,r.last)
   }
 
@@ -48,22 +48,19 @@ object Domain{
   implicit def intToDomain(i:Long) = SingleValueDomain(i)
 
 
-  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:((Int,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:((Int,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
-  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:((Long,Int))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongLongToDomain(minMaxCouple:(Long,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntIntToDomain(minMaxCouple:(Int,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleIntLongToDomain(minMaxCouple:(Int,Long)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  implicit def minMaxCoupleLongIntToDomain(minMaxCouple:(Long,Int)):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
 
-  def apply(v:Iterable[Long]):Domain =
-    v match{
-      case r:Range => r
-      case s:SortedSet[Long] => DomainRange(s.firstKey,s.lastKey)
-    }
+  def apply(s:SortedSet[Long]) = DomainRange(s.firstKey,s.lastKey)
   def apply(min:Long,max:Long) = DomainRange(min,max)
   def apply(min:Int,max:Int) = DomainRange(min,max)
   def apply(min:Int,max:Long) = DomainRange(min,max)
   def apply(min:Long,max:Int) = DomainRange(min,max)
   def apply(range:Range) = DomainRange(range.min,range.max)
-  def apply(minMaxCouple:((Long,Long))):Domain = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  def apply(minMaxCouple:(Long,Long)) = DomainRange(minMaxCouple._1,minMaxCouple._2)
+  def apply(v:Iterable[Long]) =  DomainRange(v.min,v.max)
 
 }
 
