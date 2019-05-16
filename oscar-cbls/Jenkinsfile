@@ -1,7 +1,7 @@
 node {
-    env.JAVA_HOME="${tool 'jdk-1.8.212'}"
+    env.JAVA_HOME="${tool 'jdk-1.8.121'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-    env.SBT_HOME = "${tool 'sbt-1.2.8'}"
+    env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
     
     def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
     
