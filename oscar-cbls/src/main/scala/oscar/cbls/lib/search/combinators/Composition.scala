@@ -291,7 +291,7 @@ case class Atomic(a: Neighborhood, shouldStop:Int => Boolean, stopAsSoonAsAccept
     if(allMoves.isEmpty){
       NoMoveFound
     } else {
-      CompositeMove(allMoves,endObj,"Aomic(" + a + ")")
+      CompositeMove(allMoves,endObj,"Atomic(" + a + ")")
     }
   }
 
