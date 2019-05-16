@@ -1,12 +1,12 @@
 node {
-    env.JAVA_HOME="${tool 'jdk-1.8.121'}"
+    env.JAVA_HOME="${tool 'jdk-1.8.212'}"
     env.PATH="${env.JAVA_HOME}/bin:${env.PATH}"
-    env.SBT_HOME = "${tool 'sbt-1.0.0-M4'}"
+    env.SBT_HOME = "${tool 'sbt-1.2.8'}"
     
     def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
     
     email_to = "oscar.cbls-cetic@lists.cetic.be"
-    projects=['oscar-cbls']
+    projects=['oscar-visual', 'oscar-util', 'oscar-cbls']
     
     try{
         stage('scm') {
