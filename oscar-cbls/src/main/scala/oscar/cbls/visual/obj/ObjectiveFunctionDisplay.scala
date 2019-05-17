@@ -10,10 +10,10 @@ import oscar.cbls.util.StopWatch
 import oscar.visual.plot.Plot
 
 class ObjectiveFunctionDisplay(title: String)
-  extends Plot(title,"Time","Objective function value", 2) with StopWatch {
+  extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
 
-  xDom = 0 to 1
-  yDom = 0 to 100
+  xDom = new org.jfree.data.Range(0,1)
+  yDom = new org.jfree.data.Range(0,100)
 
   private val startinAt = getWatch
   private var best = Long.MaxValue
@@ -50,9 +50,9 @@ class ObjectiveFunctionDisplay(title: String)
     //TODO: this is a bit slow isnt'it?
     //TODO: it fails with integer overflows!!
     if(yDom.getUpperBound < value.toDouble)
-      yDom = Range.inclusive(0L,upper(value))
+      yDom = new org.jfree.data.Range(0,upper(value))
     if(xDom.getUpperBound < at)
-      xDom = Range.inclusive(0L,upper(at))
+      xDom = new org.jfree.data.Range(0,upper(at))
 
     addPoint(at,value.toDouble,0)
 
