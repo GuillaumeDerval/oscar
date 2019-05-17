@@ -52,8 +52,19 @@ object QList{
     toReturn
   }
 
+  def nonReversedAppend[T](l:Iterable[T],q:QList[T]):QList[T] = {
+    if(l.isEmpty) q
+    else QList(l.head,nonReversedAppend(l.tail,q))
+  }
+
 
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
+
+  def apply[T](heads: QList[T], last:T): QList[T] = {
+    if(heads == null) QList(last)
+    else
+      QList.nonReversedAppend(heads,QList(last))
+  }
 
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
 
@@ -64,6 +75,12 @@ object QList{
       acc = QList(it.next(),acc)
     }
     acc
+  }
+
+  def nonReversedBuildFromIterable[T](l:Iterable[T]):QList[T] ={
+    val reversed = buildFromIterable(l)
+    if(reversed == null) null
+    else reversed.reverse
   }
 
   def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {

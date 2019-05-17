@@ -255,9 +255,9 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
   //TODO: replace internalPositionToValue by an immutable Array, or an immutable array + a small RBTree + size
 
   def bij = externalToInternalPosition
-  override def descriptorString : String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
+  override def descriptorString: String = "[" + this.iterator.toList.mkString(",") + "]_impl:concrete"
 
-  override def toString : String = {
+  override def toString: String = {
     "ConcreteIntSequence(size:" + size + ")" + descriptorString
   }
 
@@ -268,71 +268,65 @@ class ConcreteIntSequence(private[seq] val internalPositionToValue:RedBlackTreeM
     )
   }
 
-  override val size : Int = internalPositionToValue.size
+  override val size: Int = internalPositionToValue.size
 
-  override def isEmpty : Boolean = internalPositionToValue.isEmpty
+  override def isEmpty: Boolean = internalPositionToValue.isEmpty
 
-  override def nbOccurrence(value : Long) : Int = valueToInternalPositions.get(value) match {
+  override def nbOccurrence(value: Long): Int = valueToInternalPositions.get(value) match {
     case None => 0
     case Some(p) => p.size
   }
 
-  def largestValue : Option[Long] = valueToInternalPositions.biggest match {
+  def largestValue: Option[Long] = valueToInternalPositions.biggest match {
     case None => None
     case Some((k, _)) => Some(k)
   }
 
-  def smallestValue : Option[Long] = valueToInternalPositions.smallest match {
+  def smallestValue: Option[Long] = valueToInternalPositions.smallest match {
     case None => None
     case Some((k, _)) => Some(k)
   }
 
-  def contains(value : Long) : Boolean = valueToInternalPositions.contains(value)
+  def contains(value: Long): Boolean = valueToInternalPositions.contains(value)
 
-  def valueAtPosition(position : Int) : Option[Long] = {
-    val internalPosition : Int = externalToInternalPosition.forward(position)
+  def valueAtPosition(position: Int): Option[Long] = {
+    val internalPosition: Int = externalToInternalPosition.forward(position)
     internalPositionToValue.get(internalPosition)
   }
 
-  override def positionsOfValueQ(value : Long) : QList[Int] = {
+  override def positionsOfValueQ(value: Long): QList[Int] = {
     valueToInternalPositions.get(value) match {
       case None => null
       case Some(internalPositions) =>
-        var toReturn:QList[Int] = null
-        var toDigest:List[Int] = internalPositions.values
-        while(toDigest.nonEmpty){
-          toReturn = QList(externalToInternalPosition.backward(toDigest.head),toReturn)
+        var toReturn: QList[Int] = null
+        var toDigest: List[Int] = internalPositions.values
+        while (toDigest.nonEmpty) {
+          toReturn = QList(externalToInternalPosition.backward(toDigest.head), toReturn)
           toDigest = toDigest.tail
         }
         toReturn
     }
   }
 
-  private val explorerCache: Array[Option[IntSequenceExplorer]] = Array.fill(this.size+1)(null)
 
-  def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
-
-    def createExplorer(): Option[IntSequenceExplorer] = {
-      if (position >= this.size) None
-      else {
-        val currentPivotPosition = externalToInternalPosition.forward.pivotWithPositionApplyingTo(position)
-        val (pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = currentPivotPosition match {
-          case None => (externalToInternalPosition.forward.firstPivotAndPosition, position)
-          case Some(p) => (p.next, p.value.f(position))
-        }
-
-        Some(new ConcreteIntSequenceExplorer(this,
-          position,
-          internalPositionToValue.positionOf(internalPosition).get,
-          currentPivotPosition,
-          pivotAbovePosition)()
-        )
+  def explorerAtPosition(position: Int): Option[IntSequenceExplorer] = {
+    if (position >= this.size) None
+    else {
+      val currentPivotPosition = externalToInternalPosition.forward.pivotWithPositionApplyingTo(position)
+      val (pivotAbovePosition: Option[RedBlackTreeMapExplorer[Pivot]], internalPosition) = currentPivotPosition match {
+        case None => (externalToInternalPosition.forward.firstPivotAndPosition, position)
+        case Some(p) => (p.next, p.value.f(position))
       }
-    }
 
-    if(explorerCache(position) == null) explorerCache(position) = createExplorer()
-    explorerCache(position)
+      Some(new ConcreteIntSequenceExplorer(this,
+        position,
+        internalPositionToValue.positionOf(internalPosition).get,
+        currentPivotPosition,
+        pivotAbovePosition)()
+      )
+    }
   }
+
 
   private def internalInsertToValueToInternalPositions(value : Long, internalPosition : Int, valueToInternalPositions : RedBlackTreeMap[RedBlackTreeMap[Int]]) : RedBlackTreeMap[RedBlackTreeMap[Int]] = {
     valueToInternalPositions.get(value) match {
