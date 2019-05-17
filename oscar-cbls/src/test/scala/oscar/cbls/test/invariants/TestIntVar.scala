@@ -39,8 +39,17 @@ class TestIntVar extends FunSuite with Matchers {
   }
   
   test("test create IntVar using invalid ranges"){
-	  val solver = new Store
+    val solver = new Store
+    val x = CBLSIntVar(solver, 1, 0 to -1, "x")
+    val y = CBLSIntVar(solver, 0, 0 until 0, "y")
+    // Behaviour changed: not valid ranges become
+    // empty domains
 
+    x.domain should be(Domain.empty)
+    y.domain should be(Domain.empty)
+
+    // In case of behaviour changes again, I let the old tests
+    /*
     an [NoSuchElementException] should be thrownBy {
       val x = CBLSIntVar(solver, 1, 0 to -1, "x")
     }
@@ -48,7 +57,7 @@ class TestIntVar extends FunSuite with Matchers {
     an [NoSuchElementException] should be thrownBy {
       val x = CBLSIntVar(solver, 0, 0 until 0, "x") // until makes an empty range
     }
-
+     */
   }
   
   test("test inDomain of IntVar 1..10"){
