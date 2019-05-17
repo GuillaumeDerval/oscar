@@ -4,6 +4,7 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
 import oscar.cbls.core.computation._
 import oscar.cbls._
+import oscar.cbls.algo.quick.QList
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -234,7 +235,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     * @return the value associated with the vehicle
     */
-  override def computeVehicleValue(vehicle: Long, segments: List[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
+  override def computeVehicleValue(vehicle: Long, segments: QList[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0L if first one)

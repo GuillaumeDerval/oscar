@@ -57,7 +57,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
     * @return the value associated with the vehicle
     */
   def computeVehicleValue(vehicle:Long,
-                          segments:List[Segment[T]],
+                          segments:QList[Segment[T]],
                           routes:IntSequence,
                           preComputedVals:Array[T]):U
 
@@ -92,7 +92,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       case Some(x) =>
         changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
           val segments = x(vehicle).segments
-          vehicleValues(vehicle) = computeVehicleValue(vehicle, segments.toList, changes.newValue, preComputedValues)
+          vehicleValues(vehicle) = computeVehicleValue(vehicle, segments, changes.newValue, preComputedValues)
         })
     }
   }
@@ -270,23 +270,23 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           else
             (leftCuttedInitialSegment, None)
 
-        var newSegments: QList[Segment[T]] = segmentsBeforeFromImpactedSegment
-        if(leftResidue.nonEmpty) {
-          newSegments =
-            if(newSegments == null)
-              QList(leftResidue.get)
-            else
-              QList(newSegments,leftResidue.get)
-        }
+        var newSegments: QList[Segment[T]] = segmentsAfterToImpactedSegment
         if(rightResidue.nonEmpty) {
           newSegments =
             if(newSegments == null)
               QList(rightResidue.get)
             else
-              QList(newSegments,rightResidue.get)
+              QList(rightResidue.get, newSegments)
+        }
+        if(leftResidue.nonEmpty) {
+          newSegments =
+            if(newSegments == null)
+              QList(leftResidue.get)
+            else
+              QList(leftResidue.get, newSegments)
         }
 
-        newSegments = QList.nonReversedAppend(newSegments,segmentsAfterToImpactedSegment)
+        newSegments = QList.nonReversedAppend(segmentsBeforeFromImpactedSegment, newSegments)
 
         (ListSegments(newSegments,vehicle), QList(removedSegment.get))
       } else {
@@ -302,28 +302,28 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
         // We keep the segments between from impacted and to impacted
 
-        var newSegments: QList[Segment[T]] = segmentsBeforeFromImpactedSegment
-        if(leftResidue.nonEmpty) {
-          newSegments =
-            if(newSegments == null)
-              QList(leftResidue.get)
-            else
-              QList(newSegments,leftResidue.get)
-        }
+        var newSegments: QList[Segment[T]] = segmentsAfterToImpactedSegment
         if(rightResidue.nonEmpty) {
           newSegments =
             if(newSegments == null)
               QList(rightResidue.get)
             else
-              QList(newSegments,rightResidue.get)
+              QList(rightResidue.get, newSegments)
+        }
+        if(leftResidue.nonEmpty) {
+          newSegments =
+            if(newSegments == null)
+              QList(leftResidue.get)
+            else
+              QList(leftResidue.get, newSegments)
         }
 
-        newSegments = QList.nonReversedAppend(newSegments,segmentsAfterToImpactedSegment)
+        newSegments = QList.nonReversedAppend(segmentsBeforeFromImpactedSegment, newSegments)
 
         var removedSegments =
           QList(leftCuttedFromSegment.get,segmentsBeforeToImpactedSegment.tail)
         if(rightCuttedToSegment.nonEmpty)
-          removedSegments = QList(removedSegments,rightCuttedToSegment.get)
+          removedSegments = QList.nonReversedAppend(removedSegments,QList(rightCuttedToSegment.get))
 
         (ListSegments(newSegments,vehicle), removedSegments)
       }
@@ -350,24 +350,24 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         else
           (Some(impactedSegment),None)
 
-      var newSegments: QList[Segment[T]] = segmentsBeforeImpactedSegment
-      if(leftResidue.nonEmpty) {
-        newSegments =
-          if(newSegments == null)
-            QList(leftResidue.get)
-          else
-            QList(newSegments,leftResidue.get)
-      }
-      newSegments = QList.nonReversedAppend(newSegments,segmentsToInsert)
+      var newSegments: QList[Segment[T]] = segmentsAfterImpactedSegment
       if(rightResidue.nonEmpty) {
         newSegments =
           if(newSegments == null)
             QList(rightResidue.get)
           else
-            QList(newSegments,rightResidue.get)
+            QList(rightResidue.get, newSegments)
+      }
+      newSegments = QList.nonReversedAppend(segmentsToInsert, newSegments)
+      if(leftResidue.nonEmpty) {
+        newSegments =
+          if(newSegments == null)
+            QList(leftResidue.get)
+          else
+            QList(leftResidue.get, newSegments)
       }
 
-      newSegments = QList.nonReversedAppend(newSegments,segmentsAfterImpactedSegment)
+      newSegments = QList.nonReversedAppend(segmentsBeforeImpactedSegment, newSegments)
 
       ListSegments(newSegments, vehicle)
     }
@@ -390,9 +390,12 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
                                     exploredSegments: QList[Segment[T]] = null): (Segment[T], QList[Segment[T]], QList[Segment[T]]) ={
       require(currentSegments.nonEmpty, "Segments list shouldn't be empty, if this append it means that the searched position isn't reach by this vehicle's segments")
       if(positionWithinSegment(pos, routes, currentSegments.head))
-        (currentSegments.head,exploredSegments,currentSegments.tail)
+        (currentSegments.head,
+          if(exploredSegments != null)exploredSegments.reverse
+          else exploredSegments,
+          currentSegments.tail)
       else
-        findImpactedSegment(pos,routes,currentSegments.tail, QList(exploredSegments,currentSegments.head))
+        findImpactedSegment(pos,routes,currentSegments.tail, QList(currentSegments.head, exploredSegments))
     }
 
 

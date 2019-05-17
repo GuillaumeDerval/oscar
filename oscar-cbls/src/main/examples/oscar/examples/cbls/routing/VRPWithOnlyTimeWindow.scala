@@ -50,7 +50,7 @@ object VRPWithOnlyTimeWindow extends App {
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(2)
   // The variations of n values
-  val ns_1 = List(100L, 200L, 300L/*, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
+  val ns_1 = List(100L, 200L/*, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)

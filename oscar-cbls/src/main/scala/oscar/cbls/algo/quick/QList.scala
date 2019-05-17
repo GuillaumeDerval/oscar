@@ -53,18 +53,23 @@ object QList{
   }
 
   def nonReversedAppend[T](l:Iterable[T],q:QList[T]):QList[T] = {
-    if(l.isEmpty) q
-    else QList(l.head,nonReversedAppend(l.tail,q))
+
+    def prependValue(it: Iterator[T], q:QList[T]): QList[T] ={
+      val next = it.next()
+      QList(next,
+        if(it.hasNext) {
+          prependValue(it,q)
+        } else {
+          q
+        })
+    }
+    if(l.nonEmpty)
+      prependValue(l.toIterator,q)
+    else q
   }
 
 
   def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
-
-  def apply[T](heads: QList[T], last:T): QList[T] = {
-    if(heads == null) QList(last)
-    else
-      QList.nonReversedAppend(heads,QList(last))
-  }
 
   implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
 

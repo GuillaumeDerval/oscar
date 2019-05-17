@@ -323,14 +323,14 @@ object LogReducedFlippedPreComputedSubSequence {
     }
 
     override def computeVehicleValue(vehicle:Long,
-                                     segments:List[Segment[VehicleAndPosition]],
+                                     segments:QList[Segment[VehicleAndPosition]],
                                      routes:IntSequence,
                                      preComputedVals:Array[VehicleAndPosition]):U = {
       // println("routes:" + routes)
       computeVehicleValueComposed(vehicle, decorateSegments(vehicle, segments))
     }
 
-    def decorateSegments(vehicle:Long,segments:List[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
+    def decorateSegments(vehicle:Long,segments:Iterable[Segment[VehicleAndPosition]]):QList[LogReducedSegment[T]] = {
 
       segments match{
         case Nil =>

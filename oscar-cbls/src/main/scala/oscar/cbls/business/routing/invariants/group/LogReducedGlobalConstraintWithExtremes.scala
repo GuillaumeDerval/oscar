@@ -81,7 +81,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   }
 
   override def computeVehicleValue(vehicle:Long,
-                                   segments:List[Segment[VehicleAndPosition]],
+                                   segments:QList[Segment[VehicleAndPosition]],
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]):U = {
 
@@ -95,18 +95,18 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   }
 
   def decorateSegmentsExtremes(vehicle:Long,
-                               segments:List[Segment[VehicleAndPosition]],
+                               segments:QList[Segment[VehicleAndPosition]],
                                isFirst:Boolean):QList[LogReducedSegment[T]] = {
 
     //TODO: it seems that the list construction produces a significant overhead. These might be replaced by QLists.
     segments match{
-      case Nil =>
+      case null =>
         //back to start; we add a single node (this will seldom be used, actually, since back to start is included in PreComputedSubSequence that was not flipped
         QList(LogReducedPreComputedSubSequenceGiven[T](
           vehicle: Long, vehicle: Long,
           QList(endNodeValue(vehicle))))
-      case head :: tail =>
-        head match{
+      case q =>
+        q.head match{
           case PreComputedSubSequence
             (startNode: Long, startNodeValue: VehicleAndPosition,
             endNode: Long, endNodeValue: VehicleAndPosition) =>
@@ -118,11 +118,11 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               QList(LogReducedPreComputedSubSequenceGiven[T](
                 startNode: Long, endNode: Long,
                 QList(vehicleToExtremePrecomputes(vehicle)(endNodeValue.positionInVehicleRoute).fromStart)
-              ), decorateSegmentsExtremes(vehicle:Long, segments = tail,isFirst = false))
+              ), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
 
             } else if(
               startNodeValue.vehicle == vehicle
-                && tail.isEmpty //tested second because more time consuming than the first condition
+                && q.tail == null //tested second because more time consuming than the first condition
                 && endNodeValue.positionInVehicleRoute == vehicleToExtremePrecomputes(vehicle).length-2L
             ){
               //last one, on the same vehicle as when pre-computation was performed, and nothing was removed until the end of this route
@@ -138,7 +138,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
                 startNode: Long, endNode: Long,
                 stepGenerator = () => extractSequenceOfT(
                   startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                  endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegmentsExtremes(vehicle:Long, segments = tail,isFirst = false))
+                  endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
             }
           case FlippedPreComputedSubSequence(
           startNode: Long, startNodeValue: VehicleAndPosition,
@@ -148,10 +148,10 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
               startNode: Long, endNode: Long,
               stepGenerator = () => extractSequenceOfT(
                 startNodeValue.vehicle, startNodeValue.positionInVehicleRoute,
-                endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegmentsExtremes(vehicle:Long, segments = tail,isFirst = false))
+                endNodeValue.positionInVehicleRoute, flipped = true)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
 
           case NewNode(node: Long) =>
-            QList(LogReducedNewNode[T](node: Long, nodeValue(node)), decorateSegmentsExtremes(vehicle:Long, segments = tail,isFirst = false))
+            QList(LogReducedNewNode[T](node: Long, nodeValue(node)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
         }
     }
   }
