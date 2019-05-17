@@ -233,6 +233,10 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
     setValue(adjustToDomain(v))
   }
 
+  def incrementWithAdjust (v: Long) {
+    setValue(adjustToDomain(v+newValue))
+  }
+
   def assignWithModuloAdjust (v: Long) {
     setValue(adjustToDomainModulo(v))
   }

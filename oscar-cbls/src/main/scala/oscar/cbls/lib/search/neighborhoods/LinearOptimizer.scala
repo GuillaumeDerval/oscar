@@ -123,9 +123,11 @@ class Exhaustive(step:Long = 1L,skipInitial:Boolean = false, maxIt: Long) extend
   override def toString: String = "Exhaustive(step:" + step + ")"
 }
 
+
 class NarrowingStepSlide(dividingRatio:Long, minStep: Long) extends LinearOptimizer {
 
   override def toString: String = "NarrowingStepSlide(dividingRatio:" + dividingRatio + ")"
+
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     new SlideVaryingSteps(generateSteps((maxValue - minValue)/dividingRatio).reverse, false,Long.MaxValue).
       search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long)
