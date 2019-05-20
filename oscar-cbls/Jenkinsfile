@@ -6,7 +6,7 @@ node {
     def MERCURIAL_REVISION = sh script: 'hg id -i', returnStdout: true
     
     email_to = "oscar.cbls-cetic@lists.cetic.be"
-    projects=['oscar-cbls']
+    projects=['oscar-visual', 'oscar-util', 'oscar-cbls']
     
     try{
         stage('scm') {
