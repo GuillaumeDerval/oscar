@@ -175,34 +175,6 @@ case class RemoveFromSetMove(s:CBLSSetVar,v:Long, override val objAfter:Long, ov
 
   override def touchedVariables: List[Variable] = List(s)
 }
-/**
-  * This neighborhood always returns the same move, given in the constructor
-  * it checks the objctive function before returning it, and adds the objective funtion value to the move
-  *
-  * this one canot be chained because there is no UNDO operation defined
-  *
-  * @param m the move to return when the neighborhood is queried for a move
-  */
-case class ConstantMoveNeighborhood(m: Move,
-                                    skipAcceptanceCriterion:Boolean = false,
-                                    neighborhoodName:String = null)
-  extends Neighborhood with SupportForAndThenChaining[Move] {
-  override def getMove(obj: Objective, initialObj: Long, acceptanceCriterion: (Long, Long) => Boolean): SearchResult = {
-    if (skipAcceptanceCriterion) {
-      MoveFound(m)
-    } else {
-      val newObj: Long = m.evaluate(obj)
-      if (acceptanceCriterion(initialObj, newObj)) {
-        MoveFound(new MoveWithOtherObj(m, newObj))
-      } else {
-        NoMoveFound
-      }
-    }
-  }
-
-  override def instantiateCurrentMove(newObj: Long): Move =
-    new MoveWithOtherObj(m, newObj,neighborhoodName)
-}
 
 case class ConstantMovesNeighborhood[MoveType<:Move](ms:() => Iterable[Long => MoveType],
                                                      selectMoveBehavior:LoopBehavior = First(),
@@ -357,7 +329,6 @@ object CallBackMove{
   *                         Many combinators actually rely on this value to take decisions (eg: [[oscar.cbls.lib.search.combinators.SaveBest]] and [[Best]]
   * @param neighborhoodName the name of the neighborhood that generated this move, used for pretty printing purpose.
   *                         Notice that the name is not the type of the neighborhood.
-  * @param shortDescription a description of whet the move does (since it cannot be inferred from the name of the neighborhood as for [[oscar.cbls.lib.search.neighborhoods.AssignMove]] for instance)
   * @param param            the parameter that is passed to the callBack method when the move is committed
   * @tparam T
   */
