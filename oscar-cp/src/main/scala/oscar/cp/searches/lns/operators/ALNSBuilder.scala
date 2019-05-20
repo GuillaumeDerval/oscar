@@ -102,6 +102,7 @@ object ALNSBuilder{
     */
   val LastImprov = "LastImprov"
   val LastImprovRatio = "LastImprovRatio"
+  val NoUpdate = "NoUpdate"
   val AvgImprov = "AvgImprov"
   val AvgImprovRatio = "AvgImprovRatio"
   val TTI = "TTI"
@@ -707,6 +708,7 @@ class ALNSBuilder(
   private def instantiateMetric(metricKey: String): (ALNSElement) => Double = metricKey match{
     case ALNSBuilder.LastImprov => Metrics.lastImprovement
     case ALNSBuilder.LastImprovRatio => Metrics.lastImprovementRatio
+    case ALNSBuilder.NoUpdate => Metrics.lastImprovementRatio
     case ALNSBuilder.AvgImprov => Metrics.averageImprovement
     case ALNSBuilder.AvgImprovRatio => Metrics.averageImprovementRatio
     case ALNSBuilder.TTI => Metrics.timeToImprovement
@@ -720,6 +722,7 @@ class ALNSBuilder(
   private def computeRFactor(metricKey: String): Double = metricKey match{
     case ALNSBuilder.LastImprov => 0.9
     case ALNSBuilder.LastImprovRatio => 0.9
+    case ALNSBuilder.NoUpdate => 0.0
     case ALNSBuilder.AvgImprov => 1.0
     case ALNSBuilder.AvgImprovRatio => 1.0
     case ALNSBuilder.TTI => 1.0
@@ -728,6 +731,7 @@ class ALNSBuilder(
   private def computeInitScore(metricKey: String): Double = metricKey match{
     case ALNSBuilder.LastImprov => Double.MaxValue
     case ALNSBuilder.LastImprovRatio => Double.MaxValue
+    case ALNSBuilder.NoUpdate => 1.0
     case ALNSBuilder.AvgImprov => Double.MaxValue
     case ALNSBuilder.AvgImprovRatio => Double.MaxValue
     case ALNSBuilder.TTI => 0.0
@@ -736,6 +740,7 @@ class ALNSBuilder(
   private def computeStoreDirection(metricKey: String): Boolean = metricKey match{
     case ALNSBuilder.LastImprov => false
     case ALNSBuilder.LastImprovRatio => false
+    case ALNSBuilder.NoUpdate => false
     case ALNSBuilder.AvgImprov => false
     case ALNSBuilder.AvgImprovRatio => false
     case ALNSBuilder.TTI => true
