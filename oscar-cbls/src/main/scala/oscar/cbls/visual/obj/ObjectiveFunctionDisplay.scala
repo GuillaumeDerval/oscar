@@ -9,7 +9,7 @@ import oscar.cbls._
 import oscar.cbls.util.StopWatch
 import oscar.visual.plot.Plot
 
-class ObjectiveFunctionDisplay(title: String)
+class ObjectiveFunctionDisplay(title: String, cap:Long = Long.MaxValue)
   extends LongPlot(title,"Time","Objective function value", 2) with StopWatch {
 
   xDom = new org.jfree.data.Range(0,1)
@@ -47,10 +47,8 @@ class ObjectiveFunctionDisplay(title: String)
 
     val at = (getWatch - startinAt).toDouble/1000
 
-    //TODO: this is a bit slow isnt'it?
-    //TODO: it fails with integer overflows!!
     if(yDom.getUpperBound < value.toDouble)
-      yDom = new org.jfree.data.Range(0,upper(value))
+      yDom = new org.jfree.data.Range(0,upper(value,cap))
     if(xDom.getUpperBound < at)
       xDom = new org.jfree.data.Range(0,upper(at))
 
@@ -63,8 +61,9 @@ class ObjectiveFunctionDisplay(title: String)
 
   }
 
-  private def upper(value: Double): Long ={
-    var resExp = 10L
+  private def upper(value: Double, cap:Long = Long.MaxValue): Long ={
+    //TODO why not just make an integer or long division?
+    var resExp:Long = 10
     while(value/resExp > 1) {
       resExp = resExp * 10
     }
@@ -73,10 +72,11 @@ class ObjectiveFunctionDisplay(title: String)
     while(value/res > 1){
       res += resExp
     }
-    res
+    res min cap
   }
+
 }
 
 object ObjectiveFunctionDisplay{
-  def apply(title: String): ObjectiveFunctionDisplay = new ObjectiveFunctionDisplay(title)
+  def apply(title: String, cap:Long = Long.MaxValue): ObjectiveFunctionDisplay = new ObjectiveFunctionDisplay(title,cap)
 }
