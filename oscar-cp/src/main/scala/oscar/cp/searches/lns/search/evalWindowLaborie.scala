@@ -10,7 +10,7 @@ import scala.util.Random
 /**
   * TODO
   */
-class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, vars, config) {
+class EvalWindowLaborie(solver: CPSolver, decisionVars: Array[CPIntVar], auxiliaryVars: Array[CPIntVar], config: ALNSConfig) extends ALNSSearchImpl(solver, decisionVars, config) {
   val tolerance: Double = config.metaParameters.getOrElse('tolerance, 0.5).asInstanceOf[Double]
   val balance: Double = config.metaParameters.getOrElse('balance, 0.05).asInstanceOf[Double]
   def evalWindow: Long = 10 * iterTimeout
@@ -21,6 +21,10 @@ class EvalWindowLaborie(solver: CPSolver, vars: Array[CPIntVar], config: ALNSCon
   val iterStartState: ArrayBuffer[(Long, Int)] = ArrayBuffer[(Long, Int)]()
 
   var startObjective = 0
+
+  def this(solver: CPSolver, vars: Array[CPIntVar], config: ALNSConfig){
+    this(solver, vars, Array[CPIntVar](), config)
+  }
 
   def totalEfficiency: Double = Math.abs(startObjective - bestSol.get.objective) / (timeInSearch / 1000000000.0)
 

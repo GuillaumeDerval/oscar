@@ -119,7 +119,7 @@ object StableMarriage extends CPModel with App  {
                                Array(3,1,2,4,5,6),
                                Array(2,3,1,6,5,4)))
     // default problem
-    var problem_num = 1
+    var problem_num = 3
     var problem = van_hentenryck
     // 1..4
     if (args.length > 0) {
@@ -182,8 +182,8 @@ object StableMarriage extends CPModel with App  {
        binaryFirstFail(wife ++ husband)
      }
 onSolution {
-       println("wife   :" + wife.mkString(""))
-       println("husband:" + husband.mkString(""))
+       println("wife   :" + wife.mkString(","))
+       println("husband:" + husband.mkString(","))
        println()
        numSols += 1
      }

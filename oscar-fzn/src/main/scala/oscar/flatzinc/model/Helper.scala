@@ -20,6 +20,8 @@ package oscar.flatzinc.model
 import scala.collection.mutable.{ Map => MMap}
 
 object Helper {
+  final val FznMaxInt:Int = Int.MaxValue/100
+  final val FznMinInt:Int = Int.MinValue/100
   
 //  val cnames = //MMap.empty[Constraint,String]//
 //    MMap.empty[Class[_],String]
