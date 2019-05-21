@@ -7,7 +7,7 @@ Date=$(date +"%m-%d-%y")
 VNum=`hg id -i`
 BenchDir="oscar-perf/src/main/scala/oscar/anytime/lns"
 BenchRoot="oscar.anytime.lns"
-SbtOutput=`$SBT_HOME/sbt "project oscar-perf" "export runtime:fullClasspath"`
+SbtOutput=`$SBT_HOME/sbt "project oscarPerf" "export runtime:fullClasspath"`
 #echo $SbtOutput
 CP=${SbtOutput##*$'\n'}
 ConfigsFile="$BenchDir/configs.txt"
