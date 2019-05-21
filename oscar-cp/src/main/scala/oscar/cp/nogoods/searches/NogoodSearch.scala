@@ -1,13 +1,12 @@
 package oscar.cp.nogoods.searches
 
+import oscar.algo.Inconsistency
 import oscar.algo.array.ArrayStack
-import oscar.algo.search.DFSearchNode
-import oscar.cp.core.Constraint
 import oscar.cp.core.CPStore
 import oscar.cp.nogoods.decisions.Decision
 import oscar.cp.nogoods.core.Nogood
 import oscar.cp.nogoods.database.NogoodDB
-import oscar.algo.reversible.ReversibleArrayStack
+import oscar.algo.reversible.{ReversibleArrayStack, ReversibleBoolean}
 
 /** @author Renaud Hartert ren.hartert@gmail.com */
 class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
@@ -15,6 +14,11 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
   private[this] val branch = new ReversibleArrayStack[(Decision, Boolean)](store, 100)
 
   private[this] val decisionsStack = new ArrayStack[Iterator[Decision]](100)
+
+  protected val failed = new ReversibleBoolean(store, false)
+
+  /** Set the node in a failed state */
+  def fail(): Unit = failed.setTrue()
 
   // Number of backtracks of the previous search
   private[this] var nbBkts: Int = 0
@@ -79,6 +83,7 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
     nbNodes = 0
     completed = false
 
+
     store.pushState()
 
 
@@ -93,7 +98,9 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
       }
     }
 
+
     while (!decisionsStack.isEmpty && !stopCondition(this)) {
+
 
       nbNodes += 1
 
@@ -105,9 +112,15 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
       if (!isLast) store.pushState()
       else decisionsStack.pop() // no more alternative in the sequence
 
-      decision() // apply the alternative
+      try {
+        decision() // apply the alternative
+      }
+      catch {
+        case _: Inconsistency => fail()
+      }
 
       branch.push((decision, !isLast))
+
 
       if (!store.isFailed) {
         val isExpandable = expand(branching)
@@ -123,22 +136,29 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
         nbBkts += 1
         store.pop()
       }
+
+
     }
+
 
     // Stores the nogoods
     buildNogoods()
 
-    // Pop the remaining nodes 
+    // Pop the remaining nodes
     var i = decisionsStack.size
     if (i == 0) completed = true
     else while (i != 0) {
       store.pop()
       i -= 1
     }
+
+
     store.pop()
     branch.clear()
+
+
   }
-  
+
   private[this] val toShave = new ArrayStack[Decision](16)
   final def decisionToShave = toShave
 
@@ -149,7 +169,7 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
       nogoods.addEmpty()
     }
     else {
-      
+
       val decisions = new Array[(Decision, Boolean)](branch.length)
       var i = decisions.length
       while (i > 0) {
