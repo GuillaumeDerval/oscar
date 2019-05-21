@@ -109,7 +109,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
         q.head match{
           case PreComputedSubSequence
             (startNode: Long, startNodeValue: VehicleAndPosition,
-            endNode: Long, endNodeValue: VehicleAndPosition) =>
+            endNode: Long, endNodeValue: VehicleAndPosition, length: Long) =>
 
             if(isFirst){
               require(vehicle == startNodeValue.vehicle)
@@ -142,7 +142,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
             }
           case FlippedPreComputedSubSequence(
           startNode: Long, startNodeValue: VehicleAndPosition,
-          endNode: Long, endNodeValue: VehicleAndPosition) =>
+          endNode: Long, endNodeValue: VehicleAndPosition, length: Long) =>
 
             QList(LogReducedFlippedPreComputedSubSequence[T](
               startNode: Long, endNode: Long,

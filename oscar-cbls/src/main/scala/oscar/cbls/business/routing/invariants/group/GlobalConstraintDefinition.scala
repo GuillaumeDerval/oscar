@@ -164,9 +164,9 @@ abstract class GlobalConstraintDefinition[T : Manifest, U:Manifest](routes: Chan
             val endNode = prevRoutes.explorerAtPosition(endNodePosition).get.value
             //println("NextEndNode : " + explorer.get.value)
             if (!rev) {
-              Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode)))
+              Some (PreComputedSubSequence(startNode, preComputedValues(startNode), endNode, preComputedValues(endNode), 0))
             } else {
-              Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode),endNode,preComputedValues(endNode)))
+              Some (FlippedPreComputedSubSequence(startNode,preComputedValues(startNode), endNode,preComputedValues(endNode), 0))
             }
           case FromScratch(fromNode,toNode,topOfStack) =>
             var newNodeList:List[NewNode[T]] = Nil

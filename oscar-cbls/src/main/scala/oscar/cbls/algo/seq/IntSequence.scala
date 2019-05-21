@@ -832,10 +832,10 @@ class MovedIntSequence(val seq:IntSequence,
 
   val localBijection = MovedIntSequence.bijectionForMove(startPositionIncluded, endPositionIncluded, moveAfterPosition, flip)
 
-  private val prevStartPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(startPositionIncluded-1)
-  private val nextEndPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(endPositionIncluded+1)
-  private val prevMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] = if(moveAfterPosition == 0) None else createExplorerAtPosition(moveAfterPosition-1)
-  private val nextMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] =
+  private lazy val prevStartPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(startPositionIncluded-1)
+  private lazy val nextEndPositionCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(endPositionIncluded+1)
+  private lazy val prevMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] = if(moveAfterPosition == 0) None else createExplorerAtPosition(moveAfterPosition-1)
+  private lazy val nextMoveAfterPositionCachedExplorer: Option[IntSequenceExplorer] =
     if(prevMoveAfterPositionCachedExplorer.isDefined) prevMoveAfterPositionCachedExplorer.get.next.get.next
     else createExplorerAtPosition(moveAfterPosition).get.next
   //private val fromNextVehiclePositionCachedExplorer: Option[Inseq]
@@ -851,8 +851,6 @@ class MovedIntSequence(val seq:IntSequence,
   override def nbOccurrence(value : Long) : Int = seq.nbOccurrence(value)
 
   override def commitPendingMoves:IntSequence = seq.commitPendingMoves.moveAfter(startPositionIncluded,endPositionIncluded,moveAfterPosition,flip,fast=false,autoRework = false)
-
-
 
   override def explorerAtPosition(position : Int) : Option[IntSequenceExplorer] = {
     if(position == startPositionIncluded-1) prevStartPositionCachedExplorer
@@ -989,13 +987,9 @@ class InsertedIntSequence(seq:IntSequence,
                           val pos:Int)
   extends StackedUpdateIntSequence {
 
-  private val prevPosCachedExplorer: Option[IntSequenceExplorer] = if(pos == 0) None else createExplorerAtPosition(pos-1)
-  private val nextPosCachedExplorer: Option[IntSequenceExplorer] =
+  private lazy val prevPosCachedExplorer: Option[IntSequenceExplorer] = if(pos == 0) None else createExplorerAtPosition(pos-1)
+  private lazy val nextPosCachedExplorer: Option[IntSequenceExplorer] =
     if(prevPosCachedExplorer.isDefined)prevPosCachedExplorer.get.next.get.next else createExplorerAtPosition(pos).get.next
-  /*private val posNextVehicleCachedExplorer: Option[IntSequenceExplorer] = {
-    var tempExpl = nextPosCachedExplorer
-    while (tempExpl.isDefined && tempExpl.get.value > this.)
-  }*/
 
   override val size : Int = seq.size + 1
 
@@ -1137,8 +1131,8 @@ class RemovedIntSequence(val seq:IntSequence,
                          val positionOfDelete:Int)
   extends StackedUpdateIntSequence{
 
-  private val prevPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(positionOfDelete-1)
-  private val nextPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = prevPositionOfDeleteCachedExplorer.get.next.get.next
+  private lazy val prevPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = createExplorerAtPosition(positionOfDelete-1)
+  private lazy val nextPositionOfDeleteCachedExplorer: Option[IntSequenceExplorer] = prevPositionOfDeleteCachedExplorer.get.next.get.next
 
 
   val removedValue = seq.valueAtPosition(positionOfDelete).head
