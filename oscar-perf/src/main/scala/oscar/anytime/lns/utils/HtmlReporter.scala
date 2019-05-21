@@ -56,12 +56,12 @@ object HtmlReporter extends App{
         HtmlWriter.tableToHtmlString(anyTimeGapsArray)
       )
 
-    htmlWriter.addHeading("Quality", 3)
-    htmlWriter.addElement(
-      "line",
-      "Anytime quality",
-      HtmlWriter.tableToHtmlString(renderQualityByTime(anyTimeQuality, configs, timeout))
-    )
+//    htmlWriter.addHeading("Quality", 3)
+//    htmlWriter.addElement(
+//      "line",
+//      "Anytime quality",
+//      HtmlWriter.tableToHtmlString(renderQualityByTime(anyTimeQuality, configs, timeout))
+//    )
 
     htmlWriter.addHeading("Operators statistics")
 
@@ -87,16 +87,16 @@ object HtmlReporter extends App{
         HtmlWriter.tableToHtmlString(renderSolsByTime(sols, configs, timeout, stepped = true))
       )
 
-      opScores.foreach{case (config, operators, opWeights) =>
-        if(config != "Baseline-best" && config != "Baseline-worst" && config != "Baseline") {
-          htmlWriter.addHeading("Anytime " + config + "'s operators scores", 3)
-          htmlWriter.addElement(
-            "line",
-            "Operator weights evolution for " + config,
-            HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
-          )
-        }
-      }
+//      opScores.foreach{case (config, operators, opWeights) =>
+//        if(config != "Baseline-best" && config != "Baseline-worst" && config != "Baseline") {
+//          htmlWriter.addHeading("Anytime " + config + "'s operators scores", 3)
+//          htmlWriter.addElement(
+//            "line",
+//            "Operator weights evolution for " + config,
+//            HtmlWriter.tableToHtmlString(renderOpScoresByTime(opWeights, operators, stepped = true))
+//          )
+//        }
+//      }
 
 //      htmlWriter.addElement(
 //        "line",

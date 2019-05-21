@@ -129,16 +129,21 @@ trait Benchmark {
         opDeactivation
       )
 
+      val timeout = argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L
+
+      val startWeight = if(argMap.getOrElse('metric, ALNSBuilder.AvgImprov).asInstanceOf[String] == ALNSBuilder.NoUpdate) 1.0 else startSol.objective.toDouble/timeout //Initial weight
+//      val startWeight = 1.0
+
       lazy val searchStore = builder.instantiateOperatorStore(
         if(coupled) builder.instantiateCoupledOperators
         else if(fixed) builder.instantiateFixedSearchOperators
         else builder.instantiateSearchOperators,
-        startSol.objective
+        startWeight
       )
 
       lazy val relaxStore = if (coupled) new RandomStore[ALNSOperator](Array(new ALNSNoParamOperator("dummy", 0, () => (_ => Unit, None, None))))
-      else if(fixed) builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators, startSol.objective)
-      else builder.instantiateOperatorStore(builder.instantiateRelaxOperators, startSol.objective)
+      else if(fixed) builder.instantiateOperatorStore(builder.instantiateFixedRelaxOperators, startWeight)
+      else builder.instantiateOperatorStore(builder.instantiateRelaxOperators, startWeight)
 
       val metaParams: Map[Symbol, Any] = Map(
         'coupled -> coupled,
@@ -152,7 +157,7 @@ trait Benchmark {
       val config = new ALNSConfig(
         relaxStore,
         searchStore,
-        argMap.getOrElse('timeout, 0L).asInstanceOf[Long] * 1000000000L,
+        timeout,
         bestKnownObjective,
         1000,
         argMap.getOrElse('strategy, "default").asInstanceOf[String],

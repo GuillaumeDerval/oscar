@@ -10,11 +10,12 @@ import scala.util.Random
  */
 class RouletteWheel[T <: ALNSElement](
                                        val elems: Array[T],
-                                       val weights: Array[Double],
+                                       initWeights: Array[Double],
                                        var decay: Double,
                                        val reversed: Boolean,
                                        var perfMetric: (T) => Double
                       ) extends AdaptiveStore[T]{
+  val weights: Array[Double] = initWeights.clone().map(_ / elems.length)
 
   private val lastSelected = mutable.HashMap[T, Int]() //caching for quick access to last selected elem(s)
   private val active = mutable.HashSet[Int](elems.indices: _*)
@@ -49,6 +50,7 @@ class RouletteWheel[T <: ALNSElement](
   }
 
   override def select(): T = {
+//    println(weights.mkString(", "))
     val rand = Random.nextDouble()
     val activeSeq = active.toSeq
 
@@ -65,7 +67,7 @@ class RouletteWheel[T <: ALNSElement](
     //Warning: received val is divided by the number of elems to avoid overflow when processing max values!
     weights(index) = /*if(elem.execs > 1) */(1.0 - decay) * weights(index) + decay * (perfMetric(elem) / elems.length.toDouble)
     /*else perfMetric(elem) / elems.length.toDouble*/
-    //    println("elem " + elem + " has now weight: " + weights(index))
+//    println("elem " + elem + " has now weight: " + weights(index))
     if(isCached(index)) lastSelected.remove(elem)
     if(!elem.isActive){
       deactivate(index)
