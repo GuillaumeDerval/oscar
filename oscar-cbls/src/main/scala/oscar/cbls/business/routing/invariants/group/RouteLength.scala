@@ -61,13 +61,13 @@ class RouteLength(routes:ChangingSeqValue, v:Int, vehicleToRouteLength:Array[CBL
           assymetricDistance(prevNode,vehicle)
         case head :: tail =>
           head match {
-            case PreComputedSubSequence(startNode, startNodeValue, endNode, endNodeValue) =>
+            case PreComputedSubSequence(startNode, startNodeValue, endNode, endNodeValue, _) =>
               val distanceToEnterThisSegment = if (prevNode == -1) 0 else assymetricDistance(prevNode,startNode)
               val lengthOfThisSegment = endNodeValue.distanceFromStart - startNodeValue.distanceFromStart
               require(lengthOfThisSegment >= 0)
               distanceToEnterThisSegment + lengthOfThisSegment + digestListOfSegments(tail, endNode)
 
-            case FlippedPreComputedSubSequence(startNode, startNodeValue, endNode, endNodeValue) =>
+            case FlippedPreComputedSubSequence(startNode, startNodeValue, endNode, endNodeValue, _) =>
               val distanceToEnterThisSegment = if (prevNode == -1) 0 else assymetricDistance(prevNode,startNode)
               val lengthOfThisSegment = startNodeValue.distanceToStart - endNodeValue.distanceToStart
               require(lengthOfThisSegment >= 0)

@@ -78,9 +78,9 @@ class WeightedNodesPerVehicle(routes:ChangingSeqValue, v : Int, nodeWeight:Array
   override def computeVehicleValue(vehicle: Long, segments: List[Segment[Long]], routes: IntSequence, PreComputedVals: Array[Long]): Long = {
     val tmp = segments.map(
       _ match {
-        case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
+        case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue, _) =>
           lstValue - fstValue + nodeWeight(cbls.longToInt(fstNode))
-        case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue) =>
+        case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue,_) =>
           lstValue - fstValue + nodeWeight(cbls.longToInt(fstNode))
         case NewNode(node) =>
           nodeWeight(cbls.longToInt(node))
