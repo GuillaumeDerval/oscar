@@ -16,6 +16,14 @@ package oscar.cbls.algo.quick
 
 import scala.language.implicitConversions
 
+//TODO (to discuss first) : implement a custom iteration system for the QList. We lose too much time converting it into a iterator
+// And it's quite easy to do it :
+//    QList.next = head,
+//    QList.hasNext = this.tail != null
+//    QList.foreach => fun(...); if(tail != null) tail.foreach(fun(...))
+//    ...
+//    Probably more function to add. If we do this we must adapt the all the code using a QList
+
 class QList[@specialized T](val head:T, val tail:QList[T] = null){
   def size:Long = {
     var curr = this.tail
@@ -52,19 +60,19 @@ object QList{
     toReturn
   }
 
-  def nonReversedAppend[T](l:Iterable[T],q:QList[T]):QList[T] = {
+  def nonReversedAppend[T](l:QList[T],q:QList[T]):QList[T] = {
 
-    def prependValue(it: Iterator[T], q:QList[T]): QList[T] ={
-      val next = it.next()
+    def prependValues(it: QList[T], q:QList[T]): QList[T] ={
+      val (next, tail) = (it.head, it.tail)
       QList(next,
-        if(it.hasNext) {
-          prependValue(it,q)
+        if(tail != null) {
+          prependValues(tail,q)
         } else {
           q
         })
     }
-    if(l.nonEmpty)
-      prependValue(l.toIterator,q)
+    if(l != null)
+      prependValues(l,q)
     else q
   }
 

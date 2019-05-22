@@ -93,9 +93,9 @@ class NbNodes(routes:ChangingSeqValue, v : Int, nbNodesPerVehicle : Array[CBLSIn
   override def computeVehicleValue(vehicle: Long, segments: List[Segment[Option[Long]]], routes: IntSequence, PreComputedVals: Array[Option[Long]]): Long = {
     val tmp = segments.map(
       _ match {
-        case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue) =>
+        case PreComputedSubSequence (fstNode, fstValue, lstNode, lstValue, length) =>
           lstValue.get - fstValue.get + 1
-        case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue) =>
+        case FlippedPreComputedSubSequence(lstNode,lstValue,fstNode,fstValue, length) =>
           lstValue.get - fstValue.get + 1
         case NewNode(_) =>
           1

@@ -2,14 +2,10 @@ package oscar.cbls.business.routing.invariants.group
 
 import oscar.cbls._
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
-import oscar.cbls.algo.quick
-import oscar.cbls.algo.quick.{QList, QListIterator}
-import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
-import oscar.cbls.business.routing.model.{RoutingConventionMethods, VehicleLocation}
+import oscar.cbls.algo.quick.QList
+import oscar.cbls.algo.seq.IntSequence
+import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
-
-import scala.collection.immutable.{HashMap, Stack}
-import scala.collection.mutable
 
 abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: ChangingSeqValue, v: Int)
   extends Invariant with SeqNotificationTarget{
@@ -22,9 +18,11 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
   var vehicleValuesAtLevel0 : Array[U] = new Array[U](v)
   var checkpointAtLevel0: IntSequence = _
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, true)
-  //var changedVehiclesSinceLastApplyUpdate = new IterableMagicBoolArray(v,false)
   var checkpointLevel: Int = -1
-  val savedDataAtCheckPointLevel: mutable.Map[Int,(Option[Array[ListSegments]], VehicleLocation, IterableMagicBoolArray)] = new mutable.HashMap
+  var savedDataAtCheckPointLevel: QList[(Int,Option[Array[ListSegments]], VehicleLocation, IterableMagicBoolArray, Array[Option[Int]])] = null
+  // TODO : if at checkpoint 1 only 1 vehicle has changed, all the positions before that vehicle are still valid an thus don't need to be recomputed
+  //        It should be useful when exploring wildly
+  var positionToValueCache: Array[Option[Int]] = Array.fill(n)(None)
 
   protected var vehicleSearcher: VehicleLocation = VehicleLocation((0 until v).toArray)
 
@@ -104,13 +102,13 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
         if(checkpointLevel == 0){
           checkpointAtLevel0 = newRoute
-          //changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
-          (0 until v).foreach(vehicle => {
+          changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
             performPreCompute(vehicle,newRoute,preComputedValues)
             vehicleValuesAtLevel0(vehicle) = vehicleValues(vehicle)
           })
           changedVehiclesSinceCheckpoint0.all_=(false)
           vehicleSearcher = vehicleSearcher.regularize
+          savedDataAtCheckPointLevel = null
         }
 
         // If false it means that we had an assign value update => not incremental => from scratch
@@ -122,8 +120,14 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         }
 
         this.checkpointLevel = checkpointLevel
+        if(checkpointLevel > 0) {
+          val previousCheckpointSaveData = savedDataAtCheckPointLevel.head
+          savedDataAtCheckPointLevel = QList((previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3, previousCheckpointSaveData._4,
+            positionToValueCache),savedDataAtCheckPointLevel.tail)
+        }
+        positionToValueCache = Array.fill(n)(None)
+        savedDataAtCheckPointLevel = QList((checkpointLevel,segmentsAtCheckPoint,vehicleSearcher,changedVehiclesSinceCheckpoint0,positionToValueCache),savedDataAtCheckPointLevel)
 
-        savedDataAtCheckPointLevel(checkpointLevel) = (segmentsAtCheckPoint,vehicleSearcher,changedVehiclesSinceCheckpoint0)
         segmentsAtCheckPoint
 
 
@@ -133,16 +137,22 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           require(checkpoint quickEquals this.checkpointAtLevel0)
           for(vehicle <- 0 until v) vehicleValues(vehicle) = vehicleValuesAtLevel0(vehicle)
         }
-        val (segments, vehicleSearcherAtCheckpointLevel, changedVehiclesSinceCheckpoint) = savedDataAtCheckPointLevel(checkpointLevel)
+        while(savedDataAtCheckPointLevel.tail != null  && savedDataAtCheckPointLevel.tail.head._1 >= checkpointLevel)
+          savedDataAtCheckPointLevel = savedDataAtCheckPointLevel.tail
+        val (_, segments, vehicleSearcherAtCheckpointLevel, changedVehiclesSinceCheckpoint, positionToValueCacheAtCheckpoint) = savedDataAtCheckPointLevel.head
         vehicleSearcher = vehicleSearcherAtCheckpointLevel
         changedVehiclesSinceCheckpoint0 = changedVehiclesSinceCheckpoint
+        positionToValueCache = positionToValueCacheAtCheckpoint
         segments
 
       case sui@SeqUpdateInsert(value : Long, pos : Int, prev : SeqUpdate) =>
         val prevUpdateSegments = digestUpdates(prev)
         if(prevUpdateSegments.isEmpty) None
         else {
+          keepOrResetPositionValueCache(prev)
+
           val prevRoutes = prev.newValue
+          // TODO : Probably more interesting to put those value in a local var and update/save his value using the checkpoint system
           val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
@@ -161,6 +171,8 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         val prevUpdateSegments = digestUpdates(prev)
         if(prevUpdateSegments.isEmpty) None
         else {
+          keepOrResetPositionValueCache(prev)
+
           val prevRoutes = prev.newValue
           val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
@@ -169,22 +181,27 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           val toVehicle = vehicleSearcher.vehicleReachingPosition(after)
 
           // Identification of the sub-segments to remove
-          val segmentsToRemove =
-            newPrevUpdateSegments(fromVehicle).findSubSegmentsToRemove(fromIncluded, toIncluded, prevRoutes)
+          val (listSegmentAfterRemove, segmentsToRemove) =
+            newPrevUpdateSegments(fromVehicle).removeSubSegments(fromIncluded, toIncluded, prevRoutes)
+
+          newPrevUpdateSegments(fromVehicle) = listSegmentAfterRemove
+
+          // If we are in same vehicle and we remove nodes to put them later in the route, the route length before insertion point has shortened
+          val delta =
+            if(fromVehicle != toVehicle || after < fromIncluded) 0
+            else toIncluded - fromIncluded + 1
+
           // Insert the sub-segments at his new position
           val segmentsAfterInsertion =
             if(flip)
-              newPrevUpdateSegments(toVehicle).insertSegments(segmentsToRemove.qMap(_.flip).reverse, after, prevRoutes)
+              newPrevUpdateSegments(toVehicle).insertSegments(segmentsToRemove.qMap(_.flip).reverse, after, prevRoutes, delta)
             else
-              newPrevUpdateSegments(toVehicle).insertSegments(segmentsToRemove, after, prevRoutes)
+              newPrevUpdateSegments(toVehicle).insertSegments(segmentsToRemove, after, prevRoutes, delta)
 
           newPrevUpdateSegments(toVehicle) = segmentsAfterInsertion
 
-          // Remove the sub-segments from his old position
-          val segmentsAfterRemoval = newPrevUpdateSegments(fromVehicle).removeSegments(segmentsToRemove, prevRoutes, fromIncluded, toIncluded)
-          newPrevUpdateSegments(fromVehicle) = segmentsAfterRemoval
-
           vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
+
           changedVehiclesSinceCheckpoint0(fromVehicle) = true
           changedVehiclesSinceCheckpoint0(toVehicle) = true
 
@@ -195,16 +212,17 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         val prevUpdateSegments = digestUpdates(prev)
         if(prevUpdateSegments.isEmpty) None
         else {
+          keepOrResetPositionValueCache(prev)
+
           val prevRoutes = prev.newValue
           val lastPrevUpdateSegments = prevUpdateSegments.get
           val newPrevUpdateSegments = Array.tabulate(v)(lastPrevUpdateSegments)
 
           val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
 
-          val segmentsToRemove = newPrevUpdateSegments(impactedVehicle).findSubSegmentsToRemove(position,position,prevRoutes)
+          val (listSegmentAfterRemove, _) = newPrevUpdateSegments(impactedVehicle).removeSubSegments(position,position,prevRoutes)
 
-          newPrevUpdateSegments(impactedVehicle) =
-            newPrevUpdateSegments(impactedVehicle).removeSegments(segmentsToRemove, prevRoutes, position, position)
+          newPrevUpdateSegments(impactedVehicle) = listSegmentAfterRemove
 
           vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
           changedVehiclesSinceCheckpoint0(impactedVehicle) = true
@@ -214,12 +232,21 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
       case SeqUpdateLastNotified(value:IntSequence) =>
         require(value quickEquals routes.value)
-        val vehiclesListSegments: Array[ListSegments] = if(savedDataAtCheckPointLevel.keys.isEmpty) Array.fill(v)(null) else savedDataAtCheckPointLevel(0)._1.get
+        val vehiclesListSegments: Array[ListSegments] = if(savedDataAtCheckPointLevel == null) Array.fill(v)(null) else savedDataAtCheckPointLevel.head._2.get
         (0 until v).foreach(vehicle => vehiclesListSegments(vehicle) = initSegmentsOfVehicle(vehicle, value))
         Some(vehiclesListSegments)
 
       case SeqUpdateAssign(value : IntSequence) =>
         None //impossible to go incremental
+    }
+  }
+
+  private def keepOrResetPositionValueCache(prev: SeqUpdate): Unit ={
+    prev match {
+      case _:SeqUpdateInsert => positionToValueCache = Array.fill(n)(None)
+      case _:SeqUpdateMove => positionToValueCache = Array.fill(n)(None)
+      case _:SeqUpdateRemove => positionToValueCache = Array.fill(n)(None)
+      case _ =>
     }
   }
 
@@ -265,7 +292,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
 
 
   case class ListSegments(segments: QList[Segment[T]], vehicle: Int){
-    private val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
     /**
       * Remove Segments and Sub-Segment from the Segments List
       *
@@ -276,76 +302,112 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       * @param to To position
       * @return A ListSegments containing the segments containing or between from and to
       */
-    def findSubSegmentsToRemove(from: Int, to: Int, routes: IntSequence): (QList[Segment[T]]) ={
+    def removeSubSegments(from: Int, to: Int, routes: IntSequence): (ListSegments, QList[Segment[T]]) ={
+      val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
       val (fromImpactedSegment, segmentsBeforeFromImpactedSegment, segmentsAfterFromImpactedSegment, currentCounter) =
-        findImpactedSegment(from,vehicle)
+        findImpactedSegment(from,vehicle,vehiclePos-1)
       val (toImpactedSegment, segmentsBetweenFromAndTo, segmentsAfterToImpactedSegment,_) =
-        findImpactedSegment(to,vehicle,QList(fromImpactedSegment,segmentsAfterFromImpactedSegment), initCounter = Some(currentCounter))
+        findImpactedSegment(to,vehicle, currentCounter,QList(fromImpactedSegment,segmentsAfterFromImpactedSegment))
+
       // nodeBeforeFrom is always defined because it's at worst a vehicle node
-      val beforeFromExplorer = routes.explorerAtPosition(from -1).get
-      val toExplorer = routes.explorerAtPosition(to).get
+      val (nodeBeforeFrom, fromNode, toNode, nodeAfterTo) = {
+        val beforeFromExplorer = if(positionToValueCache(from-1).isEmpty)routes.explorerAtPosition(from-1) else None
+        val fromExplorer = if(positionToValueCache(from).isEmpty){
+          if(beforeFromExplorer.nonEmpty)
+            beforeFromExplorer.get.next
+          else
+            routes.explorerAtPosition(from)
+        } else None
 
-      val nodeBeforeFrom = beforeFromExplorer.value
-      val fromNode = beforeFromExplorer.next.get.value
-      val toNode = toExplorer.value
-      val nodeAfterTo = toExplorer.next
+        val toExplorer = if(positionToValueCache(to).isEmpty) routes.explorerAtPosition(to) else None
 
-      val lengthUntilFromImpactedSegment =
-        QList.qFold[Segment[T],Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
-      val lengthToFromImpactedSegment = lengthUntilFromImpactedSegment + fromImpactedSegment.length()
-      val lengthToToImpactedSegment =
-        QList.qFold[Segment[T],Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0) +
-          QList.qFold[Segment[T],Long](segmentsBetweenFromAndTo, (acc,item) => acc + item.length(),0) +
-          toImpactedSegment.length()
+        if(beforeFromExplorer.nonEmpty)
+          positionToValueCache(from-1) = Some(beforeFromExplorer.get.value)
+        if(fromExplorer.nonEmpty)
+          positionToValueCache(from) = Some(fromExplorer.get.value)
+        if(toExplorer.nonEmpty)
+          positionToValueCache(to) = Some(toExplorer.get.value)
+        if(to+1 < n && positionToValueCache(to+1).isEmpty){
+          val afterToExplorer =
+            if(toExplorer.nonEmpty)
+              toExplorer.get.next
+            else
+              routes.explorerAtPosition(to+1)
+          positionToValueCache(to+1) = Some(if(afterToExplorer.isEmpty) -1 else afterToExplorer.get.value)
+        }
+        (positionToValueCache(from-1).get,
+          positionToValueCache(from).get,
+          positionToValueCache(to).get,
+          if(to+1 < n)positionToValueCache(to+1).get else -1)
+      }
+
+      val lengthUntilFromImpactedSegment = QList.qFold[Segment[T],Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
 
       // 1° The removed segment is included in one segment
-      if(fromImpactedSegment == toImpactedSegment){
-        val fromLeftResidueLength = from - lengthUntilFromImpactedSegment - vehiclePos
-        val fromRightResidueLength = fromImpactedSegment.length() - fromLeftResidueLength
+      val (leftResidue, removedSegments, rightResidue) =
+        if(fromImpactedSegment == toImpactedSegment) {
+          val fromLeftResidueLength = from - lengthUntilFromImpactedSegment - vehiclePos
+          val fromRightResidueLength = fromImpactedSegment.length() - fromLeftResidueLength
 
-        val toRightResidueLength =
-          if (nodeAfterTo.isEmpty) 0
-          else fromRightResidueLength - to + from - 1
-        val toLeftResidueLength =
-          fromRightResidueLength - toRightResidueLength
+          val toRightResidueLength =
+            if (nodeAfterTo == -1) 0
+            else fromRightResidueLength - to + from - 1
+          val toLeftResidueLength =
+            fromRightResidueLength - toRightResidueLength
 
-        // The left-remaining part of the initial segment
-        val (_, leftCuttedInitialSegment: Option[Segment[T]]) =
-          fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode), fromLeftResidueLength, fromRightResidueLength)
-        // The right-remaining part of the initial segment
-        val (removedSegment: Option[Segment[T]], _) =
-          if(nodeAfterTo.isDefined)
-            leftCuttedInitialSegment.get.splitAtNode(toNode, nodeAfterTo.get.value, preComputedValues(toNode), preComputedValues(nodeAfterTo.get.value), toLeftResidueLength, toRightResidueLength)
-          else
-            (leftCuttedInitialSegment, None)
-        QList(removedSegment.get)
-      } else {
-        val toRightResidueLength =
-          if(nodeAfterTo.isEmpty) 0
-          else lengthToToImpactedSegment - to + vehiclePos
-        val toLeftResidueLength =
-          lengthToToImpactedSegment - toRightResidueLength
+          // The left-remaining part of the initial segment
+          val (leftResidue, leftCuttedInitialSegment: Option[Segment[T]]) =
+            fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode), fromLeftResidueLength, fromRightResidueLength)
+          // The right-remaining part of the initial segment
+          val (removedSegments: Option[Segment[T]], rightResidue) =
+            if (nodeAfterTo >= 0)
+              leftCuttedInitialSegment.get.splitAtNode(toNode, nodeAfterTo, preComputedValues(toNode), preComputedValues(nodeAfterTo), toLeftResidueLength, toRightResidueLength)
+            else
+              (leftCuttedInitialSegment, None)
 
-        val fromRightResidueLength = lengthToFromImpactedSegment - from + vehiclePos
-        val fromLeftResidueLength = lengthToFromImpactedSegment - fromRightResidueLength
+          (leftResidue, QList(removedSegments.get), rightResidue)
+        } else {
+          val lengthToFromImpactedSegment =
+            lengthUntilFromImpactedSegment +
+              fromImpactedSegment.length()
+          val lengthToToImpactedSegment =
+            lengthUntilFromImpactedSegment +
+              QList.qFold[Segment[T],Long](segmentsBetweenFromAndTo, (acc,item) => acc + item.length(),0) +
+              toImpactedSegment.length()
 
-        // The left-remaining part of the initial from segment
-        val (_, leftCuttedFromSegment: Option[Segment[T]]) =
-          fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode), fromLeftResidueLength, fromRightResidueLength)
-        // The right-remaining part of the initial to segment
-        val (rightCuttedToSegment: Option[Segment[T]], _) =
-          if(nodeAfterTo.isDefined)
-            toImpactedSegment.splitAtNode(toNode, nodeAfterTo.get.value, preComputedValues(toNode), preComputedValues(nodeAfterTo.get.value), toLeftResidueLength, toRightResidueLength)
-          else
-            (toImpactedSegment, None)
+          val toRightResidueLength =
+            if (nodeAfterTo == -1) 0
+            else lengthToToImpactedSegment - to + vehiclePos
+          val toLeftResidueLength =
+            lengthToToImpactedSegment - toRightResidueLength
 
-        var removedSegments =
-          QList(leftCuttedFromSegment.get,segmentsBetweenFromAndTo.tail)
-        if(rightCuttedToSegment.nonEmpty)
-          removedSegments = QList.nonReversedAppend(removedSegments,QList(rightCuttedToSegment.get))
+          val fromRightResidueLength = lengthToFromImpactedSegment - from + vehiclePos
+          val fromLeftResidueLength = lengthToFromImpactedSegment - fromRightResidueLength
 
-        removedSegments
-      }
+          // The left-remaining part of the initial from segment
+          val (leftResidue, leftCuttedFromSegment: Option[Segment[T]]) =
+            fromImpactedSegment.splitAtNode(nodeBeforeFrom, fromNode, preComputedValues(nodeBeforeFrom), preComputedValues(fromNode), fromLeftResidueLength, fromRightResidueLength)
+          // The right-remaining part of the initial to segment
+          val (rightCuttedToSegment: Option[Segment[T]], rightResidue) =
+            if (nodeAfterTo >= 0)
+              toImpactedSegment.splitAtNode(toNode, nodeAfterTo, preComputedValues(toNode), preComputedValues(nodeAfterTo), toLeftResidueLength, toRightResidueLength)
+            else
+              (toImpactedSegment, None)
+
+          var removedSegments =
+            QList(leftCuttedFromSegment.get, segmentsBetweenFromAndTo.tail)
+          if (rightCuttedToSegment.nonEmpty)
+            removedSegments = QList.nonReversedAppend(removedSegments, QList(rightCuttedToSegment.get))
+
+          (leftResidue, removedSegments, rightResidue)
+        }
+
+      var newSegments: QList[Segment[T]] = segmentsAfterToImpactedSegment
+      if(rightResidue.nonEmpty) newSegments = QList(rightResidue.get, newSegments)
+      if(leftResidue.nonEmpty) newSegments = QList(leftResidue.get, newSegments)
+      newSegments = QList.nonReversedAppend(segmentsBeforeFromImpactedSegment, newSegments)
+
+      (ListSegments(newSegments,vehicle),removedSegments)
     }
 
     /**
@@ -354,26 +416,39 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       * @param afterPosition
       * @return
       */
-    def insertSegments(segmentsToInsert: QList[Segment[T]], afterPosition: Int, routes: IntSequence): ListSegments ={
-      val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition, vehicle)
+    def insertSegments(segmentsToInsert: QList[Segment[T]], afterPosition: Int, routes: IntSequence, delta: Long = 0): ListSegments ={
+      val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
 
-      val insertAfterExplorer = routes.explorerAtPosition(afterPosition).get
-      val insertAfterNode = insertAfterExplorer.value
-      val insertBeforeNode = insertAfterExplorer.next
+      val (impactedSegment, segmentsBeforeImpactedSegment, segmentsAfterImpactedSegment,_) = findImpactedSegment(afterPosition - delta, vehicle, vehiclePos-1)
+
+      val (insertAfterNode, insertBeforeNode) = {
+        val afterExplorer = if(positionToValueCache(afterPosition).isEmpty) routes.explorerAtPosition(afterPosition) else None
+
+        if(afterExplorer.nonEmpty)
+          positionToValueCache(afterPosition) = Some(afterExplorer.get.value)
+        if(afterPosition+1 < n && positionToValueCache(afterPosition+1).isEmpty){
+          val beforeExplorer = if(afterExplorer.nonEmpty)
+              afterExplorer.get.next
+            else
+              routes.explorerAtPosition(afterPosition+1)
+          positionToValueCache(afterPosition+1) = Some(if(beforeExplorer.isEmpty)-1 else beforeExplorer.get.value)
+        }
+        (positionToValueCache(afterPosition).get, if(afterPosition+1 < n)positionToValueCache(afterPosition+1).get else -1)
+      }
 
       val rightResidueLength =
-        if(insertBeforeNode.isEmpty) 0
+        if(insertBeforeNode == -1) 0
         else
           QList.qFold[Segment[T],Long](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0) +
-            impactedSegment.length() - insertBeforeNode.get.position + vehiclePos
+            impactedSegment.length() - (afterPosition + 1) + vehiclePos
       val leftResidueLength = impactedSegment.length() - rightResidueLength
 
       // We need to split the impacted segment in two and insert the new Segment between those two sub segment
       // If we are at the end of a vehicle route, we don't split the route
       val (leftResidue: Option[Segment[T]], rightResidue: Option[Segment[T]]) =
-        if(insertBeforeNode.isDefined && insertBeforeNode.get.value >= v)
-          impactedSegment.splitAtNode(insertAfterNode,insertBeforeNode.get.value,
-            preComputedValues(insertAfterNode),preComputedValues(insertBeforeNode.get.value),leftResidueLength, rightResidueLength)
+        if(insertBeforeNode >= v)
+          impactedSegment.splitAtNode(insertAfterNode,insertBeforeNode,
+            preComputedValues(insertAfterNode),preComputedValues(insertBeforeNode),leftResidueLength, rightResidueLength)
         else
           (Some(impactedSegment),None)
 
@@ -391,74 +466,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       ListSegments(newSegments, vehicle)
     }
 
-
-    /**
-      * This method replace some segments by newSegments.
-      *
-      * The startNode of  the first segment of "newSegments" and
-      * the endNode of the last segment of "newSegments" have to be part of segments.
-      *
-      * It will replace a list of segments of "segments" starting at startNode end ending at endNode with newSegments.
-      * @return
-      */
-    def removeSegments(segmentsToRemove: QList[Segment[T]], routes: IntSequence, from: Long, to: Long): ListSegments ={
-      val lastSegment = segmentsToRemove.last
-      val firstSegment = segmentsToRemove.head
-
-      val (fromImpactedSegment, segmentsBeforeFromImpactedSegment, segmentsAfterFromImpactedSegment, currentCounter) =
-        findImpactedSegment(from, vehicle)
-      val (toImpactedSegment, segmentsBetweenFromAndTo, segmentsAfterToImpactedSegment,_) =
-        findImpactedSegment(to, vehicle, QList(fromImpactedSegment,segmentsAfterFromImpactedSegment), initCounter = Some(currentCounter))
-
-      val nodeBeforeFrom = routes.explorerAtPosition(from - 1).get.value
-      val nodeAfterTo = routes.explorerAtPosition(to + 1)
-
-      val lengthUntilFromImpactedSegment = QList.qFold[Segment[T],Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0)
-      val lengthToFromImpactedSegment = lengthUntilFromImpactedSegment + fromImpactedSegment.length()
-      val lengthToToImpactedSegment =
-        QList.qFold[Segment[T],Long](segmentsBeforeFromImpactedSegment, (acc,item) => acc + item.length(),0) +
-        QList.qFold[Segment[T],Long](segmentsBetweenFromAndTo, (acc,item) => acc + item.length(),0) +
-        toImpactedSegment.length()
-
-      val(fromLeftResidueLength, fromRightResidueLength, toLeftResidueLength, toRightResidueLength) = if(lastSegment == firstSegment) {
-        val fromLeftResidueLength = from - lengthUntilFromImpactedSegment - vehiclePos
-        val fromRightResidueLength = fromImpactedSegment.length() - fromLeftResidueLength
-
-        val toRightResidueLength =
-          if (nodeAfterTo.isEmpty) 0
-          else fromRightResidueLength - to + from - 1
-        val toLeftResidueLength =
-          fromRightResidueLength - toRightResidueLength
-
-        (fromLeftResidueLength,fromRightResidueLength,toLeftResidueLength,toRightResidueLength)
-      } else {
-        val toRightResidueLength =
-          if (nodeAfterTo.isEmpty) 0
-          else lengthToToImpactedSegment - to + vehiclePos
-        val toLeftResidueLength =
-          lengthToToImpactedSegment - toRightResidueLength
-        val fromRightResidueLength = lengthToFromImpactedSegment - from + vehiclePos
-        val fromLeftResidueLength = lengthToFromImpactedSegment - fromRightResidueLength
-        (fromLeftResidueLength,fromRightResidueLength,toLeftResidueLength,toRightResidueLength)
-      }
-
-      val (leftResidue, _) =
-        fromImpactedSegment.splitAtNode(nodeBeforeFrom, firstSegment.startNode(),
-          preComputedValues(nodeBeforeFrom), preComputedValues(firstSegment.startNode()), fromLeftResidueLength, fromRightResidueLength)
-      val (_, rightResidue) =
-        if(nodeAfterTo.isDefined)
-          toImpactedSegment.splitAtNode(lastSegment.endNode(), nodeAfterTo.get.value,
-            preComputedValues(lastSegment.endNode()), preComputedValues(nodeAfterTo.get.value), toLeftResidueLength, toRightResidueLength)
-        else
-          (toImpactedSegment, None)
-
-      var newSegments: QList[Segment[T]] = segmentsAfterToImpactedSegment
-      if(rightResidue.nonEmpty) newSegments = QList(rightResidue.get, newSegments)
-      if(leftResidue.nonEmpty) newSegments = QList(leftResidue.get, newSegments)
-      newSegments = QList.nonReversedAppend(segmentsBeforeFromImpactedSegment, newSegments)
-      ListSegments(newSegments,vehicle)
-    }
-
     /**
       * This method finds the impacted segment of the previous update.
       * The segment is found if the endNode is after or equal to the search position.
@@ -467,10 +474,8 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       * @param vehicle the vehicle in which we want to add a node
       * @return a tuple (impactedSegment: Segment[T], exploredSegments: Option[QList[Segment[T] ] ], unexploredSegments: Option[QList[Segment[T] ] ])
       */
-    private def findImpactedSegment(pos: Long, vehicle: Int, segmentsToExplore: QList[Segment[T]] = segments, initCounter: Option[Int] = None): (Segment[T], QList[Segment[T]], QList[Segment[T]], Int) ={
-      val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
-
-      def checkSegment(segmentsToExplore: QList[Segment[T]], counter: Int = initCounter.getOrElse(vehiclePos-1), exploredSegments: QList[Segment[T]] = null): (Segment[T], QList[Segment[T]], QList[Segment[T]], Int) ={
+    private def findImpactedSegment(pos: Long, vehicle: Int, initCounter: Long, segmentsToExplore: QList[Segment[T]] = segments): (Segment[T], QList[Segment[T]], QList[Segment[T]], Int) ={
+      def checkSegment(segmentsToExplore: QList[Segment[T]], counter: Int = initCounter, exploredSegments: QList[Segment[T]] = null): (Segment[T], QList[Segment[T]], QList[Segment[T]], Int) ={
         require(segmentsToExplore != null, "Shouldn't happen, it means that the desired position is not within this vehicle route")
         val segment = segmentsToExplore.head
         val newCounter = counter + segment.length
@@ -484,7 +489,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
     }
 
     def length(): Long ={
-      segments.map(_.length()).sum
+      QList.qFold[Segment[T], Long](segments, (acc, item) => acc + item.length, 0L)
     }
 
     override def toString: String ={

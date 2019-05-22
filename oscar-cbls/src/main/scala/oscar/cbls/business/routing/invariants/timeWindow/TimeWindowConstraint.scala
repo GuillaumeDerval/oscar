@@ -189,25 +189,30 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param preComputedVals The array of precomputed values
     */
   override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
-    def performPreComputeOnRoute(route: List[Long]): Unit ={
+
+    def performPreComputeForNode(node: Long, prevNode: Long, route: QList[Long], lastTF: TransferFunction): Unit ={
+      if(route != null) {
+        val curNode = route.head
+        val newTF = if (lastTF.isEmpty) lastTF else composeFunction(lastTF, transferFunctionOfNode(curNode), travelTimeMatrix(prevNode)(curNode))
+        preComputedVals(node)(curNode) = newTF
+        performPreComputeForNode(node, curNode, route.tail, newTF)
+      }
+    }
+
+    def performPreComputeOnRoute(route: QList[Long]): Unit ={
       val node = route.head
       if(preComputedVals(node) == null)preComputedVals(node) = Array.fill(n)(EmptyTransferFunction)
       preComputedVals(node)(node) = transferFunctionOfNode(node)
-      var lastTF = preComputedVals(node)(node)
-      var prevNode = node
-      for(curNode <- route.tail){
-        val newTF = if(lastTF.isEmpty) lastTF else composeFunction(lastTF, transferFunctionOfNode(curNode), travelTimeMatrix(prevNode)(curNode))
-        preComputedVals(node)(curNode) = newTF
-        prevNode = curNode
-        lastTF = newTF
-      }
+      val lastTF = preComputedVals(node)(node)
+      val prevNode = node
+      performPreComputeForNode(node, prevNode, route.tail, lastTF)
       if(route.size > 1L)
         performPreComputeOnRoute(route.tail)
     }
 
     var continue = true
-    var vExplorer = routes.explorerAtAnyOccurrence(vehicle)
-    var route: List[Long] = List.empty
+    var vExplorer = routes.explorerAtAnyOccurrence(vehicle).get.next
+    var route: QList[Long] = QList(vehicle)
     while(continue){
       vExplorer match {
         case None => continue = false
@@ -215,14 +220,13 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
           if (elem.value < v && elem.value != vehicle){
             continue = false
           } else {
-            route = elem.value :: route
+            route = QList(elem.value, route)
           }
           vExplorer = elem.next
       }
     }
     performPreComputeOnRoute(route)
     performPreComputeOnRoute(route.reverse)
-    //println("Result : " + preComputedVals.zipWithIndex.map(x => "" + x._2 + (if(x._1 != null) x._1.mkString(", ") else "")).mkString("\n"))
   }
 
   /**
@@ -241,21 +245,21 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       * @param prevLeavingTime The leave time at previous segment (0L if first one)
       * @return The leave time after going through all the segments
       */
-    def arrivalAtDepot(segments: Iterator[Segment[Array[TransferFunction]]], previousSegmentEnd: Long = vehicle, prevLeavingTime: Long = 0L): Long ={
-      val segment = segments.next
+    def arrivalAtDepot(segments: QList[Segment[Array[TransferFunction]]], previousSegmentEnd: Long = vehicle, prevLeavingTime: Long = 0L): Long ={
+      val (segment, tail) = (segments.head, segments.tail)
       val (segmentStart, segmentEnd, transferFunction) = segmentsInfo(segment)
       val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd)(segmentStart)
       val leaveTimeAtSegment = transferFunction(arrivalTimeAtSegment)
       if(leaveTimeAtSegment >= 0L) {
-        if (segments.hasNext)
-          arrivalAtDepot(segments, segmentEnd, leaveTimeAtSegment)
+        if (tail != null)
+          arrivalAtDepot(tail, segmentEnd, leaveTimeAtSegment)
         else
           leaveTimeAtSegment + travelTimeMatrix(segmentEnd)(vehicle)
       }
       else leaveTimeAtSegment
     }
     //println("Using : " + preComputedVals.map(x => x.mkString(", ")).mkString("\n"))
-    val arrivalTimeAtDepot = arrivalAtDepot(segments.toIterator)
+    val arrivalTimeAtDepot = arrivalAtDepot(segments)
     arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 

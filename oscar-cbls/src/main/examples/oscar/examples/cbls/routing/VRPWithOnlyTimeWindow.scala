@@ -6,6 +6,8 @@ import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, 
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 
+import scala.collection.mutable
+
 object VRPWithOnlyTimeWindow extends App {
 
   def runConfiguration(ns: List[Long], vs: List[Long],
@@ -44,27 +46,27 @@ object VRPWithOnlyTimeWindow extends App {
   }
 
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
-  val timeWindowConstraints = List(1)
+  val timeWindowConstraints = List(0,1)
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(2)
   // The variations of n values
-  val ns_1 = List(100L, 200L/*, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
+  val ns_1 = List(/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, */1000L)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
   val vs_2 = List(5L, 10L, 20L, 50L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 5
+  val iterations = 1
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false, iteration: Int = 0){
-  val m = new Store(noCycle = false)
+  val m = new Store(noCycle = false/*, checker = Some(new ErrorChecker)*/)
   val penaltyForUnrouted = 10000
   RoutingMatrixGenerator.random.setSeed(iteration)
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
@@ -165,7 +167,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // InsertPoint neighborhood
   def insertPoint(best: Boolean) = insertPointUnroutedFirst(
     () => myVRP.unrouted.value,
-    ()=> myVRP.kFirst(if (best) 20 else n/5,closestRelevantPredecessorsByDistance(_), postFilter),
+    ()=> myVRP.kFirst(if (!best) 20 else n/5,closestRelevantPredecessorsByDistance(_), postFilter),
     myVRP,
     selectInsertionPointBehavior = if(best) Best() else First(),
     neighborhoodName = "InsertUF")
@@ -173,7 +175,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // OnePointMove neighborhood
   def onePtMove(best: Boolean) = onePointMove(
     () => myVRP.routed.value,
-    ()=> myVRP.kFirst(if (best) 20 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
+    ()=> myVRP.kFirst(if (!best) 20 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
     myVRP,
     selectDestinationBehavior = if(best) Best() else First(),
 
@@ -182,7 +184,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // ThreeOpt neighborhood
   def threeOptMove(best: Boolean) = threeOpt(
     myVRP.routed,
-    ()=>myVRP.kFirst(if (best) 40 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
+    ()=>myVRP.kFirst(if (!best) 40 else n/5,closestRelevantPredecessorsByDistance(_),postFilter),
     myVRP,
     neighborhoodName = "ThreeOpt(k=" + v*2 + ")",
     selectMovedSegmentBehavior = if(best) Best() else First(),
@@ -192,7 +194,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Simple InsertPoint procedure
   def run1(best: Boolean): (Long,Long) ={
     val search = insertPoint(best)
-    //search.verbose = 2
+    //search.verbose = 1
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
@@ -203,8 +205,10 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Simple InsertPoint exhaust OnePoitnMove procedure
   def run2(best: Boolean): (Long,Long) ={
     val search = insertPoint(best) exhaust onePtMove(best)
+    search.verbose = 1
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
+    println(search.profilingStatistics)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
     (obj.value, duration)

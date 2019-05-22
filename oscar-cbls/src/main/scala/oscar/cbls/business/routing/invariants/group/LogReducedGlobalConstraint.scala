@@ -343,7 +343,7 @@ object LogReducedFlippedPreComputedSubSequence {
           head match {
             case PreComputedSubSequence
               (startNode: Long, startNodeValue: VehicleAndPosition,
-              endNode: Long, endNodeValue: VehicleAndPosition) =>
+              endNode: Long, endNodeValue: VehicleAndPosition, length) =>
 
               if(tail.isEmpty
                 && startNodeValue.vehicle == vehicle
@@ -365,7 +365,7 @@ object LogReducedFlippedPreComputedSubSequence {
               }
             case FlippedPreComputedSubSequence(
             startNode: Long, startNodeValue: VehicleAndPosition,
-            endNode: Long, endNodeValue: VehicleAndPosition) =>
+            endNode: Long, endNodeValue: VehicleAndPosition, length) =>
 
               QList(LogReducedFlippedPreComputedSubSequence[T](
                 startNode: Long, endNode: Long,
