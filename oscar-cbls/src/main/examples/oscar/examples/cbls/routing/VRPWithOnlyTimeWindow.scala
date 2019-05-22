@@ -6,6 +6,9 @@ import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, 
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 
+import scala.util.Random
+
+
 object VRPWithOnlyTimeWindow extends App {
 
   def runConfiguration(ns: List[Long], vs: List[Long],
@@ -44,13 +47,13 @@ object VRPWithOnlyTimeWindow extends App {
   }
 
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
-  val timeWindowConstraints = List(2)
+  val timeWindowConstraints = List(0,1,2)
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2,3)
+  val procedures = List(2)
   // The variations of n values
-  val ns_1 = List(50L, 100L, 200L, 500L, 1000L)
+  val ns_1 = List(/*50L, 100L, 200L, 500L, */1000L)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
@@ -60,10 +63,11 @@ object VRPWithOnlyTimeWindow extends App {
   val iterations = 1
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
-  runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
+  //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false){
+  RoutingMatrixGenerator.random.setSeed(0)
   val m = new Store(noCycle = false)
   val penaltyForUnrouted = 10000
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
@@ -200,7 +204,9 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   def run2(best: Boolean): (Long,Long) ={
     val search = insertPoint(best) exhaust onePtMove(best)
     val start = System.nanoTime()
+    search.verbose = 1
     search.doAllMoves(obj=obj)
+    println(myVRP)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
     (obj.value, duration)
