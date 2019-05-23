@@ -55,13 +55,13 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
                               searchZone:() => Iterable[Long] = null,
                               symmetryClassOfVariables:Option[Long => Long] = None,
                               symmetryClassOfValues:Option[Long => Long => Long] = None,
-                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
+                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,_) => v.domain.values,
                               hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
   var startIndice:Long = 0L
 
-  var currentVar:CBLSIntVar = null
+  var currentVar:CBLSIntVar = _ //null
   var currentIndice:Long = 0L
   var newVal:Long = 0L
 
@@ -151,20 +151,20 @@ case class AssignNeighborhood(vars:Array[CBLSIntVar],
  *                    if false, consider the exploration range in natural order from the first position.
  */
 case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
-                              name:String = "NumericAssignNeighborhood",
-                              selectIndiceBehavior:LoopBehavior = First(),
-                              selectValueBehavior:LoopBehavior = First(),
-                              searchZone:() => Iterable[Long] = null,
-                              symmetryClassOfVariables:Option[Long => Long] = None,
-                              symmetryClassOfValues:Option[Long => Long => Long] = None,
-                              domain:(CBLSIntVar,Long) => Iterable[Long] = (v,i) => v.domain.values,
-                              domainExplorer: () => (Long,Long) => LinearOptimizer,
-                              hotRestart:Boolean = true)
+                                     name:String = "NumericAssignNeighborhood",
+                                     selectIndiceBehavior:LoopBehavior = First(),
+                                     selectValueBehavior:LoopBehavior = First(),
+                                     searchZone:() => Iterable[Long] = null,
+                                     symmetryClassOfVariables:Option[Long => Long] = None,
+                                     symmetryClassOfValues:Option[Long => Long => Long] = None,
+                                     domain:(CBLSIntVar,Long) => Iterable[Long] = (v,_) => v.domain.values,
+                                     domainExplorer: () => (Long,Long) => LinearOptimizer,
+                                     hotRestart:Boolean = true)
   extends EasyNeighborhoodMultiLevel[AssignMove](name){
   //the indice to start with for the exploration
   var startIndice:Long = 0L
 
-  var currentVar:CBLSIntVar = null
+  var currentVar:CBLSIntVar = _ //null
   var currentIndice:Long = 0L
   var newVal:Long = 0L
 
