@@ -25,8 +25,8 @@ import oscar.cbls.{CBLSIntVar, IntValue}
 import oscar.cbls.algo.magicArray.IterableMagicBoolArray
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.model._
-import oscar.cbls.core.{IntInvariant, Invariant}
-import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue}
+import oscar.cbls.core.{IntInvariant, IntNotificationTarget, Invariant}
+import oscar.cbls.core.computation.{AtomicValue, ChangingAtomicValue, ChangingIntValue}
 
 object Overlap {
 
@@ -166,7 +166,7 @@ object Overlap {
   * @param shapes
   * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
   */
-class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeAll:Boolean = true)
+class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]],preComputeAll:Boolean = true)
   extends Invariant with GeometryNotificationTarget{
 
   registerStaticAndDynamicDependencyArrayIndex(shapes)
@@ -286,5 +286,210 @@ class NoOverlapPenetration(shapes:Array[AtomicValue[GeometryValue]], preComputeA
   }
 }
 
+
+
+/**
+  * @param shapes
+  * @param preComputeAll forces pre-computation of indexes for all shapes. use this if there are constant shapes that will never move/change
+  */
+
+//wehn margin is given, we only consider the centre of the shape, not he shape itself.
+class NoOverlapPenetrationMargins(shapes:Array[AtomicValue[GeometryValue]],
+                                  overrideShapeWithMargins:Array[Option[IntValue]],
+                                  preComputeAll:Boolean = true)
+  extends Invariant
+    with GeometryNotificationTarget
+    with IntNotificationTarget{
+
+  registerStaticAndDynamicDependencyArrayIndex(shapes)
+  for(i <- overrideShapeWithMargins.indices if overrideShapeWithMargins(i).isDefined){
+    registerStaticAndDynamicDependency(overrideShapeWithMargins(i).get,i)
+  }
+
+  finishInitialization()
+
+  val output = CBLSIntVar(model,name = "violation of NoOverlapPenetrationMargins")
+  output.setDefiningInvariant(this)
+
+  //index in array => index in geometry, for fast overlap computation
+  private var geometryIndexes:Array[PreparedGeometry] = Array.fill(shapes.size)(null)
+
+  if(preComputeAll){
+    for(id <- shapes.indices) computeAndReturnIndex(id)
+  }
+
+  private var changedShapesToCheck = IterableMagicBoolArray(shapes.size,initVal = true)
+
+  private def computeAndReturnIndex(id:Int):PreparedGeometry = {
+    geometryIndexes(id) = PreparedGeometryFactory.prepare(shapes(id).value.geometry)
+    geometryIndexes(id)
+  }
+
+  private def returnIndexComputeIfNeeded(id:Int):PreparedGeometry = {
+    if(geometryIndexes(id)!= null) geometryIndexes(id)
+    else computeAndReturnIndex(id)
+  }
+
+  //we initialize as zero overlap, but all shapes are notes as having moved, and we schedule ourself for propagation.
+  private val recordedOverlap = Array.tabulate(shapes.size)(id => Array.fill(id)(0L))
+  output := 0
+
+  //we initialize as zero overlap, but all shcpes are notes as having moved, and we schedule ourself for propagation.
+  private val overlapByShape:Array[CBLSIntVar] = Array.tabulate(shapes.size)(id => {
+    val v = CBLSIntVar(model,name="violation of overlap of shape " + id)
+    v.setDefiningInvariant(this)
+    v
+  })
+
+  def violation(shapeID:Int):IntValue = overlapByShape(shapeID)
+
+  scheduleForPropagation()
+
+  override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
+                                    id: Int,
+                                    oldVal: GeometryValue,
+                                    newVal: GeometryValue): Unit = {
+    changedShapesToCheck(id) = true
+    geometryIndexes(id) = null
+    scheduleForPropagation()
+  }
+
+
+  override def notifyIntChanged(v: ChangingIntValue,
+                                id: Int,
+                                oldVal: Long,
+                                newVal: Long): Unit = {
+    //if the margin has decreased since the computation was done,
+    // and there was no overlap at this time,
+    // we do not need to do anything
+    //we can directly compare hte oldVal with the newVal
+    // because it it increases, there will be a notification of increase.
+    //although we will over-approximate the need to checking some chapes
+
+    if(newVal < oldVal &&  overlapByShape(id).newValue == 0){
+      //we do not need to check it :-)
+    }else{
+      //we need to check it, but we can keep the index as it was since the shape itself has not changed
+      changedShapesToCheck(id) = true
+      scheduleForPropagation()
+    }
+  }
+
+  def getMarginIfDefined(id:Int):Option[Long] = {
+    overrideShapeWithMargins(id) match {
+      case None => None
+      case Some(x) => Some(x.value)
+    }
+  }
+
+  override def performInvariantPropagation(): Unit = {
+    for(shapeIDToCheck <- changedShapesToCheck.indicesAtTrue){
+      for(otherID <- shapes.indices if !changedShapesToCheck(otherID) || otherID < shapeIDToCheck){
+        val newOverlap = computeOverlapViolation(shapes(shapeIDToCheck).value, getMarginIfDefined(shapeIDToCheck),shapeIDToCheck,shapes(otherID).value,getMarginIfDefined(otherID),otherID)
+        val oldOverlap = recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID)
+        recordedOverlap(shapeIDToCheck max otherID)(shapeIDToCheck min otherID) = newOverlap
+        output :+= (newOverlap - oldOverlap)
+        overlapByShape(shapeIDToCheck) :+= (newOverlap - oldOverlap)
+        overlapByShape(otherID) :+= (newOverlap - oldOverlap)
+      }
+    }
+    changedShapesToCheck.all = false
+  }
+
+  private def computeOverlapViolation(shape1:GeometryValue,overriden1:Option[Long],id1:Int,shape2:GeometryValue,overriden2:Option[Long],id2:Int):Long = {
+    (overriden1,overriden2) match {
+      case (None, None) =>
+        computeOverlapViolationPolyPoly(shape1, id1, shape2, id2)
+      case (Some(m1), None) =>
+        computeOverlapViolationMarginPoly(shape1, m1, id1, shape2, id2)
+      case (None, Some(m2)) =>
+        computeOverlapViolationMarginPoly(shape2, m2, id2, shape1, id1)
+      case (Some(m1), Some(m2)) =>
+        computeOverlapViolationMarginMargin(shape1, m1, id1, shape2, m2, id2)
+    }
+  }
+
+  private def computeOverlapViolationMarginPoly(shape1:GeometryValue,margin1:Long,id1:Int,shape2:GeometryValue,id2:Int):Long = {
+    //here, we use the minDistance point to shape
+    //but before, the quick distance stuff
+    val distanceWithApproximatingCircle = (shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle)
+
+    val mightOverlapBasedOnOverApproximatingCirle = distanceWithApproximatingCircle < (margin1 + shape2.overApproximatingRadius)
+    if(!mightOverlapBasedOnOverApproximatingCirle) return 0
+
+    //now we use the closest distance
+    val distanceToShape = computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle)
+    if(distanceToShape >= margin1){
+      0
+    }else{
+      val v = (margin1 - distanceToShape).toLong
+      v*v
+    }
+  }
+
+  private def computeOverlapViolationMarginMargin(shape1:GeometryValue,margin1:Long,id1:Int,shape2:GeometryValue,margin2:Long,id2:Int):Long = {
+    val distance = (shape1.centerOfOverApproximatingCircle distance shape2.centerOfOverApproximatingCircle)
+
+    if(distance >= (margin1 + margin2)) 0
+    else{
+      //too close
+      //we use a penetration procedure to the square
+      val v = ((margin1 + margin2) - distance).toLong
+      v*v
+    }
+  }
+
+  private def computeOverlapViolationPolyPoly(shape1:GeometryValue,id1:Int,shape2:GeometryValue,id2:Int):Long = {
+    if(! (shape1 mightOverlapBasedOnOverApproximatingValues shape2)) return 0
+
+    if(geometryIndexes(id1) != null){
+      if(geometryIndexes(id1).disjoint(shape2.geometry)) return 0
+    }else if (geometryIndexes(id2) != null){
+      if(geometryIndexes(id2).disjoint(shape1.geometry)) return 0
+    }else{
+      //create an index for the smallest shape
+      if(shape1.geometry.getNumPoints < shape2.geometry.getNumPoints){
+        if(computeAndReturnIndex(id1).disjoint(shape2.geometry)) return 0
+      }else{
+        if(computeAndReturnIndex(id2).disjoint(shape1.geometry)) return 0
+      }
+    }
+
+    //There is an overlap, so we quantify it; we measure some penetration,
+    //which is faster to compute than the overlap area
+    //also it must be symmetric, and muse be able to capture improvement by rotation (that's why it must be symmetric?)
+    /*
+    (shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius -
+      (computeDistance(shape1.geometry,shape2.centerOfOverApproximatingCircle)
+        + computeDistance(shape2.geometry,shape1.centerOfOverApproximatingCircle))).toLong
+*/
+    val v = (shape1.overApproximatingRadius
+      + shape2.overApproximatingRadius -
+      (computeDistanceNegIfInside(shape1.geometry,id1,shape2.centerOfOverApproximatingCircle)
+        + computeDistanceNegIfInside(shape2.geometry,id2,shape1.centerOfOverApproximatingCircle))).toLong
+
+    v*v
+  }
+
+  private def computeDistanceNegIfInside(shape1:Geometry,id1:Int,point:Point):Double = {
+
+    val containsPt = if(geometryIndexes(id1) == null){
+      shape1.contains(point)
+    }else{
+      geometryIndexes(id1).contains(point)
+    }
+
+    val d = computeDistance(shape1:Geometry,point:Point)
+
+    if(containsPt) -d else d
+  }
+
+  private def computeDistance(shape1:Geometry,point:Point):Double = {
+    val ptDist = new PointPairDistance()
+    DistanceToPoint.computeDistance(shape1,point.getCoordinate,ptDist) //in distance among all points of the geometry and other point
+    ptDist.getDistance()
+  }
+}
 
 
