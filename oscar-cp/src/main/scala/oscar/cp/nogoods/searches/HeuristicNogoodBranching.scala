@@ -29,7 +29,7 @@ import oscar.cp.nogoods.decisions._
  * @param varHeuris is a variable heuristic, it will select preferably first the unbound
  *        variables(i) such that varHeuris(i) is the smallest
  */
-class HeuristicNogoodBranching(variables: Array[CPIntVar], varHeuris: (Int => Int), valHeuris: (Int => Int), doSplit: Boolean = true)
+class HeuristicNogoodBranching(variables: Array[CPIntVar], varHeuris: Int => Double, valHeuris: Int => Int, doSplit: Boolean = false)
 extends NogoodBranching {
 
   val cp = variables(0).store
@@ -69,7 +69,7 @@ extends NogoodBranching {
       if (variable.isBound) bound(i)
       else {
         val h = varHeuris(varId)
-        if (h < bestH || (h == bestH && varId < bestId)) {
+        if (h > bestH || (h == bestH && varId < bestId)) {
           bestVariable = variable
           bestId = varId
           bestH = h

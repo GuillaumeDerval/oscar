@@ -19,7 +19,16 @@ abstract class NogoodBranching extends Branching {
     else {
       Seq(() => { dec.apply() }, () => { dec.opposite.apply() })
     }
-  }  
+  }
+
+  def ++(b: NogoodBranching): NogoodBranching = new NogoodBranching {
+    override def nextDecision: Decision = {
+      val r = NogoodBranching.this.nextDecision
+      if(r == null) b.nextDecision
+      else r
+    }
+  }
+
 }
 
 class StaticNogoodBranching(variables: Array[CPIntVar], valHeuristic: CPIntVar => Int) extends NogoodBranching {
