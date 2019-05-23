@@ -1,5 +1,6 @@
 package oscar.cbls.visual.geometry
 import java.awt.Color
+import java.io.File
 
 import javax.swing.JPanel
 import org.locationtech.jts.geom.Geometry
@@ -23,10 +24,11 @@ object GeometryDrawing {
             geometryDrawingType: GeometryDrawingTypes.Value = GeometryDrawingTypes.Simple,
             area: Option[List[(Int,Int)]] = None,
             pointOfOrigin: Option[(Double, Double)] = None,
-            pointShift: Option[() => (Double,Double)] = None): JPanel with GeometryDrawingTrait ={
+            pointShift: Option[() => (Double,Double)] = None,
+            savingFile: Option[File] = None): JPanel with GeometryDrawingTrait ={
     geometryDrawingType match{
       case GeometryDrawingTypes.Simple=>
-        new SimpleGeometryDrawing(relevantDistances, pointShift = pointShift)
+        new SimpleGeometryDrawing(relevantDistances, pointShift = pointShift, savingFile = savingFile)
       case GeometryDrawingTypes.OnRealMap =>
         require(pointOfOrigin.isDefined && area.isDefined,
           "In order to display Geometry drawing on a real map, " +

@@ -16,12 +16,16 @@ package oscar.cbls.visual.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import java.awt.event.{ComponentEvent, ComponentListener}
+import java.awt.event.{ComponentEvent, ComponentListener, KeyEvent, KeyListener}
 import java.awt.{Color, Shape}
+import java.awt.image.BufferedImage
+import java.io.File
+import java.time.LocalDateTime
 
+import javax.imageio.ImageIO
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
-import org.locationtech.jts.geom.util.{AffineTransformation}
+import org.locationtech.jts.geom.util.AffineTransformation
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants.Overlap
 import oscar.visual.VisualDrawing
@@ -31,11 +35,13 @@ import oscar.visual.shapes.VisualShape
 class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
                             windowWidth: Int = 960,
                             windowHeight: Int = 960,
-                            pointShift: Option[() => (Double,Double)] = None) //TODO: pointShift:(Double,Double) = (0,0) ce serait nettement plus simple.
+                            pointShift: Option[() => (Double,Double)] = None,
+                            savingFile: Option[File] = None) //TODO: pointShift:(Double,Double) = (0,0) ce serait nettement plus simple.
   extends VisualDrawing(false,false)
     with GeometryDrawingTrait {
 
   this.setSize(windowWidth, windowHeight)
+  this.setFocusable(true)
 
   var geometryShapes: List[(Geometry,Option[Color],Option[Color],String)] = List.empty
   var centers: List[(Long, Long)] =  List.empty
@@ -100,7 +106,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     //repaint()
   }
 
-  def defineDrawingAreaAndAffineTransformation(minX: Double, maxX: Double, minY: Double, maxY: Double): (AffineTransformation,AffineTransformation) ={
+  private def defineDrawingAreaAndAffineTransformation(minX: Double, maxX: Double, minY: Double, maxY: Double): (AffineTransformation,AffineTransformation) ={
     val drawingWidth = (maxX - minX).toInt
     val drawingHeight = (maxY - minY).toInt
 
@@ -118,7 +124,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   }
 
   // Paint the box containing all the shapes
-  def paintBorder(w: ShapeWriter, boundingBoxOn: Geometry, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintBorder(w: ShapeWriter, boundingBoxOn: Geometry, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     val border = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(boundingBoxOn))))
 
     border.fill = false
@@ -134,7 +140,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     * @param scaleTransform The scaling affine transformation
     * @param translateTransform The translating affine transformation
     */
-  def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((geometry,borderColOpt,innerColOpt,toolTipText) <- shapes){
       val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry))))
 
@@ -157,7 +163,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     }
   }
 
-  def paintSomeHoles(s:List[Geometry],scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintSomeHoles(s:List[Geometry],scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
     val w = new ShapeWriter()
 
     val centers = Overlap.centersOfFreeSpaces(s.tail, s.head,100).toArray
@@ -174,7 +180,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   }
 
   // Paint links between shapes
-  def paintLinks(w: ShapeWriter, centers: List[(Long,Long)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintLinks(w: ShapeWriter, centers: List[(Long,Long)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((fromID,toID) <- relevantDistances){
       val (x1,y1) = centers(fromID)
       val (x2,y2) = centers(toID)
@@ -192,6 +198,39 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     (x,y)
   }
 
+
+  def saveStateAsPNG(): Unit ={
+    val bi = new BufferedImage(this.getWidth, this.getHeight, BufferedImage.TYPE_INT_ARGB)
+    val g = bi.createGraphics
+    this.paint(g) //this == JComponent
+
+    val now = LocalDateTime.now().toString
+    val filePath = savingFile.get.getPath
+    val initFileName = if(filePath.endsWith(".png")) filePath.dropRight(4) else filePath
+    val fileName = initFileName + "_" + now + ".png"
+
+    g.dispose()
+    try
+      ImageIO.write(bi,"png", new File(fileName))
+    catch {
+      case e: Exception =>
+
+    }
+  }
+
+  addKeyListener{
+    new KeyListener {
+      override def keyTyped(keyEvent: KeyEvent): Unit = {
+        if(keyEvent.getKeyChar.equals('p') && savingFile.isDefined){
+          saveStateAsPNG()
+        }
+      }
+
+      override def keyPressed(keyEvent: KeyEvent): Unit = {}
+
+      override def keyReleased(keyEvent: KeyEvent): Unit = {}
+    }
+  }
 
   addComponentListener{
     new ComponentListener {

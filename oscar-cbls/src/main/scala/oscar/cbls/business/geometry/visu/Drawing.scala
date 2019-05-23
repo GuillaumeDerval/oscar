@@ -1,6 +1,7 @@
 package oscar.cbls.business.geometry.visu
 
 import java.awt.Color
+import java.io.File
 
 import org.locationtech.jts.geom.Geometry
 import oscar.cbls.visual.SingleFrameWindow
@@ -10,13 +11,14 @@ class Drawing (title: String,
                relevantDistances: List[(Int,Int)],
                geometryDrawingType: GeometryDrawingTypes.Value,
                area: Option[List[(Int,Int)]] = None,
-               pointOfOrigin: Option[(Double, Double)] = None) {
+               pointOfOrigin: Option[(Double, Double)] = None,
+               savingFile: Option[File] = None) {
   val (drawing, background) = geometryDrawingType match {
     case GeometryDrawingTypes.Simple =>
-      (GeometryDrawing(relevantDistances,geometryDrawingType,area,pointOfOrigin), None)
+      (GeometryDrawing(relevantDistances,geometryDrawingType,area,pointOfOrigin, savingFile = savingFile), None)
     case GeometryDrawingTypes.OnRealMap =>{
       val background = GeometryDrawing(relevantDistances,GeometryDrawingTypes.OnRealMap,area,pointOfOrigin).asInstanceOf[GeometryDrawingOnRealMap]
-      (GeometryDrawing(relevantDistances,GeometryDrawingTypes.Simple,area,pointOfOrigin,pointShift = Some(() => background.topLeftPointShiftInPixel)), Some(background))
+      (GeometryDrawing(relevantDistances,GeometryDrawingTypes.Simple,area,pointOfOrigin,pointShift = Some(() => background.topLeftPointShiftInPixel), savingFile = savingFile), Some(background))
     }
   }
   SingleFrameWindow.show(drawing, title, backgroundPanel = background)
