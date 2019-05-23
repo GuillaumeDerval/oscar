@@ -16,16 +16,16 @@ package oscar.cbls.visual.geometry
   * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
   ******************************************************************************/
 
-import java.awt.geom.{Line2D, Rectangle2D}
+import java.awt.event.{ComponentEvent, ComponentListener}
 import java.awt.{Color, Shape}
 
 import org.locationtech.jts.awt.ShapeWriter
 import org.locationtech.jts.geom._
-import org.locationtech.jts.geom.util.{AffineTransformation, GeometryTransformer}
+import org.locationtech.jts.geom.util.{AffineTransformation}
 import oscar.cbls.business.geometry
 import oscar.cbls.business.geometry.invariants.Overlap
 import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualArrow, VisualLine, VisualRectangle, VisualShape}
+import oscar.visual.shapes.VisualShape
 
 
 class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
@@ -35,6 +35,12 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   extends VisualDrawing(false,false)
     with GeometryDrawingTrait {
 
+  this.setSize(windowWidth, windowHeight)
+
+  var geometryShapes: List[(Geometry,Option[Color],Option[Color],String)] = List.empty
+  var centers: List[(Long, Long)] =  List.empty
+  var boundingBoxOn: Option[Geometry] = None
+
   class VisualShapeConcrete(d: VisualDrawing, s: Shape) extends VisualShape(d) {
 
     override def move(x: Double, y: Double): Unit = {}
@@ -43,11 +49,10 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     protected val shape = s
   }
 
+
   override def addShape(shape: VisualShape, repaintAfter: Boolean): Unit ={
     super.addShape(shape,false)
   }
-
-  this.setSize(windowWidth, windowHeight)
 
   //TODO: il manque un zoom et un scroll!!!
   //TODO: on ne voit pas le border!!
@@ -56,7 +61,8 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     */
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],
-                 centers:List[(Long,Long)]) ={
+                 centers:List[(Long,Long)],
+                 saveShapesAndPositions: Boolean = true) ={
     super.clear(false)
 
     val w = new ShapeWriter()
@@ -74,29 +80,61 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
           b.getCoordinates.map(c => c.y).max)
     }
 
+    val (scaleTransform, translateTransform) = defineDrawingAreaAndAffineTransformation(minX, maxX, minY, maxY)
+
+    val boundingBoxOnNow = boundingBoxOn.getOrElse(
+      new Polygon(
+        geometry.factory.createLinearRing(List(new Coordinate(minX,0), new Coordinate(0,minY), new Coordinate(maxX,0), new Coordinate(0,maxY)).toArray),
+        null,
+        geometry.factory))
+    paintBorder(w, boundingBoxOnNow, scaleTransform, translateTransform)
+
+    paintShapes(w, shapes, scaleTransform, translateTransform)
+    paintLinks(w, centers, scaleTransform, translateTransform)
+
+    if(saveShapesAndPositions){
+      geometryShapes = shapes
+      this.centers = centers
+      this.boundingBoxOn = boundingBoxOn
+    }
+    //repaint()
+  }
+
+  def defineDrawingAreaAndAffineTransformation(minX: Double, maxX: Double, minY: Double, maxY: Double): (AffineTransformation,AffineTransformation) ={
     val drawingWidth = (maxX - minX).toInt
     val drawingHeight = (maxY - minY).toInt
 
-    val (realMapScaleX,realMapScaleY) = pointShift.getOrElse(() => (0.0,0.0))()
-    val scaling = Math.min((windowWidth.toDouble-(realMapScaleX*2.0))/drawingWidth,(windowHeight.toDouble-(2.0*realMapScaleY))/drawingHeight)
-    val scaleTransform = AffineTransformation.scaleInstance(scaling,scaling)
-    val translateTransform = AffineTransformation.translationInstance(realMapScaleX,realMapScaleY)
 
-    val border =
-      if(boundingBoxOn.isEmpty)
-        new VisualRectangle(this, new Rectangle2D.Double(
-          coordToPixel((minX.toInt,0), drawingWidth, drawingHeight)._1,
-          coordToPixel((0,minY.toInt), drawingWidth, drawingHeight)._2,
-          coordToPixel((drawingWidth,0), drawingWidth, drawingHeight)._1,
-          coordToPixel((0,drawingHeight), drawingWidth, drawingHeight)._2))
-      else
-        new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(boundingBoxOn.get))))
+    val (realMapScaleX,realMapScaleY) = pointShift.getOrElse(() => (0.0,0.0))()
+
+    val widthOffSet = if(realMapScaleX > 0) realMapScaleX else 10.0
+    val heightOffSet = if(realMapScaleY > 0) realMapScaleY else 10.0
+
+    val scaling = Math.min((this.getWidth.toDouble-(widthOffSet*2.0))/drawingWidth,(this.getHeight.toDouble-(2.0*heightOffSet))/drawingHeight)
+    val scaleTransform = AffineTransformation.scaleInstance(scaling,scaling)
+    val translateTransform = AffineTransformation.translationInstance(widthOffSet,heightOffSet)
+
+    (scaleTransform, translateTransform)
+  }
+
+  // Paint the box containing all the shapes
+  def paintBorder(w: ShapeWriter, boundingBoxOn: Geometry, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+    val border = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(boundingBoxOn))))
 
     border.fill = false
     border.border = true
     border.borderWidth = 3
     border.outerCol = Color.black
+  }
 
+  /**
+    * Draw the shapes of the problem
+    * @param w The shapeWriter
+    * @param shapes The shapes
+    * @param scaleTransform The scaling affine transformation
+    * @param translateTransform The translating affine transformation
+    */
+  def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((geometry,borderColOpt,innerColOpt,toolTipText) <- shapes){
       val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry))))
 
@@ -117,18 +155,6 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
 
       s.toolTip = toolTipText
     }
-
-    //paintSomeHoles(shapes.map(_._1), scaleTransform, translateTransform)
-
-    for((fromID,toID) <- relevantDistances){
-      val (x1,y1) = centers(fromID)
-      val (x2,y2) = centers(toID)
-      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.createLine(x1:Long,y1:Long,x2:Long,y2:Long)))))
-      s.innerCol = Color.BLUE
-      s.dashed = false
-    }
-
-    repaint()
   }
 
   def paintSomeHoles(s:List[Geometry],scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
@@ -147,14 +173,40 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     }
   }
 
+  // Paint links between shapes
+  def paintLinks(w: ShapeWriter, centers: List[(Long,Long)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+    for((fromID,toID) <- relevantDistances){
+      val (x1,y1) = centers(fromID)
+      val (x2,y2) = centers(toID)
+      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.createLine(x1:Long,y1:Long,x2:Long,y2:Long)))))
+      s.innerCol = Color.BLUE
+      s.dashed = false
+    }
+  }
+
   private def coordToPixel(coord: (Long,Long), drawingWidth: Int, drawingHeight: Int): (Int,Int) ={
     val (shiftX,shiftY): (Double, Double)= if(pointShift.isDefined)pointShift.get.apply() else (0,0)
-    val scaling = Math.max((windowWidth.toDouble-(shiftX*2))/drawingWidth,(windowHeight.toDouble-(shiftY*2))/drawingHeight)
+    val scaling = Math.max((this.getWidth.toDouble-(shiftX*2))/drawingWidth,(this.getHeight.toDouble-(shiftY*2))/drawingHeight)
     val x = ((coord._1.toDouble*scaling) + shiftX).toInt
     val y = ((coord._2.toDouble*scaling) + shiftY).toInt
     (x,y)
   }
 
+
+  addComponentListener{
+    new ComponentListener {
+      override def componentResized(componentEvent: ComponentEvent): Unit = {
+        if(shapes.nonEmpty)
+          drawShapes(boundingBoxOn, geometryShapes, centers, false)
+      }
+
+      override def componentMoved(componentEvent: ComponentEvent): Unit = repaint()
+
+      override def componentShown(componentEvent: ComponentEvent): Unit = repaint()
+
+      override def componentHidden(componentEvent: ComponentEvent): Unit = repaint()
+    }
+  }
 }
 
 
