@@ -111,7 +111,8 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
 
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],
-                 centers:List[(Long,Long)]): Unit ={
+                 centers:List[(Long,Long)],
+                 saveShapesAndPositions: Boolean = true): Unit ={
   }
 }
 
