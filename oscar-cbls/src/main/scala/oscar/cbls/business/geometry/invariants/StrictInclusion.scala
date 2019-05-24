@@ -27,7 +27,7 @@ class StrictInclusion(innerShape:AtomicValue[GeometryValue], outerShape:CBLSGeom
   scheduleForPropagation()
 
   //violation = la distance entre le le centre de la figure outer et le point le plus éloigné de ce centre
-  //ATTENTION: ne supportera pas les figures convexes ou en plusieurs morceaux
+  //ATTENTION: ne se comportera pas bien avec les figures hautement convexes ou en plusieurs morceaux
 
   override def notifyGeometryChange(a: ChangingAtomicValue[GeometryValue],
                                     id: Int,
