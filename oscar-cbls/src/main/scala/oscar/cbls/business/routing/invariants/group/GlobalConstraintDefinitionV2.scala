@@ -146,7 +146,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           require(checkpoint quickEquals this.checkpointAtLevel0)
           for(vehicle <- 0 until v){
             vehicleValues(vehicle) = vehicleValuesAtLevel0(vehicle)
-            assignVehicleValue(vehicle, vehicleValues(vehicle))
           }
         }
         while(savedDataAtCheckPointLevel.tail != null  && savedDataAtCheckPointLevel.tail.head._1 >= checkpointLevel)
@@ -452,7 +451,7 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
         if(insertBeforeNode == -1) 0
         else
           QList.qFold[Segment[T],Long](segmentsBeforeImpactedSegment, (acc,item) => acc + item.length(),0) +
-            impactedSegment.length() - (afterPosition + 1) + vehiclePos
+            impactedSegment.length() - afterPosition + vehiclePos
       val leftResidueLength = impactedSegment.length() - rightResidueLength
 
       // We need to split the impacted segment in two and insert the new Segment between those two sub segment
