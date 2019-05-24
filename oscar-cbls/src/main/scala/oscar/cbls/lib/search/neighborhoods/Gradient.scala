@@ -17,7 +17,7 @@ package oscar.cbls.lib.search.neighborhoods
 
 import oscar.cbls.algo.search.HotRestart
 import oscar.cbls.core.computation.{CBLSIntVar, Variable}
-import oscar.cbls.core.search.{EasyNeighborhoodMultiLevel, Move}
+import oscar.cbls.core.search.{Best, EasyNeighborhoodMultiLevel, Move}
 import oscar.cbls._
 
 import scala.collection.immutable.SortedSet
@@ -72,7 +72,7 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
                                    selectVars:Iterable[Long],
                                    variableIndiceToDeltaForGradientDefinition:Long => Long,
                                    linearSearch:LinearOptimizer,
-                                   gradientSearchBehavior:LoopBehavior,
+                                   gradientSearchBehavior:LoopBehavior = Best(),
                                    trySubgradient:Boolean = false)
   extends AbstractGradientDescent(vars:Array[CBLSIntVar],
     name:String,
