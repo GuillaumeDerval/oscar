@@ -35,8 +35,7 @@ import oscar.visual.shapes.VisualShape
 class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
                             windowWidth: Int = 960,
                             windowHeight: Int = 960,
-                            pointShift: Option[() => (Double,Double)] = None,
-                            savingFile: Option[File] = None) //TODO: pointShift:(Double,Double) = (0,0) ce serait nettement plus simple.
+                            pointShift: Option[() => (Double,Double)] = None) //TODO: pointShift:(Double,Double) = (0,0) ce serait nettement plus simple.
   extends VisualDrawing(false,false)
     with GeometryDrawingTrait {
 
@@ -196,40 +195,6 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     val x = ((coord._1.toDouble*scaling) + shiftX).toInt
     val y = ((coord._2.toDouble*scaling) + shiftY).toInt
     (x,y)
-  }
-
-
-  def saveStateAsPNG(): Unit ={
-    val bi = new BufferedImage(this.getWidth, this.getHeight, BufferedImage.TYPE_INT_ARGB)
-    val g = bi.createGraphics
-    this.paint(g) //this == JComponent
-
-    val now = LocalDateTime.now().toString
-    val filePath = savingFile.get.getPath
-    val initFileName = if(filePath.endsWith(".png")) filePath.dropRight(4) else filePath
-    val fileName = initFileName + "_" + now + ".png"
-
-    g.dispose()
-    try
-      ImageIO.write(bi,"png", new File(fileName))
-    catch {
-      case e: Exception =>
-
-    }
-  }
-
-  addKeyListener{
-    new KeyListener {
-      override def keyTyped(keyEvent: KeyEvent): Unit = {
-        if(keyEvent.getKeyChar.equals('p') && savingFile.isDefined){
-          saveStateAsPNG()
-        }
-      }
-
-      override def keyPressed(keyEvent: KeyEvent): Unit = {}
-
-      override def keyReleased(keyEvent: KeyEvent): Unit = {}
-    }
   }
 
   addComponentListener{

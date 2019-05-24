@@ -21,7 +21,15 @@ class Drawing (title: String,
       (GeometryDrawing(relevantDistances,GeometryDrawingTypes.Simple,area,pointOfOrigin,pointShift = Some(() => background.topLeftPointShiftInPixel), savingFile = savingFile), Some(background))
     }
   }
-  SingleFrameWindow.show(drawing, title, backgroundPanel = background)
+  val singleFrameWindow = SingleFrameWindow.show(drawing, title, backgroundPanel = background)
+
+  /**
+    * This method save the current drawing as a png in the specified savingFile.
+    */
+  def saveDrawingAsPNG = {
+    require(savingFile.nonEmpty, "Unable to save the current drawing - No file specified")
+    singleFrameWindow.saveWindowAsPng(savingFile.get)
+  }
 
   def drawShapes(boundingBoxOn:Option[Geometry] = None,
                  shapes:List[(Geometry,Option[Color],Option[Color],String)],

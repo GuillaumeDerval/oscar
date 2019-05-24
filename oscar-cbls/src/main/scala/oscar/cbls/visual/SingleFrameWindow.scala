@@ -1,7 +1,11 @@
 package oscar.cbls.visual
 
+import java.awt.image.BufferedImage
 import java.awt.{BorderLayout, Color, Dimension}
+import java.io.File
+import java.time.LocalDateTime
 
+import javax.imageio.ImageIO
 import javax.swing.{JFrame, JLayeredPane, JPanel}
 import oscar.cbls.visual.geometry.GeometryDrawingOnRealMap
 import oscar.visual.VisualDrawing
@@ -39,4 +43,18 @@ class SingleFrameWindow(val pannel:JPanel,title:String,width:Int,height:Int,back
   frame.pack()
   frame.revalidate()
   frame.setVisible(true)
+
+  def saveWindowAsPng(savingFile: File): Unit ={
+    val bi = new BufferedImage(frame.getWidth, frame.getHeight, BufferedImage.TYPE_INT_ARGB)
+    val g = bi.createGraphics
+    frame.paint(g) //this == JComponent
+
+    g.dispose()
+    try
+      ImageIO.write(bi,"png", savingFile)
+    catch {
+      case e: Exception =>
+
+    }
+  }
 }

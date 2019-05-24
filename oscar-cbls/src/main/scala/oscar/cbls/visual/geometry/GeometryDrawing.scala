@@ -28,7 +28,7 @@ object GeometryDrawing {
             savingFile: Option[File] = None): JPanel with GeometryDrawingTrait ={
     geometryDrawingType match{
       case GeometryDrawingTypes.Simple=>
-        new SimpleGeometryDrawing(relevantDistances, pointShift = pointShift, savingFile = savingFile)
+        new SimpleGeometryDrawing(relevantDistances, pointShift = pointShift)
       case GeometryDrawingTypes.OnRealMap =>
         require(pointOfOrigin.isDefined && area.isDefined,
           "In order to display Geometry drawing on a real map, " +
