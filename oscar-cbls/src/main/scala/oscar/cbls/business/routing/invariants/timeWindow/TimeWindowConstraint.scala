@@ -104,7 +104,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
                             earliestLeavingTime: Array[Long],
                             latestLeavingTime: Array[Long],
                             travelTimeMatrix: Array[Array[Long]],
-                            violations: Array[CBLSIntVar]
+                            val violations: Array[CBLSIntVar]
                            ) extends GlobalConstraintDefinitionV2[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(

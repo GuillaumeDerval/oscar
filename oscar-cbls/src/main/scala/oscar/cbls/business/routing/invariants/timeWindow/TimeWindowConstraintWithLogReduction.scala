@@ -79,7 +79,7 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                            earliestLeavingTime: Array[Long],
                                            latestLeavingTime: Array[Long],
                                            travelTimeMatrix: Array[Array[Long]],
-                                           violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
+                                           val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
 
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
