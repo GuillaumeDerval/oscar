@@ -86,7 +86,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
   def computeVehicleValueFromScratch(vehicle : Long, routes : IntSequence):U
 
   override def notifySeqChanges(v: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
-    println(changes)
     digestUpdates(changes) match{
       case None => for (vehicle <- vehicles){
         assignVehicleValue(vehicle,computeVehicleValueFromScratch(vehicle,routes.value))
@@ -98,7 +97,6 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
       case Some(x) =>
         changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
           val segments = x(vehicle).segments
-          println(segments.toList)
           vehicleValues(vehicle) = computeVehicleValue(vehicle, segments, routes.newValue, preComputedValues)
           assignVehicleValue(vehicle, vehicleValues(vehicle))
         })
@@ -116,6 +114,8 @@ abstract class GlobalConstraintDefinitionV2 [T : Manifest, U:Manifest](routes: C
           changedVehiclesSinceCheckpoint0.indicesAtTrue.foreach(vehicle => {
             performPreCompute(vehicle,newRoute,preComputedValues)
             vehicleValuesAtLevel0(vehicle) = vehicleValues(vehicle)
+            if(prevUpdateSegments.nonEmpty)
+              prevUpdateSegments.get(vehicle) = initSegmentsOfVehicle(vehicle,newRoute)
           })
           changedVehiclesSinceCheckpoint0.all_=(false)
 
