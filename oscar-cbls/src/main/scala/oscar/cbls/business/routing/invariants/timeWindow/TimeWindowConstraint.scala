@@ -107,6 +107,13 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
                             val violations: Array[CBLSIntVar]
                            ) extends GlobalConstraintDefinitionV2[Array[TransferFunction], Boolean](routes, v) with SeqNotificationTarget {
 
+  var preComputeTime = 0L
+  var preComputeCount = 0
+  var computeValueTime = 0L
+  var computeValueCount = 0
+  var assignTime = 0L
+  var assignCount = 0
+
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
       DefinedTransferFunction(
@@ -190,6 +197,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     */
   override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Unit = {
 
+    val start = System.nanoTime()
     def performPreComputeForNode(node: Long, prevNode: Long, route: QList[Long], lastTF: TransferFunction): Unit ={
       if(route != null) {
         val curNode = route.head
@@ -227,6 +235,9 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
     performPreComputeOnRoute(route)
     performPreComputeOnRoute(route.reverse)
+
+    preComputeTime += System.nanoTime() - start
+    preComputeCount += 1
   }
 
   /**
@@ -240,6 +251,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @return the value associated with the vehicle
     */
   override def computeVehicleValue(vehicle: Long, segments: QList[Segment[Array[TransferFunction]]], routes: IntSequence, preComputedVals: Array[Array[TransferFunction]]): Boolean = {
+    val start = System.nanoTime()
     /**
       * @param segments The list of segment
       * @param prevLeavingTime The leave time at previous segment (0L if first one)
@@ -260,6 +272,8 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     }
     //println("Using : " + preComputedVals.map(x => x.mkString(", ")).mkString("\n"))
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
+    computeValueTime += System.nanoTime() - start
+    computeValueCount += 1
     arrivalTimeAtDepot < 0L || arrivalTimeAtDepot > latestLeavingTime(vehicle)
   }
 
@@ -272,7 +286,10 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * @param value   the value of the vehicle
     */
   override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    val start = System.nanoTime()
     if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
+    assignTime += System.nanoTime() - start
+    assignCount += 1
   }
 
   /**

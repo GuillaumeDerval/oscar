@@ -33,9 +33,14 @@ object VRPWithOnlyTimeWindow extends App {
                   case 2 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run2(best)
                   case 3 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run3(best)
                 }).
-                foldLeft(Array[Long](0,0,0,0,0,0,0,0,0,0,0))((acc,item) =>
-                  Array(acc(0) + item._1,acc(1) + item._2)).toList.map(_/iterations)
+                foldLeft(Array[Long](0,0,0,0,0,0,0,0,0,0))((acc,item) =>
+                  Array(acc(0) + item._1,acc(1) + item._2,
+                    acc(2) + item._3,acc(3) + item._4,
+                    acc(4) + item._5,acc(5) + item._6,
+                    acc(6) + item._7,acc(7) + item._8,
+                    acc(8) + item._9,acc(9) + item._10)).toList.map(_/iterations)
               println("Average quality : " + res.head + "\nAverage duration (ms) : " + res(1) + "\n")
+              //println("" + res(1) + ";" + res(2) + ";" + res(4) + ";" + res(6) + ";" + res(8))
             }
           }
         }
@@ -44,20 +49,20 @@ object VRPWithOnlyTimeWindow extends App {
   }
 
   // 0 == old constraint, 1 == New TimeWindow constraint, 2 == New TimeWindow constraint with log reduction
-  val timeWindowConstraints = List(1,2)
+  val timeWindowConstraints = List(1)
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2)
+  val procedures = List(3)
   // The variations of n values
-  val ns_1 = List(100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L)
+  val ns_1 = List(/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, */1000L)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
   val vs_2 = List(5L, 10L, 20L, 50L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 10
+  val iterations = 1
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
@@ -192,34 +197,46 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     selectFlipBehavior = if(best) Best() else First())
 
   // Simple InsertPoint procedure
-  def run1(best: Boolean): (Long,Long) ={
+  def run1(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best)
-    //search.verbose = 1
+    //search.verbose = 2
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration)
+    (obj.value, duration,
+      globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+      globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+      globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
   }
 
   // Simple InsertPoint exhaust OnePoitnMove procedure
-  def run2(best: Boolean): (Long,Long) ={
+  def run2(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best) exhaust onePtMove(best)
     //search.verbose = 2
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration)
+    (obj.value, duration,
+      globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+      globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+      globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
   }
 
   // Simple InsertPoint exhaust ThreeOpt procedure
-  def run3(best: Boolean): (Long,Long) ={
+  def run3(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best) exhaust threeOptMove(best)
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration)
+    (obj.value, duration,
+      globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+      globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+      globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
   }
 }
