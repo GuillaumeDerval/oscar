@@ -4,49 +4,54 @@ import oscar.cp.CPIntVar
 import oscar.cp._
 import oscar.util.IncrementalStatistics
 import scala.util.Random
+import oscar.cp.heuristics.HelperFunctions._
 
-class ActivityBasedSearch(variables: Array[CPIntVar], decay:Double) {
+class ActivityBasedSearch(variables: Array[CPIntVar], decay:Double=0.999) {
 
   private[this] val nVars = variables.length
   private[this] val activity = Array.fill(nVars)(0.0)
   private[this] val stats = Array.fill(nVars)(new IncrementalStatistics)
   private[this] val rand = new Random(42)
   private[this] val indices = Array.tabulate(nVars)(i => i)
-  private[this] val context = variables(0).context
   private[this] val activityOverDom = Array.fill(nVars)(0.0)
   private[this] var absMin = Double.MaxValue
   private[this] var absMax = Double.MinValue
   private[this] val domSize = Array.tabulate(nVars)(i => variables(i).getSize)
-  private[this] val studentDistribution = new StudentDistribution
-  private[this] val node = variables(0).store
 
-  node.onPush {
 
-    absMin = Double.MaxValue
-    absMax = Double.MinValue
+  if(variables.nonEmpty) {
 
-    for(i <- variables.indices) {
+    val node = variables(0).store
 
-      if(variables(i).getSize < domSize(i)) {
-        activity(i) += 1
+    node.onPush {
+
+      absMin = Double.MaxValue
+      absMax = Double.MinValue
+
+      for(i <- variables.indices) {
+
+        if(variables(i).getSize < domSize(i)) {
+          activity(i) += 1
+        }
+        else if (!variables(i).isBound) {
+          activity(i) *= decay
+        }
+
+        activityOverDom(i) = activity(i)/variables(i).getSize
+        if(activityOverDom(i) < absMin) absMin = activityOverDom(i)
+        if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
+        domSize(i) = variables(i).getSize
       }
-      else if (!variables(i).isBound) {
-        activity(i) *= decay
-      }
-
-      activityOverDom(i) = activity(i)/variables(i).getSize
-      if(activityOverDom(i) < absMin) absMin = activityOverDom(i)
-      else if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
-      domSize(i) = variables(i).getSize
     }
 
-  }
-
-  node.onPop {
-    for(i <- variables.indices) {
-      domSize(i) = variables(i).getSize
+    node.onPop {
+      for(i <- variables.indices) {
+        domSize(i) = variables(i).getSize
+      }
     }
   }
+
+
 
 
 
@@ -67,22 +72,22 @@ class ActivityBasedSearch(variables: Array[CPIntVar], decay:Double) {
       activity(i) = stats(i).average
       activityOverDom(i) = activity(i)/variables(i).getSize
       if(activityOverDom(i) < absMin) absMin = activityOverDom(i)
-      else if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
+      if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
     }
   }
 
   private[this] def probe(valH:Int => Int):Unit = {
-    context.pushState()
+    variables(0).context.pushState()
     val shuffled = rand.shuffle(indices.toSeq)
     var i = 0
-    while (i < nVars && !context.isFailed) {
+    while (i < nVars && !variables(0).context.isFailed) {
       val x = variables(shuffled(i))
-      if (!x.isBound && !isInconsistent(context.assign(x, valH(shuffled(i)))) && !context.isFailed) {
+      if (!x.isBound && !isInconsistent(variables(0).context.assign(x, valH(shuffled(i)))) && !variables(0).context.isFailed) {
         updateValues()
       }
       i += 1
     }
-    context.pop()
+    variables(0).context.pop()
   }
 
   private[this] def updateValues():Unit = {
@@ -110,11 +115,11 @@ class ActivityBasedSearch(variables: Array[CPIntVar], decay:Double) {
     }
     for(i <- variables.indices) {
       val stdDev = Math.sqrt(stats(i).variance / currentRound)
-      val lb = stats(i).average - studentDistribution.get(currentRound)*stdDev
-      val ub = stats(i).average + studentDistribution.get(currentRound)*stdDev
+      val lb = stats(i).average - student(currentRound)*stdDev
+      val ub = stats(i).average + student(currentRound)*stdDev
       if(lb < stats(i).average*(1-sig) || ub > stats(i).average*(1+sig)) return false
     }
-    return true
+    true
   }
 
 
@@ -126,20 +131,33 @@ class ActivityBasedSearch(variables: Array[CPIntVar], decay:Double) {
     activityOverDom(i)
   }
 
+  // returns the scaled value of activity/dom
   def getScaledActivity(i:Int): Double = {
-    (activityOverDom(i) - absMin) / (absMax - absMin)
+    val res = if (absMin == absMax) {
+      0
+    }
+    else {
+      (activityOverDom(i) - absMin) / (absMax - absMin)
+    }
+    // TODO: remove for the xcsp3 competition
+    if(res > 1 || res < 0) {
+      println("ERROR -> ABS not in range [0, 1]")
+      println("abs: " + activityOverDom(i))
+      println("absMin : " + absMin)
+      println("obsMax : " + absMax)
+    }
+    res
   }
 
+  // set the activity values from another array
   def setActivity(values:Array[Double]): Unit = {
-
     absMin = Double.MaxValue
     absMax = Double.MinValue
-
     for(i <- values.indices) {
       activity(i) = values(i)
       activityOverDom(i) = activity(i)/variables(i).getSize
       if(activityOverDom(i) < absMin) absMin = activityOverDom(i)
-      else if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
+      if(activityOverDom(i) > absMax) absMax = activityOverDom(i)
     }
   }
 

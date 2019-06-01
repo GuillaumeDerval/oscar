@@ -1,20 +1,38 @@
 package oscar.cp.heuristics
-
 import oscar.cp.CPIntVar
+import oscar.cp.constraints.DiffVal
 
-trait PhaseSaving {
-  def updateSolution(): Unit
-  def selectValue(i:Int):Int
-}
 
-class SolBasedPhaseSaving(variables: Array[CPIntVar], fallBack: Int => Int) extends PhaseSaving {
+class SolBasedPhaseSaving(variables: Array[CPIntVar], isMin:Boolean, fallBack: Int => Int, landscape: (Int, Int) => Int) {
 
   private[this] val solValues = Array.ofDim[Int](variables.length)
 
   // updates the current best solution
   def updateSolution(): Unit = {
+
     for(i <- variables.indices) {
       solValues(i) = variables(i).getMin
+    }
+  }
+
+  def addConstraints(): Unit = {
+
+    for(i <- variables.indices) {
+      val solLandscapeValue = landscape(i, solValues(i))
+      val values = Array.ofDim[Int](variables(i).getSize)
+      variables(i).fillArray(values)
+      for(v <- values) {
+        if(isMin) {
+          if(landscape(i, v) > solLandscapeValue) {
+            variables(0).store.post(new DiffVal(variables(i), v))
+          }
+        }
+        else {
+          if(landscape(i, v) < solLandscapeValue) {
+            variables(0).store.post(new DiffVal(variables(i), v))
+          }
+        }
+      }
     }
   }
 

@@ -34,6 +34,11 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   implicit val implModelDeclaration = modelDeclaration
   val varHashMap = collection.mutable.LinkedHashMap[String, IntExpression]() //automagically maintains the order of insertion
   val decisionVars = collection.mutable.LinkedHashSet[String]() //Decision vars ids
+  val nConstraint = Map[String, Int]()
+
+
+
+
 
   val impl = new Implem(this)
 
@@ -54,7 +59,7 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_UNARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_BINARY_PRIMITIVES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZE_TERNARY_PRIMITIVES, new Object)
-//  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
+  //  impl.currParameters.put(XCallbacksParameters.RECOGNIZE_NVALUES_CASES, new Object)
   impl.currParameters.put(XCallbacksParameters.RECOGNIZING_BEFORE_CONVERTING, java.lang.Boolean.TRUE)
   impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_ARITY_LIMIT, 0: java.lang.Integer) // included
   impl.currParameters.put(XCallbacksParameters.CONVERT_INTENSION_TO_EXTENSION_SPACE_LIMIT, 0L: java.lang.Long) // included
@@ -355,8 +360,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
         val tempVar = IntVar(thenMember.values().toSet ++ elseMember.values().toSet, "")
 
         //Linking expression:
-//        modelDeclaration.add(cond.asInstanceOf[BoolExpression] ==> (tempVar === thenMember))
-//        modelDeclaration.add((!cond).asInstanceOf[BoolExpression] ==> (tempVar === elseMember))
+        //        modelDeclaration.add(cond.asInstanceOf[BoolExpression] ==> (tempVar === thenMember))
+        //        modelDeclaration.add((!cond).asInstanceOf[BoolExpression] ==> (tempVar === elseMember))
         val array = Array(elseMember, thenMember)
         modelDeclaration.add(array(cond) === tempVar)
 
@@ -917,6 +922,8 @@ private class XCSP3Parser2(modelDeclaration: ModelDeclaration, filename: String)
 
   override def buildObjToMaximize(id: String, syntaxTreeRoot: XNodeParent[XVarInteger]): Unit = {
     modelDeclaration.maximize(_recursiveIntentionBuilder(syntaxTreeRoot).reify())
+
+
   }
 
   override def buildAnnotationDecision(list: Array[XVarInteger]): Unit = {
@@ -945,6 +952,7 @@ object XCSP3Parser2 {
   def parse(modelDeclarator: ModelDeclaration, filename: String): (Array[IntVar], () => String) = {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
     val vars = parser.varHashMap.values.map(i => i.asInstanceOf[IntVar]).toArray
+
     (vars, () => parser.generateInstantiationWithSymbolic(vars.map(x => x.name), vars.map(x => x.evaluate())))
   }
 
@@ -958,6 +966,8 @@ object XCSP3Parser2 {
     */
   def parse2(modelDeclarator: ModelDeclaration, filename: String): (Array[IntVar], Array[IntVar], () => String) = {
     val parser = new XCSP3Parser2(modelDeclarator, filename)
+
+
     val decision = parser.varHashMap.keys.filter(parser.decisionVars.contains).map(i => parser.varHashMap(i).asInstanceOf[IntVar]).toArray
     val auxiliary = parser.varHashMap.keys.filterNot(parser.decisionVars.contains).map(i => parser.varHashMap(i).asInstanceOf[IntVar]).toArray
     val vars = decision ++ auxiliary
@@ -1034,9 +1044,9 @@ object RunEverything extends CPApp[String] with App {
     .filter(_.isDirectory)
     .map(f => (f.getName, f))
     .flatMap(x => getFolderContent(x._2.getAbsolutePath).filter(_.isDirectory).map(f => (x._1+"/"+f.getName, f)))
-      .flatMap(x => {
-        getFolderContent(x._2.getAbsolutePath).filter(_.getName.endsWith(".lzma")).map(f => (x._1, f.getName, f.getAbsolutePath))
-      })
+    .flatMap(x => {
+      getFolderContent(x._2.getAbsolutePath).filter(_.getName.endsWith(".lzma")).map(f => (x._1, f.getName, f.getAbsolutePath))
+    })
 
   val working = scala.collection.mutable.MutableList[String]()
   val notworking = scala.collection.mutable.MutableList[String]()

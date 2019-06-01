@@ -4,67 +4,74 @@ import oscar.cp.CPIntVar
 import oscar.cp.core.CPSolver
 import oscar.cp._
 
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+
 
 /** Bound-Impact Value Selector from "Making the first solution good!"
   *
   * @param cp         The  cp solver
   * @param variables  The variables on which the value heuristic is applied
-  * @param maxDomSize If the size of the domain of a variable exceeds this number, only the bounds are considered
+  * @param maxDomSize Limits the number of values that are considered during the selection process, by default 50
+  * @param tiebreaker A secondary value heuristic that can be used as a tiebreaker, by default no tiebreaker is used
   * @author           Yannick Goulleven : yannick.goulleven@student.uclouvain.be
   */
-class BoundImpactValueSelector(cp: CPSolver, variables: Array[CPIntVar], maxDomSize: Int= 30) {
+class BoundImpactValueSelector(cp: CPSolver, variables: Array[CPIntVar], maxDomSize: Int= 50, tiebreaker: (Int, Int) => Int = (i, j) => Integer.MAX_VALUE) {
 
   private[this] val isMinimization:Boolean = cp.objective.objs.head.isMin
-  private[this] val context = variables(0).context
   private[this] val threshold = maxDomSize
-  private[this] val isDecisionVars = Array.fill(variables.length)(false)
-  private[this] val domB = cp.objective.objs.head.domBest
+  private[this] val rand = new Random(42)
 
   def selectValue(i: Int): Int = {
 
     var bestBound = bound(i, variables(i).getMin)
     var bestValue = variables(i).getMin
+    var tieBreakScore = Integer.MAX_VALUE
+    var candidates = ArrayBuffer[Int]()
 
-    // select maxDomsize variables randonly
-    if(variables(i).getSize > threshold) {
-      val b = bound(i, variables(i).getMax)
-      if(b < bestBound) {
-        bestValue = variables(i).getMax
+    val values = new Array[Int](variables(i).getSize)
+    variables(i).fillArray(values)
+
+    val vSeq = values.toSeq
+    val shuffled = rand.shuffle(vSeq)
+    val maxCount = if(values.length > threshold) threshold else values.length
+
+    for(j <- 0 until maxCount) {
+      val x = shuffled(j)
+      val b = bound(i, x)
+      if (b < bestBound) {
+        bestValue = x
         bestBound = b
+        tieBreakScore = tiebreaker(i, x)
+        candidates = ArrayBuffer[Int](x)
       }
-    }
-    else {
-      val values = new Array[Int](variables(i).getSize)
-      variables(i).fillArray(values)
-
-      for(x <- values) {
-        val b = bound(i, x)
-        if(b < bestBound) {
+      else if (b == bestBound) {
+        if(tiebreaker(i, x) < tieBreakScore) {
           bestValue = x
-          bestBound = b
+          candidates = ArrayBuffer[Int](x)
+          tieBreakScore = tiebreaker(i, x)
+        }
+        else if(tiebreaker(i, x) == tieBreakScore) {
+          candidates += x
         }
       }
     }
-    bestValue
+    candidates(rand.nextInt(candidates.length))
   }
 
-  def isDecisionVar:Array[Boolean] = {
-    isDecisionVars
-  }
 
   private def bound(i: Int, x: Int): Int = {
-    context.pushState()
-    val out = isInconsistent(context.assign(variables(i), x))
+    variables(0).context.pushState()
+    val out = isInconsistent(variables(0).context.assign(variables(i), x))
     val ret = if(!out) {
       val db = cp.objective.objs.head.domBest
-      if(db != domB) isDecisionVars(i) = true
       if(isMinimization) db
       else -db
     }
     else {
       Integer.MAX_VALUE
     }
-    context.pop()
+    variables(0).context.pop()
     ret
   }
 }

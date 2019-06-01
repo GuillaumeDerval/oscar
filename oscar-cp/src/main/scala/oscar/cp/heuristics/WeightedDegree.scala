@@ -5,7 +5,6 @@ import oscar.cp.core.variables.{CPIntVar, CPVar}
 
 class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
 
-  // WDEG
   private[this] val nVariables = variables.length
   private[this] val degree:Array[Double] = Array.tabulate(nVariables)(i => variables(i).constraintDegree)
   private[this] val map = variables.zipWithIndex.map(y => (y._1.asInstanceOf[CPVar], y._2)).toMap
@@ -18,9 +17,7 @@ class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
     else if(degree(i) > max) max = degree(i)
   }
 
-
-  cp.onFailure(onFailure())
-
+  cp.onFailure(this.onFailure())
 
   private def onFailure():Unit = {
     min = Double.MaxValue
@@ -54,7 +51,14 @@ class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
   }
 
   def getScaledDegree(i:Int):Double = {
-    (degree(i)) - min / (max - min)
+
+    val res = if (min == max) {
+      0
+    }
+    else {
+      (degree(i) - min) / (max - min)
+    }
+    res
   }
 
 }

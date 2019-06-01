@@ -63,7 +63,9 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
   final def clearOnFailure(): Unit = failureActions = Nil
 
   @inline private def expand(branching: NogoodBranching): Boolean = {
+
     val decision = branching.nextDecision
+
     if (decision == null) false
     else {
       val decisions = Iterator(decision, !decision)
@@ -102,15 +104,23 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
     while (!decisionsStack.isEmpty && !stopCondition(this)) {
 
 
+
       nbNodes += 1
 
       val decisions = decisionsStack.top
+
+
       val decision = decisions.next()
+
+
 
       val isLast = !decisions.hasNext
 
+
+
       if (!isLast) store.pushState()
       else decisionsStack.pop() // no more alternative in the sequence
+
 
       try {
         decision() // apply the alternative
@@ -119,12 +129,18 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
         case _: Inconsistency => fail()
       }
 
+
+
       branch.push((decision, !isLast))
 
 
       if (!store.isFailed) {
+
+
         val isExpandable = expand(branching)
+
         if (!isExpandable) {
+
           store.solFound()
           solutionActions.foreach(_())
           nbSols += 1

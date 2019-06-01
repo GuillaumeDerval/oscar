@@ -55,6 +55,34 @@ abstract class COSSolver extends CompetitionApp with App{
       val vars = decisionVars ++ auxiliaryVars
       solver.silent = true
 
+      var bestScore = 0
+      var bestId = ""
+      var degree = 0
+      var currentId = ""
+      var domSize = 0
+
+      for(v <- vars) {
+
+        val subId = v.name.split("\\[")(0)
+        if(subId != currentId) {
+          if(domSize > 0 && degree/domSize > bestScore) {
+            bestScore = degree/domSize
+            bestId = currentId
+          }
+          degree = 0
+          domSize = 0
+        }
+        currentId = subId
+        degree += v.constraintDegree
+        domSize += 1
+      }
+
+      val decVars = vars.filter(v => v.name.contains(bestId))
+      val auxVars = vars.filterNot(v => v.name.contains(bestId))
+
+
+
+
       val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime: Long = System.nanoTime() + timeout
 
@@ -71,17 +99,30 @@ abstract class COSSolver extends CompetitionApp with App{
         sols += ((sol, instantiation))
       }
 
-      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
+      val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || sols.nonEmpty || optimumFound
+      //val stopCondition = (_: DFSearch) => System.nanoTime() >= endTime || optimumFound
 
       printComment("Parsing done, starting search...")
+      printComment("instance: " + args(0))
 
-      val stats = startSearch(solver, stopCondition, decisionVars, auxiliaryVars, maximizeObjective)
+      if(auxVars.isEmpty) {
+        printComment("No auxiliary Vars")
+      }
+      else {
+        println("decision vars:")
+        for(v <- decVars) {
+          print(v.name +  ", ")
+        }
+      }
+
+      val stats = startSearch(solver, stopCondition, decVars, auxVars, maximizeObjective)
 
       if (sols.nonEmpty){
         if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
       else if (stats.completed) status = "UNSATISFIABLE"
       else printDiagnostic("NO_SOL_FOUND")
+      println(stats.nFails)
       printStatus()
     }
   }

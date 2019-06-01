@@ -1,106 +1,89 @@
 package oscar.cp.heuristics
-
 import oscar.algo.Inconsistency
-import oscar.cp.constraints.LeEq
+import oscar.cp.constraints.{GrEq, LeEq}
 import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.CPIntVar
-
 import util.control.Breaks._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 
-
-
+// Objective Landscapes from "Objective Landscapes for Constraint Programming"
 class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
 
-  private[this] val isDecision = Array.fill(variables.length)(false)
-
-  private[this] val size = variables.length
+  private[this] val nPoints = 100
   private[this] val isMin = solver.objective.objs.head.isMin
   private[this] val objVar = solver.objective.objs.head.objVar
+  private[this] val context = variables(0).context
+  private[this] val size = variables.length
   // lower bound of the objective function
   private[this] var Zl = if(isMin) solver.objective.objs.head.domBest else solver.objective.objs.head.domWorst
   // upper bound of the objective function
   private[this] val Zu = if(isMin)  solver.objective.objs.head.domWorst else solver.objective.objs.head.domBest
-
-  var sum = 0
-  for(i <- variables.indices) {
-    sum += variables(i).getSize
-  }
-
-  var k = Zl
-  breakable {
-    while(k < Zu) {
-      try {
-        solver.pushState()
-        solver.post(new LeEq(objVar, k))
-        solver.pop()
-        break
-      }
-      catch {
-        case _: Inconsistency =>
-          solver.pop()
-          k += 1
-      }
-    }
-  }
-  Zl = k
-
-  private[this] var Zj = getZValues()
-
-
-  // number of points computed for the landscape
-  private[this] var nPoints = Zj.length
-  // lower bounds of variables for a given propagation
-  private[this] val Xl = Array.ofDim[Int](size, nPoints)
-  // upper bounds of the variables for a given propagation
-  private[this] val Xu = Array.ofDim[Int](size, nPoints)
-
-  // objective landscape
+  // sequence of zj values
+  private[this] val points:Array[Int] = getPoints
+  // lower and upper points or variables when f(x) <= zj is propagated
+  private[this] val Xl = Array.ofDim[Int](size, points.length)
+  private[this] val Xu = Array.ofDim[Int](size, points.length)
+  // objective landscape function
   private[this] val L = Array.ofDim[Map[Int, Int]](size)
   for(i <- variables.indices) {
     L(i) = Map.empty[Int, Int]
   }
 
 
-  // objective landscape basic computation
-  var j = 0
-  while(j < Zj.length) {
-    solver.pushState()
-    for (i <- variables.indices) {
-      solver.post(new LeEq(objVar, Zj(j)))
-      Xl(i)(j) = variables(i).getMin
-      Xu(i)(j) = variables(i).getMax
+  // objective landscape preliminary computation
+  // compute Xl and Xu for all values  zj such that f(x) <= z does not fail
+  if(isMin) {
+    context.pushState()
+    for(j <- points.indices) {
+
+      solver.post(new LeEq(objVar, points(j)))
+      for(i <- variables.indices) {
+        Xl(i)(j) = variables(i).getMin
+        Xu(i)(j) = variables(i).getMax
+      }
     }
-    j += 1
+    context.pop()
   }
+  else {
+    context.pushState()
+    for(j <- points.indices) {
+
+      solver.post(new GrEq(objVar, points(j)))
+      for(i <- variables.indices) {
+        Xl(i)(j) = variables(i).getMin
+        Xu(i)(j) = variables(i).getMax
+      }
+    }
+    context.pop()
+  }
+
+
+
+
 
   // objective landscape final computation
   for(i <- variables.indices) {
     val values = Array.ofDim[Int](variables(i).getSize)
     variables(i).fillArray(values)
     for(v <- values) {
-      if(v >= Xl(i)(Zj.length-1) && v <= Xu(i)(nPoints - 1)) {
-        L(i) += (v -> Zl)
+      if(v >= Xl(i)(points.length-1) && v <= Xu(i)(points.length-1)) {
+        L(i) += (v -> points(points.length-1))
       }
-      else if( v < Xl(i)(nPoints-1)) {
-        println("XXXXXX")
-        isDecision(i) = true
+      else if( v < Xl(i)(points.length-1)) {
         breakable {
-          for (j <- nPoints - 1 to 0 by -1) {
+          for (j <- points.length-1 to 0 by -1) {
             if (Xl(i)(j) <= v) {
-              L(i) += (v -> Zj(j))
+              L(i) += (v -> points(j))
               break
             }
           }
         }
       }
-      else if(v > Xu(i)(nPoints -1)) {
-        println("XXXXXX")
-        isDecision(i) = true
+      else if(v > Xu(i)(points.length-1)) {
         breakable {
-          for (j <- nPoints - 1 to 0 by -1) {
+          for (j <- points.length-1 to 0 by -1) {
             if (Xu(i)(j) >= v) {
-              L(i) += (v -> Zj(j))
+              L(i) += (v -> points(j))
               break
             }
           }
@@ -109,36 +92,77 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
     }
   }
 
-  private def getZValues(): List[Int] = {
-    var ret = ListBuffer[Int]()
-    var j = 1
-    var zj = ((Zu - Zl) / scala.math.pow(2,j-1)).toInt + Zl
-    while(zj != Zl) {
-      ret += zj
-      j += 1
-      zj = ((Zu - Zl) / scala.math.pow(2,j-1)).toInt + Zl
-    }
-    ret += Zl
-    ret.toList
-  }
 
-  def selectValue(i:Int):Int = {
-    val m = L(i)
-    val tmp = Array.ofDim[Int](variables(i).getSize)
-    var lowest = Int.MaxValue
-    var bestV = 0
-    for(v <- tmp) {
-      val g = m.getOrElse(v, Int.MaxValue)
-      if(g < lowest) {
-        bestV = v
-        lowest = g
+
+
+
+
+  // computes the sequence of points zj
+  private def getPoints: Array[Int] = {
+    var j = 2
+    val values = ArrayBuffer[Int]()
+    context.pushState()
+
+    if(isMin) {
+      var zj = Zu
+
+      while(zj >= Zl && !context.isFailed && zj != 0) {
+
+        zj = ((Zu - Zl) / scala.math.pow(2, j-1)).toInt + Zl
+        try {
+          solver.post(new LeEq(objVar, zj))
+          values += zj
+        }
+        catch {
+          case _: Inconsistency =>
+            context.pop()
+            return values.toArray
+        }
+        j += 1
       }
     }
-    bestV
+    else {
+      var zj = Zl
+      j = 2
+      while(zj <= Zu && !context.isFailed && zj != Zu) {
+
+        zj = Math.abs(((Zu - Zl) / scala.math.pow(2, j-1)).toInt - Zu)
+
+        try {
+          solver.post(new GrEq(objVar, zj))
+          values += zj
+        }
+        catch {
+          case _: Inconsistency =>
+            context.pop()
+            return values.toArray
+        }
+        j += 1
+      }
+    }
+    context.pop()
+    values.toArray
   }
 
-  def getDecisionVars:Array[Boolean] = {
-    isDecision
+
+  // selects the value that optimizes the landscape value
+  def selectValue(i:Int): Int = {
+    val m = L(i)
+    var bestValue = variables(i).getMin
+    var bestScore = Integer.MAX_VALUE
+    for((key, value) <- m) {
+      val tmp = if(isMin) value else -value
+      if(tmp < bestScore) {
+        bestValue = key
+        bestScore = tmp
+      }
+    }
+    bestValue
   }
 
+  // returns the landscape score which has to be minimized
+  def getLandscapeScore(i:Int, v:Int): Int = {
+    val ret = L(i).getOrElse(v, Integer.MAX_VALUE)
+    if(isMin) ret else -ret
+  }
 }
