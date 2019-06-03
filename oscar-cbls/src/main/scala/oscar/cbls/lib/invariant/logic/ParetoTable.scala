@@ -1,6 +1,7 @@
 package oscar.cbls.lib.invariant.logic
 
 import oscar.cbls.IntValue
+import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.core.{IntInvariant, IntNotificationTarget}
 
@@ -17,6 +18,10 @@ class ParetoTable(variables:Array[IntValue],
 
   registerStaticAndDynamicDependencyArrayIndex(variables)
   this.finishInitialization()
+
+
+  val smallestAmongAllRows = Array.tabulate(d)(i => tables.map(row => row(i)).min)
+  val dimensionList = QList.buildFromIterable(0 until d)
 
   var exploreFrom:Int = -1
   override def notifyIntChanged(v: ChangingIntValue, id: Int, oldVal: Long, newVal: Long): Unit = {
@@ -55,18 +60,23 @@ class ParetoTable(variables:Array[IntValue],
 
   def searchFromScratchLin(v:Array[Long],staAt:Int):Int = {
     var i = staAt
+    //if the smallest is bigger or equal to the value, we do not need to check it.
+    //this is a speedup when there are many dimensions, with many zero's as we expect here.
+    val relevantDimensions:QList[Int] = QList.qFilter(dimensionList,i => smallestAmongAllRows(i) < v(i))
+
     while(i < t){
-      if(dominates(tables(i),v)) return i
+      if(dominates(tables(i),v,relevantDimensions)) return i
       i = i+1
     }
     -1
   }
 
-  def dominates(x:Array[Long],y:Array[Long]):Boolean = {
-    var d = this.d
-    while(d != 0){
-      if(x(d) < y(d)) return false
-      d = d-1
+  def dominates(x:Array[Long],y:Array[Long],relevantDimensions:QList[Int]):Boolean = {
+    var d = relevantDimensions
+    while(d != null){
+      val i = d.head
+      if(x(i) < y(i)) return false
+      d = d.tail
     }
     true
   }

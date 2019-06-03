@@ -66,6 +66,23 @@ object QList{
     acc
   }
 
+  def qFilterNoFlip[T](q:QList[T],fun:T => Boolean):QList[T] = {
+    if(q == null) null
+    else if(fun(q.head)) QList(q.head,qFilterNoFlip(q.tail,fun))
+    else qFilterNoFlip(q.tail,fun)
+  }
+
+  def qFilter[T](q:QList[T],fun:T => Boolean):QList[T] = {
+    var toReturn:QList[T] = null
+    var toEat = q
+    while(toEat != null){
+      val i = toEat.head
+      toEat = toEat.tail
+      if(fun(i)) toReturn = QList(i,toReturn)
+    }
+    toReturn
+  }
+
   def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
     if(q == null) null
     else q.qMap(fun)
