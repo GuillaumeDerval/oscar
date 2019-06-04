@@ -5,20 +5,20 @@ import oscar.cbls.algo.quick.QList
 import oscar.cbls.core.computation.ChangingIntValue
 import oscar.cbls.core.{IntInvariant, IntNotificationTarget}
 
-//the output is the first indice i in the table such tat for each j, table(i)(j) >= variables(j)
+
+
+//the output is the first indice i in the table such that for each j, table(i)(j) >= variables(j)
 //default if no such line exist
-class ParetoTable(variables:Array[IntValue],
-                  tables:Array[Array[Long]],
+class ParetoTable(val variables:Array[IntValue],
+                  tables:Array[Array[Long]], //should be incomparable rows otherwise it is pointless
                   defaultIfNoDominate:Long)
-  extends IntInvariant
-    with IntNotificationTarget{
+  extends IntInvariant with IntNotificationTarget{
   val t = tables.length
   val d = variables.length
   for(t <- tables) require(t.length == d)
 
   registerStaticAndDynamicDependencyArrayIndex(variables)
   this.finishInitialization()
-
 
   val smallestAmongAllRows = Array.tabulate(d)(i => tables.map(row => row(i)).min)
   val dimensionList = QList.buildFromIterable(0 until d)
