@@ -35,7 +35,12 @@ class ObjectiveBasedSelector(solver:CPSolver, variables: Array[CPIntVar], alpha:
       for (i <- variables.indices) {
         if (variables(i).getSize < domSize(i) && variables(i).isBound) {
           val dO = alpha * math.abs(prevLb - lb) + beta * math.abs(prevUb - ub)
-          deltaO(i) = deltaO(i) * (1 - gamma) + gamma * dO
+          if(deltaO(i) == Double.MinValue) {
+            deltaO(i) = dO
+          }
+          else {
+            deltaO(i) = deltaO(i) * (1 - gamma) + gamma * dO
+          }
         }
         if (deltaO(i) < obsMin) obsMin = deltaO(i)
         if (deltaO(i) > obsMax) obsMax = deltaO(i)

@@ -15,7 +15,7 @@ import scala.util.Random
   * @param maxDomSize Limits the number of values that are considered during the selection process, by default 50
   * @author           Yannick Goulleven : yannick.goulleven@student.uclouvain.be
   */
-class BoundImpactValueSelector(cp: CPSolver, variables: Array[CPIntVar], maxDomSize: Int= 20) {
+class NewBIVS2(cp: CPSolver, variables: Array[CPIntVar], maxDomSize: Int= 20) {
 
   private[this] val isMinimization:Boolean = cp.objective.objs.head.isMin
   private[this] val threshold = maxDomSize
@@ -52,9 +52,14 @@ class BoundImpactValueSelector(cp: CPSolver, variables: Array[CPIntVar], maxDomS
     variables(0).context.pushState()
     val out = isInconsistent(variables(0).context.assign(variables(i), x))
     val ret = if(!out) {
-      val db = cp.objective.objs.head.domBest
-      if(isMinimization) db
-      else -db
+      val newDw = cp.objective.objs.head.domWorst
+      val newDb = cp.objective.objs.head.domBest
+      if (isMinimization) {
+        newDb + newDw
+      }
+      else {
+          -newDb - newDw
+      }
     }
     else {
       Integer.MAX_VALUE

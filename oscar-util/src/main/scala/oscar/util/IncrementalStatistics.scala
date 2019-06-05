@@ -40,7 +40,9 @@ class IncrementalStatistics {
     }
     s2 += x*x
   }
-  
+
+  def Npoints: Int = n
+
   def sum: Double = s
   
   def average: Double = sum/n

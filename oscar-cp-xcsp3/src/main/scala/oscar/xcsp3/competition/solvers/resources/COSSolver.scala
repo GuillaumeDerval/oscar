@@ -21,7 +21,7 @@ abstract class COSSolver extends CompetitionApp with App{
     val md = new ModelDeclaration
 
     //Parsing the instance
-    printComment("Parsing instance...")
+    printComment("Parsing instance " + args(0))
     val parsingResult = try {
       val (decisionVars, auxiliaryVars, solutionGenerator) = XCSP3Parser2.parse2(md, conf.benchname())
 
@@ -55,33 +55,6 @@ abstract class COSSolver extends CompetitionApp with App{
       val vars = decisionVars ++ auxiliaryVars
       solver.silent = true
 
-      var bestScore = 0
-      var bestId = ""
-      var degree = 0
-      var currentId = ""
-      var domSize = 0
-
-      for(v <- vars) {
-
-        val subId = v.name.split("\\[")(0)
-        if(subId != currentId) {
-          if(domSize > 0 && degree/domSize > bestScore) {
-            bestScore = degree/domSize
-            bestId = currentId
-          }
-          degree = 0
-          domSize = 0
-        }
-        currentId = subId
-        degree += v.constraintDegree
-        domSize += 1
-      }
-
-      val decVars = vars.filter(v => v.name.contains(bestId))
-      val auxVars = vars.filterNot(v => v.name.contains(bestId))
-
-
-
 
       val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime: Long = System.nanoTime() + timeout
@@ -92,6 +65,10 @@ abstract class COSSolver extends CompetitionApp with App{
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
       solver.onSolution {
         val time = System.nanoTime() - startTime
+
+        val toPrint = time.toDouble / 1000000000.0
+        println("found a solution after " + toPrint + " seconds")
+
         val sol = new CPIntSol(vars.map(_.value), if(maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         val instantiation = solutionGenerator()
         optimumFound = if(maximizeObjective.isDefined) solver.objective.isOptimum() else true //In case of CSP, no point of searching another solution
@@ -105,24 +82,24 @@ abstract class COSSolver extends CompetitionApp with App{
       printComment("Parsing done, starting search...")
       printComment("instance: " + args(0))
 
-      if(auxVars.isEmpty) {
+      if(auxiliaryVars.isEmpty) {
         printComment("No auxiliary Vars")
       }
       else {
         println("decision vars:")
-        for(v <- decVars) {
+        for(v <- decisionVars) {
           print(v.name +  ", ")
         }
       }
+      println()
 
-      val stats = startSearch(solver, stopCondition, decVars, auxVars, maximizeObjective)
+      val stats = startSearch(solver, stopCondition, decisionVars, auxiliaryVars, maximizeObjective)
 
       if (sols.nonEmpty){
         if(maximizeObjective.isDefined && (optimumFound || stats.completed)) status = "OPTIMUM FOUND"
       }
       else if (stats.completed) status = "UNSATISFIABLE"
       else printDiagnostic("NO_SOL_FOUND")
-      println(stats.nFails)
       printStatus()
     }
   }

@@ -113,7 +113,6 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
       val decision = decisions.next()
 
 
-
       val isLast = !decisions.hasNext
 
 
@@ -167,6 +166,7 @@ class NogoodSearch(store: CPStore, nogoods: NogoodDB) {
       store.pop()
       i -= 1
     }
+
 
 
     store.pop()

@@ -28,73 +28,84 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
   for(i <- variables.indices) {
     L(i) = Map.empty[Int, Int]
   }
+  private[this] var empty = false
 
-
-  // objective landscape preliminary computation
-  // compute Xl and Xu for all values  zj such that f(x) <= z does not fail
-  if(isMin) {
-    context.pushState()
-    for(j <- points.indices) {
-
-      solver.post(new LeEq(objVar, points(j)))
-      for(i <- variables.indices) {
-        Xl(i)(j) = variables(i).getMin
-        Xu(i)(j) = variables(i).getMax
-      }
-    }
-    context.pop()
+  if(Zu == Zl || points.isEmpty) {
+    empty = true
   }
-  else {
-    context.pushState()
-    for(j <- points.indices) {
+  else{
 
-      solver.post(new GrEq(objVar, points(j)))
-      for(i <- variables.indices) {
-        Xl(i)(j) = variables(i).getMin
-        Xu(i)(j) = variables(i).getMax
+    // objective landscape preliminary computation
+    // compute Xl and Xu for all values  zj such that f(x) <= z does not fail
+    if(isMin) {
+      context.pushState()
+      for(j <- points.indices) {
+
+        solver.post(new LeEq(objVar, points(j)))
+        for(i <- variables.indices) {
+          Xl(i)(j) = variables(i).getMin
+          Xu(i)(j) = variables(i).getMax
+        }
       }
+      context.pop()
     }
-    context.pop()
-  }
+    else {
+      context.pushState()
+      for(j <- points.indices) {
 
-
-
-
-
-  // objective landscape final computation
-  for(i <- variables.indices) {
-    val values = Array.ofDim[Int](variables(i).getSize)
-    variables(i).fillArray(values)
-    for(v <- values) {
-      if(v >= Xl(i)(points.length-1) && v <= Xu(i)(points.length-1)) {
-        L(i) += (v -> points(points.length-1))
+        solver.post(new GrEq(objVar, points(j)))
+        for(i <- variables.indices) {
+          Xl(i)(j) = variables(i).getMin
+          Xu(i)(j) = variables(i).getMax
+        }
       }
-      else if( v < Xl(i)(points.length-1)) {
-        breakable {
-          for (j <- points.length-1 to 0 by -1) {
-            if (Xl(i)(j) <= v) {
-              L(i) += (v -> points(j))
-              break
+      context.pop()
+    }
+
+
+
+
+
+
+    // objective landscape final computation
+    for(i <- variables.indices) {
+      val values = Array.ofDim[Int](variables(i).getSize)
+      variables(i).fillArray(values)
+      for(v <- values) {
+        if(v >= Xl(i)(points.length-1) && v <= Xu(i)(points.length-1)) {
+          L(i) += (v -> points(points.length-1))
+        }
+        else if( v < Xl(i)(points.length-1)) {
+          breakable {
+            for (j <- points.length-1 to 0 by -1) {
+              if (Xl(i)(j) <= v) {
+                L(i) += (v -> points(j))
+                break
+              }
+            }
+          }
+        }
+        else if(v > Xu(i)(points.length-1)) {
+          breakable {
+            for (j <- points.length-1 to 0 by -1) {
+              if (Xu(i)(j) >= v) {
+                L(i) += (v -> points(j))
+                break
+              }
             }
           }
         }
       }
-      else if(v > Xu(i)(points.length-1)) {
-        breakable {
-          for (j <- points.length-1 to 0 by -1) {
-            if (Xu(i)(j) >= v) {
-              L(i) += (v -> points(j))
-              break
-            }
-          }
-        }
-      }
     }
+
+
+
   }
 
 
-
-
+  def isEmpty:Boolean = {
+    empty
+  }
 
 
   // computes the sequence of points zj
@@ -106,7 +117,7 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
     if(isMin) {
       var zj = Zu
 
-      while(zj >= Zl && !context.isFailed && zj != 0) {
+      while(zj > Zl && !context.isFailed) {
 
         zj = ((Zu - Zl) / scala.math.pow(2, j-1)).toInt + Zl
         try {
@@ -124,7 +135,7 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
     else {
       var zj = Zl
       j = 2
-      while(zj <= Zu && !context.isFailed && zj != Zu) {
+      while(zj < Zu && !context.isFailed) {
 
         zj = Math.abs(((Zu - Zl) / scala.math.pow(2, j-1)).toInt - Zu)
 

@@ -1,18 +1,18 @@
 package oscar.cp.heuristics
 
 import oscar.cp.core.CPSolver
-import oscar.cp.core.variables.{CPIntVar, CPVar}
+import oscar.cp.core.variables.{CPIntVar}
 import oscar.util.IncrementalStatistics
 import oscar.cp._
 import oscar.cp.heuristics.HelperFunctions._
 
 import scala.util.Random
 
-class InitHeuristics(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array[CPIntVar], valH: Int => Int, maxTime:Long, significance:Double) {
+class InitHeuristics2(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array[CPIntVar], valH: Int => Int, maxTime:Long, significance:Double) {
 
   private[this] val context = decisionVars(0).context
   private[this] val nDecVars = decisionVars.length
-  private[this] val domSize = Array.tabulate(vars.size)(i => vars(i).size)
+  private[this] val domSize = Array.tabulate(vars.length)(i => vars(i).size)
   private[this] val decIndices = Array.tabulate(nDecVars)(i => i).toSeq
   private[this] var round = 0
   private[this] val rand = new Random(42)
@@ -44,8 +44,14 @@ class InitHeuristics(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array
   }
 
   for(i <- vars.indices) {
+
     activity(i) = absStats(i).average
-    decDeltaO(i) = decObsStats(i).average
+    if(decObsStats(i).Npoints > 0) {
+      decDeltaO(i) = decObsStats(i).average
+    }
+    else {
+      decDeltaO(i) = Double.MinValue
+    }
   }
 
 
@@ -61,9 +67,8 @@ class InitHeuristics(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array
     var i = 0
     while(i < nDecVars && !context.isFailed) {
       val x = decisionVars(shuffled(i))
-      // && !isInconsistent(context.assign(x, valH(shuffled(i)))) && !context.isFailed
       if(!x.isBound && !isInconsistent(solver.assign(x, valH(shuffled(i)))) && !context.isFailed) {
-          updateDecisionFeatures()
+        updateDecisionFeatures()
       }
       current = System.nanoTime()
       if(current >= endTime) {
@@ -84,7 +89,7 @@ class InitHeuristics(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array
     for(i <- vars.indices) {
       if (vars(i).getSize < domSize(i)) {
         activity(i) += 1
-        if(vars(i).isBound) {
+        if(vars(i).isBound && (objLowerBound != objLB || objUB != objUpperBound)) {
           decDeltaO(i) = alpha*Math.abs(objLowerBound - objLB) + beta*Math.abs(objUpperBound - objUB)
         }
       }
@@ -99,7 +104,9 @@ class InitHeuristics(solver: CPSolver, decisionVars: Array[CPIntVar], vars:Array
     for(i <- vars.indices) {
       absStats(i).addPoint(activity(i))
       activity(i) = 0.0
-      decObsStats(i).addPoint(decDeltaO(i))
+      if(decDeltaO(i) != 0.0) {
+        decObsStats(i).addPoint(decDeltaO(i))
+      }
       decDeltaO(i) = 0.0
       domSize(i) = vars(i).getSize
     }

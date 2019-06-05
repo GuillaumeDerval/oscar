@@ -19,7 +19,7 @@ class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
 
   cp.onFailure(this.onFailure())
 
-  private def onFailure():Unit = {
+  def onFailure():Unit = {
     min = Double.MaxValue
     max = Double.MinValue
     for(i <- variables.indices) {
@@ -38,6 +38,10 @@ class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
 
   def getDomWeightedDegree(i:Int):Double = {
     variables(i).getSize.toDouble / degree(i)
+  }
+
+  def negativeWDEG(i:Int):Double = {
+    - variables(i).getSize.toDouble / degree(i)
   }
 
   def setDegree(values: Array[Double]):Unit = {

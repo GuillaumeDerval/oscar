@@ -19,7 +19,7 @@ object ConfOrderSolverWithRestarts extends COSSolver {
     val stopRestartCondition : DFSearch => Boolean = search => {
       val initialStop = stopCondition(search)
       if(initialStop)
-       globalStop = true
+        globalStop = true
 
       val stopRestart = restartTimeLimit < System.nanoTime() - initialTime
       initialStop || stopRestart || completed
@@ -27,32 +27,24 @@ object ConfOrderSolverWithRestarts extends COSSolver {
 
     val rand = new scala.util.Random(42)
 
-
-
-
     solver.search(
       if(auxiliaryVars.isEmpty) conflictOrderingSearch(
         decsionVars,
         i => decsionVars(i).size,
-//        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
+        //        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
         learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand))
       )
-      else {
-        val cosDec = conflictOrderingSearch(
-          decsionVars,
-          i => decsionVars(i).size,
-          //        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
-          learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand))
-        )
-        val cosAux = new AuxCOS(
-          solver,
-          auxiliaryVars,
-          i => auxiliaryVars(i).size,
-          //        learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).max else auxiliaryVars(_).min else auxiliaryVars(_).max)
-          learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand))
-        )
-        cosDec ++ cosAux
-      }
+      else conflictOrderingSearch(
+        decsionVars,
+        i => decsionVars(i).size,
+        //        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).max else decsionVars(_).min else decsionVars(_).max)
+        learnValueHeuristic(decsionVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand) else decsionVars(_).randomValue(rand))
+      ) ++ conflictOrderingSearch(
+        auxiliaryVars,
+        i => auxiliaryVars(i).size,
+        //        learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).max else auxiliaryVars(_).min else auxiliaryVars(_).max)
+        learnValueHeuristic(auxiliaryVars, if(maximizeObjective.isDefined) if(maximizeObjective.get) auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand) else auxiliaryVars(_).randomValue(rand))
+      )
     )
 
     //find first solution

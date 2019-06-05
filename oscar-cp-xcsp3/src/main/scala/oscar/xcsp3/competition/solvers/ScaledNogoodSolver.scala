@@ -2,9 +2,9 @@ package oscar.xcsp3.competition.solvers
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.NoSolutionException
-import oscar.cp.heuristics.{ActivityBasedSearch, BoundImpactValueSelector, InitHeuristics, ObjectiveBasedSelector, ObjectiveLandscape, SolBasedPhaseSaving}
+import oscar.cp.heuristics.{ActivityBasedSearch, BoundImpactValueSelector, InitHeuristics, InitHeuristics2, NewBIVS2, ObjectiveBasedSelector, ObjectiveLandscape, SolBasedPhaseSaving}
 import oscar.cp.nogoods.database.NogoodDB
-import oscar.cp.nogoods.searches.{BinaryRandomizedNogoodBranching, ConflictOrderingSearch, NogoodSearch}
+import oscar.cp.nogoods.searches.{BinaryRandomizedNogoodBranching, ConflictOrderingSearch, HeuristicNogoodBranching, NogoodSearch}
 import oscar.cp.searches.lns.CPIntSol
 import oscar.cp.{CPSolver, _}
 import oscar.modeling.models.cp.CPModel
@@ -15,6 +15,7 @@ import oscar.xcsp3.competition.{CompetitionApp, CompetitionConf}
 import oscar.cp.heuristics.HelperFunctions._
 
 import scala.collection.mutable
+import scala.util.Random
 
 
 
@@ -27,7 +28,7 @@ object ScaledNogoodSolver extends CompetitionApp with App {
     val md = new ModelDeclaration
 
     //Parsing the instance
-    printComment("Parsing instance...")
+    printComment("Parsing instance " + args(0))
     val parsingResult = try {
       val (decisionVars, auxiliaryVars, solutionGenerator) = XCSP3Parser2.parse2(md, conf.benchname())
 
@@ -56,41 +57,51 @@ object ScaledNogoodSolver extends CompetitionApp with App {
         None
     }
 
-    if (parsingResult.isDefined){
+    if (parsingResult.isDefined) {
 
       val (decVars, auxVars, solver, solutionGenerator) = parsingResult.get
       val vars = decVars ++ auxVars
       solver.silent = true
-      val timeout = ((conf.timelimit() -5).toLong * 1000000000L) - (System.nanoTime() - tstart)
+      val timeout = ((conf.timelimit() - 5).toLong * 1000000000L) - (System.nanoTime() - tstart)
       val endTime = System.nanoTime() + timeout
-      val maximizeObjective: Option[Boolean] = if(solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
+      val maximizeObjective: Option[Boolean] = if (solver.objective.objs.nonEmpty) Some(solver.objective.objs.head.isMax) else None
       val sols = mutable.ListBuffer[(CPIntSol, String)]()
 
       // parameters for obs
       val isMin = solver.objective.objs.head.isMin
-      val alpha = if(isMin) -1 else 0
-      val beta = if(isMin) 0 else -1
-      val gamma = 0.4
+      val alpha = if (isMin) -1 else 0
+      val beta = if (isMin) 0 else -1
+      val gamma = 0.5
       val decay = 0.99
       var optimumFound = false
       var lastSolTime = 0L
       var nTimeOuts = 0
+      var limit:Long = 0
+      val rand = new Random(42)
 
-      /********************************************************************//**
-        *  STEP 1 : Extract decision variables based on constraint degree
-        ***********************************************************************/
+      /** ******************************************************************//**
+        * STEP 1 : Extract decision variables based on constraint degree
+        * **********************************************************************/
 
-      var bestScore = 0
-      var bestId = ""
-      var degree = 0
+      var bestScore = 0.0
+      var minNumber = Double.MaxValue
+      var bestId = decVars(0).name.split("\\[")(0)
+      var degree = 0.0
       var currentId = ""
-      var domSize = 0
-      for(v <- vars) {
+      var domSize = 0.0
+      for (v <- decVars) {
         val subId = v.name.split("\\[")(0)
-        if(subId != currentId) {
-          if(domSize > 0 && degree/domSize > bestScore) {
-            bestScore = degree/domSize
+        if (subId != currentId) {
+          if (domSize > 1.0 && degree / domSize > bestScore) {
+            bestScore = degree / domSize
+            minNumber = domSize
             bestId = currentId
+          }
+          else if (domSize > 1.0 && degree / domSize == bestScore) {
+            if (domSize < minNumber) {
+              minNumber = domSize
+              bestId = currentId
+            }
           }
           degree = 0
           domSize = 0
@@ -100,33 +111,36 @@ object ScaledNogoodSolver extends CompetitionApp with App {
         domSize += 1
       }
 
+      printComment("Decision variables : " + bestId)
+
       // split variables into decision and auxiliary variables
       val decisionVars = vars.filter(v => v.name.contains(bestId))
       val auxiliaryVars = vars.filterNot(v => v.name.contains(bestId))
+      val allVars = decisionVars ++ auxiliaryVars
 
-      /********************************************************************//**
-        *  STEP 2: Initialize heuristics / searches
-        ***********************************************************************/
+      /** ******************************************************************//**
+        * STEP 2: Initialize heuristics / searches
+        * **********************************************************************/
 
 
       // create an objective landscape on decision variables
       var objLandscape = new ObjectiveLandscape(solver, decisionVars)
 
       // the value heuristic used for probing is the one that is later used in the search
-      val decBIVS = new BoundImpactValueSelector(solver, decisionVars, tiebreaker=objLandscape.getLandscapeScore)
+      val decBIVS = new BoundImpactValueSelector(solver, decisionVars)
       // initialize ABS and OBS features by probing
-      val init = new InitHeuristics(solver, decisionVars, vars, decBIVS.selectValue, maxTime = 10000000000L, significance = 0.2)
+      val init = new InitHeuristics2(solver, decisionVars, allVars, decBIVS.selectValue, maxTime = 10000000000L, significance = 0.2)
 
       // set OBS and ABS values for decision variables
-      val decABS = new ActivityBasedSearch(decisionVars, decay=decay)
+      val decABS = new ActivityBasedSearch(decisionVars, decay = decay)
       decABS.setActivity(init.getDecisionArrays._1)
-      val decOBS = new ObjectiveBasedSelector(solver, decisionVars, alpha, beta, gamma=gamma)
+      val decOBS = new ObjectiveBasedSelector(solver, decisionVars, alpha, beta, gamma = gamma)
       decOBS.setDeltaO(init.getDecisionArrays._2)
 
       // set ABS and OBS values for auxiliary variables -> nothing happens if they are empty
-      val auxABS = new ActivityBasedSearch(auxiliaryVars, decay=decay)
+      val auxABS = new ActivityBasedSearch(auxiliaryVars, decay = decay)
       auxABS.setActivity(init.getAuxiliaryArrays._1)
-      val auxOBS = new ObjectiveBasedSelector(solver, auxiliaryVars, alpha, beta, gamma=gamma)
+      val auxOBS = new ObjectiveBasedSelector(solver, auxiliaryVars, alpha, beta, gamma = gamma)
       auxOBS.setDeltaO(init.getAuxiliaryArrays._2)
       val auxBIVS = new BoundImpactValueSelector(solver, auxiliaryVars)
 
@@ -140,14 +154,11 @@ object ScaledNogoodSolver extends CompetitionApp with App {
       val noGoodSearch = new NogoodSearch(solver, noGoodDB)
 
 
-
-
       noGoodSearch.onSolution {
-
         nTimeOuts = 0
         val time = System.nanoTime() - startTime
         lastSolTime = time
-        val sol = new CPIntSol(vars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
+        val sol = new CPIntSol(allVars.map(_.value), if (maximizeObjective.isDefined) solver.objective.objs.head.best else 0, time)
         decSBPS.updateSolution()
         auxSBPS.updateSolution()
         val instantiation = solutionGenerator()
@@ -159,49 +170,46 @@ object ScaledNogoodSolver extends CompetitionApp with App {
       }
 
 
-      /********************************************************************//**
-        *  STEP 2: Search for a first solution
-        ***********************************************************************/
+      /** ******************************************************************//**
+        * STEP 2: Search for a first solution
+        * **********************************************************************/
 
 
-      val decHybrid = scaledSum(importance=0.5, decOBS.getScaledDeltaO, decABS.getScaledActivity)(_)
-      val auxHybrid = scaledSum(importance=0.5, auxABS.getScaledActivity, auxOBS.getScaledDeltaO)(_)
+      val decHybrid = scaledSum(importance = 0.5, decOBS.getScaledDeltaO, decABS.getScaledActivity)(_)
+      val auxHybrid = scaledSum(importance = 0.5, auxOBS.getScaledDeltaO, auxABS.getScaledActivity)(_)
 
-      var searchStrat = if(auxiliaryVars.isEmpty) {
+      var searchStrat = if (auxiliaryVars.isEmpty) {
         ConflictOrderingSearch(new BinaryRandomizedNogoodBranching(decisionVars, decHybrid, decBIVS.selectValue))(solver)
       }
       else {
         val h1 = new BinaryRandomizedNogoodBranching(decisionVars, decHybrid, decBIVS.selectValue)
-        val h2 = new BinaryRandomizedNogoodBranching(auxiliaryVars, auxHybrid,  auxBIVS.selectValue)
+        val h2 = new BinaryRandomizedNogoodBranching(auxiliaryVars, auxHybrid, auxBIVS.selectValue)
         ConflictOrderingSearch(h1)(solver) ++ ConflictOrderingSearch(h2)(solver)
       }
 
-      var current:Long = 0L
-      var searchTime:Long = (timeout * 0.08).toLong
-      var limit:Long = 0L
-      val geoRate = 1.3
+
+      var current: Long = 0L
+      current = System.nanoTime()
 
       var stopCondition = (_: NogoodSearch) => {
         val now = System.nanoTime()
         var stop = false
-        stop |= now >= limit && noGoodSearch.nBacktracks >= decisionVars.length
+        stop |= noGoodSearch.nBacktracks >= allVars.length * 2
         stop |= now >= endTime
         stop |= sols.nonEmpty
         stop |= noGoodSearch.isCompleted
-        stop |= noGoodSearch.nBacktracks >= vars.length*2
         stop
       }
 
-      current = System.nanoTime()
-      limit = current + searchTime
 
-
-      while(sols.isEmpty && current < endTime && !noGoodSearch.isCompleted) {
+      while (sols.isEmpty && current < endTime && !noGoodSearch.isCompleted) {
         noGoodSearch.start(searchStrat, stopCondition)
-        try {solver.add(noGoodDB.allNogoods().map(ng => ng.toConstraint)) }
+        try {
+          solver.add(noGoodDB.allNogoods().map(ng => ng.toConstraint))
+        }
         catch {
           case _: NoSolutionException => {
-            if(sols.isEmpty) {
+            if (sols.isEmpty) {
               status = "UNSATISFIABLE"
               printStatus()
               return
@@ -210,28 +218,27 @@ object ScaledNogoodSolver extends CompetitionApp with App {
         }
         noGoodDB.clear()
         current = System.nanoTime()
-        searchTime = math.ceil(searchTime * geoRate).toLong
-        limit = current + searchTime
       }
 
-      /********************************************************************//**
-        *  STEP 3: Improve the solution
-        ***********************************************************************/
+      /** ******************************************************************//**
+        * STEP 3: Improve the solution
+        * **********************************************************************/
 
       // no time to improve the solution :(
       current = System.nanoTime()
-      if(current >= endTime || noGoodSearch.isCompleted) {
-        if(noGoodSearch.isCompleted && sols.isEmpty) status = "UNSATISFIABLE"
+      if (current >= endTime || noGoodSearch.isCompleted) {
+        if (noGoodSearch.isCompleted && sols.isEmpty) status = "UNSATISFIABLE"
         printStatus()
         return
       }
 
-      searchStrat = if(auxiliaryVars.isEmpty) {
+
+      searchStrat = if (auxiliaryVars.isEmpty) {
         new BinaryRandomizedNogoodBranching(decisionVars, decHybrid, decSBPS.selectValue)
       }
       else {
-        val h1 = new BinaryRandomizedNogoodBranching(decisionVars, decOBS.getDeltaO, decSBPS.selectValue)
-        val h2 = new BinaryRandomizedNogoodBranching(auxiliaryVars, auxOBS.getDeltaO,  auxSBPS.selectValue)
+        val h1 = new BinaryRandomizedNogoodBranching(decisionVars, decHybrid, decSBPS.selectValue)
+        val h2 = new BinaryRandomizedNogoodBranching(auxiliaryVars, auxHybrid, auxSBPS.selectValue)
         h1 ++ h2
       }
 
@@ -244,17 +251,24 @@ object ScaledNogoodSolver extends CompetitionApp with App {
         stop
       }
 
+
       val duration = luby(minTime=2, maxTime = 8)(_)
       current = System.nanoTime()
-      searchTime = duration(nTimeOuts)
+      var searchTime = duration(nTimeOuts)
       limit = current + searchTime
 
+      while (current < endTime && !noGoodSearch.isCompleted) {
 
-
-      while(current < endTime && !noGoodSearch.isCompleted) {
-
-        decSBPS.addConstraints()
-
+        try {
+          decSBPS.addConstraints()
+        }
+        catch {
+          case _: Inconsistency => {
+            status = "OPTIMUM FOUND"
+            printStatus()
+            return
+          }
+        }
         noGoodSearch.start(searchStrat, stopCondition)
         try {
           solver.add(noGoodDB.allNogoods().map(ng => ng.toConstraint))
@@ -273,7 +287,47 @@ object ScaledNogoodSolver extends CompetitionApp with App {
         nTimeOuts += 1
       }
 
-      if(noGoodSearch.isCompleted) {
+      try {
+        decSBPS.addConstraints()
+      }
+      catch {
+        case _: Inconsistency => {
+          status = "OPTIMUM FOUND"
+          printStatus()
+          return
+        }
+      }
+
+      // no time to improve the solution :(
+      current = System.nanoTime()
+      if(current >= endTime || noGoodSearch.isCompleted) {
+        if(noGoodSearch.isCompleted) status = "OPTIMUM FOUND"
+        printStatus()
+        return
+      }
+
+      stopCondition = (_: NogoodSearch) => {
+        val now = System.nanoTime()
+        var stop = false
+        stop |= now >= endTime
+        stop |= noGoodSearch.isCompleted
+        stop
+      }
+
+      println("trying to prove optimality")
+      searchStrat = if(auxiliaryVars.isEmpty) {
+        ConflictOrderingSearch(new HeuristicNogoodBranching(decisionVars, decABS.getActivity, i => decisionVars(i).randomValue(rand)))(solver)
+      }
+      else {
+        val h1 = new HeuristicNogoodBranching(decisionVars, decABS.getActivity, i => decisionVars(i).randomValue(rand))
+
+        val h2 = new HeuristicNogoodBranching(auxiliaryVars, auxABS.getActivity, i => auxiliaryVars(i).randomValue(rand))
+        ConflictOrderingSearch(h1)(solver) ++ ConflictOrderingSearch(h2)(solver)
+      }
+      noGoodSearch.start(searchStrat, stopCondition)
+
+
+      if (noGoodSearch.isCompleted) {
         status = "OPTIMUM FOUND"
       }
       else {
@@ -282,3 +336,4 @@ object ScaledNogoodSolver extends CompetitionApp with App {
     }
   }
 }
+
