@@ -37,5 +37,5 @@ package oscar.cbls.core
  * @author renaud.delandtsheer@cetic.be
  *
  */
-package object propagation{
+package object propagation {
 }

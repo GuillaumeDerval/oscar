@@ -50,7 +50,7 @@ case class Store(override val verbose:Boolean = false,
                  override val checker:Option[Checker] = None,
                  override val noCycle:Boolean = true,
                  override val topologicalSort:Boolean = false,
-                 val propagateOnToString:Boolean = true,
+                 propagateOnToString:Boolean = true,
                  override val sortScc:Boolean = true)
   extends PropagationStructure(verbose,checker,noCycle,topologicalSort, sortScc)
   with Bulker with StorageUtilityManager{
@@ -59,11 +59,9 @@ case class Store(override val verbose:Boolean = false,
 
   cbls.warning(checker.isEmpty, "OscaR.cbls is running in debug mode. It makes the engine slower.")
 
-
   private[this] var variables:QList[AbstractVariable] = null
   private var propagationElements:QList[PropagationElement] = null
-
-  private[this] var privateDecisionVariables:QList[Variable] = null;
+  private[this] var privateDecisionVariables:QList[Variable] = null
 
   def decisionVariables():QList[Variable] = {
     if(privateDecisionVariables == null){
