@@ -85,17 +85,17 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
           b.getCoordinates.map(c => c.y).max)
     }
 
-    val (scaleTransform, translateTransform) = defineDrawingAreaAndAffineTransformation(minX, maxX, minY, maxY)
+    val (nonNegativeTransform,scaleTransform, translateTransform) = defineDrawingAreaAndAffineTransformation(minX, maxX, minY, maxY)
 
     val boundingBoxOnNow = boundingBoxOn.getOrElse(
       new Polygon(
         geometry.factory.createLinearRing(List(new Coordinate(minX,0), new Coordinate(0,minY), new Coordinate(maxX,0), new Coordinate(0,maxY)).toArray),
         null,
         geometry.factory))
-    paintBorder(w, boundingBoxOnNow, scaleTransform, translateTransform)
+    paintBorder(w, boundingBoxOnNow, nonNegativeTransform, scaleTransform, translateTransform)
 
-    paintShapes(w, shapes, scaleTransform, translateTransform)
-    paintLinks(w, centers, scaleTransform, translateTransform)
+    paintShapes(w, shapes, nonNegativeTransform, scaleTransform, translateTransform)
+    paintLinks(w, centers, nonNegativeTransform, scaleTransform, translateTransform)
 
     if(saveShapesAndPositions){
       geometryShapes = shapes
@@ -105,10 +105,9 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     //repaint()
   }
 
-  private def defineDrawingAreaAndAffineTransformation(minX: Double, maxX: Double, minY: Double, maxY: Double): (AffineTransformation,AffineTransformation) ={
+  private def defineDrawingAreaAndAffineTransformation(minX: Double, maxX: Double, minY: Double, maxY: Double): (AffineTransformation,AffineTransformation,AffineTransformation) ={
     val drawingWidth = (maxX - minX).toInt
     val drawingHeight = (maxY - minY).toInt
-
 
     val (realMapScaleX,realMapScaleY) = pointShift.getOrElse(() => (0.0,0.0))()
 
@@ -117,14 +116,17 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
 
     val scaling = Math.min((this.getWidth.toDouble-(widthOffSet*2.0))/drawingWidth,(this.getHeight.toDouble-(2.0*heightOffSet))/drawingHeight)
     val scaleTransform = AffineTransformation.scaleInstance(scaling,scaling)
+    val toNonNegativeWidthTranslation = -Math.min(0.0,minX) // If the figure to draw has some negative position value, we need to translate the figure
+    val toNonNegativeHeightTranslation = -Math.min(0.0,minY)
     val translateTransform = AffineTransformation.translationInstance(widthOffSet,heightOffSet)
+    val nonNegativeTransform = AffineTransformation.translationInstance(toNonNegativeWidthTranslation,toNonNegativeHeightTranslation)
 
-    (scaleTransform, translateTransform)
+    (nonNegativeTransform, scaleTransform, translateTransform)
   }
 
   // Paint the box containing all the shapes
-  private def paintBorder(w: ShapeWriter, boundingBoxOn: Geometry, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
-    val border = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(boundingBoxOn))))
+  private def paintBorder(w: ShapeWriter, boundingBoxOn: Geometry, nonNegativeTransform: AffineTransformation, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+    val border = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(nonNegativeTransform.transform(boundingBoxOn)))))
 
     border.fill = false
     border.border = true
@@ -139,9 +141,9 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     * @param scaleTransform The scaling affine transformation
     * @param translateTransform The translating affine transformation
     */
-  private def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], nonNegativeTransform: AffineTransformation, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((geometry,borderColOpt,innerColOpt,toolTipText) <- shapes){
-      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry))))
+      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(nonNegativeTransform.transform(geometry)))))
 
       borderColOpt match{
         case None =>
@@ -162,13 +164,13 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     }
   }
 
-  private def paintSomeHoles(s:List[Geometry],scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintSomeHoles(s:List[Geometry], nonNegativeTransform: AffineTransformation, scaleTransform:AffineTransformation, translateTransform:AffineTransformation): Unit ={
     val w = new ShapeWriter()
 
     val centers = Overlap.centersOfFreeSpaces(s.tail, s.head,100).toArray
 
     for(center <- centers){
-      val centroidPoint = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.point(center._1,center._2)))))
+      val centroidPoint = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(nonNegativeTransform.transform(geometry.point(center._1,center._2))))))
       centroidPoint.fill = true
       centroidPoint.innerCol = Color.BLACK
       centroidPoint.borderWidth = 10
@@ -179,11 +181,11 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   }
 
   // Paint links between shapes
-  private def paintLinks(w: ShapeWriter, centers: List[(Long,Long)], scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
+  private def paintLinks(w: ShapeWriter, centers: List[(Long,Long)], nonNegativeTransform: AffineTransformation, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((fromID,toID) <- relevantDistances){
       val (x1,y1) = centers(fromID)
       val (x2,y2) = centers(toID)
-      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(geometry.createLine(x1:Long,y1:Long,x2:Long,y2:Long)))))
+      val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(nonNegativeTransform.transform(geometry.createLine(x1:Long,y1:Long,x2:Long,y2:Long))))))
       s.innerCol = Color.BLUE
       s.dashed = false
     }
