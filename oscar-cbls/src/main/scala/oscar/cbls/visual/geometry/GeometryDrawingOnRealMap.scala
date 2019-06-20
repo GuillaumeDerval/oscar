@@ -3,9 +3,8 @@ package oscar.cbls.visual.geometry
 import java.awt.Color
 
 import org.jdesktop.swingx.mapviewer.{DefaultTileFactory, GeoPosition, TileFactoryInfo}
-import org.jxmapviewer.OSMTileFactoryInfo
 import org.locationtech.jts.geom.Geometry
-import oscar.visual.map.{MapWaypoint, VisualMap}
+import oscar.visual.map.VisualMap
 
 class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
                                area: List[(Int, Int)],
