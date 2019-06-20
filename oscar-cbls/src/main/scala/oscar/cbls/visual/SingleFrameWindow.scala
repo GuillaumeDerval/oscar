@@ -1,19 +1,15 @@
 package oscar.cbls.visual
 
 import java.awt.image.BufferedImage
-import java.awt.{BorderLayout, Color, Dimension}
+import java.awt.{BorderLayout, Dimension}
 import java.io.File
-import java.time.LocalDateTime
 
 import javax.imageio.ImageIO
-import javax.swing.{JFrame, JLayeredPane, JPanel}
-import oscar.cbls.visual.geometry.GeometryDrawingOnRealMap
-import oscar.visual.VisualDrawing
-import oscar.visual.shapes.{VisualLine, VisualRectangle}
+import javax.swing.{JFrame, JPanel}
 
 object SingleFrameWindow{
-  def show(pannel:JPanel,title:String,width:Int = 960,height:Int = 960,backgroundPanel: Option[JPanel] = None):SingleFrameWindow = {
-    new SingleFrameWindow(pannel:JPanel,title:String,width,height,backgroundPanel)
+  def show(panel:JPanel, title:String, width:Int = 960, height:Int = 960, backgroundPanel: Option[JPanel] = None):SingleFrameWindow = {
+    new SingleFrameWindow(panel:JPanel,title:String,width,height,backgroundPanel)
   }
 
   def showFrame(frame:JFrame,title:String,width:Int = 960,height:Int = 960) = {
@@ -26,19 +22,19 @@ object SingleFrameWindow{
   }
 }
 
-class SingleFrameWindow(val pannel:JPanel,title:String,width:Int,height:Int,backgroundPanel: Option[JPanel] = None){
-  pannel.setPreferredSize(new Dimension(width,height))
+class SingleFrameWindow(val panel:JPanel, title:String, width:Int, height:Int, backgroundPanel: Option[JPanel] = None){
+  panel.setPreferredSize(new Dimension(width,height))
 
   val frame = new JFrame()
   frame.setTitle(title)
   frame.setPreferredSize(new java.awt.Dimension(width,height))
   if(backgroundPanel.isDefined) {
     frame.setContentPane(backgroundPanel.get)
-    frame.setGlassPane(pannel)
-    pannel.setOpaque(false)
-    pannel.setVisible(true)
+    frame.setGlassPane(panel)
+    panel.setOpaque(false)
+    panel.setVisible(true)
   }
-  else frame.add(pannel)
+  else frame.add(panel)
   frame.setResizable(true)
   frame.pack()
   frame.revalidate()
@@ -47,14 +43,13 @@ class SingleFrameWindow(val pannel:JPanel,title:String,width:Int,height:Int,back
   def saveWindowAsPng(savingFile: File): Unit ={
     val bi = new BufferedImage(frame.getWidth, frame.getHeight, BufferedImage.TYPE_INT_ARGB)
     val g = bi.createGraphics
-    frame.paint(g) //this == JComponent
+    frame.repaint() //this == JComponent
 
-    g.dispose()
     try
       ImageIO.write(bi,"png", savingFile)
     catch {
       case e: Exception =>
-
+        println("WARNING : Error while saving drawing into png file : " + e.getMessage)
     }
   }
 }
