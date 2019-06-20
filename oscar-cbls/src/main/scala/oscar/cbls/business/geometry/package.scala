@@ -39,11 +39,14 @@ package object geometry {
     inputCentreOfOverApproximatingCircle = None,
     inputOverApproximatingRadius = Some(0))
 
-  def createLine(x1:Long,y1:Long,x2:Long,y2:Long):Geometry = {
+  def createLine(x1:Double,y1:Double,x2:Double,y2:Double):Geometry = {
     geometry.factory.createLineString(Array(
       new Coordinate(x1,y1),
       new Coordinate(x2,y2)
     ))
+  }
+  def createLineFromCoordinates(a:Coordinate,b:Coordinate):Geometry = {
+    geometry.factory.createLineString(Array(a,b))
   }
 
   def createSquare(side:Double):GeometryValue = {
