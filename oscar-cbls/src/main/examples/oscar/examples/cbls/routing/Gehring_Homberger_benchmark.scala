@@ -203,6 +203,3 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
 
 
 }
-
-
-

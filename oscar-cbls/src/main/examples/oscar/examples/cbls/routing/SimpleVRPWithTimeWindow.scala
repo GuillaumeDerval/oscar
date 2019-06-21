@@ -24,11 +24,6 @@ object SimpleVRPWithTimeWindow extends App{
 
   val myVRP =  new VRP(m,n,v)
 
-  //println("earliest arrival time : " + earliestArrivalTimes.zipWithIndex.map(x => x._2 -> x._1).toList)
-  //println("latest leaving time : " + latestLeavingTimes.zipWithIndex.map(x => x._2 -> x._1).toList)
-  //println("task duration: " + taskDurations.zipWithIndex.map(x => x._2 -> x._1).toList)
-
-
   // Distance
   val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
 

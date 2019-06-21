@@ -45,12 +45,26 @@ class QList[@specialized T](val head:T, val tail:QList[T] = null){
     toReturn
   }
 
+  def qFilter(fun:T => Boolean):QList[T] =
+    if(fun(head)) {
+      if (tail != null)
+        QList(head, tail.qFilter(fun))
+      else
+        QList(head)
+    }else{
+      if (tail != null)
+        tail.qFilter(fun)
+      else
+        null
+    }
+
+
   def qMap[X](fun:T => X):QList[X] = new QList(fun(head),if(tail == null) null else tail.qMap(fun))
 }
 
 object QList{
 
-  def append[T](l:Iterable[T],q:QList[T]):QList[T] = {
+  def append[@specialized T](l:Iterable[T],q:QList[T]):QList[T] = {
     val it = l.toIterator
 
     var toReturn = q
@@ -60,7 +74,7 @@ object QList{
     toReturn
   }
 
-  def nonReversedAppend[T](l:QList[T],q:QList[T]):QList[T] = {
+  def nonReversedAppend[@specialized T](l:QList[T],q:QList[T]):QList[T] = {
 
     def prependValues(it: QList[T], q:QList[T]): QList[T] ={
       val (next, tail) = (it.head, it.tail)
@@ -77,11 +91,11 @@ object QList{
   }
 
 
-  def apply[T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
+  def apply[@specialized T](head:T,tail:QList[T] = null):QList[T] = new QList(head,tail)
 
-  implicit def toIterable[T](l:QList[T]):Iterable[T] = new IterableQList(l)
+  implicit def toIterable[@specialized T](l:QList[T]):Iterable[T] = new IterableQList(l)
 
-  def buildFromIterable[T](l:Iterable[T]):QList[T] = {
+  def buildFromIterable[@specialized T](l:Iterable[T]):QList[T] = {
     var acc:QList[T] = null
     val it = l.toIterator
     while(it.hasNext){
@@ -90,13 +104,13 @@ object QList{
     acc
   }
 
-  def nonReversedBuildFromIterable[T](l:Iterable[T]):QList[T] ={
+  def nonReversedBuildFromIterable[@specialized T](l:Iterable[T]):QList[T] ={
     val reversed = buildFromIterable(l)
     if(reversed == null) null
     else reversed.reverse
   }
 
-  def qMap[T,X](q:QList[T],fun:T => X):QList[X] = {
+  def qMap[@specialized T,@specialized X](q:QList[T],fun:T => X):QList[X] = {
     if(q == null) null
     else q.qMap(fun)
   }
@@ -109,6 +123,14 @@ object QList{
       l = l.tail
     }
     acc
+  }
+
+  def qForeach[@specialized T](qList: QList[T], fun:T => Unit): Unit ={
+    var tempList = qList
+    while(tempList != null){
+      fun(tempList.head)
+      tempList = tempList.tail
+    }
   }
 }
 

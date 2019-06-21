@@ -6,6 +6,8 @@ import oscar.cbls.core.computation._
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
 
+import scala.reflect.runtime.universe._
+
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
   * it under the terms of the GNU Lesser General Public License as published by
@@ -35,8 +37,8 @@ object TimeWindowConstraint {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Int,
-            v: Int,
+            n: Long,
+            v: Long,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             travelTimeMatrix: Array[Array[Long]],
@@ -66,8 +68,8 @@ object TimeWindowConstraint {
     * @return a time window constraint
     */
   def apply(routes: ChangingSeqValue,
-            n: Int,
-            v: Int,
+            n: Long,
+            v: Long,
             earliestArrivalTime: Array[Long],
             latestLeavingTime: Array[Long],
             taskDurations: Array[Long],
@@ -97,8 +99,8 @@ object TimeWindowConstraint {
   * @param violations An array of CBLSIntVar maintaining the violation of each vehicle
   */
 class TimeWindowConstraint (routes: ChangingSeqValue,
-                            n: Int,
-                            v: Int,
+                            n: Long,
+                            v: Long,
                             earliestArrivalTime: Array[Long],
                             latestArrivalTime: Array[Long],
                             earliestLeavingTime: Array[Long],
@@ -145,6 +147,68 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     val latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.ea
     val latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 = latestArrivalTimeAt2 <= f2.la
 
+    // A simple pattern matching would be much more concise unfortunately,
+    // pattern matching with a tuple of size > 2 introduces boxing which has
+    // a unwanted impact on performance
+    /*var ea3: Long = 0
+    var ll3: Long = 0
+    var el3: Long = 0
+      if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = f1.la
+        ll3 = f1.la
+        el3 = f2.el
+      }
+
+      else if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = f2.ea - f1.el - m + f1.ea
+        ll3 = f1.la
+        el3 = f2.el
+      }
+      else if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = f2.ea - f1.el - m + f1.ea
+        ll3 = f2.la - f1.el - m + f1.ea
+        el3 = f2.el
+      }
+      else if(!earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = f1.ea
+        ll3 = f1.la
+        el3 = f1.el + f2.el - f2.ea + m
+      }
+      else if(!earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = f1.ea
+        ll3 = f2.la - f1.el - m + f1.ea
+        el3 = f1.el + f2.el - f2.ea + m
+      }
+      else if(!earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        !earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
+        !latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) {
+        ea3 = 1L
+        ll3 = -1L
+        el3 = -1L
+      }
+
+      else
+        throw new Error("Unhandled case : (" + earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
+          earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ", " +
+          latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
+          latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ")")*/
+
     val (ea3, ll3, el3) =
       (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
         earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
@@ -177,6 +241,11 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       DefinedTransferFunction(ea3, ll3, el3, f1.from, f2.to)
   }
 
+  /**
+    * Return relevant information concercing the given segment.
+    * In order to avoid boxing issues, the start and end node a grouped into their own tuple.
+    * This way, we avoid to have a tuple of size 3.
+    */
   private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Long, Long, TransferFunction) ={
     segment match{
       case seg: PreComputedSubSequence[Array[TransferFunction]] =>
@@ -187,7 +256,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
   }
 
   /**
-    * tis method is called by the framework when a pre-computation must be performed.
+    * This method is called by the framework when a pre-computation must be performed.
     * you are expected to assign a value of type T to each node of the vehicle "vehicle" through the method "setNodeValue"
     *
     * @param vehicle         the vehicle where pre-computation must be performed
@@ -200,7 +269,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     val start = System.nanoTime()
     def performPreComputeForNode(node: Long, prevNode: Long, route: QList[Long], lastTF: TransferFunction): Unit ={
       if(route != null) {
-        val curNode = route.head
+        val curNode = route.head.toInt
         val newTF = if (lastTF.isEmpty) lastTF else composeFunction(lastTF, transferFunctionOfNode(curNode), travelTimeMatrix(prevNode)(curNode))
         preComputedVals(node)(curNode) = newTF
         performPreComputeForNode(node, curNode, route.tail, newTF)

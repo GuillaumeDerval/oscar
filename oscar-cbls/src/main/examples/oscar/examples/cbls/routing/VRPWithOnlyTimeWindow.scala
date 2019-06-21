@@ -40,7 +40,9 @@ object VRPWithOnlyTimeWindow extends App {
                     acc(6) + item._7,acc(7) + item._8,
                     acc(8) + item._9,acc(9) + item._10)).toList.map(_/iterations)
               println("Average quality : " + res.head + "\nAverage duration (ms) : " + res(1) + "\n")
-              //println("" + res(1) + ";" + res(2) + ";" + res(4) + ";" + res(6) + ";" + res(8))
+              println("Average total duration : " + res(1) + "\nAverage total time in Notify : " + res(2) +
+                "\nAverage total time in PreComputation : " + res(4) + "\nAverage total time in VehicleValueComputation : " + res(6) +
+                "\nAverage total time in Assignation : " + res(8))
             }
           }
         }
@@ -53,16 +55,16 @@ object VRPWithOnlyTimeWindow extends App {
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(3)
+  val procedures = List(1,2,3)
   // The variations of n values
-  val ns_1 = List(/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, */1000L)
+  val ns_1 = List(100L/*, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
   val vs_2 = List(5L, 10L, 20L, 50L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 1
+  val iterations = 10
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
@@ -208,7 +210,9 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
       globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
       globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      //0,0,0,0,0,0,0,0
+    )
   }
 
   // Simple InsertPoint exhaust OnePoitnMove procedure
@@ -223,7 +227,9 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
       globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
       globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      //0,0,0,0,0,0,0,0
+    )
   }
 
   // Simple InsertPoint exhaust ThreeOpt procedure
@@ -237,6 +243,8 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
       globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
       globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount)
+      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      //0,0,0,0,0,0,0,0
+    )
   }
 }
