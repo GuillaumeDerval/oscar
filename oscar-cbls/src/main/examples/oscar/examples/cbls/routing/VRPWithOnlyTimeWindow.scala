@@ -39,10 +39,11 @@ object VRPWithOnlyTimeWindow extends App {
                     acc(4) + item._5,acc(5) + item._6,
                     acc(6) + item._7,acc(7) + item._8,
                     acc(8) + item._9,acc(9) + item._10)).toList.map(_/iterations)
-              println("Average quality : " + res.head + "\nAverage duration (ms) : " + res(1) + "\n")
-              println("Average total duration : " + res(1) + "\nAverage total time in Notify : " + res(2) +
-                "\nAverage total time in PreComputation : " + res(4) + "\nAverage total time in VehicleValueComputation : " + res(6) +
-                "\nAverage total time in Assignation : " + res(8))
+              println("Average total duration : " + res(1) + " - Average quality : " + res.head +
+                "\nAverage total time in Notify : " + res(2) + " - COUNT : " + res(3) +
+                "\nAverage total time in PreComputation : " + res(4) + " - COUNT : " + res(5) +
+                "\nAverage total time in VehicleValueComputation : " + res(6) + " - COUNT : " + res(7) +
+                "\nAverage total time in Assignation : " + res(8) + " - COUNT : " + res(9) + "\n")
             }
           }
         }
@@ -57,7 +58,7 @@ object VRPWithOnlyTimeWindow extends App {
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(1,2,3)
   // The variations of n values
-  val ns_1 = List(100L/*, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
+  val ns_1 = List(100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
@@ -201,7 +202,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Simple InsertPoint procedure
   def run1(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best)
-    //search.verbose = 2
+    //search.verbose = 4
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
@@ -235,6 +236,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Simple InsertPoint exhaust ThreeOpt procedure
   def run3(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best) exhaust threeOptMove(best)
+    //search.verbose = 2
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()

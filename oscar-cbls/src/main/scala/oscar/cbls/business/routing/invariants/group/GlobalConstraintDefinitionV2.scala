@@ -25,14 +25,19 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
   var checkpointLevel: Int = -1
   var checkpointAtLevel0: IntSequence = _
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
-  var changedVehiclesSinceLastCheckpoint = new IterableMagicBoolArray(v, false)
+  //var changedVehiclesSinceLastCheckpoint = new IterableMagicBoolArray(v, false)
 
   // An array holding the ListSegment modifications as a QList
   // Int == checkpoint level, ListSegments the new ListSegment of the vehicle considering the modifications
   // It holds at least one value : the initial value whose checkpoint level == -1
   // Then each time we do a modification to the ListSegment, it's stored with the current checkpoint level
-  val segmentsOfVehicle: Array[QList[(Int,ListSegments)]] = Array.fill(v)(null)
-  var savedDataAtCheckPointLevel: QList[(Int, VehicleLocation, QList[Int], QList[Int], Array[Option[Int]])] = null
+  var segmentsOfVehicle: Array[ListSegments] = Array.fill(v)(null)
+  // Each time we define a checkpoint we save the current constraint state including :
+  //    - changedVehiclesSinceCheckpoint0
+  //    - vehiclesValueAtCheckpoint
+  //    - vehicleSearcher
+  //    - positionToValueCache
+  var savedDataAtCheckPointLevel: QList[(QList[Int], Array[U], VehicleLocation, Array[Option[Int]], Array[ListSegments])] = null
   var positionToValueCache: Array[Option[Int]] = Array.fill(n)(None)
 
   var initialListSegmentOfVehicles: collection.immutable.Map[Int, ListSegments] = HashMap.empty
@@ -101,9 +106,10 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val start = System.nanoTime()
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
+      val newRoute = routes.newValue
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
-        vehicleValues(vehicle) = computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).head._2.segments, routes.newValue, preComputedValues)
+        vehicleValues(vehicle) = computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).segments, newRoute, preComputedValues)
         assignVehicleValue(vehicle, vehicleValues(vehicle))
       })
     } else {
@@ -151,16 +157,18 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
         } else {
           // Saving position of nodes of the previous checkpoint level to avoid excessive calls to positionAtAnyOccurence(...) when roll-backing
           val previousCheckpointSaveData = savedDataAtCheckPointLevel.head
-          savedDataAtCheckPointLevel = QList((previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3, previousCheckpointSaveData._4,
-            positionToValueCache), savedDataAtCheckPointLevel.tail)
+          savedDataAtCheckPointLevel = QList(
+            (previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3, positionToValueCache, previousCheckpointSaveData._5),
+            savedDataAtCheckPointLevel.tail)
         }
 
         // Common manipulations
         this.checkpointLevel = checkpointLevel
         positionToValueCache = Array.fill(n)(None)
         savedDataAtCheckPointLevel =
-          QList((checkpointLevel,vehicleSearcher,changedVehiclesSinceLastCheckpoint.indicesAtTrueAsQList,changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,positionToValueCache),savedDataAtCheckPointLevel)
-        changedVehiclesSinceLastCheckpoint.all = false
+          QList((changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, vehicleValues.clone(), vehicleSearcher, positionToValueCache, segmentsOfVehicle),savedDataAtCheckPointLevel)
+        segmentsOfVehicle = segmentsOfVehicle.clone()
+        //changedVehiclesSinceLastCheckpoint.all = false
         true
 
       case r@SeqUpdateRollBackToCheckpoint(checkpoint:IntSequence,checkpointLevel:Int) =>
@@ -170,11 +178,11 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
 
         // This variable holds the vehicles that changes during this roll-back
         // We must at least revert changes since last checkpoint
-        val vehiclesChangedDuringRollBack = changedVehiclesSinceLastCheckpoint
+        //val vehiclesChangedDuringRollBack = changedVehiclesSinceLastCheckpoint
 
         // While the checkpoint level of segmentsOfVehicles(v) head is greater or equal to checkpointLevel, pop the head
         // Then recompute vehicle value and assign value
-        def revertSegmentChangesSinceCheckpointAndUpdateVehicleValues(): Unit ={
+        /*def revertSegmentChangesSinceCheckpointAndUpdateVehicleValues(): Unit ={
           QList.qForeach(vehiclesChangedDuringRollBack.indicesAtTrueAsQList, (vehicle: Int) => {
             while(segmentsOfVehicle(vehicle).head._1 >= checkpointLevel) {
               segmentsOfVehicle(vehicle) = segmentsOfVehicle(vehicle).tail
@@ -186,25 +194,30 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
             vehicleValues(vehicle) = vehicleValuesAtLevel0(vehicle)
             assignVehicleValue(vehicle, vehicleValuesAtLevel0(vehicle))
           })
-        }
+        }*/
 
         // savedDataAtCheckpointLevel holds some information stored when defining checkpoint
         // Since the fact that there is only one saved value per checkpoint,
         // in order to restore the right information, the head of savedDataAtCheckpointLevel
         // should be checkpointLevel we are rollbacking to.
-        while(savedDataAtCheckPointLevel.tail != null  && savedDataAtCheckPointLevel.head._1 != checkpointLevel) {
+        /*while(savedDataAtCheckPointLevel.tail != null  && savedDataAtCheckPointLevel.head._1 != checkpointLevel) {
           QList.qForeach(savedDataAtCheckPointLevel.head._3,
             (vehicle: Int) => vehiclesChangedDuringRollBack(vehicle) = true)     // Mark all changed vehicle of this checkpoint level to be revert
           savedDataAtCheckPointLevel = savedDataAtCheckPointLevel.tail    // Taking previous checkpoint save
-        }
+        }*/
+        savedDataAtCheckPointLevel = QList.qDrop(savedDataAtCheckPointLevel, this.checkpointLevel - checkpointLevel)
+        //revertSegmentChangesSinceCheckpointAndUpdateVehicleValues()
+        val vehicleValueAtCheckpointLevel = savedDataAtCheckPointLevel.head._2
+        QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
+          vehicleValues(vehicle) = vehicleValueAtCheckpointLevel(vehicle)
+          assignVehicleValue(vehicle, vehicleValues(vehicle))
+        })
+        this.changedVehiclesSinceCheckpoint0.all = false
+        QList.qForeach(savedDataAtCheckPointLevel.head._1, (vehicle: Int) =>  this.changedVehiclesSinceCheckpoint0(vehicle) = true)
+        vehicleSearcher = savedDataAtCheckPointLevel.head._3
+        positionToValueCache = savedDataAtCheckPointLevel.head._4
+        segmentsOfVehicle = savedDataAtCheckPointLevel.head._5.clone()
 
-        revertSegmentChangesSinceCheckpointAndUpdateVehicleValues()
-
-        val (_, vehicleSearcherAtCheckpointLevel, _, changedVehiclesSinceCheckpoint0, positionToValueCacheAtCheckpoint) = savedDataAtCheckPointLevel.head
-        vehicleSearcher = vehicleSearcherAtCheckpointLevel
-        changedVehiclesSinceLastCheckpoint.all = false
-        changedVehiclesSinceCheckpoint0.foreach(changedVehicle => this.changedVehiclesSinceCheckpoint0(changedVehicle) = true)
-        positionToValueCache = positionToValueCacheAtCheckpoint
         this.checkpointLevel = checkpointLevel
         true
 
@@ -213,18 +226,14 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
             keepOrResetPositionValueCache(prev)
 
             val prevRoutes = prev.newValue
-            // TODO : Probably more interesting to put those value in a local var and update/save his value using the checkpoint system
 
             val impactedVehicle = vehicleSearcher.vehicleReachingPosition(pos-1)
-            val impactedSegment = segmentsOfVehicle(impactedVehicle).head._2
+            val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
             // InsertSegment insert a segment AFTER a defined position and SeqUpdateInsert at a position => we must withdraw 1
-            segmentsOfVehicle(impactedVehicle) =
-              QList((checkpointLevel,impactedSegment.insertSegments(QList[Segment[T]](NewNode(value).asInstanceOf[Segment[T]]),pos-1,prevRoutes)),
-                segmentsOfVehicle(impactedVehicle))
+            segmentsOfVehicle(impactedVehicle) = impactedSegment.insertSegments(QList[Segment[T]](NewNode(value).asInstanceOf[Segment[T]]),pos-1,prevRoutes)
 
             vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
-            changedVehiclesSinceLastCheckpoint(impactedVehicle) = true
             changedVehiclesSinceCheckpoint0(impactedVehicle) = true
             true
         } else {
@@ -241,13 +250,13 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
           val toVehicle = vehicleSearcher.vehicleReachingPosition(after)
           val sameVehicle = fromVehicle == toVehicle
 
-          val fromImpactedSegment = segmentsOfVehicle(fromVehicle).head._2
+          val fromImpactedSegment = segmentsOfVehicle(fromVehicle)
 
           // Identification of the sub-segments to remove
           val (listSegmentsAfterRemove, segmentsToRemove) =
             fromImpactedSegment.removeSubSegments(fromIncluded, toIncluded, prevRoutes)
 
-          val toImpactedSegment = if (sameVehicle) listSegmentsAfterRemove else segmentsOfVehicle(toVehicle).head._2
+          val toImpactedSegment = if (sameVehicle) listSegmentsAfterRemove else segmentsOfVehicle(toVehicle)
           // If we are in same vehicle and we remove nodes to put them later in the route, the route length before insertion point has shortened
           val delta =
             if (!sameVehicle || after < fromIncluded) 0
@@ -260,13 +269,11 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
             else
               toImpactedSegment.insertSegments(segmentsToRemove, after, prevRoutes, delta)
 
-          segmentsOfVehicle(toVehicle) = QList((checkpointLevel, listSegmentsAfterInsertion), segmentsOfVehicle(toVehicle))
-          if (!sameVehicle) segmentsOfVehicle(fromVehicle) = QList((checkpointLevel, listSegmentsAfterRemove), segmentsOfVehicle(fromVehicle))
+          segmentsOfVehicle(toVehicle) = listSegmentsAfterInsertion
+          if (!sameVehicle) segmentsOfVehicle(fromVehicle) = listSegmentsAfterRemove
 
           vehicleSearcher = vehicleSearcher.push(sum.oldPosToNewPos)
 
-          changedVehiclesSinceLastCheckpoint(fromVehicle) = true
-          changedVehiclesSinceLastCheckpoint(toVehicle) = true
           changedVehiclesSinceCheckpoint0(fromVehicle) = true
           changedVehiclesSinceCheckpoint0(toVehicle) = true
           true
@@ -281,14 +288,13 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
           val prevRoutes = prev.newValue
 
           val impactedVehicle = vehicleSearcher.vehicleReachingPosition(position)
-          val impactedSegment = segmentsOfVehicle(impactedVehicle).head._2
+          val impactedSegment = segmentsOfVehicle(impactedVehicle)
 
           val (listSegmentAfterRemove, _) = impactedSegment.removeSubSegments(position, position, prevRoutes)
 
-          segmentsOfVehicle(impactedVehicle) = QList((checkpointLevel, listSegmentAfterRemove), segmentsOfVehicle(impactedVehicle))
+          segmentsOfVehicle(impactedVehicle) = listSegmentAfterRemove
 
           vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
-          changedVehiclesSinceLastCheckpoint(impactedVehicle) = true
           changedVehiclesSinceCheckpoint0(impactedVehicle) = true
           true
         } else {
@@ -324,7 +330,7 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
         (route.valueAtPosition(route.size-1).get,route.size-1)
       }
 
-    segmentsOfVehicle(vehicle) = QList((-1, ListSegments(
+    segmentsOfVehicle(vehicle) = ListSegments(
       QList[Segment[T]](PreComputedSubSequence(
         vehicle,
         preComputedValues(vehicle),
@@ -332,7 +338,7 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
         preComputedValues(lastNodeOfVehicle),
         posOfLastNodeOfVehicle - posOfVehicle + 1
       )),
-      vehicle)))
+      vehicle)
   }
 
   private def computeAndAssignVehiclesValueFromScratch(newSeq: IntSequence): Unit ={
@@ -354,9 +360,15 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
     }
   }
 
+  object ListSegments{
+    def apply(segments: QList[Segment[T]], vehicle: Int): ListSegments = new ListSegments(segments, vehicle)
 
+    def apply(listSegments: ListSegments): ListSegments =
+      new ListSegments(listSegments.segments, listSegments.vehicle)
+  }
 
-  case class ListSegments(segments: QList[Segment[T]], vehicle: Int){
+  class ListSegments(val segments: QList[Segment[T]], val vehicle: Int){
+
     /**
       * Remove Segments and Sub-Segment from the Segments List
       *

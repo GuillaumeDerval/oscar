@@ -132,6 +132,16 @@ object QList{
       tempList = tempList.tail
     }
   }
+
+  def qDrop[@specialized T](qList: QList[T], number: Int): QList[T] ={
+    var tempList = qList
+    var toDrop = number
+    while(toDrop > 0 && tempList != null) {
+      tempList = tempList.tail
+      toDrop -= 1
+    }
+    tempList
+  }
 }
 
 class IterableQList[@specialized T](l:QList[T]) extends Iterable[T]{

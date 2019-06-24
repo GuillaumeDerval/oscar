@@ -246,12 +246,11 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     * In order to avoid boxing issues, the start and end node a grouped into their own tuple.
     * This way, we avoid to have a tuple of size 3.
     */
-  private def segmentsInfo(segment: Segment[Array[TransferFunction]]): (Long, Long, TransferFunction) ={
+  private def segmentsTransferFunction(segment: Segment[Array[TransferFunction]]): TransferFunction ={
     segment match{
-      case seg: PreComputedSubSequence[Array[TransferFunction]] =>
-        (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
-      case seg: FlippedPreComputedSubSequence[Array[TransferFunction]] => (seg.startNode, seg.endNode, seg.startNodeValue(seg.endNode))
-      case seg: NewNode[Array[TransferFunction]] => (seg.node, seg.node, transferFunctionOfNode(seg.node))
+      case seg: PreComputedSubSequence[Array[TransferFunction]] => seg.startNodeValue(seg.endNode)
+      case seg: FlippedPreComputedSubSequence[Array[TransferFunction]] => seg.startNodeValue(seg.endNode)
+      case seg: NewNode[Array[TransferFunction]] => transferFunctionOfNode(seg.node)
     }
   }
 
@@ -328,14 +327,14 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
       */
     def arrivalAtDepot(segments: QList[Segment[Array[TransferFunction]]], previousSegmentEnd: Long = vehicle, prevLeavingTime: Long = 0L): Long ={
       val (segment, tail) = (segments.head, segments.tail)
-      val (segmentStart, segmentEnd, transferFunction) = segmentsInfo(segment)
-      val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd)(segmentStart)
+      val transferFunction = segmentsTransferFunction(segment)
+      val arrivalTimeAtSegment = prevLeavingTime + travelTimeMatrix(previousSegmentEnd)(segment.startNode())
       val leaveTimeAtSegment = transferFunction(arrivalTimeAtSegment)
       if(leaveTimeAtSegment >= 0L) {
         if (tail != null)
-          arrivalAtDepot(tail, segmentEnd, leaveTimeAtSegment)
+          arrivalAtDepot(tail, segment.endNode(), leaveTimeAtSegment)
         else
-          leaveTimeAtSegment + travelTimeMatrix(segmentEnd)(vehicle)
+          leaveTimeAtSegment + travelTimeMatrix(segment.endNode())(vehicle)
       }
       else leaveTimeAtSegment
     }
