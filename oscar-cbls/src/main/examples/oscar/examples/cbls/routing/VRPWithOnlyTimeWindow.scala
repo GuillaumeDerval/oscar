@@ -62,7 +62,7 @@ object VRPWithOnlyTimeWindow extends App {
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
-  val vs_2 = List(5L, 10L, 20L, 50L, 100L)
+  val vs_2 = List(10L, 20L, 30L, 40L, 50L, 60L, 70L, 80L, 90L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
   val iterations = 10
@@ -216,10 +216,10 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       )
     else if(globalConstraintWithLogReduc.isDefined)
       (obj.value, duration,
-        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
-        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
-        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraintWithLogReduc.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraintWithLogReduc.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraintWithLogReduc.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraintWithLogReduc.get.assignCount
       )
     else
       (obj.value, duration,0,0,0,0,0,0,0,0)
@@ -242,10 +242,10 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       )
     else if(globalConstraintWithLogReduc.isDefined)
       (obj.value, duration,
-        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
-        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
-        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraintWithLogReduc.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraintWithLogReduc.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraintWithLogReduc.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraintWithLogReduc.get.assignCount
       )
     else
       (obj.value, duration,0,0,0,0,0,0,0,0)
@@ -268,10 +268,10 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       )
     else if(globalConstraintWithLogReduc.isDefined)
       (obj.value, duration,
-        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
-        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
-        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraintWithLogReduc.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraintWithLogReduc.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraintWithLogReduc.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraintWithLogReduc.get.assignCount
       )
     else
       (obj.value, duration,0,0,0,0,0,0,0,0)
