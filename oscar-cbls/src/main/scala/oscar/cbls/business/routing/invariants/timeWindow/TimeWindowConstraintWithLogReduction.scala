@@ -81,6 +81,9 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
                                            travelTimeMatrix: Array[Array[Long]],
                                            val violations: Array[CBLSIntVar]) extends LogReducedGlobalConstraintWithExtremes [TransferFunction, Boolean](routes,v){
 
+  var assignTime = 0L
+  var assignCount = 0
+
   private val transferFunctionOfNode: Array[TransferFunction] = Array.tabulate(n)(
     node =>
       DefinedTransferFunction(
@@ -225,7 +228,10 @@ class TimeWindowConstraintWithLogReduction(routes: ChangingSeqValue,
     * @param value   the value of the vehicle
     */
   override def assignVehicleValue(vehicle: Long, value: Boolean): Unit = {
+    val start = System.nanoTime()
     if(value) violations(vehicle) := 1L else violations(vehicle) := 0L
+    assignTime += System.nanoTime() - start
+    assignCount += 1
   }
 
   /**

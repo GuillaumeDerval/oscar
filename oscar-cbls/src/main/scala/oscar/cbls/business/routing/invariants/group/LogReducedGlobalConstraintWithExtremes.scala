@@ -7,6 +7,10 @@ import oscar.cbls._
 
 abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Long)
   extends LogReducedGlobalConstraint[T,U](routes:ChangingSeqValue,v :Long){
+  var preComputeTime = 0L
+  var preComputeCount = 0
+  var computeValueTime = 0L
+  var computeValueCount = 0
 
   class NodeAndExtremePreComputes(val node:Long,
                                   var fromStart:T = null.asInstanceOf[T],
@@ -41,6 +45,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   }
 
   override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[VehicleAndPosition]): Unit = {
+    val start = System.nanoTime()
     super.performPreCompute(vehicle, routes, preComputedVals)
     //also compute the extremes forward and backwards
 
@@ -78,20 +83,24 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
           nodeValue(extremePrecomputesOfCurrentVehicle(i).node),
           extremePrecomputesOfCurrentVehicle(i+1L).toEnd)
     }
+    preComputeTime += System.nanoTime() - start
+    preComputeCount += 1
   }
 
   override def computeVehicleValue(vehicle:Long,
                                    segments:QList[Segment[VehicleAndPosition]],
                                    routes:IntSequence,
                                    preComputedVals:Array[VehicleAndPosition]):U = {
-
-    computeVehicleValueComposed(
+    computeValueCount += 1
+    val start = System.nanoTime()
+    val res = computeVehicleValueComposed(
       vehicle,
       decorateSegmentsExtremes(
         vehicle,
         segments,
         isFirst = true))
-
+    computeValueTime += System.nanoTime() - start
+    res
   }
 
   def decorateSegmentsExtremes(vehicle:Long,

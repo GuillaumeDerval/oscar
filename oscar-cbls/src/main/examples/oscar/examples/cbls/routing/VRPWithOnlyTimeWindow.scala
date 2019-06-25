@@ -207,13 +207,22 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration,
-      globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
-      globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
-      globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
-      //0,0,0,0,0,0,0,0
-    )
+    if(globalConstraint.isDefined)
+      (obj.value, duration,
+        globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else if(globalConstraintWithLogReduc.isDefined)
+      (obj.value, duration,
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else
+      (obj.value, duration,0,0,0,0,0,0,0,0)
   }
 
   // Simple InsertPoint exhaust OnePoitnMove procedure
@@ -224,13 +233,22 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration,
-      globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
-      globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
-      globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
-      globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
-      //0,0,0,0,0,0,0,0
-    )
+    if(globalConstraint.isDefined)
+      (obj.value, duration,
+        globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else if(globalConstraintWithLogReduc.isDefined)
+      (obj.value, duration,
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else
+      (obj.value, duration,0,0,0,0,0,0,0,0)
   }
 
   // Simple InsertPoint exhaust ThreeOpt procedure
@@ -241,12 +259,21 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
     val duration = ((end - start)/1000000).toInt
-    (obj.value, duration,
+    if(globalConstraint.isDefined)
+      (obj.value, duration,
       globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
       globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
       globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
       globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
-      //0,0,0,0,0,0,0,0
-    )
+      )
+    else if(globalConstraintWithLogReduc.isDefined)
+      (obj.value, duration,
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else
+      (obj.value, duration,0,0,0,0,0,0,0,0)
   }
 }

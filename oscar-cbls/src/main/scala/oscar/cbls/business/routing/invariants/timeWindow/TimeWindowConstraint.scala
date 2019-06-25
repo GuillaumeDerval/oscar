@@ -150,7 +150,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
     // A simple pattern matching would be much more concise unfortunately,
     // pattern matching with a tuple of size > 2 introduces boxing which has
     // a unwanted impact on performance
-    /*var ea3: Long = 0
+    var ea3: Long = 0
     var ll3: Long = 0
     var el3: Long = 0
       if(earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 &&
@@ -207,33 +207,7 @@ class TimeWindowConstraint (routes: ChangingSeqValue,
         throw new Error("Unhandled case : (" + earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
           earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ", " +
           latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2 + ", " +
-          latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ")")*/
-
-    val (ea3, ll3, el3) =
-      (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
-        earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
-        latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
-        latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2) match{
-        case (true,true,true,true) =>
-          (f1.la, f1.la, f2.el)                                    // e3 == d1 because latest arrival time at 2L is lower than earliest starting time at 2L
-        // so it doesn't matter when you arrive at 1L the resulting leaving time at 2L will be l2
-        // => e3 == d1 (the formula says if (t <= e) => l
-        case (true,true,false,true) =>
-          (f2.ea - f1.el - m + f1.ea, f1.la, f2.el)
-        case (true,true,false,false) =>
-          (f2.ea - f1.el - m + f1.ea, f2.la - f1.el - m + f1.ea, f2.el)
-        case (false,true,false,true) =>
-          (f1.ea, f1.la,f1.el + f2.el - f2.ea + m)
-        case (false,true,false,false) =>
-          (f1.ea, f2.la - f1.el - m + f1.ea, f1.el + f2.el - f2.ea + m)
-        case (false,false,false,false) =>
-          (1L, -1L, -1L)
-        case _ =>
-          throw new Error("Unhandled case : " + (earliestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
-            earliestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2,
-            latestArrivalTimeAt2_earlier_or_equal_than_earliestStartingTimeAt2,
-            latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2))
-      }
+          latestArrivalTimeAt2_earlier_or_equal_than_latestStartingTimeAt2 + ")")
 
     if(ea3 > ll3)
       EmptyTransferFunction
