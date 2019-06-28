@@ -118,7 +118,7 @@ abstract class ChangingIntValue(initialValue:Long, initialDomain:Domain)
     (v max this.min) min this.max
   }
   def adjustToDomainModulo(v:Long):Long = {
-    val modVal = domain.max - domain.min
+    val modVal = Math.max(domain.max - domain.min,1)
     val adjusted = (v - domain.min) % modVal
     adjusted + domain.min
   }
@@ -274,7 +274,8 @@ class CBLSIntVar(givenModel: Store, initialValue: Long, initialDomain:Domain, n:
   def <==(i: IntValue) {IdentityInt(this,i)}
 
   def randomize(): Unit ={
-    this := this.min + RandomGenerator.nextInt(this.max - this.min)
+    if(this.max != this.min)
+      this := this.min + RandomGenerator.nextInt(this.max - this.min)
   }
 }
 

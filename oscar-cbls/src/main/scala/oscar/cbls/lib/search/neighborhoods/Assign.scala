@@ -191,26 +191,28 @@ case class NumericAssignNeighborhood(vars:Array[CBLSIntVar],
       currentIndice = indicesIterator.next()
       currentVar = vars(currentIndice)
       //now we have the current variable
+//TODO: skip this var if domain is singleton
+      if(currentVar.domain.size > 1) {
+        val oldVal = currentVar.value
 
-      val oldVal = currentVar.value
+        val domainIterationScheme = symmetryClassOfValues match {
+          case None => domain(currentVar, currentIndice)
+          case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
+        }
 
-      val domainIterationScheme = symmetryClassOfValues match {
-        case None => domain(currentVar, currentIndice)
-        case Some(s) => IdenticalAggregator.removeIdenticalClassesLazily(domain(currentVar, currentIndice), s(currentIndice))
-      }
+        val searchZoneForThisVar = searchZoneForVar(currentIndice, oldVal)
 
-      val searchZoneForThisVar = searchZoneForVar(currentIndice,oldVal)
+        def eval(value: Long): Long = {
+          this.newVal = value
+          obj.assignVal(currentVar, value)
+        }
 
-      def eval(value:Long):Long = {
-        this.newVal = value
-        obj.assignVal(currentVar,value)
-      }
+        val (newBestVal, bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
+        this.newVal = newBestVal
 
-      val (newBestVal,bestObj) = searchZoneForThisVar.search(oldVal, initialObj, domainIterationScheme.min, domainIterationScheme.max, eval)
-      this.newVal = newBestVal
-
-      if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
-        notifyFound1()
+        if (evaluateCurrentMoveObjTrueIfSomethingFound(bestObj)) {
+          notifyFound1()
+        }
       }
     }
 
