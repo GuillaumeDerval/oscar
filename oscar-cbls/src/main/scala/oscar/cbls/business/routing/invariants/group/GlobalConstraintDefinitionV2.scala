@@ -25,6 +25,10 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
   var checkpointLevel: Int = -1
   var checkpointAtLevel0: IntSequence = _
   var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
+  // This variable holds the vehicles that has changed since the beginning of the notifySeqChanges method
+  // (Without considering the roll-back mechanism)
+  // We'll need to compute the new value of these vehicles
+  var changedVehicleDuringNotify: QList[Int] = null
 
   // An array holding the ListSegment modifications as a QList
   // Int == checkpoint level, ListSegments the new ListSegment of the vehicle considering the modifications
@@ -103,9 +107,10 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val start = System.nanoTime()
+    changedVehicleDuringNotify = null
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
       val newRoute = routes.newValue
-      QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
+      QList.qForeach(changedVehicleDuringNotify,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
         vehicleValues(vehicle) = computeVehicleValue(vehicle, segmentsOfVehicle(vehicle).segments, newRoute, preComputedValues)
         assignVehicleValue(vehicle, vehicleValues(vehicle))
@@ -144,8 +149,6 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
             initSegmentsOfVehicle(vehicle, newRoute)
           })
 
-          // Persisting recent updates of the vehicleSearcher
-          vehicleSearcher = vehicleSearcher.regularize
           // Resetting the savedData QList.
           savedDataAtCheckPointLevel = null
 
@@ -159,6 +162,9 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
             (previousCheckpointSaveData._1, previousCheckpointSaveData._2, previousCheckpointSaveData._3, positionToValueCache, previousCheckpointSaveData._5),
             savedDataAtCheckPointLevel.tail)
         }
+
+        // Persisting recent updates of the vehicleSearcher
+        vehicleSearcher = vehicleSearcher.regularize
 
         // Common manipulations
         this.checkpointLevel = checkpointLevel
@@ -179,8 +185,11 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
         // Restoring the vehicle values if it has changed since checkpoint 0 (using current changedVehiclesSinceCheckpoint0 value)
         val vehicleValueAtCheckpointLevel = savedDataAtCheckPointLevel.head._2
         QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList, (vehicle: Int) => {
-          vehicleValues(vehicle) = vehicleValueAtCheckpointLevel(vehicle)
-          assignVehicleValue(vehicle, vehicleValues(vehicle))
+          val newVehicleValue = vehicleValueAtCheckpointLevel(vehicle)
+          if(vehicleValues(vehicle) != newVehicleValue) {
+            vehicleValues(vehicle) = newVehicleValue
+            assignVehicleValue(vehicle, vehicleValues(vehicle))
+          }
         })
 
         // Restoring all other values
@@ -207,6 +216,7 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
 
             vehicleSearcher = vehicleSearcher.push(sui.oldPosToNewPos)
             changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+            changedVehicleDuringNotify = QList(impactedVehicle,changedVehicleDuringNotify)
             true
         } else {
           false
@@ -248,6 +258,7 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
 
           changedVehiclesSinceCheckpoint0(fromVehicle) = true
           changedVehiclesSinceCheckpoint0(toVehicle) = true
+          changedVehicleDuringNotify = QList(toVehicle,QList(fromVehicle,changedVehicleDuringNotify))
           true
         } else {
           false
@@ -268,6 +279,7 @@ abstract class GlobalConstraintDefinitionV2[T : Manifest, U : Manifest] (routes:
 
           vehicleSearcher = vehicleSearcher.push(sur.oldPosToNewPos)
           changedVehiclesSinceCheckpoint0(impactedVehicle) = true
+          changedVehicleDuringNotify = QList(impactedVehicle,changedVehicleDuringNotify)
           true
         } else {
           false

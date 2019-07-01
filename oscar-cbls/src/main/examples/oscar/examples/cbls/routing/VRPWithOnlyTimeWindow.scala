@@ -23,6 +23,7 @@ object VRPWithOnlyTimeWindow extends App {
             case 1 => println("\n++++++ Starting insertPoint procedure ++++++")
             case 2 => println("\n++++++ Starting insertPoint exhaust onePtMove procedure ++++++")
             case 3 => println("\n++++++ Starting insertPoint exhaust threeOpt procedure ++++++")
+            case 4 => println("\n++++++ Starting insertPoint exhaust mu[OnePtMove] procedure ++++++")
           }
           for(n <- ns){
             for(v <- vs){
@@ -32,6 +33,7 @@ object VRPWithOnlyTimeWindow extends App {
                   case 1 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run1(best)
                   case 2 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run2(best)
                   case 3 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run3(best)
+                  case 4 => new VRPWithOnlyTimeWindow(twc, n, v, iteration = it).run4(best)
                 }).
                 foldLeft(Array[Long](0,0,0,0,0,0,0,0,0,0))((acc,item) =>
                   Array(acc(0) + item._1,acc(1) + item._2,
@@ -56,16 +58,16 @@ object VRPWithOnlyTimeWindow extends App {
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(1,2,3)
+  val procedures = List(4)
   // The variations of n values
-  val ns_1 = List(100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L)
+  val ns_1 = List(50L/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
   val ns_2 = List(1000L)
   // The variations of v values
-  val vs_1 = List(10L)
+  val vs_1 = List(5L)
   val vs_2 = List(10L, 20L, 30L, 40L, 50L, 60L, 70L, 80L, 90L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 10
+  val iterations = 5
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
@@ -199,6 +201,20 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
     selectInsertionPointBehavior = if(best) Best() else First(),
     selectFlipBehavior = if(best) Best() else First())
 
+  def nextMoveGenerator(best: Boolean) = {
+    (exploredMoves:List[OnePointMoveMove]) => {
+      val moveNeighborhood = onePtMove(best)
+      Some(moveNeighborhood)
+    }
+  }
+
+  def muOnePtMove(depth: Int, best: Boolean) =
+    mu[OnePointMoveMove](
+      onePtMove(best),
+      nextMoveGenerator(best),
+      depth,
+      true)
+
   // Simple InsertPoint procedure
   def run1(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best)
@@ -265,6 +281,31 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
       globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
       globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
+      )
+    else if(globalConstraintWithLogReduc.isDefined)
+      (obj.value, duration,
+        globalConstraintWithLogReduc.get.notifyTime/1000000, globalConstraintWithLogReduc.get.notifyCount,
+        globalConstraintWithLogReduc.get.preComputeTime/1000000, globalConstraintWithLogReduc.get.preComputeCount,
+        globalConstraintWithLogReduc.get.computeValueTime/1000000, globalConstraintWithLogReduc.get.computeValueCount,
+        globalConstraintWithLogReduc.get.assignTime/1000000, globalConstraintWithLogReduc.get.assignCount
+      )
+    else
+      (obj.value, duration,0,0,0,0,0,0,0,0)
+  }
+
+  def run4(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
+    val search = insertPoint(best) exhaust muOnePtMove(2,best)
+    search.verbose = 1
+    val start = System.nanoTime()
+    search.doAllMoves(obj=obj)
+    val end = System.nanoTime()
+    val duration = ((end - start)/1000000).toInt
+    if(globalConstraint.isDefined)
+      (obj.value, duration,
+        globalConstraint.get.notifyTime/1000000, globalConstraint.get.notifyCount,
+        globalConstraint.get.preComputeTime/1000000, globalConstraint.get.preComputeCount,
+        globalConstraint.get.computeValueTime/1000000, globalConstraint.get.computeValueCount,
+        globalConstraint.get.assignTime/1000000, globalConstraint.get.assignCount
       )
     else if(globalConstraintWithLogReduc.isDefined)
       (obj.value, duration,
