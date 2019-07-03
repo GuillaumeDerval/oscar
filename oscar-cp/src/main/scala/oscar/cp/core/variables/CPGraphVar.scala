@@ -26,9 +26,10 @@ import oscar.cp.core.Constraint
  * 			inputEdges : list of tuple/pair (source, destination) representing the edges of the maximal graph
  *               if an tuple has values out of range (e.g. node value bigger than nNodes-1), this edge is ignored
  */
-class CPGraphVar(val s: CPStore, nNodes: Int, inputEdges: List[(Int,Int)], val name: String = "") extends CPVar {
+class CPGraphVar(val s: CPStore, val nNodes: Int, inputEdges: List[(Int,Int)], val name: String = "") extends CPVar {
   
-  def store = s 
+  def store = s
+
   
   // check if the edge is in range of nodes, otherwise ignore it
   private val r = 0 to nNodes
@@ -36,8 +37,8 @@ class CPGraphVar(val s: CPStore, nNodes: Int, inputEdges: List[(Int,Int)], val n
   private val nEdges = correctInputEdges.length
   
   // N and E will hold current graph interval
-  private val N = new CPSetVar(store,0,nNodes-1)
-  private val E = new CPSetVar(store,0,nEdges-1)
+  val N = new CPSetVar(store,0,nNodes-1)
+  val E = new CPSetVar(store,0,nEdges-1)
   
   // define some useful inner class
   case class Edge(index : Int, src: Int, dest : Int)

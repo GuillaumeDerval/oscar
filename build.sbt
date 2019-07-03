@@ -57,6 +57,15 @@ lazy val oscarCp = (project in file("oscar-cp")) // TODO pack : pack auto settin
   .dependsOn(oscarAlgo)
   .dependsOn(oscarVisual)
 
+lazy val oscarCpExample = (project in file("oscar-cp-examples")) // TODO pack : pack auto settings?
+  .settings(commonSettings: _*)
+  .settings(name := "oscar-cp-examples")
+  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaParserCombinators)
+  .enablePlugins(PackPlugin)
+  .settings(PackPlugin.packSettings)
+  .enablePlugins(JacocoPlugin)
+  .settings(JacocoPlugin.globalSettings)
+  .dependsOn(oscarCp)
 
 lazy val oscarModeling = (project in file("oscar-modeling"))
   .settings(commonSettings: _*)
