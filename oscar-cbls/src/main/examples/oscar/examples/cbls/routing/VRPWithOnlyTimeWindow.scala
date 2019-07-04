@@ -2,7 +2,9 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
+import oscar.cbls.business.routing.invariants.group.{GlobalConstraintDefinition, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
+import oscar.cbls.core.computation.FullRange
 import oscar.cbls.core.objective.CascadingObjective
 import oscar.cbls.core.search.{Best, First}
 
@@ -58,23 +60,23 @@ object VRPWithOnlyTimeWindow extends App {
   // Add true if you want to run with Best and/or false if you want to run with First
   val bests = List(false)
   // Add the procedures you want (see at the end of this files for more informations)
-  val procedures = List(4)
+  val procedures = List(1,2,3)
   // The variations of n values
-  val ns_1 = List(50L/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
+  val ns_1 = List(400L/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
   val ns_2 = List(1000L)
   // The variations of v values
-  val vs_1 = List(5L)
+  val vs_1 = List(10L)
   val vs_2 = List(10L, 20L, 30L, 40L, 50L, 60L, 70L, 80L, 90L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 5
+  val iterations = 1
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
   //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false, iteration: Int = 0){
-  val m = new Store(noCycle = false, propagateOnToString = false)
+  val m = new Store(noCycle = false, propagateOnToString = false/*, checker = Some(new ErrorChecker())*/)
   val penaltyForUnrouted = 10000
   RoutingMatrixGenerator.random.setSeed(iteration)
   val symmetricDistance = RoutingMatrixGenerator.apply(n)._1
@@ -84,10 +86,13 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
 
   val myVRP =  new VRP(m,n,v)
 
+  val gc = GlobalConstraintDefinition(myVRP.routes, v)
+
   var globalConstraintWithLogReduc: Option[TimeWindowConstraintWithLogReduction] = None
   var globalConstraint: Option[TimeWindowConstraint] = None
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,symmetricDistance,true,true,false)(0)
+  val vehicleToRouteLength = Array.fill(v)(CBLSIntVar(m, 0, FullRange))
+  val routeLengthInvariant = new RouteLength(gc,n,v,vehicleToRouteLength,(from,to) => symmetricDistance(from)(to))
 
   // This class isn't meant to last but given the time left I don't want to modify it.
   // It uses an old representation of time windows with earliestArrivalTimes and latestLeavingTimes.
@@ -130,34 +135,34 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
       }
 
       new CascadingObjective(constraints,
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+        sum(vehicleToRouteLength) + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
     else if(version == 1){
       // Global constraint
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
       val smartTimeWindowInvariant =
-        TimeWindowConstraint(myVRP.routes, n, v,
+        TimeWindowConstraint(gc, n, v,
           timeWindowExtension.earliestArrivalTimes,
           timeWindowExtension.latestLeavingTimes,
           timeWindowExtension.taskDurations,
           timeMatrix, violations)
       globalConstraint = Some(smartTimeWindowInvariant)
       new CascadingObjective(sum(violations),
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+        sum(vehicleToRouteLength) + (penaltyForUnrouted*(n - length(myVRP.routes))))
     } else {
       // Global constraint with log reduction
       val violations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
       val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
       val smartTimeWindowInvariant =
-        TimeWindowConstraintWithLogReduction(myVRP.routes, n, v,
+        TimeWindowConstraintWithLogReduction(gc, n, v,
           timeWindowExtension.earliestArrivalTimes,
           timeWindowExtension.latestLeavingTimes,
           timeWindowExtension.taskDurations,
           timeMatrix, violations)
       globalConstraintWithLogReduc = Some(smartTimeWindowInvariant)
       new CascadingObjective(sum(violations),
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes))))
+        sum(vehicleToRouteLength) + (penaltyForUnrouted*(n - length(myVRP.routes))))
     }
   m.close()
 
@@ -218,7 +223,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
   // Simple InsertPoint procedure
   def run1(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best)
-    //search.verbose = 4
+    //search.verbose = 1
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()
@@ -295,7 +300,7 @@ class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo
 
   def run4(best: Boolean): (Long,Long,Long,Long,Long,Long,Long,Long,Long,Long) ={
     val search = insertPoint(best) exhaust muOnePtMove(2,best)
-    search.verbose = 1
+    search.verbose = 0
     val start = System.nanoTime()
     search.doAllMoves(obj=obj)
     val end = System.nanoTime()

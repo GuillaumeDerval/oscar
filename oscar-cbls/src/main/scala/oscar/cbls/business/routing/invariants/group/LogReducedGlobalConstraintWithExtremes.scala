@@ -5,8 +5,8 @@ import oscar.cbls.algo.seq.{IntSequence, IntSequenceExplorer}
 import oscar.cbls.core.ChangingSeqValue
 import oscar.cbls._
 
-abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](routes:ChangingSeqValue,v :Long)
-  extends LogReducedGlobalConstraint[T,U](routes:ChangingSeqValue,v :Long){
+abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest](gc: GlobalConstraintDefinition, n: Long, v: Long)
+  extends LogReducedGlobalConstraint[T](gc,n,v){
   var preComputeTime = 0L
   var preComputeCount = 0
   var computeValueTime = 0L
@@ -44,9 +44,9 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
     }
   }
 
-  override def performPreCompute(vehicle: Long, routes: IntSequence, preComputedVals: Array[VehicleAndPosition]): Unit = {
+  override def performPreCompute(vehicle: Long, routes: IntSequence): Unit = {
     val start = System.nanoTime()
-    super.performPreCompute(vehicle, routes, preComputedVals)
+    super.performPreCompute(vehicle, routes)
     //also compute the extremes forward and backwards
 
     identifyNodesAndAllocateExtremePrecomputes(
@@ -88,9 +88,8 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   }
 
   override def computeVehicleValue(vehicle:Long,
-                                   segments:QList[Segment[VehicleAndPosition]],
-                                   routes:IntSequence,
-                                   preComputedVals:Array[VehicleAndPosition]):U = {
+                                   segments:QList[Segment],
+                                   routes:IntSequence): Unit = {
     computeValueCount += 1
     val start = System.nanoTime()
     val res = computeVehicleValueComposed(
@@ -104,7 +103,7 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
   }
 
   def decorateSegmentsExtremes(vehicle:Long,
-                               segments:QList[Segment[VehicleAndPosition]],
+                               segments:QList[Segment],
                                isFirst:Boolean):QList[LogReducedSegment[T]] = {
 
     //TODO: it seems that the list construction produces a significant overhead. These might be replaced by QLists.
@@ -117,8 +116,9 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
       case q =>
         q.head match{
           case PreComputedSubSequence
-            (startNode: Long, startNodeValue: VehicleAndPosition,
-            endNode: Long, endNodeValue: VehicleAndPosition, length: Long) =>
+            (startNode: Long, endNode: Long, length: Long) =>
+            val startNodeValue = preComputedVals(startNode)
+            val endNodeValue = preComputedVals(endNode)
 
             if(isFirst){
               require(vehicle == startNodeValue.vehicle)
@@ -150,8 +150,9 @@ abstract class LogReducedGlobalConstraintWithExtremes[T:Manifest,U:Manifest](rou
                   endNodeValue.positionInVehicleRoute, flipped = false)), decorateSegmentsExtremes(vehicle:Long, segments = q.tail,isFirst = false))
             }
           case FlippedPreComputedSubSequence(
-          startNode: Long, startNodeValue: VehicleAndPosition,
-          endNode: Long, endNodeValue: VehicleAndPosition, length: Long) =>
+          startNode: Long, endNode: Long, length: Long) =>
+            val startNodeValue = preComputedVals(startNode)
+            val endNodeValue = preComputedVals(endNode)
 
             QList(LogReducedFlippedPreComputedSubSequence[T](
               startNode: Long, endNode: Long,

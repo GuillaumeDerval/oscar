@@ -5,6 +5,7 @@ import java.io.File
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
+import oscar.cbls.business.routing.invariants.group.GlobalConstraintDefinition
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
 import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint, SegmentExchangeOnSegments}
@@ -108,14 +109,15 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   //Time window constraints
   val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-  val timeWindowConstraint = TimeWindowConstraint(myVRP.routes,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
+  val gc = GlobalConstraintDefinition(myVRP.routes, v)
+  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
 
 
   // Weighted nodes
   // The sum of node's weight can't excess the capacity of a vehicle
   val weightPerVehicle = Array.tabulate(v)(_ => CBLSIntVar(m))
   // This invariant maintains the total node's weight encountered by each vehicle
-  val weightedNodesConstraint = WeightedNodesPerVehicle(myVRP.routes, v, nodeWeight, weightPerVehicle)
+  val weightedNodesConstraint = WeightedNodesPerVehicle(gc, n, v, nodeWeight, weightPerVehicle)
   // This invariant maintains the capacity violation of each vehicle (le means lesser or equals)
   val vehicleCapacityViolation = Array.tabulate(v)(vehicle => weightPerVehicle(vehicle) le c)
   val constraintSystem = new ConstraintSystem(m)

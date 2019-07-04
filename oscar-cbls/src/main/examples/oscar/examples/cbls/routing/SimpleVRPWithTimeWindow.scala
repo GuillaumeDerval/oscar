@@ -2,7 +2,8 @@ package oscar.examples.cbls.routing
 
 import oscar.cbls._
 import oscar.cbls.business.routing._
-import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
+import oscar.cbls.business.routing.invariants.group.GlobalConstraintDefinition
+import oscar.cbls.business.routing.invariants.timeWindow.TimeWindowConstraint
 import oscar.cbls.core.search.Best
 import oscar.cbls.lib.constraint.EQ
 
@@ -43,8 +44,9 @@ object SimpleVRPWithTimeWindow extends App{
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
   val timeMatrix = Array.tabulate(n)(from => Array.tabulate(n)(to => travelDurationMatrix.getTravelDuration(from, 0, to)))
   //println("travel durations: \n" + timeMatrix.zipWithIndex.map(from => from._2 -> from._1.zipWithIndex.map(to => "" + to._2 + " : " + to._1).mkString(", ")).mkString("\n"))
+  val gc = GlobalConstraintDefinition(myVRP.routes,v)
   val smartTimeWindowInvariant =
-    TimeWindowConstraint(myVRP.routes, n, v,
+    TimeWindowConstraint(gc, n, v,
       earliestArrivalTimes,
       latestLeavingTimes,
       taskDurations,
