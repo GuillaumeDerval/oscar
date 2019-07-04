@@ -81,7 +81,6 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val start = System.nanoTime()
     if(!invariantAreInitiated) initializeVehicleValues()
-    println(changes)
 
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
       val newRoute = routes.newValue
@@ -346,8 +345,10 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
       val vehiclePos = vehicleSearcher.startPosOfVehicle(vehicle)
       val (fromImpactedSegment, segmentsBeforeFromImpactedSegment, segmentsAfterFromImpactedSegment, currentCounter) =
         findImpactedSegment(from,vehicle,vehiclePos-1)
-      val (toImpactedSegment, segmentsBetweenFromAndTo, segmentsAfterToImpactedSegment,_) =
+      val (toImpactedSegment, tempSegmentsBetweenFromAndTo, segmentsAfterToImpactedSegment,_) =
         findImpactedSegment(to,vehicle, currentCounter,QList(fromImpactedSegment,segmentsAfterFromImpactedSegment))
+
+      val segmentsBetweenFromAndTo = QList.qDrop(tempSegmentsBetweenFromAndTo,1)
 
       // nodeBeforeFrom is always defined because it's at worst a vehicle node
       // Update positionToValueCache and then use the updated value

@@ -60,7 +60,6 @@ class RouteLength(gc: GlobalConstraintDefinition, n: Int, v:Int, vehicleToRouteL
   override def computeVehicleValue(vehicle: Long,
                                    segments: QList[Segment],
                                    routes: IntSequence): Unit = {
-    println(segments.toList.mkString("\n"))
 
     def digestListOfSegments(segments: QList[Segment], prevNode: Long): Long = {
       segments match {
@@ -110,7 +109,7 @@ class RouteLength(gc: GlobalConstraintDefinition, n: Int, v:Int, vehicleToRouteL
         //we are at the end of the last route
         false
       case Some(explorer) =>
-        if(explorer.value == vehicle+1){
+        if(explorer.value < v && explorer.value == vehicle+1){
           //we start the next vehicle
           false
         }else{
