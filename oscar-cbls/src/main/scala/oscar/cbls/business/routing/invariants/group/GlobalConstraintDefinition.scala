@@ -16,12 +16,13 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
   val n = routes.maxValue+1L
   val vehicles = 0L until v
 
-  private var managedConstraints: List[GlobalConstraintMethods] = List.empty
+  private var managedConstraints: QList[GlobalConstraintMethods] = null
   private var invariantAreInitiated = false
 
   private var checkpointLevel: Int = -1
   private var checkpointAtLevel0: IntSequence = _
   private var changedVehiclesSinceCheckpoint0 = new IterableMagicBoolArray(v, false)
+  private var vehicleToRecomputeAfterRB = new IterableMagicBoolArray(v, false)
 
   // An array holding the ListSegment modifications as a QList
   // Int == checkpoint level, ListSegments the new ListSegment of the vehicle considering the modifications
@@ -44,19 +45,19 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
   finishInitialization()
 
   private def computeVehicleValues(vehicle: Long, segmentsOfVehicle: QList[Segment], newRoute: IntSequence): Unit ={
-    managedConstraints.foreach(c => c.computeVehicleValue(vehicle, segmentsOfVehicle, newRoute))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.computeVehicleValue(vehicle, segmentsOfVehicle, newRoute))
   }
 
   private def assignVehicleValues(vehicle: Long): Unit ={
-    managedConstraints.foreach(c => c.assignVehicleValue(vehicle))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.assignVehicleValue(vehicle))
   }
 
   private def performPreComputes(vehicle: Long, routes: IntSequence): Unit ={
-    managedConstraints.foreach(c => c.performPreCompute(vehicle, routes))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.performPreCompute(vehicle, routes))
   }
 
   private def computeVehicleValuesFromScratch(vehicle: Long, routes: IntSequence): Unit ={
-    managedConstraints.foreach(c => c.computeVehicleValueFromScratch(vehicle, routes))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.computeVehicleValueFromScratch(vehicle, routes))
   }
 
   private def rollBackVehicleValuesToCheckPoint(changedVehicleAtFromCheckpoint: QList[Int], changedVehicleAtToCheckpoint: QList[Int]): Unit ={
@@ -64,34 +65,32 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
   }
 
   private def setCheckpointLevel0Values(vehicle: Int): Unit ={
-    managedConstraints.foreach(c => c.setCheckpointLevel0Value(vehicle))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.setCheckpointLevel0Value(vehicle))
   }
 
   private def initializeVehicleValues(): Unit ={
     invariantAreInitiated = true
-    managedConstraints.foreach(c => c.init(routes.newValue))
+    QList.qForeach(managedConstraints, (c: GlobalConstraintMethods) => c.init(routes.newValue))
   }
 
   def register(invariant: GlobalConstraintMethods): Unit ={
-    managedConstraints = managedConstraints :+ invariant
+    managedConstraints = QList(invariant, managedConstraints)
   }
 
   override def notifySeqChanges(r: ChangingSeqValue, d: Int, changes: SeqUpdate): Unit = {
     val start = System.nanoTime()
     if(!invariantAreInitiated) initializeVehicleValues()
 
+    val newRoute = routes.newValue
+
     if(digestUpdates(changes) && !(this.checkpointLevel == -1)){
-      val newRoute = routes.newValue
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
         computeVehicleValues(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
         assignVehicleValues(vehicle)
       })
     } else {
-      for (vehicle <- vehicles){
-        computeVehicleValuesFromScratch(vehicle,routes.newValue)
-        assignVehicleValues(vehicle)
-      }
+      computeAndAssignVehiclesValueFromScratch(newRoute)
     }
     notifyTime += System.nanoTime() - start
     notifyCount += 1
