@@ -60,7 +60,6 @@ class RouteLength(gc: GlobalConstraintDefinition, n: Int, v:Int, vehicleToRouteL
   override def computeVehicleValue(vehicle: Long,
                                    segments: QList[Segment],
                                    routes: IntSequence): Unit = {
-
     def digestListOfSegments(segments: QList[Segment], prevNode: Long): Long = {
       segments match {
         case null =>
@@ -89,7 +88,7 @@ class RouteLength(gc: GlobalConstraintDefinition, n: Int, v:Int, vehicleToRouteL
       }
     }
 
-    saveVehicleValue(vehicle, digestListOfSegments(segments, -1))
+    saveVehicleValue(vehicle, digestListOfSegments(segments,-1))
   }
 
   override def assignVehicleValue(vehicle: Long): Unit = {

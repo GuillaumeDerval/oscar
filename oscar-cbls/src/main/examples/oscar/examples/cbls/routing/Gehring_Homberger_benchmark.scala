@@ -5,10 +5,10 @@ import java.io.File
 import oscar.cbls._
 import oscar.cbls.business.routing._
 import oscar.cbls.business.routing.invariants.WeightedNodesPerVehicle
-import oscar.cbls.business.routing.invariants.group.GlobalConstraintDefinition
+import oscar.cbls.business.routing.invariants.group.{GlobalConstraintDefinition, RouteLength}
 import oscar.cbls.business.routing.invariants.timeWindow.{TimeWindowConstraint, TimeWindowConstraintWithLogReduction}
 import oscar.cbls.business.routing.model.extensions.TimeWindows
-import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint, SegmentExchangeOnSegments}
+import oscar.cbls.business.routing.neighborhood.{InsertPointUnroutedFirst, RemovePoint}
 import oscar.cbls.core.search.Best
 
 import scala.io.Source
@@ -99,19 +99,21 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   val penaltyForUnrouted = 1000000
   val penaltyForMovingVehicle = 10000
 
+  val gc = GlobalConstraintDefinition(myVRP.routes, v)
+
   val travelDurationMatrix = RoutingMatrixGenerator.generateLinearTravelTimeFunction(n,distanceMatrix)
   val nodeWeight = demands
 
   // Distance
-  val totalRouteLength = routeLength(myVRP.routes,n,v,false,distanceMatrix,true,true,false)(0)
+  val routeLengths = Array.fill(v)(CBLSIntVar(m,0))
+  val routeLength = new RouteLength(gc,n,v,routeLengths,(from: Long, to: Long) => distanceMatrix(from)(to))
   val movingVehiclesNow = movingVehicles(myVRP.routes,v)
 
   //Time window constraints
   val timeWindowRoute = myVRP.routes.createClone()
   val timeWindowViolations = Array.fill(v)(new CBLSIntVar(m, 0, Domain.coupleToDomain((0,1))))
-  val gc = GlobalConstraintDefinition(myVRP.routes, v)
-  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
 
+  val timeWindowConstraint = TimeWindowConstraint(gc,n,v,timeWindows.earliestArrivalTimes, timeWindows.latestLeavingTimes, timeWindows.taskDurations, distanceMatrix, timeWindowViolations)
 
   // Weighted nodes
   // The sum of node's weight can't excess the capacity of a vehicle
@@ -126,7 +128,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   //Constraints & objective
   val obj = new CascadingObjective(sum(timeWindowViolations),
       new CascadingObjective(constraintSystem,
-        totalRouteLength + (penaltyForUnrouted*(n - length(myVRP.routes)) + penaltyForMovingVehicle*setSum(movingVehiclesNow, x => 1))))
+        sum(routeLengths) + (penaltyForUnrouted*(n - length(myVRP.routes)) + penaltyForMovingVehicle*setSum(movingVehiclesNow, x => 1))))
 
   m.close()
 
@@ -199,7 +201,7 @@ class Gehring_Homberger_benchmark_VRPTW(n: Int, v: Int, c: Int, distanceMatrix: 
   search.doAllMoves(obj=obj)
 
   println("Unrouted nodes : " + myVRP.unroutedNodes.size)
-  println("Distance totale parcourue :" + totalRouteLength.value/100.0)
+  println("Distance totale parcourue :" + routeLengths.map(_.value).sum/100.0)
   println("Nombre de véhicules utilisés :" + movingVehiclesNow.value.size)
   println("\n\n###########################################################################################\n\n")
 

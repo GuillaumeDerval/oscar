@@ -2,11 +2,8 @@ package oscar.cbls.business.routing.invariants.timeWindow
 
 import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.invariants.group._
-import oscar.cbls.core.computation._
 import oscar.cbls._
 import oscar.cbls.algo.quick.QList
-
-import scala.reflect.runtime.universe._
 
 /*******************************************************************************
   * OscaR is free software: you can redistribute it and/or modify
@@ -320,7 +317,6 @@ class TimeWindowConstraint (gc: GlobalConstraintDefinition,
       }
       else leaveTimeAtSegment
     }
-    //println("Using : " + preComputedVals.map(x => x.mkString(", ")).mkString("\n"))
     val arrivalTimeAtDepot = arrivalAtDepot(segments)
     computeValueTime += System.nanoTime() - start
     computeValueCount += 1
@@ -377,7 +373,7 @@ class TimeWindowConstraint (gc: GlobalConstraintDefinition,
     // Check travel back to depot
     val travelBackToDepot = travelTimeMatrix(fromNode)(vehicle)
     val arrivalTimeAtDepot = leaveTimeAtFromNode + travelBackToDepot
-    val result = violationFound || arrivalTimeAtDepot >= latestLeavingTime(vehicle)
+    val result = violationFound || arrivalTimeAtDepot > latestLeavingTime(vehicle)
     if(save) saveVehicleValue(vehicle, result)
     result
   }

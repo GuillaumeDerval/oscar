@@ -96,7 +96,7 @@ abstract class GlobalConstraintMethods(gc: GlobalConstraintDefinition, v: Int) {
 
   def checkInternals(vehicle: Long, routes: ChangingSeqValue): Unit ={
     val fromScratch = computeVehicleValueFromScratch(vehicle, routes.value, false)
-    require(fromScratch.equals(currentVehiclesValue(vehicle)),
+    require(fromScratch.equals(currentVehiclesValue(vehicle)), "Constraint " + this.getClass.getName + " failed " +
     "For Vehicle " + vehicle + " : should be " + fromScratch + " got " +
       currentVehiclesValue(vehicle) + " " + routes + "\n")
   }

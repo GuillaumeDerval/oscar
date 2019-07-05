@@ -62,17 +62,17 @@ object VRPWithOnlyTimeWindow extends App {
   // Add the procedures you want (see at the end of this files for more informations)
   val procedures = List(1,2,3)
   // The variations of n values
-  val ns_1 = List(400L/*100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L*/)
+  val ns_1 = List(100L, 200L, 300L, 400L, 500L, 600L, 700L, 800L, 900L, 1000L)
   val ns_2 = List(1000L)
   // The variations of v values
   val vs_1 = List(10L)
   val vs_2 = List(10L, 20L, 30L, 40L, 50L, 60L, 70L, 80L, 90L, 100L)
   //val vs_2 = List(10)
   // The number of iterations of each configuration
-  val iterations = 1
+  val iterations = 20
   runConfiguration(ns_1,vs_1,timeWindowConstraints,bests, procedures,iterations)
   println("\n\n\n\n\n\n\n#####################################################\n\n\n\n\n\n")
-  //runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
+  runConfiguration(ns_2,vs_2,timeWindowConstraints,bests, procedures,iterations)
 }
 
 class VRPWithOnlyTimeWindow(version: Long, n: Long = 100, v: Long = 10, fullInfo: Boolean = false, iteration: Int = 0){

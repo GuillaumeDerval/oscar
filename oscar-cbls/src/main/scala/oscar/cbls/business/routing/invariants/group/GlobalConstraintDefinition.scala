@@ -7,8 +7,6 @@ import oscar.cbls.algo.seq.IntSequence
 import oscar.cbls.business.routing.model.VehicleLocation
 import oscar.cbls.core._
 
-import scala.collection.immutable.HashMap
-
 case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
   extends Invariant with SeqNotificationTarget{
 
@@ -49,7 +47,7 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
     managedConstraints.foreach(c => c.computeVehicleValue(vehicle, segmentsOfVehicle, newRoute))
   }
 
-  private def assignVehicleValues(vehicle: Long, checkpointLevel: Int): Unit ={
+  private def assignVehicleValues(vehicle: Long): Unit ={
     managedConstraints.foreach(c => c.assignVehicleValue(vehicle))
   }
 
@@ -57,7 +55,7 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
     managedConstraints.foreach(c => c.performPreCompute(vehicle, routes))
   }
 
-  private def computeVehicleValuesFromScratch(vehicle: Long, routes: IntSequence, checkpointLevel: Int): Unit ={
+  private def computeVehicleValuesFromScratch(vehicle: Long, routes: IntSequence): Unit ={
     managedConstraints.foreach(c => c.computeVehicleValueFromScratch(vehicle, routes))
   }
 
@@ -87,12 +85,12 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
       QList.qForeach(changedVehiclesSinceCheckpoint0.indicesAtTrueAsQList,(vehicle: Int) => {
         // Compute new vehicle value based on last segment changes
         computeVehicleValues(vehicle, segmentsOfVehicle(vehicle).segments, newRoute)
-        assignVehicleValues(vehicle, checkpointLevel+1)
+        assignVehicleValues(vehicle)
       })
     } else {
       for (vehicle <- vehicles){
-        computeVehicleValuesFromScratch(vehicle,routes.value, 0)
-        assignVehicleValues(vehicle, 0)
+        computeVehicleValuesFromScratch(vehicle,routes.newValue)
+        assignVehicleValues(vehicle)
       }
     }
     notifyTime += System.nanoTime() - start
@@ -299,8 +297,8 @@ case class GlobalConstraintDefinition(routes: ChangingSeqValue, v: Long)
 
   private def computeAndAssignVehiclesValueFromScratch(newSeq: IntSequence): Unit ={
     vehicles.foreach(v => {
-      computeVehicleValuesFromScratch(v, newSeq, 0)
-      assignVehicleValues(v, 0)
+      computeVehicleValuesFromScratch(v, newSeq)
+      assignVehicleValues(v)
     })
   }
 
