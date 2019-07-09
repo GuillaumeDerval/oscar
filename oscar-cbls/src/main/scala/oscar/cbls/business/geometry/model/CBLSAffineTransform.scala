@@ -21,14 +21,14 @@ import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
 
-class AffineTransformationValue(val affineTransform:AffineTransformation,
-                                val uniformScalingFactor:Option[Double]){
+case class AffineTransformationValue(affineTransform:AffineTransformation,
+                                     uniformScalingFactor:Option[Double]){
 }
 
 /**
-  * @param store
+  * @param store is the underlying model
   * @param initialValue is the initial value of the variable
-  * @param givenName
+  * @param givenName is the name of the affine variable
   */
 class CBLSAffineTransformVar(store: Store,
                              initialValue: AffineTransformationValue,
@@ -87,8 +87,8 @@ trait AffineTransformNotificationTarget{
 class CBLSAffineTransformConst(store:Store, override val value:AffineTransformation, givenName:String = null)
   extends CBLSAtomicConst[AffineTransformation](value){
 
-  override def name = if (givenName == null) value.toString else givenName
-  override def toString:String = if (givenName == null) value.toString else givenName
+  override def name: String = if (givenName == null) value.toString else givenName
+  override def toString: String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSAffineTransformInvariant(initialValue:AffineTransformationValue)

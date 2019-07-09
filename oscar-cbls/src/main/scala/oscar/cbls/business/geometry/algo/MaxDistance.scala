@@ -23,7 +23,7 @@ object MaxDistance {
   }
 
   def computeDistanceLineString(line: LineString, pt: Coordinate, ptDist: PointPairDistance): Unit = {
-    val tempSegment = new LineSegment
+    //val tempSegment = new LineSegment
     val coords:Array[Coordinate] = line.getCoordinates
 
     for(coord <- coords){

@@ -22,7 +22,7 @@ import oscar.cbls.Store
 import oscar.cbls.core.computation._
 import oscar.cbls.core.propagation.{Checker, PropagationElement}
 
-case class GeometryValue(val geometry:Geometry,
+case class GeometryValue(geometry: Geometry,
                          private var inputCentreOfOverApproximatingCircle:Option[Point] = None,
                          private var inputOverApproximatingRadius:Option[Double] = None) {
 
@@ -34,7 +34,8 @@ case class GeometryValue(val geometry:Geometry,
   //une value dérivée est soit:
   // donnée
   // Calculée à partir de geometry
-  //on ne considère pas le cas de calculé à partir des va leurs d'origines; on doit alors juste la doner en entrée.
+  // on ne considère pas le cas de calculé à partir des valeurs d'origines; on doit
+  // alors juste la doner en entrée.
 
   def centerOfOverApproximatingCircleOpt:Option[Point] = inputCentreOfOverApproximatingCircle
   def centerOfOverApproximatingCircle:Point = inputCentreOfOverApproximatingCircle match{
@@ -69,10 +70,11 @@ case class CBLSGeometryVar(store: Store,
     givenName: String ){
 
   def createClone:CBLSGeometryVar = {
-    val clone = new CBLSGeometryVar(
+    val clone = CBLSGeometryVar(
       store,
       this.value,
-      "clone of " + this.name)
+      "clone of " + this.name
+    )
 
     clone <== this
     clone
@@ -120,8 +122,8 @@ trait GeometryNotificationTarget{
 case class CBLSGeometryConst(store:Store, override val value:GeometryValue, givenName:String = "")
   extends CBLSAtomicConst[GeometryValue](value){
 
-  override def name = if (givenName == null) value.toString else givenName
-  override def toString:String = if (givenName == null) value.toString else givenName
+  override def name: String = if (givenName == null) value.toString else givenName
+  override def toString: String = if (givenName == null) value.toString else givenName
 }
 
 class CBLSGeometryInvariant(store:Store,
@@ -129,10 +131,11 @@ class CBLSGeometryInvariant(store:Store,
   extends AtomicInvariant[GeometryValue](initialValue){
 
   def createClone:CBLSGeometryVar = {
-    val clone = new CBLSGeometryVar(
+    val clone = CBLSGeometryVar(
       store,
       this.value,
-      "clone of " + this.name)
+      "clone of " + this.name
+    )
 
     clone <== this
     clone

@@ -19,7 +19,7 @@ package oscar.cbls.business
 
 import org.locationtech.jts.geom.impl.CoordinateArraySequence
 import org.locationtech.jts.geom.util.AffineTransformation
-import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory, Point}
+import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryFactory, MultiPolygon, Point}
 
 package object geometry {
 
@@ -28,7 +28,7 @@ package object geometry {
   // so better to keep it all in floats, and perform any conversion when getting things out of JTS
   val factory:GeometryFactory = new GeometryFactory()
 
-  val emptyPolygon = factory.createMultiPolygon(Array.empty)
+  val emptyPolygon:MultiPolygon = factory.createMultiPolygon(Array.empty)
 
   def point(x:Double,y:Double):Point = {
     new Point(new CoordinateArraySequence(Array(new Coordinate(x,y))), factory)
