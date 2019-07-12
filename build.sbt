@@ -91,6 +91,17 @@ lazy val oscarCPXcsp3 = (project in file("oscar-cp-xcsp3"))
   .dependsOn(oscarModeling)
 
 
+lazy val oscarMl = (project in file("oscar-ml")) // TODO pack : pack auto settings?
+  .settings(commonSettings: _*)
+  .settings(name := "oscar-ml")
+  .settings(libraryDependencies ++= Dependencies.testDeps :+ Dependencies.scalaParserCombinators)
+  .enablePlugins(PackPlugin)
+  .settings(PackPlugin.packSettings)
+  .enablePlugins(JacocoPlugin)
+  .settings(JacocoPlugin.globalSettings)
+  .dependsOn(oscarCp)
+
+
 lazy val oscarPerf = (project in file("oscar-perf")) // TODO check configs PerfTest?
   .settings(commonSettings: _*)
   .settings(name := "oscar-perf")
