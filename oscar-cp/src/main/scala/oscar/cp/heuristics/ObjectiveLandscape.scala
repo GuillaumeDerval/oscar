@@ -6,16 +6,19 @@ import oscar.cp.core.variables.CPIntVar
 import util.control.Breaks._
 import scala.collection.mutable.ArrayBuffer
 
-// Objective Landscapes from "Objective Landscapes for Constraint Programming"
+/** Objective Landscape from "Objective Landscapes for Constraint Programming"
+  * @param solver    The  cp solver
+  * @param variables The variables on which the variable ordering heuristic is applied
+  * @author           Yannick Goulleven : yannick.goulleven@student.uclouvain.be
+  */
 class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
 
-  private[this] val nPoints = 100
   private[this] val isMin = solver.objective.objs.head.isMin
   private[this] val objVar = solver.objective.objs.head.objVar
   private[this] val context = variables(0).context
   private[this] val size = variables.length
   // lower bound of the objective function
-  private[this] var Zl = if(isMin) solver.objective.objs.head.domBest else solver.objective.objs.head.domWorst
+  private[this] val Zl = if(isMin) solver.objective.objs.head.domBest else solver.objective.objs.head.domWorst
   // upper bound of the objective function
   private[this] val Zu = if(isMin)  solver.objective.objs.head.domWorst else solver.objective.objs.head.domBest
   // sequence of zj values
@@ -62,11 +65,6 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
       context.pop()
     }
 
-
-
-
-
-
     // objective landscape final computation
     for(i <- variables.indices) {
       val values = Array.ofDim[Int](variables(i).getSize)
@@ -97,9 +95,6 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
         }
       }
     }
-
-
-
   }
 
 
@@ -170,6 +165,7 @@ class ObjectiveLandscape(solver:CPSolver, variables: Array[CPIntVar]) {
     }
     bestValue
   }
+
 
   // returns the landscape score which has to be minimized
   def getLandscapeScore(i:Int, v:Int): Int = {

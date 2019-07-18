@@ -3,7 +3,11 @@ package oscar.cp.heuristics
 import oscar.cp.core.variables.CPIntVar
 import oscar.cp._
 
-
+/** Least Constraining Value Selector
+  * @param variables  The variables on which the value heuristic is applied
+  * @param maxDomSize Limits the number of values that are considered during the selection process, by default 20
+  * @author           Yannick Goulleven : yannick.goulleven@student.uclouvain.be
+  */
 class LeastConstrainingValueSelector(variables:Array[CPIntVar], maxDomSize:Int = 30) {
 
   private[this] val context = variables(0).context
@@ -11,8 +15,6 @@ class LeastConstrainingValueSelector(variables:Array[CPIntVar], maxDomSize:Int =
 
   // selects the value for a variable that removes the least values from the domains of other variables
   def selectValue(i:Int):Int = {
-
-
     var nLeft = propagate(i, variables(i).getMin)
     var bestValue = variables(i).getMin
 

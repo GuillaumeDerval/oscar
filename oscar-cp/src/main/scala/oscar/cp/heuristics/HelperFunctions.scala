@@ -106,6 +106,14 @@ object HelperFunctions {
   }
 
 
+
+  // helper function to compute the paretoFront
+  private def dominates(i:Int, j:Int, varH1:Int => Double, varH2: Int => Double):Boolean = {
+    if(varH1(i) >= varH1(j) && varH2(i) > varH2(j)) true
+    else if(varH2(i) >= varH2(j) && varH1(i) > varH1(j)) true
+    else false
+  }
+
   /**
     * @param futureVars   : the set of indices of un-assigned variables
     * @param varH1        : the first variable heuristic where the score returned needs to be maximized
@@ -140,6 +148,12 @@ object HelperFunctions {
     parFront.toArray
   }
 
+  /**
+    * @param minTime   : the minimum duration of the luby sequence
+    * @param maxTime   : the maximum duration of the luby seqeuence
+    * @param nTimeOuts : the number of timeouts without finding a better solution during the usage of the luby sequence
+    * @return          : a random duration between minTime and maxTime
+    **/
   def luby(minTime:Int, maxTime:Int)(nTimeOuts:Int): Long = {
 
     val m = rand.nextInt((maxTime - minTime / 2) + 1)
@@ -155,14 +169,6 @@ object HelperFunctions {
     else {
       duration(res)
     }
-  }
-
-
-
-  private def dominates(i:Int, j:Int, varH1:Int => Double, varH2: Int => Double):Boolean = {
-    if(varH1(i) >= varH1(j) && varH2(i) > varH2(j)) true
-    else if(varH2(i) >= varH2(j) && varH1(i) > varH1(j)) true
-    else false
   }
 
 }

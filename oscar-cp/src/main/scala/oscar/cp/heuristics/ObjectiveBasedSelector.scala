@@ -6,6 +6,14 @@ import oscar.util.IncrementalStatistics
 import oscar.cp.heuristics.HelperFunctions._
 import scala.util.Random
 
+/** Objective-Based Selector from "Objective as a Feature for Robust Search Strategies"
+  *
+  * @param variables The variables on which the variable ordering heuristic is applied
+  * @param alpha     weight given to the lower bound modification
+  * @param beta      weight given to the upper bound modification
+  * @param gamma     decay factor
+  * @author          Yannick Goulleven : yannick.goulleven@student.uclouvain.be
+  */
 class ObjectiveBasedSelector(solver:CPSolver, variables: Array[CPIntVar], alpha:Int, beta:Int, gamma:Double=0.4) {
 
   private[this] val isMin = solver.objective.objs.head.isMin
@@ -61,6 +69,9 @@ class ObjectiveBasedSelector(solver:CPSolver, variables: Array[CPIntVar], alpha:
 
   }
 
+  /*
+  METHODS FOR INITIALIZING AND SETTING THE DELTAo VALUES
+ */
 
   def probing(maxProbingTime:Long, significance:Double, valH:Int => Int): Unit = {
     var current = System.nanoTime()
@@ -131,6 +142,20 @@ class ObjectiveBasedSelector(solver:CPSolver, variables: Array[CPIntVar], alpha:
     true
   }
 
+  def setDeltaO(values:Array[Double]): Unit = {
+    obsMin = Double.MaxValue
+    obsMax = Double.MinValue
+
+    for(i <- values.indices) {
+      deltaO(i) = values(i)
+      if(deltaO(i) < obsMin) obsMin = deltaO(i)
+      if (deltaO(i) > obsMax) obsMax = deltaO(i)
+    }
+  }
+
+  /*
+  METHODS TO RETURN THE DELTAo VALUE IN VARIOUS WAYS
+ */
 
   def getDeltaO(i:Int): Double = {
     deltaO(i)
@@ -147,26 +172,6 @@ class ObjectiveBasedSelector(solver:CPSolver, variables: Array[CPIntVar], alpha:
     else {
       (deltaO(i) - obsMin) / (obsMax - obsMin)
     }
-    // TODO REMOVE FOR FINAL COMPETATION
-    if(res > 1 || res < 0) {
-      println("ERROR -> DELTA 0 not in range")
-      println("deltaO: " + deltaO(i))
-      println("obsMin : " + obsMin)
-      println("obsMax : " + obsMax)
-    }
     res
   }
-
-  def setDeltaO(values:Array[Double]): Unit = {
-    obsMin = Double.MaxValue
-    obsMax = Double.MinValue
-
-    for(i <- values.indices) {
-      deltaO(i) = values(i)
-      if(deltaO(i) < obsMin) obsMin = deltaO(i)
-      if (deltaO(i) > obsMax) obsMax = deltaO(i)
-    }
-  }
-
-
 }

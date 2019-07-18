@@ -8,8 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 
-/** Bound-Impact Value Selector from "Making the first solution good!"
-  *
+/** Adaptation from the Bound-Impact Value Selector from "Making the first solution good!"
   * @param cp         The  cp solver
   * @param variables  The variables on which the value heuristic is applied
   * @param maxDomSize Limits the number of values that are considered during the selection process, by default 50
@@ -54,6 +53,8 @@ class NewBIVS2(cp: CPSolver, variables: Array[CPIntVar], maxDomSize: Int= 20) {
     val ret = if(!out) {
       val newDw = cp.objective.objs.head.domWorst
       val newDb = cp.objective.objs.head.domBest
+      // HERE IS THE DIFFERENCE TO THE ORIGINAL BIVS
+      // we consider the difference between the lower and the upper bound modification
       if (isMinimization) {
         newDb + newDw
       }

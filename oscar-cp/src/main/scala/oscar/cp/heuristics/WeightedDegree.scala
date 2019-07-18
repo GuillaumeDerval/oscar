@@ -3,6 +3,7 @@ package oscar.cp.heuristics
 import oscar.cp.core.CPSolver
 import oscar.cp.core.variables.{CPIntVar, CPVar}
 
+// CAUTION -> not to be used with nogood search
 class WeightedDegree(cp:CPSolver, variables:Array[CPIntVar], decay:Double) {
 
   private[this] val nVariables = variables.length
