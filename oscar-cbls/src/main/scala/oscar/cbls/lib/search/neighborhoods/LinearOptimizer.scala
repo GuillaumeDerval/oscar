@@ -184,8 +184,8 @@ class TryExtremes() extends LinearOptimizer {
   override def toString: String = "TryExtremes()"
 }
 
-class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Boolean, maxIt:Long)
-  extends LinearOptimizer{
+
+class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Boolean, maxIt:Long) extends LinearOptimizer{
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
 
     var positionOfBestSoFar:Long = startPos
@@ -243,7 +243,7 @@ class SlideVaryingSteps(stepSequence:List[Long] = List(1L), gradualIncrease:Bool
   }
 }
 
-class Slide(step:Long = 1L, maxIt: Long) extends LinearOptimizer{
+class Slide(step:Long = 1L, maxIt: Long) extends LinearOptimizer {
 
   override def toString: String = "Slide(step:" + step + ")"
 
@@ -335,9 +335,9 @@ class NewtonRaphsonRoot(dXForDetivativeEvalution:Long, maxIt: Long) extends Line
 
 
 //this one finds a min!!!
-class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends LinearOptimizer{
+class NewtonRaphsonMinimize(dXForDerivativeEvalution:Long, maxIt: Long) extends LinearOptimizer {
 
-  override def toString: String = "NewtonRaphson(dXForDetivativeEvalution:" + dXForDetivativeEvalution + ")"
+  override def toString: String = "NewtonRaphson(dXForDerivativeEvalution:" + dXForDerivativeEvalution + ")"
 
   override def search(startPos: Long, startObj: Long, minValue: Long, maxValue: Long, obj: Long => Long): (Long, Long) = {
     var positionOfBestSoFar:Long = startPos
@@ -354,12 +354,12 @@ class NewtonRaphsonMinimize(dXForDetivativeEvalution:Long, maxIt: Long) extends 
 
     val evaluate2: Long => Long = x => {
       val f = myObj(x)
-      val fpdx = myObj(x + dXForDetivativeEvalution)
+      val fpdx = myObj(x + dXForDerivativeEvalution)
 
-      ((fpdx - f).toDouble / dXForDetivativeEvalution) toLong
+      ((fpdx - f).toDouble / dXForDerivativeEvalution) toLong
     }
 
-    new NewtonRaphsonRoot(dXForDetivativeEvalution: Long, maxIt: Long).search(startPos: Long, evaluate2(startPos), minValue: Long, maxValue: Long, evaluate2)
+    new NewtonRaphsonRoot(dXForDerivativeEvalution: Long, maxIt: Long).search(startPos: Long, evaluate2(startPos), minValue: Long, maxValue: Long, evaluate2)
     (positionOfBestSoFar,bestObjSoFar)
   }
 }

@@ -52,20 +52,20 @@ case class GradientComponent(variable:CBLSIntVar,
   val (minStep, maxStep) = if (bound1 < bound2) (bound1, bound2) else (bound2, bound1)
 }
 
-
-
 /**
-  * this neighborhood persorms a gradient descent.
-  * i first sense each dimension independently, and the performs a linear descent on the steepest identified gradient.
-  * @param vars
-  * @param name
-  * @param maxNbVars
-  * @param selectVars
-  * @param variableIndiceToDeltaForGradientDefinition
-  * @param hotRestart
-  * @param linearSearch
-  * @param trySubgradient
-  */
+ * this neighborhood performs a gradient descent.
+ * it first sense each dimension independently,
+ * and then performs a linear descent on the steepest identified gradient.
+ *
+ * @param vars
+ * @param name
+ * @param maxNbVars
+ * @param selectVars
+ * @param variableIndiceToDeltaForGradientDefinition
+ * @param linearSearch
+ * @param gradientSearchBehavior
+ * @param trySubgradient
+ */
 case class GradientDescentRotating(vars:Array[CBLSIntVar],
                                    name:String = "GradientDescent",
                                    maxNbVars:Int = Integer.MAX_VALUE,
@@ -78,7 +78,6 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
     name:String,
     linearSearch,
     trySubgradient)  {
-
 
   override def findGradient(initialObj: Long): List[GradientComponent] = {
 
@@ -179,14 +178,10 @@ case class GradientDescentRotating(vars:Array[CBLSIntVar],
   }
 }
 
-
-
-
-
-
 /**
-  * this neighborhood persorms a gradient descent.
-  * i first sense each dimension independently, and the performs a linear descent on the steepest identified gradient.
+  * this neighborhood performs a gradient descent.
+  * it first sense each dimension independently, and then performs
+  * a linear descent on the steepest identified gradient.
   * @param vars
   * @param name
   * @param maxNbVars
@@ -271,10 +266,8 @@ case class GradientDescent(vars:Array[CBLSIntVar],
   }
 }
 
-
 abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
                                        name:String,
-
                                        linearSearch:LinearOptimizer,
                                        trySubgradient:Boolean = false)
   extends EasyNeighborhoodMultiLevel[GradientMove](name) {
@@ -352,7 +345,6 @@ abstract class AbstractGradientDescent(vars:Array[CBLSIntVar],
 }
 
 
-
 case class GradientMove(gradientDefinition : List[GradientComponent], step:Long, override val objAfter:Long, override val neighborhoodName:String = null)
   extends Move(objAfter, neighborhoodName){
 
@@ -368,4 +360,3 @@ case class GradientMove(gradientDefinition : List[GradientComponent], step:Long,
 
   override def touchedVariables: List[Variable] = gradientDefinition.map(_.variable)
 }
-
