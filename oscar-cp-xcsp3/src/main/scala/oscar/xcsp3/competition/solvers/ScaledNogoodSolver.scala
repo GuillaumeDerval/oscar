@@ -157,8 +157,8 @@ object ScaledNogoodSolver extends CompetitionApp with App {
       val noGoodDB = NogoodDB()
       val noGoodSearch = new NogoodSearch(solver, noGoodDB)
 
-      val decWDEG = new WeightedDegree(solver, noGoodSearch, decisionVars, 0.99)
-      val auxWDEG = new WeightedDegree(solver, noGoodSearch, auxiliaryVars, 0.99)
+      val decWDEG = new WeightedDegree(solver, decisionVars, 0.99)
+      val auxWDEG = new WeightedDegree(solver, auxiliaryVars, 0.99)
 
 
       noGoodSearch.onSolution {

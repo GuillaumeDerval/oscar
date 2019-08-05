@@ -2,7 +2,7 @@ package oscar.xcsp3.competition.solvers
 
 import oscar.algo.Inconsistency
 import oscar.cp.core.NoSolutionException
-import oscar.cp.heuristics.{ActivityBasedSearch, BoundImpactValueSelector, InitHeuristics, InitHeuristics2, NewBIVS2, ObjectiveBasedSelector, ObjectiveLandscape, SolBasedPhaseSaving}
+import oscar.cp.heuristics.{ActivityBasedSearch, BoundImpactValueSelector, InitHeuristics, NewBIVS2, ObjectiveBasedSelector, ObjectiveLandscape, SolBasedPhaseSaving}
 import oscar.cp.nogoods.database.NogoodDB
 import oscar.cp.nogoods.searches.{BinaryRandomizedNogoodBranching, ConflictOrderingSearch, HeuristicNogoodBranching, NogoodSearch}
 import oscar.cp.searches.lns.CPIntSol
@@ -129,7 +129,7 @@ object ABSSolver extends CompetitionApp with App {
       // the value heuristic used for probing is the one that is later used in the search
       val decBIVS = new BoundImpactValueSelector(solver, decisionVars)
       // initialize ABS and OBS features by probing
-      val init = new InitHeuristics2(solver, decisionVars, allVars, decBIVS.selectValue, maxTime = 10000000000L, significance = 0.2)
+      val init = new InitHeuristics(solver, decisionVars, allVars, decBIVS.selectValue, maxTime = 10000000000L, significance = 0.2)
 
       // set OBS and ABS values for decision variables
       val decABS = new ActivityBasedSearch(decisionVars, decay = decay)
