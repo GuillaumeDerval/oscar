@@ -1,24 +1,24 @@
 /*******************************************************************************
-  * OscaR is free software: you can redistribute it and/or modify
-  * it under the terms of the GNU Lesser General Public License as published by
-  * the Free Software Foundation, either version 2.1 of the License, or
-  * (at your option) any later version.
-  *
-  * OscaR is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU Lesser General Public License  for more details.
-  *
-  * You should have received a copy of the GNU Lesser General Public License along with OscaR.
-  * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
-  ******************************************************************************/
+ * OscaR is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 2.1 of the License, or
+ * (at your option) any later version.
+ *
+ * OscaR is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License  for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with OscaR.
+ * If not, see http://www.gnu.org/licenses/lgpl-3.0.en.html
+ ******************************************************************************/
 package oscar.cbls.core.objective
 
 /*******************************************************************************
-  * Contributors:
-  *     This code has been initially developed by CETIC www.cetic.be
-  *         by Renaud De Landtsheer
-  ******************************************************************************/
+ * Contributors:
+ *     This code has been initially developed by CETIC www.cetic.be
+ *         by Renaud De Landtsheer
+ ******************************************************************************/
 
 import oscar.cbls.core.computation._
 
@@ -116,6 +116,63 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
   override def model: Store = mustBeZeroObjective.model
 }
 
+
+
+
+
+
+/**
+ * if (objective1.value == 0) objective2.value
+ * else objective1.value * (objective2.max+1)
+ *
+ * objective2.max is a additional parameter.
+ *
+ * this is when objective2 is expensive to evaluate
+ * and we want to treat objective1 as a weak objective (opposite to the [[CascadingObjective]])
+ *
+ * @param objective1 the first objective to minimize
+ * @param objective2 the one to inimize when the first one is zero
+ * @param maxObjective2 the maximal value that objective2 will ever have when objective1 is zero.
+ */
+class PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long) extends Objective {
+
+  /**
+   * This method returns the actual objective value.
+   * It is easy to override it, and perform a smarter propagation if needed.
+   * @return the actual objective value.
+   */
+  override def value = {
+    val firstObjectiveValue = objective1.value
+    if (firstObjectiveValue==0) objective2.value
+    else (firstObjectiveValue * (maxObjective2+1))
+  }
+
+  override def model: Store = objective1.model
+
+  override def detailedString(short: Boolean, indent:Long = 0L): String =
+    (if(short) {
+      if (objective1.value == 0) {
+        nSpace(indent) + "PriorityObjective(\n" +
+          nSpace(indent + 2L) + "objective1 :=0 \n" +
+          nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 2L) + "\n" +
+          nSpace(indent) + ")"
+      } else {
+        nSpace(indent) + "CascadingObjective(\n" +
+          nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
+          nSpace(indent) + ")"
+      }
+    }else {
+      nSpace(indent) + "CascadingObjective(\n" +
+        nSpace(indent + 2L) + "objective1:" + objective1.detailedString(true, indent + 4L) + "\n" +
+        nSpace(indent + 2L) + "objective2:" + objective2.detailedString(true, indent + 4L) + "\n" +
+        nSpace(indent) + ")"
+    })
+}
+
+
+
+
+
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m
 
@@ -146,10 +203,10 @@ trait Objective {
   def isZero:Boolean = value == 0L
 
   /**returns the value of the objective variable if the two variables a and b were swapped values.
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def swapVal(a: CBLSIntVar, b: CBLSIntVar): Long = {
     a :=: b
     val newVal = value
@@ -158,17 +215,17 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if variable a was assigned the value v.
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def assignVal(a: CBLSIntVar, v: Long): Long = assignVal(List((a,v)))
 
   /**returns the value of the objective variable if the assignment described by parameter a was performed
-    * This proceeds through explicit state change and restore.
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * This proceeds through explicit state change and restore.
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def assignVal(a: Iterable[(CBLSIntVar, Long)]): Long = {
     //memorize
     val oldvals: Iterable[(CBLSIntVar, Long)] = a.foldLeft(List.empty[(CBLSIntVar, Long)])(
@@ -185,9 +242,9 @@ trait Objective {
 
 
   /**returns the value of the objective variable if i is inserted to a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def insertValAssumeNotAlreadyIn(a: CBLSSetVar, i:Long): Long = {
     a :+= i
     val newVal = value
@@ -196,18 +253,18 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if i is inserted to a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def insertVal(a: CBLSSetVar, i:Long): Long = {
     if(a.value.contains(i)) return value
     insertValAssumeNotAlreadyIn(a, i)
   }
 
   /**returns the value of the objective variable if i is removed from a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def removeValAssumeIn(a: CBLSSetVar, i:Long): Long = {
     a :-= i
     val newVal = value
@@ -216,9 +273,9 @@ trait Objective {
   }
 
   /**returns the value of the objective variable if i is removed from a
-    * this process is efficiently performed as the objective Variable is registered for partial propagation
-    * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
-    */
+   * this process is efficiently performed as the objective Variable is registered for partial propagation
+   * @see registerForPartialPropagation() in [[oscar.cbls.core.computation.Store]]
+   */
   def removeVal(a: CBLSSetVar, i:Long): Long = {
     if(!a.value.contains(i)) return value
     removeValAssumeIn(a, i)

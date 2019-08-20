@@ -18,6 +18,7 @@ package oscar
 
 import oscar.cbls.algo.search.InstrumentedRange
 import oscar.cbls.core.computation._
+import oscar.cbls.core.objective.Objective
 import oscar.cbls.core.search.Neighborhood
 import oscar.cbls.lib.constraint.{EQ, GE, LE, NE}
 import oscar.cbls.lib.invariant.logic._
@@ -115,6 +116,8 @@ package object cbls extends ModelingAPI{
   type AbstractVariable= oscar.cbls.core.computation.AbstractVariable
 
   type CascadingObjective = oscar.cbls.core.objective.CascadingObjective
+
+  type PriorityObjective = oscar.cbls.core.objective.PriorityObjective
 
   type IntVarObjective = oscar.cbls.core.objective.IntVarObjective
 

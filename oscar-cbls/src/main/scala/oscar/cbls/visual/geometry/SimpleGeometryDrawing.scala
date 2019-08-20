@@ -143,6 +143,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
     */
   private def paintShapes(w: ShapeWriter, shapes:List[(Geometry,Option[Color],Option[Color],String)], nonNegativeTransform: AffineTransformation, scaleTransform: AffineTransformation, translateTransform:AffineTransformation): Unit ={
     for((geometry,borderColOpt,innerColOpt,toolTipText) <- shapes){
+
       val s = new VisualShapeConcrete(this, w.toShape(translateTransform.transform(scaleTransform.transform(nonNegativeTransform.transform(geometry)))))
 
       borderColOpt match{
@@ -202,7 +203,7 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
   addComponentListener{
     new ComponentListener {
       override def componentResized(componentEvent: ComponentEvent): Unit = {
-        if(shapes.nonEmpty)
+        if(geometryShapes.nonEmpty)
           drawShapes(boundingBoxOn, geometryShapes, centers, false)
       }
 
