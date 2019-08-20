@@ -116,16 +116,14 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
   override def model: Store = mustBeZeroObjective.model
 }
 
-
-
-
-
-
 /**
  * if (objective1.value == 0) objective2.value
- * else objective1.value * (objective2.max+1)
+ * else objective1.value * (maxObjective2+1)
  *
- * objective2.max is a additional parameter.
+ * If the product parameter is set to false, the formula uses a + operator instead of a *:
+ *
+ * if (objective1.value == 0) objective2.value
+ * else objective1.value + (maxObjective2+1)
  *
  * this is when objective2 is expensive to evaluate
  * and we want to treat objective1 as a weak objective (opposite to the [[CascadingObjective]])
@@ -133,8 +131,9 @@ class CascadingObjective(mustBeZeroObjective: Objective, secondObjective:Objecti
  * @param objective1 the first objective to minimize
  * @param objective2 the one to inimize when the first one is zero
  * @param maxObjective2 the maximal value that objective2 will ever have when objective1 is zero.
+ * @param product uses a product operator (if false, uses a sum operator
  */
-class PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long) extends Objective {
+class PriorityObjective(objective1: Objective, objective2:Objective, maxObjective2:Long, product:Boolean = true) extends Objective {
 
   /**
    * This method returns the actual objective value.
@@ -144,7 +143,8 @@ class PriorityObjective(objective1: Objective, objective2:Objective, maxObjectiv
   override def value = {
     val firstObjectiveValue = objective1.value
     if (firstObjectiveValue==0) objective2.value
-    else (firstObjectiveValue * (maxObjective2+1))
+    else if(product) (firstObjectiveValue * (maxObjective2+1))
+    else (firstObjectiveValue + (maxObjective2+1))
   }
 
   override def model: Store = objective1.model
@@ -168,10 +168,6 @@ class PriorityObjective(objective1: Objective, objective2:Objective, maxObjectiv
         nSpace(indent) + ")"
     })
 }
-
-
-
-
 
 class FunctionObjective(f:()=>Long, m:Store = null) extends Objective{
   override def model: Store = m
