@@ -5,8 +5,10 @@ import org.locationtech.jts.geom.{Coordinate, Geometry, GeometryCollection, Line
 
 object MaxDistance {
 
-  def computeDistance(geom: Geometry, pt: Coordinate,  ptDist:PointPairDistance = new PointPairDistance()): PointPairDistance = {
-    geom match{
+  def computeDistance(geom: Geometry,
+                      pt: Coordinate,
+                      ptDist:PointPairDistance = new PointPairDistance()): PointPairDistance = {
+    geom match {
       case l:LineString =>
         computeDistanceLineString(l, pt, ptDist)
       case p:Polygon =>
@@ -14,7 +16,7 @@ object MaxDistance {
       case gc:GeometryCollection =>
         for(i <- 0 until gc.getNumGeometries){
           val g = gc.getGeometryN(i)
-          computeDistance(g, pt,ptDist)
+          computeDistance(g, pt, ptDist)
         }
       case _ =>
         ptDist.setMaximum(geom.getCoordinate, pt)
@@ -23,7 +25,7 @@ object MaxDistance {
   }
 
   def computeDistanceLineString(line: LineString, pt: Coordinate, ptDist: PointPairDistance): Unit = {
-    val tempSegment = new LineSegment
+    //val tempSegment = new LineSegment
     val coords:Array[Coordinate] = line.getCoordinates
 
     for(coord <- coords){

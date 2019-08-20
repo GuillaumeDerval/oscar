@@ -50,7 +50,7 @@ case class IsWithin(inner:AtomicValue[GeometryValue], outer:AtomicValue[Geometry
 
 class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(store:Store,
-    initialValue=new GeometryValue(a.value.geometry union b.value.geometry))
+    initialValue = GeometryValue(a.value.geometry union b.value.geometry))
     with GeometryNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
@@ -62,7 +62,7 @@ class Union(store:Store,a:AtomicValue[GeometryValue],b:AtomicValue[GeometryValue
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new GeometryValue(a.value.geometry union b.value.geometry)
+    this := GeometryValue(a.value.geometry union b.value.geometry)
   }
 }
 

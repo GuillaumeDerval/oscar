@@ -26,9 +26,9 @@ class Compose(store:Store,
               a:ChangingAtomicValue[AffineTransformationValue],
               b:ChangingAtomicValue[AffineTransformationValue])
   extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
+    initialValue = AffineTransformationValue(
       new AffineTransformation(new AffineTransformation(a.value.affineTransform) compose b.value.affineTransform),
-      (a.value.uniformScalingFactor,b.value.uniformScalingFactor) match{case (Some(x),Some(y)) => Some(x*y); case _ => None}))
+      (a.value.uniformScalingFactor,b.value.uniformScalingFactor) match {case (Some(x),Some(y)) => Some(x*y); case _ => None}))
     with AffineTransformNotificationTarget {
 
   this.registerStaticAndDynamicDependency(a)
@@ -43,7 +43,7 @@ class Compose(store:Store,
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
+    this := AffineTransformationValue(
       new AffineTransformation(new AffineTransformation(a.value.affineTransform) compose b.value.affineTransform),
       (a.value.uniformScalingFactor, b.value.uniformScalingFactor)
       match {
@@ -55,7 +55,7 @@ class Compose(store:Store,
 
 class Translation(store:Store,x:IntValue,y:IntValue)
   extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
+    initialValue = AffineTransformationValue(
       AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble),
       Some(1.0)))
     with IntNotificationTarget {
@@ -73,7 +73,7 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
+    this := AffineTransformationValue(
       AffineTransformation.translationInstance(x.value.toDouble,y.value.toDouble),
       Some(1.0))
   }
@@ -85,12 +85,12 @@ class Translation(store:Store,x:IntValue,y:IntValue)
   * by an angle <i>theta</i>.
   * Positive angles correspond to a rotation
   * in the counter-clockwise direction.
-  * @param store
+  * @param store the CBLS store
   * @param theta: the angle of rotation, in t th of degree
   */
 class RotationAroundZero(store:Store,theta:IntValue, t:Int = 1)
   extends CBLSAffineTransformInvariant(
-    initialValue = new AffineTransformationValue(
+    initialValue = AffineTransformationValue(
       AffineTransformation.rotationInstance(theta.value * java.lang.Math.PI / (180 * t)),
       Some(1.0)))
     with IntNotificationTarget {
@@ -105,20 +105,18 @@ class RotationAroundZero(store:Store,theta:IntValue, t:Int = 1)
   }
 
   override def performInvariantPropagation(): Unit = {
-    this := new AffineTransformationValue(
+    this := AffineTransformationValue(
       AffineTransformation.rotationInstance(theta.value * java.lang.Math.PI / (180 * t)),
       Some(1.0))
   }
 }
-
-
 
 class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[GeometryValue])
   extends CBLSGeometryInvariant(
     store:Store,
     initialValue = {
       a.value.uniformScalingFactor match{
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))
+        case None => GeometryValue(a.value.affineTransform.transform(b.value.geometry))
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
@@ -132,7 +130,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
             case Some(r) => Some(r*s)
           }
 
-          new GeometryValue(newGeo,newCentroid,newRadius)
+          GeometryValue(newGeo,newCentroid,newRadius)
       }
     }) with GeometryNotificationTarget with AffineTransformNotificationTarget {
 
@@ -159,7 +157,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
   override def performInvariantPropagation(): Unit = {
     this := {
       a.value.uniformScalingFactor match {
-        case None => new GeometryValue(a.value.affineTransform.transform(b.value.geometry))
+        case None => GeometryValue(a.value.affineTransform.transform(b.value.geometry))
         case Some(s) =>
           val newGeo = a.value.affineTransform.transform(b.value.geometry)
 
@@ -173,7 +171,7 @@ class Apply(store:Store,a:AtomicValue[AffineTransformationValue],b:AtomicValue[G
             case Some(r) => Some(r * s)
           }
 
-          new GeometryValue(newGeo,newCentroid, newRadius)
+          GeometryValue(newGeo,newCentroid, newRadius)
       }
     }
   }

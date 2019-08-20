@@ -20,7 +20,7 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
     256, true, true, // tile size is 256 and x/y orientation is normal
     "http://tile.openstreetmap.org",
     "x", "y", "z") {
-    override def getTileUrl(x: Int, y: Int, zoo: Int) = {
+    override def getTileUrl(x: Int, y: Int, zoo: Int): String = {
       val zoom = maxZoom - zoo
       this.baseURL + "/" + zoom + "/" + x + "/" + y + ".png"
     }
@@ -60,7 +60,7 @@ class GeometryDrawingOnRealMap(pointOfOrigin: (Double,Double),
   viewer.setPreferredSize(new java.awt.Dimension(windowWidth, windowHeight))
   this.setOpaque(true)
 
-  def topLeftPointShiftInPixel(): (Double,Double) ={
+  def topLeftPointShiftInPixel: (Double,Double) ={
     val topLeftPointInPixel = viewer.convertGeoPositionToPoint(topLeftGeoPosition)
     (topLeftPointInPixel.getX, topLeftPointInPixel.getY)
   }

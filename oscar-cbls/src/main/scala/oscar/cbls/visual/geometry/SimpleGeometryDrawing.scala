@@ -89,7 +89,12 @@ class SimpleGeometryDrawing(relevantDistances:List[(Int,Int)],
 
     val boundingBoxOnNow = boundingBoxOn.getOrElse(
       new Polygon(
-        geometry.factory.createLinearRing(List(new Coordinate(minX,0), new Coordinate(0,minY), new Coordinate(maxX,0), new Coordinate(0,maxY)).toArray),
+        geometry.factory.createLinearRing(List(
+          new Coordinate(minX,minY),
+          new Coordinate(minX,maxY),
+          new Coordinate(maxX,maxY),
+          new Coordinate(maxX,minY),
+          new Coordinate(minX,minY)).toArray),
         null,
         geometry.factory))
     paintBorder(w, boundingBoxOnNow, nonNegativeTransform, scaleTransform, translateTransform)

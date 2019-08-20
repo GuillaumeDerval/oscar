@@ -16,17 +16,16 @@ class Drawing (title: String,
   val (drawing, background) = geometryDrawingType match {
     case GeometryDrawingTypes.Simple =>
       (GeometryDrawing(relevantDistances,geometryDrawingType,area,pointOfOrigin, savingFile = savingFile), None)
-    case GeometryDrawingTypes.OnRealMap =>{
+    case GeometryDrawingTypes.OnRealMap =>
       val background = GeometryDrawing(relevantDistances,GeometryDrawingTypes.OnRealMap,area,pointOfOrigin).asInstanceOf[GeometryDrawingOnRealMap]
       (GeometryDrawing(relevantDistances,GeometryDrawingTypes.Simple,area,pointOfOrigin,pointShift = Some(() => background.topLeftPointShiftInPixel), savingFile = savingFile), Some(background))
-    }
   }
-  val singleFrameWindow = SingleFrameWindow.show(drawing, title, backgroundPanel = background)
+  val singleFrameWindow: SingleFrameWindow = SingleFrameWindow.show(drawing, title, backgroundPanel = background)
 
   /**
     * This method save the current drawing as a png in the specified savingFile.
     */
-  def saveDrawingAsPNG = {
+  def saveDrawingAsPNG(): Unit = {
     require(savingFile.nonEmpty, "Unable to save the current drawing - No file specified")
     singleFrameWindow.saveWindowAsPng(savingFile.get)
   }
